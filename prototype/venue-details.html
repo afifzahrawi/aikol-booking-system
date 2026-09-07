@@ -135,11 +135,12 @@
 
     document.getElementById('vDesc').textContent = v.description;
 
-    document.getElementById('facList').innerHTML = A.facilitiesFor('Venue').map(f => {
-        const has = v.facilities.indexOf(f.code) !== -1;
-        return '<li><span class="' + (has ? 'tick' : 'off') + '" aria-hidden="true">' + (has ? '✓' : '–') + '</span>' +
-            '<span class="' + (has ? '' : 'off') + '">' + A.esc(A.facilityName(f.code)) + '</span></li>';
-    }).join('');
+    /* Chips, the same as the vehicle page: what the room HAS, not a checklist
+       of everything it might have. A tick-and-cross list makes a well-equipped
+       room look half-empty. */
+    document.getElementById('facList').innerHTML = v.facilities.length
+        ? v.facilities.map(f => '<li><span class="pill">' + A.esc(A.facilityName(f)) + '</span></li>').join('')
+        : '<li><span class="help">No facilities recorded for this room.</span></li>';
 
     document.getElementById('rules').innerHTML = v.rules.map(r => '<li>' + A.esc(r) + '</li>').join('');
     document.getElementById('approvalNote').innerHTML = v.approval

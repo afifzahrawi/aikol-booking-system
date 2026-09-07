@@ -22,10 +22,10 @@
             </div>
 
             <div class="grid grid-4" style="margin-bottom:1.25rem">
-                <div class="stat"><span class="label">Total bookings</span><span class="value" id="sTotal">0</span></div>
-                <div class="stat warn"><span class="label">Pending</span><span class="value" id="sPending">0</span></div>
-                <div class="stat accent"><span class="label">Approved</span><span class="value" id="sApproved">0</span></div>
-                <div class="stat"><span class="label">Completed</span><span class="value" id="sCompleted">0</span></div>
+                <div class="stat"><span class="k">Total bookings</span><span class="v" id="sTotal">0</span><span class="d" id="dTotal"></span></div>
+                <div class="stat accent"><span class="k">Awaiting approval</span><span class="v" id="sPending">0</span><span class="d" id="dPending"></span></div>
+                <div class="stat info"><span class="k">Approved</span><span class="v" id="sApproved">0</span><span class="d" id="dApproved"></span></div>
+                <div class="stat neutral"><span class="k">Completed</span><span class="v" id="sCompleted">0</span><span class="d" id="dCompleted"></span></div>
             </div>
 
             <section class="card" aria-labelledby="listHead">
@@ -100,10 +100,23 @@
 
     function stats() {
         const m = mine();
-        document.getElementById('sTotal').textContent = m.length;
-        document.getElementById('sPending').textContent = m.filter(b => b.status === 'Pending').length;
-        document.getElementById('sApproved').textContent = m.filter(b => b.status === 'Approved').length;
-        document.getElementById('sCompleted').textContent = m.filter(b => b.status === 'Completed').length;
+        const now = new Date();
+        const pending = m.filter(b => b.status === 'Pending');
+        const approved = m.filter(b => b.status === 'Approved');
+        const completed = m.filter(b => b.status === 'Completed');
+        const upcoming = approved.filter(b => A.toDate(b.startAt) > now);
+        const rooms = m.filter(b => b.kind === 'Venue').length;
+        const oldest = pending.slice().sort((a, b) => a.created < b.created ? -1 : 1)[0];
+        const set = (id, v) => { document.getElementById(id).textContent = v; };
+
+        set('sTotal', m.length);
+        set('dTotal', rooms + ' room · ' + (m.length - rooms) + ' vehicle');
+        set('sPending', pending.length);
+        set('dPending', oldest ? 'oldest submitted ' + A.fmtDate(oldest.created) : 'nothing waiting');
+        set('sApproved', approved.length);
+        set('dApproved', upcoming.length + ' still to come');
+        set('sCompleted', completed.length);
+        set('dCompleted', 'retained ' + A.SETTINGS.retentionYears + ' years for audit');
     }
     stats();
 

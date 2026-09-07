@@ -13,23 +13,20 @@
 
     <section class="login-hero">
         <div class="brand">
-            <img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 200px">
-            <span class="brand-text">
-                <span class="brand-name">Ahmad Ibrahim Kulliyyah of Laws</span>
-                <span class="brand-sub">International Islamic University Malaysia</span>
-            </span>
+            <img src="assets/images/aikol_logo.png" alt="Ahmad Ibrahim Kulliyyah of Laws, International Islamic University Malaysia" style="width: 200px;">
         </div>
 
         <div>
+            <div class="arabic">السلام عليكم</div>
             <h1>Create an account</h1>
             <p>
-                Registration is open to anyone with an IIUM matriculation number or staff number.
-                The Kulliyyah does not create accounts by hand.
+                Booking is open to the Kulliyyah and to the public. IIUM students, lecturers and staff
+                register with their matriculation or staff number; anyone else registers without one.
             </p>
             <ul>
-                <li>An IIUM email address is required and is verified before you can book</li>
-                <li>Your matriculation or staff number is recorded for documentation</li>
-                <li>Students may book any venue; vehicles are for lecturers and staff</li>
+                <li>Your email address is verified before you can book</li>
+                <li>IIUM members give a matriculation or staff number, recorded for documentation</li>
+                <li>Rooms are bookable by everyone; Kulliyyah cars by lecturers and staff</li>
                 <li>The system has its own sign-in — it is not IIUM single sign-on</li>
             </ul>
         </div>
@@ -43,7 +40,7 @@
         <main class="card login-card" id="main">
             <div class="card-body">
                 <h2>Register</h2>
-                <p class="help" style="margin-bottom:1.25rem">
+                <p class="help" style="margin-bottom: 1.25rem;">
                     All fields are required unless marked otherwise.
                 </p>
 
@@ -51,29 +48,38 @@
                     <div class="field">
                         <label for="name">Full name <span class="req" aria-hidden="true">*</span></label>
                         <input class="input" type="text" id="name" autocomplete="name" required
-                               placeholder="As it appears on your matriculation or staff card">
+                               placeholder="As it appears on your identification">
+                    </div>
+
+                    <!-- The default is an IIUM registrant. Ticking this removes the
+                         Kulliyyah-specific fields rather than greying them out. -->
+                    <div class="checkline" style="margin: 0 0 16px;">
+                        <input type="checkbox" id="notIium">
+                        <label for="notIium">I am not IIUM staff, a lecturer or a student</label>
                     </div>
 
                     <div class="field">
-                        <label for="email">IIUM email address <span class="req" aria-hidden="true">*</span></label>
+                        <label for="email">Email address <span class="req" aria-hidden="true">*</span></label>
                         <input class="input" type="email" id="email" autocomplete="username" required
                                placeholder="yourname@live.iium.edu.my">
                         <p class="help" id="emailHelp"></p>
                     </div>
 
-                    <div class="field">
-                        <label for="affiliation">You are <span class="req" aria-hidden="true">*</span></label>
-                        <select class="select" id="affiliation" required>
-                            <option value="Student">A student</option>
-                            <option value="Lecturer">A lecturer</option>
-                            <option value="Staff">A member of staff</option>
-                        </select>
-                    </div>
+                    <div id="iiumBlock">
+                        <div class="field">
+                            <label for="affiliation">You are <span class="req" aria-hidden="true">*</span></label>
+                            <select class="select" id="affiliation" required>
+                                <option value="Student">A student</option>
+                                <option value="Lecturer">A lecturer</option>
+                                <option value="Staff">A member of staff</option>
+                            </select>
+                        </div>
 
-                    <div class="field">
-                        <label for="idno" id="idLabel">Matriculation number <span class="req" aria-hidden="true">*</span></label>
-                        <input class="input" type="text" id="idno" required placeholder="For example: A21EC0123">
-                        <p class="help" id="idHelp">Recorded for documentation and reporting. It is not your sign-in credential.</p>
+                        <div class="field">
+                            <label for="idno" id="idLabel">Matriculation number <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" id="idno" placeholder="For example: A21EC0123">
+                            <p class="help" id="idHelp">Recorded for documentation and reporting. It is not your sign-in credential.</p>
+                        </div>
                     </div>
 
                     <div class="field">
@@ -98,16 +104,16 @@
                     <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Create account</button>
                 </form>
 
-                <p class="help" style="margin-top:1rem">
+                <p class="help" style="margin-top: 1rem;">
                     Already registered? <a href="login.html">Sign in instead</a>.
                 </p>
             </div>
 
             <div class="card-foot">
-                <p class="help" style="margin:0">
+                <p class="help" style="margin: 0;">
                     <strong>Note on demonstration data:</strong> the sample accounts in this prototype use
-                    <span class="mono">@demo.aikol.test</span> addresses so they are obviously fictional. The rule
-                    enforced above is the real one.
+                    <span class="mono">@demo.aikol.test</span> addresses so they are obviously fictional.
+                    The rules enforced above are the real ones.
                 </p>
             </div>
         </main>
@@ -122,99 +128,129 @@
 
     const els = {
         name: document.getElementById('name'),
+        notIium: document.getElementById('notIium'),
         email: document.getElementById('email'),
         affiliation: document.getElementById('affiliation'),
         idno: document.getElementById('idno'),
         phone: document.getElementById('phone'),
         password: document.getElementById('password'),
         password2: document.getElementById('password2'),
+        iiumBlock: document.getElementById('iiumBlock'),
         validation: document.getElementById('validation'),
         emailHelp: document.getElementById('emailHelp'),
         idLabel: document.getElementById('idLabel'),
         idHelp: document.getElementById('idHelp')
     };
 
-    els.emailHelp.textContent = 'Must end in ' + S.allowedEmailDomains.map(d => '@' + d).join(' or ') +
-        '. A verification link is sent to this address.';
+    const isIIUM = () => !els.notIium.checked;
 
-    /* The label follows the affiliation — a lecturer does not have a
+    /* The affiliation decides what the number is called. A lecturer has no
        matriculation number, and asking for one invites bad data. */
-    function syncIdField() {
-        const student = els.affiliation.value === 'Student';
-        els.idLabel.innerHTML = (student ? 'Matriculation number' : 'Staff number') +
-            ' <span class="req" aria-hidden="true">*</span>';
-        els.idno.placeholder = student ? 'For example: A21EC0123' : 'For example: S1042';
-        els.idHelp.textContent = student
-            ? 'Recorded for documentation and reporting. It is not your sign-in credential.'
-            : 'Recorded for documentation. Lecturers and staff may also request Kulliyyah vehicles.';
+    function syncFields() {
+        const iium = isIIUM();
+        els.iiumBlock.hidden = !iium;
+        /* Hidden fields must not be required, or the form blocks on something
+           the person cannot see. */
+        els.idno.required = iium;
+        els.affiliation.required = iium;
+
+        els.email.placeholder = iium ? 'yourname@live.iium.edu.my' : 'yourname@example.com';
+        els.emailHelp.textContent = iium
+            ? 'Must end in ' + S.allowedEmailDomains.map(d => '@' + d).join(' or ') +
+              '. A verification link is sent to this address.'
+            : 'Any email address. A verification link is sent to it before you can book.';
+
+        if (iium) {
+            const student = els.affiliation.value === 'Student';
+            els.idLabel.innerHTML = (student ? 'Matriculation number' : 'Staff number') +
+                ' <span class="req" aria-hidden="true">*</span>';
+            els.idno.placeholder = student ? 'For example: A21EC0123' : 'For example: S1042';
+            els.idHelp.textContent = student
+                ? 'Recorded for documentation and reporting. It is not your sign-in credential.'
+                : 'Recorded for documentation. Lecturers and staff may also request Kulliyyah vehicles.';
+        }
     }
-    els.affiliation.addEventListener('change', () => { syncIdField(); validate(); });
-    syncIdField();
 
     function domainOk(email) {
         const at = email.lastIndexOf('@');
         if (at < 1) return false;
-        const domain = email.slice(at + 1).toLowerCase();
-        return S.allowedEmailDomains.indexOf(domain) !== -1;
+        return S.allowedEmailDomains.indexOf(email.slice(at + 1).toLowerCase()) !== -1;
     }
 
     function validate() {
-        const errors = [];
+        const out = [];
+        const iium = isIIUM();
         const email = els.email.value.trim();
 
-        if (!els.name.value.trim()) errors.push('Enter your full name.');
+        if (!els.name.value.trim()) out.push('Enter your full name.');
 
-        if (!email) errors.push('Enter your IIUM email address.');
-        else if (email.indexOf('@') < 1) errors.push('Enter a complete email address.');
-        else if (!domainOk(email))
-            errors.push('Registration is restricted to IIUM addresses. "' + email.slice(email.lastIndexOf('@')) +
-                        '" is not accepted — use ' + S.allowedEmailDomains.map(d => '@' + d).join(' or ') + '.');
+        if (!email) out.push('Enter your email address.');
+        else if (email.indexOf('@') < 1) out.push('Enter a complete email address.');
+        /* The IIUM domain rule applies only to IIUM registrants — the whole
+           point of the tick box is that the public are not held to it. */
+        else if (iium && !domainOk(email))
+            out.push('IIUM members must register with an ' +
+                     S.allowedEmailDomains.map(d => '@' + d).join(' or ') + ' address. ' +
+                     'If you are not IIUM staff, a lecturer or a student, tick the box above.');
         else if (A.users.some(u => u.email.toLowerCase() === email.toLowerCase()))
-            errors.push('An account already exists for this address.');
+            out.push('An account already exists for this address.');
 
-        const idno = els.idno.value.trim();
-        const student = els.affiliation.value === 'Student';
-        if (!idno) errors.push('Enter your ' + (student ? 'matriculation' : 'staff') + ' number.');
-        else if (A.users.some(u => u.idNo.toLowerCase() === idno.toLowerCase()))
-            errors.push('That ' + (student ? 'matriculation' : 'staff') + ' number is already registered. ' +
-                        'Each number may hold one account.');
+        if (iium) {
+            const idno = els.idno.value.trim();
+            const student = els.affiliation.value === 'Student';
+            if (!idno) out.push('Enter your ' + (student ? 'matriculation' : 'staff') + ' number.');
+            else if (A.users.some(u => u.idNo && u.idNo.toLowerCase() === idno.toLowerCase()))
+                out.push('That ' + (student ? 'matriculation' : 'staff') + ' number is already registered. ' +
+                         'Each number may hold one account.');
+        }
 
-        if (!els.phone.value.trim()) errors.push('Enter a telephone number.');
+        if (!els.phone.value.trim()) out.push('Enter a telephone number.');
 
-        if (els.password.value.length < 10) errors.push('The password must be at least 10 characters.');
-        else if (els.password.value !== els.password2.value) errors.push('The two passwords do not match.');
+        if (els.password.value.length < 10) out.push('The password must be at least 10 characters.');
+        else if (els.password.value !== els.password2.value) out.push('The two passwords do not match.');
 
-        return errors;
+        return out;
     }
 
     function refresh() {
-        const errors = validate();
+        const errs = validate();
         const touched = els.name.value || els.email.value || els.idno.value ||
                         els.phone.value || els.password.value;
         els.validation.innerHTML = !touched ? ''
-            : errors.length
+            : errs.length
                 ? '<div class="notice notice-danger"><strong>Please correct the following:</strong>' +
-                  '<ul style="margin:.5rem 0 0;padding-left:1.1rem">' +
-                  errors.map(x => '<li>' + A.esc(x) + '</li>').join('') + '</ul></div>'
+                  '<ul style="margin:.4rem 0 0;padding-left:1.1rem">' +
+                  errs.map(x => '<li>' + A.esc(x) + '</li>').join('') + '</ul></div>'
                 : '<div class="notice notice-success">Ready to submit. A verification link will be sent to ' +
                   A.esc(els.email.value.trim()) + '.</div>';
-        document.getElementById('submitBtn').disabled = errors.length > 0;
+        document.getElementById('submitBtn').disabled = errs.length > 0;
     }
 
-    Object.keys(els).forEach(k => {
-        if (els[k] && els[k].addEventListener && els[k].tagName) els[k].addEventListener('input', refresh);
-    });
+    els.notIium.addEventListener('change', () => { syncFields(); refresh(); });
+    els.affiliation.addEventListener('change', () => { syncFields(); refresh(); });
+    ['name', 'email', 'idno', 'phone', 'password', 'password2']
+        .forEach(k => els[k].addEventListener('input', refresh));
 
     document.getElementById('regForm').addEventListener('submit', e => {
         e.preventDefault();
         if (validate().length) return;
+        const iium = isIIUM();
         A.modal({
             title: 'Check your email',
             body:
                 '<p>An account would be created for <strong>' + A.esc(els.email.value.trim()) + '</strong> ' +
                 'with the status <em>unverified</em>.</p>' +
-                '<p>A verification link would be emailed. Until it is followed, the account can sign in but ' +
-                '<strong>cannot book anything</strong>.</p>' +
+                '<dl class="kv">' +
+                '<dt>Registered as</dt><dd>' +
+                    (iium ? A.esc(els.affiliation.value) + ' · IIUM' : 'Member of the public') + '</dd>' +
+                (iium ? '<dt>Matriculation / staff number</dt><dd><span class="mono">' +
+                        A.esc(els.idno.value.trim()) + '</span></dd>' : '') +
+                '</dl>' +
+                '<p style="margin-top:12px">A verification link would be emailed. Until it is followed, the ' +
+                'account can sign in but <strong>cannot book anything</strong>.</p>' +
+                (iium ? '' :
+                  '<div class="notice notice-info" style="margin-top:12px">Public accounts may book rooms. ' +
+                  'Kulliyyah cars are requested by lecturers and staff only.</div>') +
                 '<p class="help">The message is written to the email outbox in the same transaction as the ' +
                 'account, and delivered by the mail sender. Nothing is sent from this prototype.</p>',
             buttons: [{ label: 'Back to sign in', cls: 'btn-primary', onClick: () => {
@@ -223,6 +259,7 @@
         });
     });
 
+    syncFields();
     refresh();
 })();
 </script>
