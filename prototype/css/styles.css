@@ -442,6 +442,34 @@ button, input, select, textarea { font-family: inherit; }
 }
 .searchbar button:hover { background: var(--brand-dark); }
 
+/* Type-ahead picker. A production account list runs to thousands of rows, so
+   the control searches rather than scrolls; the results list is what a server
+   would return, capped so the panel never becomes its own scrolling problem. */
+.combo { position: relative; }
+.combo-list {
+    position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 2px);
+    margin: 0; padding: 4px; list-style: none;
+    background: var(--white); border: 1px solid var(--line);
+    border-radius: var(--r); box-shadow: var(--shadow-md);
+    max-height: 260px; overflow-y: auto;
+}
+.combo-list li {
+    padding: 8px 10px; border-radius: var(--r-sm); cursor: pointer; font-size: 13px;
+}
+.combo-list li:hover, .combo-list li[aria-selected="true"] { background: var(--brand-050); }
+.combo-list li .n { display: block; color: var(--ink); }
+.combo-list li .m { display: block; font-size: 11.5px; color: var(--muted); }
+.combo-list .none { color: var(--muted); cursor: default; }
+.combo-list .none:hover { background: none; }
+.combo-picked {
+    display: flex; align-items: center; gap: 10px; margin-top: 8px;
+    padding: 9px 12px; background: var(--brand-100);
+    border-left: 3px solid var(--brand); border-radius: var(--r-sm); font-size: 13px;
+}
+.combo-picked .who { flex: 1; min-width: 0; }
+.combo-picked .who b { display: block; }
+.combo-picked .who span { font-size: 11.5px; color: var(--ink-500); }
+
 /* ---------- 8. Tables ----------------------------------------------------- */
 .table-wrap { overflow-x: auto; }
 table.data { width: 100%; border-collapse: collapse; }

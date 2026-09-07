@@ -93,4 +93,20 @@ PostgreSQL in production, SQLite in development · Nginx + Gunicorn · Django's 
 
 ## Licence
 
-Not yet decided — see the repository owner before reusing.
+**Apache License 2.0** — see [LICENSE](LICENSE). You may use, modify and redistribute this software,
+including commercially, provided you keep the copyright notice, state what you changed, and include
+the [NOTICE](NOTICE) file.
+
+### If you reuse this, remove the university's identity first
+
+The licence covers the **software**. It does not grant any right to the names, logos or institutional
+identity of IIUM or of the Ahmad Ibrahim Kulliyyah of Laws — Apache 2.0 section 6 reserves
+trademarks explicitly, and NOTICE sets out what that means here.
+
+Before deploying this for another institution, replace the AIKOL wordmark, the institution name,
+address, telephone number and email address, and any wording that presents the system as an IIUM
+service. The code is arranged so this is a configuration task rather than a code change: the wordmark
+is uploaded through the Site Content screen, the header and footer are stored as settings, and the
+palette is one block of custom properties at the top of `prototype/css/styles.css`.
+
+Copyright rests with the Kulliyyah, not with individual contributors.

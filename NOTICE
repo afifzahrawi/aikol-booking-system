@@ -1,0 +1,37 @@
+AIKOL Room and Vehicle Booking System
+Copyright 2026 Ahmad Ibrahim Kulliyyah of Laws,
+International Islamic University Malaysia
+
+This product includes software developed at the Ahmad Ibrahim Kulliyyah of Laws,
+International Islamic University Malaysia (https://www.iium.edu.my/).
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file.
+
+
+INSTITUTIONAL IDENTITY IS NOT LICENSED
+--------------------------------------
+
+The Apache License grants rights to the SOFTWARE. It does not grant any right
+to the names, logos or institutional identity of IIUM or of the Ahmad Ibrahim
+Kulliyyah of Laws — see section 6 of the licence, which reserves trademarks.
+
+If you reuse this system, you must remove the university's identity before
+deploying it. Specifically:
+
+  - prototype/assets/images/aikol_logo.png     the AIKOL wordmark
+  - management-report/assets/images/           the same wordmark
+  - the green and gold palette insofar as it is presented as IIUM's identity
+  - the institution name, address, telephone number and email address, which
+    are editable in the system's own Site Content screen and stored as
+    settings rather than hard-coded
+  - the Arabic greeting on the dashboard, and any wording that presents the
+    system as an IIUM or AIKOL service
+
+The software is written so this is straightforward: the wordmark is uploaded
+through the administration interface, the header and footer are settings, and
+the palette lives in one block of custom properties at the top of
+prototype/css/styles.css.
+
+Removing them is a condition of reuse, not a suggestion. Deploying this system
+with AIKOL or IIUM branding, by anyone other than the Kulliyyah, would
+misrepresent the University.

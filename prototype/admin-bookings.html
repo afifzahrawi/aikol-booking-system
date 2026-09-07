@@ -79,7 +79,6 @@
             <section class="card" style="margin-bottom: 22px;" aria-labelledby="roomHead" id="roomSection">
                 <div class="card-head">
                     <h2 id="roomHead">Room bookings</h2>
-                    <span class="help" style="margin: 0;" id="roomInfo"></span>
                 </div>
                 <div class="table-wrap">
                     <table class="data">
@@ -98,14 +97,16 @@
                         <tbody id="roomRows"></tbody>
                     </table>
                 </div>
-                <div class="card-foot"><div class="pagination" id="roomPager"></div></div>
+                <div class="card-foot" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+                    <span class="help" style="margin:0" id="roomInfo"></span>
+                    <div class="pagination" id="roomPager"></div>
+                </div>
             </section>
 
             <!-- ================= Vehicles ================= -->
             <section class="card" aria-labelledby="vehHead" id="vehSection" hidden>
                 <div class="card-head">
                     <h2 id="vehHead">Vehicle bookings</h2>
-                    <span class="help" style="margin: 0;" id="vehInfo"></span>
                 </div>
                 <div class="table-wrap">
                     <table class="data">
@@ -124,7 +125,10 @@
                         <tbody id="vehRows"></tbody>
                     </table>
                 </div>
-                <div class="card-foot"><div class="pagination" id="vehPager"></div></div>
+                <div class="card-foot" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+                    <span class="help" style="margin:0" id="vehInfo"></span>
+                    <div class="pagination" id="vehPager"></div>
+                </div>
             </section>
 
             <p class="help" style="margin-top: 14px;">
@@ -248,7 +252,6 @@
 
     function refreshAll() { roomCtl.refresh(); vehCtl.refresh(); }
     showKind('Venue');
-    tabCounts();
 
     /* ---- Tabs ---- */
     function showKind(kind) {
@@ -261,19 +264,12 @@
         const b = e.target.closest('button[data-kind]');
         if (b) showKind(b.dataset.kind);
     });
-    function tabCounts() {
-        document.getElementById('tabVenue').textContent =
-            'Rooms (' + B.filter(b => b.kind === 'Venue' && matches(b)).length + ')';
-        document.getElementById('tabVehicle').textContent =
-            'Vehicles (' + B.filter(b => b.kind === 'Vehicle' && matches(b)).length + ')';
-    }
 
     ['q', 'status', 'keyState', 'period'].forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
             filters[id] = el.value;
             refreshAll();
-            tabCounts();
         });
     });
 
@@ -414,6 +410,7 @@
         const S = A.SETTINGS;
         const todayIso = A.iso(A.today);
         const maxIso = A.iso(A.addDays(A.today, S.advanceBookingLimitDays));
+        let picked = null;                       // the user the booking is for
 
         function timeOpts(sel) {
             let h = '';
@@ -431,8 +428,18 @@
                 '<select class="select" id="cKind"><option value="Venue">Room</option>' +
                 '<option value="Vehicle">Vehicle</option></select></div>' +
 
-                '<div class="field"><label for="cUser">Booking is for <span class="req" aria-hidden="true">*</span></label>' +
-                '<select class="select" id="cUser"></select>' +
+                /* Searched, not scrolled — the live account list runs to thousands. */
+                '<div class="field">' +
+                '<label for="cUserSearch">Booking for <span class="req" aria-hidden="true">*</span></label>' +
+                '<div style="display:flex;gap:8px;align-items:flex-start">' +
+                '<div class="combo" style="flex:1;min-width:0">' +
+                '<input class="input" type="text" id="cUserSearch" role="combobox" autocomplete="off" ' +
+                'aria-expanded="false" aria-autocomplete="list" aria-controls="cUserList" ' +
+                'placeholder="Type a name, matriculation or staff number">' +
+                '<ul class="combo-list" id="cUserList" role="listbox" hidden></ul></div>' +
+                '<button class="btn btn-sm" type="button" id="cMe">Myself</button></div>' +
+                '<input type="hidden" id="cUser">' +
+                '<div class="combo-picked" id="cUserPicked" hidden></div>' +
                 '<p class="help" id="cUserHelp"></p></div>' +
 
                 '<div class="field"><label for="cRes">Resource <span class="req" aria-hidden="true">*</span></label>' +
@@ -453,7 +460,19 @@
                 '<div class="field"><label for="cTo">To</label>' +
                 '<select class="select" id="cTo">' + timeOpts('11:00') + '</select></div></div>' +
 
-                '<div class="field"><label for="cPurpose">Purpose <span class="req" aria-hidden="true">*</span></label>' +
+                /* Weekly recurrence — the reason it exists is a semester of classes. */
+                '<div id="cRepeatWrap">' +
+                '<div class="checkline"><input type="checkbox" id="cRepeat">' +
+                '<label for="cRepeat">Repeat weekly — a class or tutorial across the semester</label></div>' +
+                '<div id="cRepeatOpts" hidden style="padding-left:24px">' +
+                '<div class="field"><span class="label">Repeat on</span>' +
+                '<div class="facility-grid" id="cDows"></div></div>' +
+                '<div class="field"><label for="cUntil">Repeat until</label>' +
+                '<input class="input" type="date" id="cUntil" min="' + todayIso + '" max="' + maxIso + '" value="' +
+                A.iso(A.addDays(A.today, 84)) + '"></div>' +
+                '<div id="cOccs"></div></div></div>' +
+
+                '<div class="field" style="margin-top:14px"><label for="cPurpose">Purpose <span class="req" aria-hidden="true">*</span></label>' +
                 '<textarea class="textarea" id="cPurpose" placeholder="Visible to the requester and on the record"></textarea></div>' +
 
                 '<div id="cRoomFields"><div class="field"><label for="cAtt">Attendees</label>' +
@@ -475,37 +494,106 @@
                 '<div id="cErr" aria-live="polite"></div>',
             buttons: [
                 { label: 'Cancel' },
-                { label: 'Create booking', cls: 'btn-primary', onClick: root => {
-                    if (problems(root).length) return false;
-                    const forUser = A.userById(Number(root.querySelector('#cUser').value));
-                    const res = A.resourceById(Number(root.querySelector('#cRes').value));
-                    const approved = root.querySelector('#cApprove').checked;
-                    A.toast('A booking on ' + res.name + ' would be created for ' + forUser.name +
-                            ', with ' + A.ADMIN_USER.name + ' recorded as its creator' +
-                            (approved ? ' and approver' : ' and the request left pending') +
-                            '. A confirmation would be queued to ' + forUser.email + '.');
+                { label: 'Create booking', cls: 'btn-primary', onClick: () => {
+                    if (problems().length || !picked) { refresh(); return false; }
+                    const res = A.resourceById(Number($('cRes').value));
+                    const occs = occurrences();
+                    const free = occs.filter(o => !A.findConflicts(res.id, o.s, o.e).length);
+                    const clash = occs.length - free.length;
+                    const approved = $('cApprove').checked;
+                    A.toast(
+                        (occs.length > 1
+                            ? free.length + ' of ' + occs.length + ' weekly occurrences would be created on '
+                            : 'A booking on ') + res.name + ' for ' + picked.name +
+                        ', with ' + A.ADMIN_USER.name + ' recorded as its creator' +
+                        (approved ? ' and approver' : ' and the request left pending') + '. ' +
+                        (clash ? clash + ' clashing date' + (clash === 1 ? '' : 's') + ' would be reported, not skipped. ' : '') +
+                        'One confirmation would be queued to ' + picked.email + '.');
                 } }
             ]
         });
 
         const root = m.root;
         const $ = id => root.querySelector('#' + id);
+        const kind = () => $('cKind').value;
 
-        function kind() { return $('cKind').value; }
+        /* ---- Weekday boxes ---- */
+        $('cDows').innerHTML = A.DAYS.map((d, i) =>
+            '<label class="checkline" style="font-weight:400;margin:0">' +
+            '<input type="checkbox" class="cDow" value="' + i + '"> ' + A.esc(d.slice(0, 3)) + '</label>').join('');
+        const dows = () => [...root.querySelectorAll('.cDow:checked')].map(c => Number(c.value));
 
-        function fillUsers() {
-            /* Kulliyyah cars are for lecturers and staff, so the list of people
-               a car can be booked FOR is narrower than for a room. */
-            const list = kind() === 'Vehicle'
+        /* ---- The searchable picker ---- */
+        function eligible() {
+            return kind() === 'Vehicle'
                 ? A.users.filter(u => u.status === 'Active' && A.canBookVehicle(u))
                 : A.users.filter(u => u.status === 'Active');
-            $('cUser').innerHTML = list.slice(0, 40).map(u =>
-                '<option value="' + u.id + '">' + A.esc(u.name) + ' — ' + A.esc(u.affiliation) +
-                (u.idNo ? ' · ' + A.esc(u.idNo) : '') + '</option>').join('');
-            $('cUserHelp').textContent = kind() === 'Vehicle'
-                ? 'Lecturers and staff only. A student activity is arranged through the Vehicle Management Unit via STADD.'
-                : 'Anyone with an active account, including members of the public.';
         }
+        function search(term) {
+            const t = term.trim().toLowerCase();
+            const pool = eligible();
+            if (!t) return pool.slice(0, 8);
+            return pool.filter(u =>
+                (u.name + ' ' + (u.idNo || '') + ' ' + u.email).toLowerCase().includes(t)).slice(0, 8);
+        }
+        function renderList(term) {
+            const hits = search(term);
+            const list = $('cUserList');
+            list.innerHTML = hits.length
+                ? hits.map((u, i) =>
+                    '<li role="option" data-id="' + u.id + '" aria-selected="' + (i === 0) + '">' +
+                    '<span class="n">' + A.esc(u.name) + '</span>' +
+                    '<span class="m">' + A.esc(u.affiliation) +
+                    (u.idNo ? ' · ' + A.esc(u.idNo) : ' · no matriculation number') +
+                    ' · ' + A.esc(u.email) + '</span></li>').join('')
+                : '<li class="none">No account matches that. Try a surname or a staff number.</li>';
+            list.hidden = false;
+            $('cUserSearch').setAttribute('aria-expanded', 'true');
+        }
+        function closeList() {
+            $('cUserList').hidden = true;
+            $('cUserSearch').setAttribute('aria-expanded', 'false');
+        }
+        function pick(u) {
+            picked = u;
+            $('cUser').value = u.id;
+            $('cUserSearch').value = '';
+            closeList();
+            const box = $('cUserPicked');
+            box.hidden = false;
+            box.innerHTML = '<span class="who"><b>' + A.esc(u.name) + '</b>' +
+                '<span>' + A.esc(u.affiliation) + (u.idNo ? ' · ' + A.esc(u.idNo) : '') +
+                ' · ' + A.esc(u.email) + '</span></span>' +
+                '<button class="btn btn-sm" type="button" id="cClear">Change</button>';
+            box.querySelector('#cClear').addEventListener('click', () => {
+                picked = null; $('cUser').value = ''; box.hidden = true; $('cUserSearch').focus(); refresh();
+            });
+            refresh();
+        }
+
+        $('cUserSearch').addEventListener('input', e => renderList(e.target.value));
+        $('cUserSearch').addEventListener('focus', e => renderList(e.target.value));
+        $('cUserSearch').addEventListener('keydown', e => {
+            const items = [...$('cUserList').querySelectorAll('li[data-id]')];
+            if (!items.length) return;
+            const cur = items.findIndex(li => li.getAttribute('aria-selected') === 'true');
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const next = e.key === 'ArrowDown'
+                    ? Math.min(cur + 1, items.length - 1) : Math.max(cur - 1, 0);
+                items.forEach((li, i) => li.setAttribute('aria-selected', String(i === next)));
+                items[next].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const sel = items[cur < 0 ? 0 : cur];
+                if (sel) pick(A.userById(Number(sel.dataset.id)));
+            } else if (e.key === 'Escape') { closeList(); }
+        });
+        $('cUserList').addEventListener('click', e => {
+            const li = e.target.closest('li[data-id]');
+            if (li) pick(A.userById(Number(li.dataset.id)));
+        });
+        $('cMe').addEventListener('click', () => pick(A.ADMIN_USER));
 
         function fillResources() {
             const pool = (kind() === 'Vehicle' ? A.vehicles : A.venues).filter(r => r.status === 'Active');
@@ -514,7 +602,6 @@
                 (r.capacity ? ' — ' + r.capacity + ' persons' : ' — ' + r.seats + ' seats') + '</option>').join('');
             syncRes();
         }
-
         function syncRes() {
             const r = A.resourceById(Number($('cRes').value));
             $('cResHelp').textContent = kind() === 'Vehicle'
@@ -522,45 +609,69 @@
                 : r.location + ' · bookable ' + A.fmtTime(r.open) + '–' + A.fmtTime(r.close);
         }
 
-        function startAt() { return $('cDate').value + 'T' + $('cFrom').value; }
-        function endAt() {
-            const d = kind() === 'Vehicle' ? $('cEndDate').value : $('cDate').value;
-            return d + 'T' + $('cTo').value;
+        /* ---- Occurrences ---- */
+        function occurrences() {
+            const one = [{ date: $('cDate').value, s: $('cDate').value + 'T' + $('cFrom').value,
+                           e: (kind() === 'Vehicle' ? $('cEndDate').value : $('cDate').value) + 'T' + $('cTo').value }];
+            if (kind() === 'Vehicle' || !$('cRepeat').checked) return one;
+            const days = dows(), until = $('cUntil').value;
+            if (!days.length || !until) return one;
+            const out = [];
+            let d = new Date($('cDate').value + 'T00:00:00');
+            while (A.iso(d) <= until && out.length < S.maxSeriesOccurrences) {
+                if (days.indexOf(d.getDay()) !== -1 && A.iso(d) >= $('cDate').value) {
+                    out.push({ date: A.iso(d), s: A.iso(d) + 'T' + $('cFrom').value,
+                               e: A.iso(d) + 'T' + $('cTo').value });
+                }
+                d = A.addDays(d, 1);
+            }
+            return out.length ? out : one;
         }
 
-        function problems(scope) {
-            const q = id => (scope || root).querySelector('#' + id);
+        function problems() {
             const out = [];
-            const isVeh = q('cKind').value === 'Vehicle';
-            const res = A.resourceById(Number(q('cRes').value));
-            const s = q('cDate').value + 'T' + q('cFrom').value;
-            const e = (isVeh ? q('cEndDate').value : q('cDate').value) + 'T' + q('cTo').value;
+            const isVeh = kind() === 'Vehicle';
+            const res = A.resourceById(Number($('cRes').value));
+            const occs = occurrences();
+            const first = occs[0];
 
-            if (!q('cDate').value) out.push('Choose a date.');
-            if (e <= s) out.push('The end must be after the start.');
-            if (!q('cPurpose').value.trim()) out.push('A purpose is required.');
+            if (!picked) out.push('Choose the person the booking is for.');
+            if (!$('cDate').value) out.push('Choose a date.');
+            if (first.e <= first.s) out.push('The end must be after the start.');
+            if (!$('cPurpose').value.trim()) out.push('A purpose is required.');
 
             if (!isVeh) {
-                const mins = A.minutesBetween(s, e);
+                const mins = A.minutesBetween(first.s, first.e);
                 if (mins > S.maxBookingMinutes)
                     out.push('A single room booking may last at most ' + (S.maxBookingMinutes / 60) +
                              ' hours. This is ' + (mins / 60) + '.');
-                const att = Number(q('cAtt').value);
-                if (att > res.capacity) out.push('That exceeds the room capacity of ' + res.capacity + '.');
+                if (Number($('cAtt').value) > res.capacity)
+                    out.push('That exceeds the room capacity of ' + res.capacity + '.');
+                if ($('cRepeat').checked) {
+                    if (!dows().length) out.push('Choose at least one day of the week to repeat on.');
+                    if ($('cUntil').value && $('cUntil').value < $('cDate').value)
+                        out.push('The repeat ends before the first booking.');
+                }
             } else {
-                if (!q('cDest').value.trim()) out.push('A destination is required.');
-                const days = A.minutesBetween(s, e) / 1440;
+                if (!$('cDest').value.trim()) out.push('A destination is required.');
+                const days = A.minutesBetween(first.s, first.e) / 1440;
                 if (days > S.maxVehicleTripDays)
                     out.push('The trip is ' + Math.ceil(days) + ' days; the maximum is ' + S.maxVehicleTripDays + '.');
-                if (Number(q('cPax').value) > res.seats - 1)
+                if (Number($('cPax').value) > res.seats - 1)
                     out.push('At most ' + (res.seats - 1) + ' passengers, plus the driver.');
-                if (res.roadTaxExpiry < e.slice(0, 10)) out.push('The road tax expires before the trip ends.');
+                if (res.roadTaxExpiry < first.e.slice(0, 10)) out.push('The road tax expires before the trip ends.');
             }
 
-            /* The same conflict rule as everywhere else. An administrator does
-               not get to double-book. */
-            A.findConflicts(res.id, s, e).forEach(c =>
-                out.push('Already reserved: ' + A.fmtPeriod(c.startAt, c.endAt) + ' (' + c.status.toLowerCase() + ').'));
+            /* A single booking that clashes cannot be created. A SERIES that
+               partly clashes can — the clashing dates are reported, never
+               silently skipped. */
+            const clashing = occs.filter(o => A.findConflicts(res.id, o.s, o.e).length);
+            if (occs.length === 1 && clashing.length) {
+                A.findConflicts(res.id, first.s, first.e).forEach(c =>
+                    out.push('Already reserved: ' + A.fmtPeriod(c.startAt, c.endAt) + ' (' + c.status.toLowerCase() + ').'));
+            } else if (clashing.length === occs.length) {
+                out.push('Every occurrence clashes with an existing booking.');
+            }
             return out;
         }
 
@@ -569,9 +680,32 @@
             $('cRoomFields').hidden = isVeh;
             $('cVehFields').hidden = !isVeh;
             $('cEndDateWrap').hidden = !isVeh;
+            /* Weekly recurrence is for classes, so it is offered on rooms only. */
+            $('cRepeatWrap').hidden = isVeh;
+            $('cRepeatOpts').hidden = isVeh || !$('cRepeat').checked;
             $('cDateLabel').innerHTML = (isVeh ? 'Collection date' : 'Date') +
                 ' <span class="req" aria-hidden="true">*</span>';
             if (isVeh && $('cEndDate').value < $('cDate').value) $('cEndDate').value = $('cDate').value;
+
+            $('cUserHelp').textContent = isVeh
+                ? 'Lecturers and staff only. A student activity is arranged through the Vehicle Management Unit via STADD.'
+                : 'Anyone with an active account, including members of the public.';
+
+            const res = A.resourceById(Number($('cRes').value));
+            const occs = occurrences();
+            if (!isVeh && $('cRepeat').checked) {
+                const clashing = occs.filter(o => A.findConflicts(res.id, o.s, o.e).length);
+                $('cOccs').innerHTML = '<div class="notice ' + (clashing.length ? 'notice-warn' : 'notice-info') + '">' +
+                    '<strong>' + occs.length + ' occurrence' + (occs.length === 1 ? '' : 's') + '</strong>' +
+                    (clashing.length
+                        ? (occs.length - clashing.length) + ' free, ' + clashing.length + ' clashing: ' +
+                          clashing.slice(0, 6).map(o => A.esc(A.fmtDate(o.date))).join(', ') +
+                          (clashing.length > 6 ? ' and others' : '') +
+                          '. Creating will make the free ones and report these.'
+                        : 'All dates are free.') + '</div>';
+            } else {
+                $('cOccs').innerHTML = '';
+            }
 
             const errs = problems();
             $('cErr').innerHTML = errs.length
@@ -581,12 +715,26 @@
                 : '<div class="notice notice-success">No conflict. Ready to create.</div>';
         }
 
-        $('cKind').addEventListener('change', () => { fillUsers(); fillResources(); refresh(); });
+        $('cKind').addEventListener('change', () => {
+            /* Switching to a vehicle can invalidate the chosen person. */
+            if (picked && kind() === 'Vehicle' && !A.canBookVehicle(picked)) {
+                picked = null; $('cUser').value = ''; $('cUserPicked').hidden = true;
+            }
+            fillResources(); refresh();
+        });
         $('cRes').addEventListener('change', () => { syncRes(); refresh(); });
-        ['cUser', 'cDate', 'cEndDate', 'cFrom', 'cTo', 'cPurpose', 'cAtt', 'cDest', 'cPax']
+        $('cRepeat').addEventListener('change', () => {
+            if ($('cRepeat').checked && !dows().length && $('cDate').value) {
+                const dow = new Date($('cDate').value + 'T00:00:00').getDay();
+                const box = root.querySelector('.cDow[value="' + dow + '"]');
+                if (box) box.checked = true;
+            }
+            refresh();
+        });
+        $('cDows').addEventListener('change', refresh);
+        ['cDate', 'cEndDate', 'cFrom', 'cTo', 'cUntil', 'cPurpose', 'cAtt', 'cDest', 'cPax']
             .forEach(id => $(id).addEventListener('input', refresh));
 
-        fillUsers();
         fillResources();
         refresh();
     }
