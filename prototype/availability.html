@@ -24,7 +24,14 @@
                 </div>
             </div>
 
-            <div class="daypick" style="margin-bottom: 18px;" id="days" role="group" aria-label="Choose a day"></div>
+            <div class="datepick" style="margin-bottom: 18px;">
+                <div class="field" style="margin: 0;">
+                    <label for="pickDate">Date</label>
+                    <input class="input" type="date" id="pickDate">
+                </div>
+                <div class="picked" id="pickedDay" aria-live="polite"></div>
+                <button class="btn btn-sm" type="button" id="todayBtn">Today</button>
+            </div>
 
             <div class="legend" style="margin-bottom: 14px;">
                 <span><span class="swatch swatch-approved"></span>Approved</span>
@@ -53,18 +60,26 @@
     const me = A.CURRENT_USER;
     const mayDrive = A.canBookVehicle(me);   /* eligibility to REQUEST a car; the driver is assigned by the office */
 
-    const state = { type: 'rooms', dayIdx: 0 };
+    const todayISO = A.iso(A.today);
+    const maxISO = A.iso(A.addDays(A.today, A.SETTINGS.advanceBookingLimitDays));
+    const state = { type: 'rooms', date: todayISO };
 
-    /* Seven days from today. */
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-        const d = A.addDays(A.today, i);
-        days.push({
-            iso: A.iso(d),
+    function dayInfo(isoStr) {
+        const d = new Date(isoStr + 'T00:00:00');
+        return {
+            iso: isoStr,
             dow: A.DAYS[d.getDay()].slice(0, 3),
             label: String(d.getDate()).padStart(2, '0') + ' ' + A.MONTHS[d.getMonth()],
             full: A.DAYS[d.getDay()] + ', ' + A.fmtDate(d)
-        });
+        };
+    }
+    /* Rooms show one day. Cars still show a week, because a trip runs across
+       days — so the chosen date is the week's first day. */
+    function weekFrom(isoStr) {
+        const base = new Date(isoStr + 'T00:00:00');
+        const out = [];
+        for (let i = 0; i < 7; i++) out.push(dayInfo(A.iso(A.addDays(base, i))));
+        return out;
     }
 
     /* ---- Blocks for one room on one day -------------------------------- */
@@ -146,15 +161,30 @@
 
     /* ---- Render -------------------------------------------------------- */
     function renderDays() {
-        document.getElementById('days').innerHTML = days.map((d, i) =>
-            '<button type="button" data-day="' + i + '" aria-pressed="' + (i === state.dayIdx) + '">' +
-            '<span class="dow">' + A.esc(d.dow) + '</span>' +
-            '<span class="dnum">' + A.esc(d.label) + '</span></button>').join('');
+        const input = document.getElementById('pickDate');
+        input.min = todayISO;
+        input.max = maxISO;
+        input.value = state.date;
+
+        const d = dayInfo(state.date);
+        const rel = state.date === todayISO
+            ? 'Today'
+            : (state.date === A.iso(A.addDays(A.today, 1)) ? 'Tomorrow' : '');
+        document.getElementById('pickedDay').innerHTML =
+            '<span class="dow">' + A.esc(A.DAYS[new Date(state.date + 'T00:00:00').getDay()]) + '</span>' +
+            '<span class="full">' + A.esc(A.fmtDate(state.date)) + '</span>' +
+            (rel ? '<span class="badge badge-approved">' + rel + '</span>' : '') +
+            (state.type === 'cars'
+                ? '<span class="help" style="margin:0">week to ' +
+                  A.esc(A.fmtDate(weekFrom(state.date)[6].iso)) + '</span>'
+                : '');
+        document.getElementById('todayBtn').disabled = state.date === todayISO;
     }
 
     function renderBoard() {
         const board = document.getElementById('board');
-        const day = days[state.dayIdx];
+        const day = dayInfo(state.date);
+        const days = weekFrom(state.date);
         const note = document.getElementById('carsNote');
 
         if (state.type === 'rooms') {
@@ -175,11 +205,11 @@
                     '</div></div>';
             }).join('');
 
-            board.innerHTML =
+            board.innerHTML = '<div class="board-inner">' +
                 '<div class="board-head"><div class="k">Room</div><div class="board-hours">' +
                 ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00']
                     .map(t => '<span>' + t + '</span>').join('') +
-                '</div></div>' + rows;
+                '</div></div>' + rows + '</div>';
 
             const freeRooms = A.venues.filter(v =>
                 roomBlocks(v, day.iso).some(b => b.kind === 'free')).length;
@@ -211,10 +241,10 @@
                     '</div></div>';
             }).join('');
 
-            board.innerHTML =
+            board.innerHTML = '<div class="board-inner">' +
                 '<div class="board-head"><div class="k">Vehicle</div><div class="board-days">' +
                 days.map(d => '<div class="d">' + A.esc(d.dow + ' ' + d.label) + '</div>').join('') +
-                '</div></div>' + rows;
+                '</div></div>' + rows + '</div>';
 
             document.getElementById('headline').textContent =
                 day.full + ' · ' + A.vehicles.length + ' Kulliyyah cars · trips may span several days';
@@ -234,7 +264,7 @@
                 '<div style="display:flex;gap:12px;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--line-soft)">' +
                 '<img src="' + A.resourceImg(r) + '" alt="" style="width:78px;height:48px;object-fit:cover;border-radius:3px;border:1px solid var(--line-img);display:block">' +
                 '<div><div style="font-family:var(--font-serif);font-size:17px;color:var(--brand)">' + A.esc(r.name) + '</div>' +
-                '<div style="font-size:12px;color:var(--ink-500)">' + A.esc(days[state.dayIdx].full) + '</div></div></div>' +
+                '<div style="font-size:12px;color:var(--ink-500)">' + A.esc(dayInfo(state.date).full) + '</div></div></div>' +
                 '<div class="field-row" style="margin-top:16px">' +
                 '<div class="field"><label>From</label>' +
                 '<div style="padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:3px;font-size:13.5px">' + hhmm(from) + '</div></div>' +
@@ -296,10 +326,19 @@
         renderBoard();
     });
 
-    document.getElementById('days').addEventListener('click', e => {
-        const b = e.target.closest('button[data-day]');
-        if (!b) return;
-        state.dayIdx = Number(b.dataset.day);
+    document.getElementById('pickDate').addEventListener('change', e => {
+        /* Clamp rather than reject: a date typed outside the bookable window
+           snaps to the nearest end, so the board is never blank. */
+        let v = e.target.value || todayISO;
+        if (v < todayISO) v = todayISO;
+        if (v > maxISO) v = maxISO;
+        state.date = v;
+        renderDays();
+        renderBoard();
+    });
+
+    document.getElementById('todayBtn').addEventListener('click', () => {
+        state.date = todayISO;
         renderDays();
         renderBoard();
     });

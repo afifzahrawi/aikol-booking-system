@@ -1,0 +1,34 @@
+Photo-backed sign-in, mobile pass, and a date picker on the availability board
+
+Sign-in hero
+- The green panel is now the Kulliyyah photograph behind a gradient scrim,
+  layered over solid green as the fallback if the image is missing.
+- The scrim never drops below .74 opacity. At that strength white text clears
+  5.3:1 against the worst case, a pure-white photograph, so the picture can be
+  swapped without re-checking contrast. Body copy moved from .86 to .92 white
+  for the same reason.
+- Swapping the picture is one line: the --login-photo custom property.
+
+Mobile
+- Five breakpoints rather than three: 1180, 1024 (tablet, four-across becomes
+  two), 940, 640 and 420.
+- Touch targets at 44px minimum on buttons, inputs, segmented controls,
+  pagination and the collapsed navigation. Inputs go to 16px on phones, which
+  is what stops iOS zooming the page on focus.
+- Wide tables and the availability board scroll inside their own container;
+  the page itself never scrolls sideways. The board keeps a 660px minimum so
+  seven days stay legible instead of being crushed.
+- The day picker scrolls horizontally rather than stacking into a tall block;
+  modals dock to the bottom of the viewport; button groups go full width.
+
+Availability board
+- The seven-day button strip is replaced by a date picker that spells out the
+  weekday beside it, with Today and Tomorrow called out. A date alone does not
+  tell you it is a Friday, which is usually what decides whether a slot is any
+  use.
+- Bounded to the 90-day advance limit, and a date typed outside the window
+  clamps to the nearest end rather than blanking the board.
+- The cars view still shows a week, taking the chosen date as its first day,
+  because a trip runs across days.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

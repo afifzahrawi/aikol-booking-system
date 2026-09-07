@@ -98,6 +98,18 @@ from `AIKOL Booking 1a.dc.html`, so they are recorded here rather than left to b
   `data-status` itself, which wins: the approvals queue does this, since its rows carry Approve and
   Reject buttons instead of a badge.
 
+**The sign-in photograph is swappable, and its scrim is load-bearing.** `--login-photo` in
+`styles.css` points at the image; the hero layers a gradient over it, over solid green as a fallback.
+The gradient never drops below `.74` opacity because that is the point at which white text still
+clears 4.5:1 against a pure-white photograph — the worst case. Anyone changing the picture does not
+need to re-check contrast; anyone weakening the scrim does.
+
+**Mobile is a real pass, not a reflow.** Breakpoints at 1180, 1024, 940, 640 and 420. Touch targets
+hit 44px on phones, and inputs go to 16px there — below that iOS zooms the page on focus, which is
+the single most common mobile-form defect. Wide tables and the availability board scroll inside their
+own containers so the page never scrolls sideways; the board holds a 660px minimum rather than
+crushing seven days into a phone width.
+
 **Navigation is horizontal.** The old left sidebar is gone. `buildChrome()` renders a white brand
 bar over a green navigation bar with five items per role: users get Dashboard, Availability, Rooms,
 Vehicles, My bookings; administrators get Approvals, Bookings, Resources, Users, Reports. Screens
