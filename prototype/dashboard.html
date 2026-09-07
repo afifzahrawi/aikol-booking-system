@@ -53,7 +53,7 @@
             </section>
 
             <!-- ===== Your activity ===== -->
-            <div id="strip" style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--brand); border-radius: var(--r); overflow: hidden;"></div>
+            <div id="strip" style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; background: var(--brand); border-radius: var(--r); overflow: hidden;"></div>
 
             <!-- ===== Browse by type ===== -->
             <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
@@ -105,10 +105,6 @@
     const next = mine.filter(b => b.status === 'Approved' && A.toDate(b.startAt) > now)
         .sort((a, b) => a.startAt < b.startAt ? -1 : 1)[0];
     const pending = mine.filter(b => b.status === 'Pending');
-    const keysOut = A.keyHandovers.filter(k => {
-        const b = A.bookingById(k.bookingId);
-        return b.userId === me.id && !k.returnedAt;
-    });
 
     function cell(label, value, dim, last) {
         return '<div style="padding: 13px 18px;' +
@@ -127,11 +123,7 @@
              pending.length
                 ? pending.length + ' request' + (pending.length === 1 ? '' : 's') + ' · ' +
                   A.esc(pending[0].resource.name)
-                : 'None', !pending.length) +
-        cell('Keys to collect',
-             keysOut.length
-                ? keysOut.length + ' outstanding · ' + A.esc(A.bookingById(keysOut[0].bookingId).resource.name)
-                : 'None outstanding', !keysOut.length, true);
+                : 'None', !pending.length, true);
 
     /* ---- Browse by room type ---- */
     const byType = {};
