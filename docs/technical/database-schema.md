@@ -252,15 +252,29 @@ Decision 17: key collection and return are recorded in the system. One row per b
 | `id` | bigint PK | |
 | `booking_id` | OneToOne → bookings | `on_delete=PROTECT` |
 | `issued_at` | timestamptz | The "time taken" of decision 18 |
-| `issued_by_id` | FK → users | The officer handing the key over |
+| `issued_by_id` | FK → users | The **officer** who handed the key over |
+| `collected_by_id` | FK → users, null | The **person who physically took it**. Often the requester, often not |
+| `collected_by_name` | varchar(150) | Their name as recorded at the counter. Kept as text as well as a link, so the record survives the account being deactivated |
+| `collected_by_note` | varchar(200) | Free text — "on behalf of Dr Ahmad Faiz", "society treasurer" |
 | `returned_at` | timestamptz, null | The "time returned". Null means still out |
-| `returned_to_id` | FK → users, null | The officer receiving it |
+| `received_by_id` | FK → users, null | The **officer** who took it back |
+| `returned_by_id` | FK → users, null | The **person who brought it back**, who may be someone else again |
+| `returned_by_name` | varchar(150), null | Their name as recorded |
 | `mileage_out`, `mileage_in` | integer, null | **Vehicles only.** `mileage_in` updates `vehicles.current_mileage` |
 | `condition_notes` | text | Damage or fault noted at return |
 | `created_at`, `updated_at` | timestamptz | |
 
 An outstanding key — `returned_at IS NULL` on a booking whose `end_at` has passed — is the single
 most useful operational report in the system. Index accordingly.
+
+**A handover records four people, not two.** The key is frequently collected by someone other than
+the person who booked — a colleague, a society member, an assigned driver — and returned by someone
+else again. Recording only the booker loses the chain of custody, which is the entire purpose of the
+register: when a key goes missing, the question is who had it, not who reserved the room.
+
+The names are stored as text alongside the foreign keys. Users are deactivated rather than deleted,
+so the link survives, but the counter also accepts a name that belongs to no account at all — a
+visiting speaker's assistant, for instance — and the register must still be able to say who that was.
 
 **The vehicle key record** AIKOL asked for is this table joined to its booking, not a separate
 thing: date out and date in come from `issued_at` / `returned_at`; driver name, contact and staff

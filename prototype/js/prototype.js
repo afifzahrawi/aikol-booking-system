@@ -593,11 +593,34 @@
             if (startD > new Date()) return;                 // not yet collected
             if (rnd() < 0.15) return;                        // some keys never collected
             const outstanding = rnd() < 0.12;                 // a few still out
+            /* Four people, not two. The person who collects the key is often
+               not the person who booked — a colleague, a society member, a
+               driver — and the person who brings it back may be someone else
+               again. Recording only the booker loses the chain of custody,
+               which is the whole point of the register. */
+            const booker = userById(b.userId);
+            const proxy = rnd() < 0.3;                        // collected on someone's behalf
+            const returnProxy = !outstanding && rnd() < 0.25; // returned by yet another person
+            const other = users[(b.id * 7) % users.length];
+            const other2 = users[(b.id * 13 + 3) % users.length];
+
             keyHandovers.push({
                 id: id++, bookingId: b.id,
-                issuedAt: b.startAt, issuedBy: 4,
+
+                /* Out */
+                issuedAt: b.startAt,
+                issuedBy: 4,                                  // the officer who handed it over
+                collectedById: proxy ? other.id : b.userId,   // who physically took it
+                collectedByName: proxy ? other.name : booker.name,
+                collectedByNote: proxy ? 'On behalf of ' + booker.name : '',
+
+                /* Back */
                 returnedAt: outstanding ? '' : b.endAt,
-                returnedTo: outstanding ? null : 4,
+                receivedBy: outstanding ? null : 4,           // the officer who took it back
+                returnedById: outstanding ? null : (returnProxy ? other2.id : (proxy ? other.id : b.userId)),
+                returnedByName: outstanding ? '' :
+                    (returnProxy ? other2.name : (proxy ? other.name : booker.name)),
+
                 mileageOut: b.kind === 'Vehicle' ? b.resource.mileage - 400 + Math.floor(rnd() * 200) : null,
                 mileageIn: (b.kind === 'Vehicle' && !outstanding) ? b.resource.mileage - 100 + Math.floor(rnd() * 90) : null,
                 notes: outstanding ? '' : (rnd() < 0.12 ? 'Minor scuff noted on return.' : '')
@@ -605,6 +628,25 @@
         });
     })();
     const keyForBooking = (bookingId) => keyHandovers.find(k => k.bookingId === bookingId) || null;
+
+    /* Renders the custody chain for a booking in one line per event, so the
+       register, the bookings tab and any future report cannot phrase it
+       differently. Returns '' when no key has been issued. */
+    function keyCustody(b) {
+        const k = keyForBooking(b && b.id);
+        if (!k) return '';
+        const officerOut = userById(k.issuedBy);
+        const rows = [
+            ['Key given out', fmtStamp(k.issuedAt),
+             esc(k.collectedByName) + (k.collectedByNote ? ' · ' + esc(k.collectedByNote) : ''),
+             'issued by ' + esc(officerOut.name)]
+        ];
+        if (k.returnedAt) {
+            rows.push(['Key returned', fmtStamp(k.returnedAt), esc(k.returnedByName),
+                       'received by ' + esc(userById(k.receivedBy).name)]);
+        }
+        return rows;
+    }
 
     /* One place that answers "where is this booking's key?", so the register,
        the booking list and the user's own screen cannot disagree.
@@ -1129,7 +1171,7 @@
         resourceById, venueById, vehicleById, userById, bookingById,
         facilityByCode, facilityName, facilitiesFor, keyForBooking, outstandingKeys,
         canBookVehicle, canDrive, eligibleDrivers, canApprove, canAssignDriver,
-        keyState, keyBadge, HOME_BASE, STUDENT_TRANSPORT,
+        keyState, keyBadge, keyCustody, HOME_BASE, STUDENT_TRANSPORT,
         // DOM
         el, esc, badge, resourceImg, icon, buildChrome, tableController, renderPager,
         tintRows, tintAllTables,

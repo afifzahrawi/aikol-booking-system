@@ -16,80 +16,112 @@
             <div class="page-head">
                 <div>
                     <h1>Booking administration</h1>
-                    <p class="lede">Review, approve, reject and cancel booking requests. Filtering and paging are performed on the server in the production system.</p>
+                    <p class="lede" id="lede"></p>
                 </div>
-                <button class="btn" type="button" id="exportBtn">Export results (CSV)</button>
+                <div class="btn-group">
+                    <a class="btn" href="admin-keys.html">Key register</a>
+                    <button class="btn" type="button" id="exportBtn">Export</button>
+                    <button class="btn btn-primary" type="button" id="onBehalfBtn">Book for a user</button>
+                </div>
             </div>
 
-            <div class="grid grid-4" style="margin-bottom:1.25rem">
-                <div class="stat warn"><span class="k">Pending</span><span class="v" id="cPending">0</span><span class="d">awaiting a decision</span></div>
-                <div class="stat accent"><span class="k">Approved</span><span class="v" id="cApproved">0</span><span class="d">confirmed bookings</span></div>
-                <div class="stat"><span class="k">Cancelled</span><span class="v" id="cCancelled">0</span><span class="d">released, record retained</span></div>
-                <div class="stat"><span class="k">Rejected</span><span class="v" id="cRejected">0</span><span class="d">with a reason recorded</span></div>
-            </div>
+            <div class="grid grid-4" style="margin-bottom: 18px;" id="stats"></div>
 
-            <section class="card" aria-labelledby="listHead">
-                <h2 id="listHead" class="visually-hidden">Booking records</h2>
-
-                <div class="toolbar">
+            <!-- One filter row governs both tables — the same question asked once. -->
+            <section class="card" style="margin-bottom: 18px;">
+                <div class="toolbar" style="border-bottom: 0;">
                     <div class="field grow">
                         <label for="q">Search</label>
-                        <input class="input" type="search" id="q" placeholder="Reference, requester, venue or purpose">
+                        <input class="input" type="search" id="q" placeholder="Reference, resource, requester or purpose">
                     </div>
                     <div class="field">
                         <label for="status">Status</label>
                         <select class="select" id="status">
-                            <option value="">All statuses</option>
-                            <option>Pending</option><option>Approved</option><option>Rejected</option>
-                            <option>Cancelled</option><option>Completed</option>
+                            <option value="">Any status</option>
+                            <option>Pending</option>
+                            <option>Approved</option>
+                            <option>Rejected</option>
+                            <option>Cancelled</option>
+                            <option>Completed</option>
                         </select>
                     </div>
                     <div class="field">
-                        <label for="venue">Venue</label>
-                        <select class="select" id="venue"><option value="">All venues</option></select>
+                        <label for="keyState">Key</label>
+                        <select class="select" id="keyState">
+                            <option value="">Any</option>
+                            <option>Awaiting collection</option>
+                            <option>Given out</option>
+                            <option>Overdue</option>
+                            <option>Collected</option>
+                            <option>Not required</option>
+                        </select>
                     </div>
                     <div class="field">
-                        <label for="from">From date</label>
-                        <input class="input" type="date" id="from">
-                    </div>
-                    <div class="field">
-                        <label for="to">To date</label>
-                        <input class="input" type="date" id="to">
-                    </div>
-                    <div class="field">
-                        <label for="reset" class="visually-hidden">Reset filters</label>
-                        <button class="btn" type="button" id="reset">Reset</button>
-                    </div>
-                </div>
-
-                <div class="table-wrap">
-                    <table class="data">
-                        <caption class="visually-hidden">All booking records</caption>
-                        <thead><tr>
-                            <th scope="col">Reference</th>
-                            <th scope="col">Requester</th>
-                            <th scope="col">Venue</th>
-                            <th scope="col">Date</th>
-                            <th scope="col">Time</th>
-                            <th scope="col">Purpose</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Actions</th>
-                        </tr></thead>
-                        <tbody id="tbody"></tbody>
-                    </table>
-                </div>
-
-                <div class="card-foot">
-                    <div class="pagination">
-                        <span id="info"></span>
-                        <div class="pager" id="pager"></div>
+                        <label for="period">Period</label>
+                        <select class="select" id="period">
+                            <option value="">All dates</option>
+                            <option value="upcoming">Upcoming</option>
+                            <option value="past">Past</option>
+                        </select>
                     </div>
                 </div>
             </section>
 
-            <p class="help" style="margin-top:1rem">
-                Approving a request never overwrites another confirmed booking: the overlap rule is re-checked
-                inside the database transaction at the moment of approval.
+            <!-- ================= Rooms ================= -->
+            <section class="card" style="margin-bottom: 22px;" aria-labelledby="roomHead">
+                <div class="card-head">
+                    <h2 id="roomHead">Room bookings</h2>
+                    <span class="help" style="margin: 0;" id="roomInfo"></span>
+                </div>
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width:160px">Reference</th>
+                                <th scope="col">Room</th>
+                                <th scope="col">Requester</th>
+                                <th scope="col" style="width:130px">Date</th>
+                                <th scope="col" style="width:120px">Time</th>
+                                <th scope="col" style="width:110px">Status</th>
+                                <th scope="col" style="width:150px">Key</th>
+                                <th scope="col" style="width:180px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="roomRows"></tbody>
+                    </table>
+                </div>
+                <div class="card-foot"><div class="pagination" id="roomPager"></div></div>
+            </section>
+
+            <!-- ================= Vehicles ================= -->
+            <section class="card" aria-labelledby="vehHead">
+                <div class="card-head">
+                    <h2 id="vehHead">Vehicle bookings</h2>
+                    <span class="help" style="margin: 0;" id="vehInfo"></span>
+                </div>
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width:160px">Reference</th>
+                                <th scope="col">Vehicle</th>
+                                <th scope="col">Requester</th>
+                                <th scope="col" style="width:180px">Period</th>
+                                <th scope="col" style="width:150px">Driver</th>
+                                <th scope="col" style="width:110px">Status</th>
+                                <th scope="col" style="width:150px">Key</th>
+                                <th scope="col" style="width:180px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="vehRows"></tbody>
+                    </table>
+                </div>
+                <div class="card-foot"><div class="pagination" id="vehPager"></div></div>
+            </section>
+
+            <p class="help" style="margin-top: 14px;">
+                A key may be collected by someone other than the person who booked, and returned by
+                someone else again. Both are recorded, with the officer who handled each side.
             </p>
 
         </main>
@@ -102,162 +134,252 @@
     const A = AIKOL;
     A.buildChrome({ mode: 'admin', active: 'admin-bookings.html' });
 
-    const $ = (id) => document.getElementById(id);
+    const now = new Date();
+    const todayISO = A.iso(A.today);
+    const B = A.bookings;
 
-    $('venue').innerHTML += A.venues.map(v =>
-        '<option value="' + v.id + '">' + A.esc(v.name) + '</option>').join('');
+    document.getElementById('lede').textContent =
+        B.length.toLocaleString() + ' bookings on record · ' +
+        B.filter(b => b.kind === 'Venue').length + ' rooms · ' +
+        B.filter(b => b.kind === 'Vehicle').length + ' vehicles';
 
-    function counts() {
-        ['Pending', 'Approved', 'Cancelled', 'Rejected'].forEach(s =>
-            $('c' + s).textContent = A.bookings.filter(b => b.status === s).length);
+    /* ---- Summary ---- */
+    const outstanding = A.bookings.filter(b => A.keyState(b) === 'Overdue');
+    const givenOut = A.bookings.filter(b => A.keyState(b) === 'Given out');
+    const awaiting = A.bookings.filter(b => A.keyState(b) === 'Awaiting collection');
+    document.getElementById('stats').innerHTML = [
+        { cls: '', k: 'Bookings', v: B.length.toLocaleString(), d: 'all statuses, all time' },
+        { cls: 'accent', k: 'Keys awaiting collection', v: awaiting.length, d: 'approved, not yet given out' },
+        { cls: 'info', k: 'Keys given out', v: givenOut.length, d: 'held, within the booked period' },
+        { cls: 'danger', k: 'Keys overdue', v: outstanding.length, d: outstanding.length ? 'period ended, not returned' : 'nothing outstanding' }
+    ].map(s => '<div class="stat ' + s.cls + '"><span class="k">' + s.k + '</span>' +
+               '<span class="v">' + s.v + '</span><span class="d">' + s.d + '</span></div>').join('');
+
+    /* ---- Shared filter state ---- */
+    const filters = { q: '', status: '', keyState: '', period: '' };
+
+    function matches(b) {
+        const term = filters.q.trim().toLowerCase();
+        if (term) {
+            const hay = (b.ref + ' ' + b.resource.name + ' ' + A.userById(b.userId).name + ' ' + b.purpose).toLowerCase();
+            if (!hay.includes(term)) return false;
+        }
+        if (filters.status && b.status !== filters.status) return false;
+        if (filters.keyState && A.keyState(b) !== filters.keyState) return false;
+        if (filters.period === 'upcoming' && b.date < todayISO) return false;
+        if (filters.period === 'past' && b.date >= todayISO) return false;
+        return true;
     }
-    counts();
 
-    const ctrl = A.tableController({
-        rows: () => A.bookings,
-        tbody: $('tbody'),
-        pager: $('pager'),
-        info: $('info'),
-        cols: 8,
-        pageSize: 10,
-        controls: [
-            { key: 'q', input: $('q') },
-            { key: 'status', input: $('status'), event: 'change' },
-            { key: 'venue', input: $('venue'), event: 'change' },
-            { key: 'from', input: $('from'), event: 'change' },
-            { key: 'to', input: $('to'), event: 'change' }
-        ],
-        match: function (b, f) {
-            const v = b.resource, u = A.userById(b.userId);
-            const term = (f.q || '').trim().toLowerCase();
-            if (term && !(b.ref + ' ' + u.name + ' ' + u.email + ' ' + v.name + ' ' + b.purpose).toLowerCase().includes(term)) return false;
-            if (f.status && b.status !== f.status) return false;
-            if (f.venue && b.resourceId !== Number(f.venue)) return false;
-            if (f.from && b.date < f.from) return false;
-            if (f.to && b.date > f.to) return false;
-            return true;
-        },
-        render: function (b) {
-            const v = b.resource, u = A.userById(b.userId);
-            let actions = '<button class="btn-link" type="button" data-view="' + b.id + '">Details</button>';
-            if (b.status === 'Pending') {
-                actions += ' · <button class="btn-link" type="button" data-approve="' + b.id + '">Approve</button>' +
-                    ' · <button class="btn-link" type="button" data-reject="' + b.id + '">Reject</button>';
-            } else if (b.status === 'Approved') {
-                actions += ' · <button class="btn-link" type="button" data-cancel="' + b.id + '">Cancel</button>';
-            }
+    /* ---- Key actions available on a row ---- */
+    function keyAction(b) {
+        const st = A.keyState(b);
+        if (st === 'Awaiting collection')
+            return '<button class="btn-link" type="button" data-issue="' + b.id + '">Issue key</button>';
+        if (st === 'Given out' || st === 'Overdue')
+            return '<button class="btn-link" type="button" data-return="' + b.id + '">Record return</button>';
+        return '';
+    }
+
+    function rowActions(b) {
+        const k = keyAction(b);
+        return '<button class="btn-link" type="button" data-open="' + b.id + '">Open</button>' +
+               (k ? ' &nbsp;·&nbsp; ' + k : '');
+    }
+
+    /* ---- Rooms ---- */
+    const roomCtl = A.tableController({
+        rows: () => B.filter(b => b.kind === 'Venue'),
+        tbody: document.getElementById('roomRows'),
+        pager: document.getElementById('roomPager'),
+        info: document.getElementById('roomInfo'),
+        cols: 8, pageSize: 8,
+        match: matches,
+        render: b => '<tr>' +
+            '<td><span class="mono">' + A.esc(b.ref) + '</span></td>' +
+            '<td><span class="res">' + A.esc(b.resource.name) + '</span>' +
+                '<br><span class="help" style="margin:0">' + A.esc(b.resource.floor || '') + '</span></td>' +
+            '<td>' + A.esc(A.userById(b.userId).name) +
+                (b.createdById !== b.userId
+                    ? '<br><span class="help" style="margin:0">booked by ' +
+                      A.esc(A.userById(b.createdById).name) + '</span>' : '') + '</td>' +
+            '<td class="nowrap">' + A.esc(A.fmtDate(b.date)) + '</td>' +
+            '<td class="nowrap">' + A.esc(A.fmtRange(b.start, b.end)) + '</td>' +
+            '<td>' + A.badge(b.status) + '</td>' +
+            '<td>' + A.keyBadge(b) + '</td>' +
+            '<td style="text-align:right" class="nowrap">' + rowActions(b) + '</td></tr>'
+    });
+
+    /* ---- Vehicles ---- */
+    const vehCtl = A.tableController({
+        rows: () => B.filter(b => b.kind === 'Vehicle'),
+        tbody: document.getElementById('vehRows'),
+        pager: document.getElementById('vehPager'),
+        info: document.getElementById('vehInfo'),
+        cols: 8, pageSize: 8,
+        match: matches,
+        render: b => {
+            const driver = b.driverId ? A.userById(b.driverId) : null;
             return '<tr>' +
-                '<td class="mono nowrap">' + A.esc(b.ref) + '</td>' +
-                '<td>' + A.esc(u.name) + '<br><span class="help">' + A.esc(u.role) + '</span></td>' +
-                '<td>' + A.esc(v.name) + '</td>' +
-                '<td class="nowrap">' + A.fmtDate(b.date) + '</td>' +
-                '<td class="nowrap">' + A.fmtRange(b.start, b.end) + '</td>' +
-                '<td>' + A.esc(b.purpose) + '</td>' +
+                '<td><span class="mono">' + A.esc(b.ref) + '</span></td>' +
+                '<td><span class="res">' + A.esc(b.resource.name) + '</span>' +
+                    '<br><span class="help mono" style="margin:0">' + A.esc(b.resource.registration) + '</span></td>' +
+                '<td>' + A.esc(A.userById(b.userId).name) + '</td>' +
+                '<td class="nowrap">' + A.esc(A.fmtDate(b.date)) +
+                    '<br><span class="help" style="margin:0">' +
+                    (b.multiDay ? A.esc(A.durationLabel(b.startAt, b.endAt)) : A.esc(A.fmtRange(b.start, b.end))) +
+                    '</span></td>' +
+                '<td>' + (driver
+                    ? A.esc(driver.name)
+                    : '<span class="badge badge-pending">Not assigned</span>') + '</td>' +
                 '<td>' + A.badge(b.status) + '</td>' +
-                '<td class="nowrap">' + actions + '</td></tr>';
+                '<td>' + A.keyBadge(b) + '</td>' +
+                '<td style="text-align:right" class="nowrap">' + rowActions(b) + '</td></tr>';
         }
     });
 
-    function after() { ctrl.refresh(); counts(); }
+    function refreshAll() { roomCtl.refresh(); vehCtl.refresh(); }
 
-    $('tbody').addEventListener('click', function (e) {
-        const d = e.target.dataset || {};
-        const id = Number(d.view || d.approve || d.reject || d.cancel);
-        if (!id) return;
-        const b = A.bookings.find(x => x.id === id);
-        const v = b.resource, u = A.userById(b.userId);
-
-        if (d.view) {
-            A.modal({
-                title: 'Booking ' + b.ref,
-                body: '<dl class="kv">' +
-                    '<dt>Requester</dt><dd>' + A.esc(u.name) + ' (' + A.esc(u.email) + ')</dd>' +
-                    '<dt>Role</dt><dd>' + A.esc(u.role) + '</dd>' +
-                    '<dt>Venue</dt><dd>' + A.esc(v.name) + ' — ' + A.esc(v.location) + '</dd>' +
-                    '<dt>Date</dt><dd>' + A.fmtDate(b.date) + '</dd>' +
-                    '<dt>Time</dt><dd>' + A.fmtRange(b.start, b.end) + '</dd>' +
-                    '<dt>Purpose</dt><dd>' + A.esc(b.purpose) + '</dd>' +
-                    '<dt>Attendees</dt><dd>' + b.attendees + ' of ' + v.capacity + ' capacity</dd>' +
-                    '<dt>Submitted</dt><dd>' + A.fmtDate(b.created) + '</dd>' +
-                    '<dt>Status</dt><dd>' + A.badge(b.status) + '</dd>' +
-                    (b.rejectReason ? '<dt>Rejection reason</dt><dd>' + A.esc(b.rejectReason) + '</dd>' : '') +
-                    (b.cancelReason ? '<dt>Cancellation reason</dt><dd>' + A.esc(b.cancelReason) + '</dd>' : '') +
-                    '</dl>'
-            });
-        }
-
-        if (d.approve) {
-            const clash = A.findConflicts(b.resourceId, b.startAt, b.endAt, b.id)
-                .filter(c => c.status === 'Approved');
-            A.modal({
-                title: 'Approve booking ' + b.ref,
-                body: (clash.length
-                    ? '<div class="notice notice-danger"><strong>Conflict detected</strong>' +
-                      'An approved booking already occupies this period (' +
-                      A.esc(clash[0].ref) + ', ' + A.fmtRange(clash[0].start, clash[0].end) + '). ' +
-                      'The production system blocks approval in this situation.</div>'
-                    : '<div class="notice notice-success"><strong>No conflict</strong>' +
-                      'No approved booking overlaps this period.</div>') +
-                    '<dl class="kv"><dt>Venue</dt><dd>' + A.esc(v.name) + '</dd>' +
-                    '<dt>Date</dt><dd>' + A.fmtDate(b.date) + '</dd>' +
-                    '<dt>Time</dt><dd>' + A.fmtRange(b.start, b.end) + '</dd>' +
-                    '<dt>Requester</dt><dd>' + A.esc(u.name) + '</dd></dl>',
-                buttons: clash.length
-                    ? [{ label: 'Close' }]
-                    : [{ label: 'Cancel' },
-                       { label: 'Approve booking', cls: 'btn-primary', onClick: () => { b.status = 'Approved'; after(); } }]
-            });
-        }
-
-        if (d.reject) {
-            A.modal({
-                title: 'Reject booking ' + b.ref,
-                body: '<p>The requester will see the rejection and the reason recorded below. The record is retained for audit.</p>' +
-                    '<div class="field"><label for="rr">Reason for rejection <span class="req">*</span></label>' +
-                    '<textarea class="textarea" id="rr" placeholder="For example: the venue is reserved for a Kulliyyah event"></textarea></div>',
-                buttons: [
-                    { label: 'Cancel' },
-                    {
-                        label: 'Reject booking', cls: 'btn-danger', onClick: function (root) {
-                            const reason = root.querySelector('#rr').value.trim();
-                            if (!reason) { root.querySelector('#rr').focus(); return false; }
-                            b.status = 'Rejected'; b.rejectReason = reason; after();
-                        }
-                    }
-                ]
-            });
-        }
-
-        if (d.cancel) {
-            A.modal({
-                title: 'Cancel booking ' + b.ref,
-                body: '<p>Administrators may cancel an approved booking at any time. The record is kept with the status ' +
-                    '<strong>Cancelled</strong> and the time slot is released.</p>' +
-                    '<div class="field"><label for="cr">Reason for cancellation</label>' +
-                    '<textarea class="textarea" id="cr"></textarea></div>',
-                buttons: [
-                    { label: 'Keep booking' },
-                    {
-                        label: 'Cancel booking', cls: 'btn-danger', onClick: function (root) {
-                            b.status = 'Cancelled';
-                            b.cancelReason = root.querySelector('#cr').value.trim() || 'Cancelled by administrator.';
-                            after();
-                        }
-                    }
-                ]
-            });
-        }
-    });
-
-    $('reset').addEventListener('click', function () {
-        ['q', 'status', 'venue', 'from', 'to'].forEach(id => {
-            $(id).value = '';
-            $(id).dispatchEvent(new Event($(id).tagName === 'SELECT' || $(id).type === 'date' ? 'change' : 'input'));
+    ['q', 'status', 'keyState', 'period'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
+            filters[id] = el.value;
+            refreshAll();
         });
     });
 
-    $('exportBtn').addEventListener('click', () =>
-        A.toast('The production system exports the currently filtered result set to CSV, generated on the server in batches so that large exports do not exhaust memory.'));
+    /* ---- Dialogues ------------------------------------------------------ */
+    document.addEventListener('click', e => {
+        const op = e.target.closest('button[data-open]');
+        const is = e.target.closest('button[data-issue]');
+        const rt = e.target.closest('button[data-return]');
+        if (op) return openBooking(A.bookingById(Number(op.dataset.open)));
+        if (is) return issueKey(A.bookingById(Number(is.dataset.issue)));
+        if (rt) return returnKey(A.bookingById(Number(rt.dataset.return)));
+    });
+
+    function custodyBlock(b) {
+        const rows = A.keyCustody(b);
+        if (!rows) return '<p class="help">No key has been issued for this booking.</p>';
+        return '<dl class="kv">' + rows.map(r =>
+            '<dt>' + r[0] + '</dt><dd>' + r[1] + '<br>' +
+            '<strong>' + r[2] + '</strong><br>' +
+            '<span class="help" style="margin:0">' + r[3] + '</span></dd>').join('') + '</dl>';
+    }
+
+    function openBooking(b) {
+        const u = A.userById(b.userId);
+        const driver = b.driverId ? A.userById(b.driverId) : null;
+        A.modal({
+            title: b.ref,
+            body: '<dl class="kv">' +
+                '<dt>' + (b.kind === 'Vehicle' ? 'Vehicle' : 'Room') + '</dt><dd>' + A.esc(b.resource.name) + '</dd>' +
+                '<dt>Period</dt><dd>' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) + '</dd>' +
+                '<dt>Requester</dt><dd>' + A.esc(u.name) + ' · ' + A.esc(u.affiliation) + '</dd>' +
+                (b.createdById !== b.userId
+                    ? '<dt>Booked by</dt><dd>' + A.esc(A.userById(b.createdById).name) + ' on their behalf</dd>' : '') +
+                '<dt>Purpose</dt><dd>' + A.esc(b.purpose) + '</dd>' +
+                (b.kind === 'Vehicle'
+                    ? '<dt>Destination</dt><dd>' + A.esc(b.destination || '—') + '</dd>' +
+                      '<dt>Assigned driver</dt><dd>' + (driver ? A.esc(driver.name) : 'Not yet assigned') + '</dd>'
+                    : '<dt>Attendees</dt><dd>' + (b.attendees || '—') + '</dd>') +
+                '<dt>Status</dt><dd>' + A.badge(b.status) + '</dd>' +
+                '</dl>' +
+                '<h3 style="font-size:15px;margin:18px 0 8px">Key custody</h3>' +
+                custodyBlock(b)
+        });
+    }
+
+    function issueKey(b) {
+        const booker = A.userById(b.userId);
+        const isVehicle = b.kind === 'Vehicle';
+        const m = A.modal({
+            title: 'Issue key — ' + b.ref,
+            body:
+                '<dl class="kv"><dt>Resource</dt><dd>' + A.esc(b.resource.name) + '</dd>' +
+                '<dt>Booked by</dt><dd>' + A.esc(booker.name) + '</dd>' +
+                '<dt>Period</dt><dd>' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) + '</dd></dl>' +
+                '<div class="field" style="margin-top:16px">' +
+                '<label for="collector">Collected by <span class="req" aria-hidden="true">*</span></label>' +
+                '<input class="input" type="text" id="collector" value="' + A.esc(booker.name) + '">' +
+                '<p class="help">Change this if someone is collecting on the requester\\u2019s behalf. ' +
+                'The register records who physically took the key, not who booked.</p></div>' +
+                '<div class="field"><label for="collectorNote">Note</label>' +
+                '<input class="input" type="text" id="collectorNote" placeholder="For example: on behalf of the requester"></div>' +
+                (isVehicle
+                    ? '<div class="field"><label for="mOut">Mileage at collection (km)</label>' +
+                      '<input class="input" type="number" id="mOut" value="' + b.resource.mileage + '"></div>'
+                    : '') +
+                '<div id="issueErr" aria-live="polite"></div>' +
+                '<p class="help">Recorded with the time and your name, and written to the audit log as ' +
+                '<span class="mono">KEY_ISSUED</span>.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Confirm issue', cls: 'btn-primary', onClick: root => {
+                    const who = root.querySelector('#collector').value.trim();
+                    if (!who) {
+                        root.querySelector('#issueErr').innerHTML =
+                            '<div class="notice notice-danger">Record who is collecting the key.</div>';
+                        return false;
+                    }
+                    if (isVehicle && !b.driverId) {
+                        A.toast('No driver has been assigned to this trip. An administrator assigns one ' +
+                                'before the key can be given out.', 'danger');
+                        return;
+                    }
+                    A.toast('The key would be recorded as given to ' + who + ' at ' +
+                            A.fmtStamp(A.iso(A.today) + 'T09:00') + ', issued by ' + A.ADMIN_USER.name + '.');
+                } }
+            ]
+        });
+    }
+
+    function returnKey(b) {
+        const k = A.keyForBooking(b.id);
+        const isVehicle = b.kind === 'Vehicle';
+        A.modal({
+            title: 'Record return — ' + b.ref,
+            body:
+                '<dl class="kv"><dt>Resource</dt><dd>' + A.esc(b.resource.name) + '</dd>' +
+                '<dt>Given to</dt><dd>' + A.esc(k.collectedByName) + ' · ' + A.esc(A.fmtStamp(k.issuedAt)) + '</dd>' +
+                '<dt>Due back</dt><dd>' + A.esc(A.fmtStamp(b.endAt)) + '</dd></dl>' +
+                '<div class="field" style="margin-top:16px">' +
+                '<label for="returner">Returned by <span class="req" aria-hidden="true">*</span></label>' +
+                '<input class="input" type="text" id="returner" value="' + A.esc(k.collectedByName) + '">' +
+                '<p class="help">Often the same person who collected it, but not always. Record whoever ' +
+                'actually brought it back.</p></div>' +
+                (isVehicle
+                    ? '<div class="field"><label for="mIn">Mileage at return (km)</label>' +
+                      '<input class="input" type="number" id="mIn" value="' + (k.mileageOut + 120) + '">' +
+                      '<p class="help">Updates the vehicle\\u2019s recorded mileage.</p></div>'
+                    : '') +
+                '<div class="field"><label for="retNote">Condition or damage noted</label>' +
+                '<textarea class="textarea" id="retNote" placeholder="Optional"></textarea></div>' +
+                '<div id="retErr" aria-live="polite"></div>' +
+                '<p class="help">Written to the audit log as <span class="mono">KEY_RETURNED</span>.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Confirm return', cls: 'btn-primary', onClick: root => {
+                    const who = root.querySelector('#returner').value.trim();
+                    if (!who) {
+                        root.querySelector('#retErr').innerHTML =
+                            '<div class="notice notice-danger">Record who returned the key.</div>';
+                        return false;
+                    }
+                    A.toast('The return would be recorded from ' + who + ', received by ' +
+                            A.ADMIN_USER.name + (isVehicle ? ', with the closing mileage.' : '.'));
+                } }
+            ]
+        });
+    }
+
+    document.getElementById('exportBtn').addEventListener('click', () =>
+        A.toast('Rooms and vehicles export as separate CSV files, filtered exactly as shown. ' +
+                'Key custody columns are included: who collected, when, who returned, when, and the ' +
+                'officer on each side.'));
+    document.getElementById('onBehalfBtn').addEventListener('click', () =>
+        A.toast('An administrator may book on another user’s behalf. The booking is recorded against ' +
+                'that person, with the administrator kept as its creator.'));
 })();
 </script>
 </body>
