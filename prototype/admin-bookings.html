@@ -21,7 +21,7 @@
                 <div class="btn-group">
                     <a class="btn" href="admin-keys.html">Key register</a>
                     <button class="btn" type="button" id="exportBtn">Export</button>
-                    <button class="btn btn-primary" type="button" id="onBehalfBtn">Book for a user</button>
+                    <button class="btn btn-primary" type="button" id="onBehalfBtn">Create booking</button>
                 </div>
             </div>
 
@@ -67,8 +67,16 @@
                 </div>
             </section>
 
+            <!-- In-page tabs. This is a view switch within Bookings, not a
+                 second navigation — the main bar keeps its five items. -->
+            <div class="seg" id="kindTabs" role="tablist" aria-label="Resource type"
+                 style="margin-bottom: 18px;">
+                <button type="button" role="tab" data-kind="Venue" aria-pressed="true" id="tabVenue">Rooms</button>
+                <button type="button" role="tab" data-kind="Vehicle" aria-pressed="false" id="tabVehicle">Vehicles</button>
+            </div>
+
             <!-- ================= Rooms ================= -->
-            <section class="card" style="margin-bottom: 22px;" aria-labelledby="roomHead">
+            <section class="card" style="margin-bottom: 22px;" aria-labelledby="roomHead" id="roomSection">
                 <div class="card-head">
                     <h2 id="roomHead">Room bookings</h2>
                     <span class="help" style="margin: 0;" id="roomInfo"></span>
@@ -94,7 +102,7 @@
             </section>
 
             <!-- ================= Vehicles ================= -->
-            <section class="card" aria-labelledby="vehHead">
+            <section class="card" aria-labelledby="vehHead" id="vehSection" hidden>
                 <div class="card-head">
                     <h2 id="vehHead">Vehicle bookings</h2>
                     <span class="help" style="margin: 0;" id="vehInfo"></span>
@@ -239,12 +247,33 @@
     });
 
     function refreshAll() { roomCtl.refresh(); vehCtl.refresh(); }
+    showKind('Venue');
+    tabCounts();
+
+    /* ---- Tabs ---- */
+    function showKind(kind) {
+        document.getElementById('roomSection').hidden = kind !== 'Venue';
+        document.getElementById('vehSection').hidden = kind !== 'Vehicle';
+        document.querySelectorAll('#kindTabs button').forEach(b =>
+            b.setAttribute('aria-pressed', String(b.dataset.kind === kind)));
+    }
+    document.getElementById('kindTabs').addEventListener('click', e => {
+        const b = e.target.closest('button[data-kind]');
+        if (b) showKind(b.dataset.kind);
+    });
+    function tabCounts() {
+        document.getElementById('tabVenue').textContent =
+            'Rooms (' + B.filter(b => b.kind === 'Venue' && matches(b)).length + ')';
+        document.getElementById('tabVehicle').textContent =
+            'Vehicles (' + B.filter(b => b.kind === 'Vehicle' && matches(b)).length + ')';
+    }
 
     ['q', 'status', 'keyState', 'period'].forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
             filters[id] = el.value;
             refreshAll();
+            tabCounts();
         });
     });
 
@@ -377,9 +406,192 @@
         A.toast('Rooms and vehicles export as separate CSV files, filtered exactly as shown. ' +
                 'Key custody columns are included: who collected, when, who returned, when, and the ' +
                 'officer on each side.'));
-    document.getElementById('onBehalfBtn').addEventListener('click', () =>
-        A.toast('An administrator may book on another user’s behalf. The booking is recorded against ' +
-                'that person, with the administrator kept as its creator.'));
+    /* ---- Administrator creates a booking (decision 14) ------------------ */
+    /* The booking belongs to the person it is for; the administrator is kept
+       as its creator. Both are recorded, so the history is honest about who
+       did what. */
+    function createBooking() {
+        const S = A.SETTINGS;
+        const todayIso = A.iso(A.today);
+        const maxIso = A.iso(A.addDays(A.today, S.advanceBookingLimitDays));
+
+        function timeOpts(sel) {
+            let h = '';
+            for (let m = A.toMin(S.windowStart); m <= A.toMin(S.windowEnd); m += 30) {
+                const t = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+                h += '<option value="' + t + '"' + (t === sel ? ' selected' : '') + '>' + A.fmtTime(t) + '</option>';
+            }
+            return h;
+        }
+
+        const m = A.modal({
+            title: 'Create a booking',
+            body:
+                '<div class="field"><label for="cKind">Resource type</label>' +
+                '<select class="select" id="cKind"><option value="Venue">Room</option>' +
+                '<option value="Vehicle">Vehicle</option></select></div>' +
+
+                '<div class="field"><label for="cUser">Booking is for <span class="req" aria-hidden="true">*</span></label>' +
+                '<select class="select" id="cUser"></select>' +
+                '<p class="help" id="cUserHelp"></p></div>' +
+
+                '<div class="field"><label for="cRes">Resource <span class="req" aria-hidden="true">*</span></label>' +
+                '<select class="select" id="cRes"></select>' +
+                '<p class="help" id="cResHelp"></p></div>' +
+
+                '<div class="field-row">' +
+                '<div class="field"><label for="cDate" id="cDateLabel">Date <span class="req" aria-hidden="true">*</span></label>' +
+                '<input class="input" type="date" id="cDate" min="' + todayIso + '" max="' + maxIso + '" value="' +
+                A.iso(A.addDays(A.today, 1)) + '"></div>' +
+                '<div class="field" id="cEndDateWrap" hidden><label for="cEndDate">Return date</label>' +
+                '<input class="input" type="date" id="cEndDate" min="' + todayIso + '" max="' + maxIso + '" value="' +
+                A.iso(A.addDays(A.today, 1)) + '"></div></div>' +
+
+                '<div class="field-row">' +
+                '<div class="field"><label for="cFrom">From</label>' +
+                '<select class="select" id="cFrom">' + timeOpts('09:00') + '</select></div>' +
+                '<div class="field"><label for="cTo">To</label>' +
+                '<select class="select" id="cTo">' + timeOpts('11:00') + '</select></div></div>' +
+
+                '<div class="field"><label for="cPurpose">Purpose <span class="req" aria-hidden="true">*</span></label>' +
+                '<textarea class="textarea" id="cPurpose" placeholder="Visible to the requester and on the record"></textarea></div>' +
+
+                '<div id="cRoomFields"><div class="field"><label for="cAtt">Attendees</label>' +
+                '<input class="input" type="number" id="cAtt" min="1" value="10"></div></div>' +
+
+                '<div id="cVehFields" hidden>' +
+                '<div class="field"><label for="cDest">Destination <span class="req" aria-hidden="true">*</span></label>' +
+                '<input class="input" type="text" id="cDest" placeholder="For example: Palace of Justice, Putrajaya"></div>' +
+                '<div class="field"><label for="cPax">Passengers</label>' +
+                '<input class="input" type="number" id="cPax" min="1" value="3"></div>' +
+                '<div class="notice notice-info">A driver is assigned separately, after the booking exists. ' +
+                'The key is not handed over until one has been.</div></div>' +
+
+                '<div class="checkline" style="margin-top:6px"><input type="checkbox" id="cApprove" checked>' +
+                '<label for="cApprove">Approve it now</label></div>' +
+                '<p class="help" style="margin-top:-4px">You are the approving authority, so this is normally ' +
+                'right. Leave it unticked to put the request in the queue for a second pair of eyes.</p>' +
+
+                '<div id="cErr" aria-live="polite"></div>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Create booking', cls: 'btn-primary', onClick: root => {
+                    if (problems(root).length) return false;
+                    const forUser = A.userById(Number(root.querySelector('#cUser').value));
+                    const res = A.resourceById(Number(root.querySelector('#cRes').value));
+                    const approved = root.querySelector('#cApprove').checked;
+                    A.toast('A booking on ' + res.name + ' would be created for ' + forUser.name +
+                            ', with ' + A.ADMIN_USER.name + ' recorded as its creator' +
+                            (approved ? ' and approver' : ' and the request left pending') +
+                            '. A confirmation would be queued to ' + forUser.email + '.');
+                } }
+            ]
+        });
+
+        const root = m.root;
+        const $ = id => root.querySelector('#' + id);
+
+        function kind() { return $('cKind').value; }
+
+        function fillUsers() {
+            /* Kulliyyah cars are for lecturers and staff, so the list of people
+               a car can be booked FOR is narrower than for a room. */
+            const list = kind() === 'Vehicle'
+                ? A.users.filter(u => u.status === 'Active' && A.canBookVehicle(u))
+                : A.users.filter(u => u.status === 'Active');
+            $('cUser').innerHTML = list.slice(0, 40).map(u =>
+                '<option value="' + u.id + '">' + A.esc(u.name) + ' — ' + A.esc(u.affiliation) +
+                (u.idNo ? ' · ' + A.esc(u.idNo) : '') + '</option>').join('');
+            $('cUserHelp').textContent = kind() === 'Vehicle'
+                ? 'Lecturers and staff only. A student activity is arranged through the Vehicle Management Unit via STADD.'
+                : 'Anyone with an active account, including members of the public.';
+        }
+
+        function fillResources() {
+            const pool = (kind() === 'Vehicle' ? A.vehicles : A.venues).filter(r => r.status === 'Active');
+            $('cRes').innerHTML = pool.map(r =>
+                '<option value="' + r.id + '">' + A.esc(r.name) +
+                (r.capacity ? ' — ' + r.capacity + ' persons' : ' — ' + r.seats + ' seats') + '</option>').join('');
+            syncRes();
+        }
+
+        function syncRes() {
+            const r = A.resourceById(Number($('cRes').value));
+            $('cResHelp').textContent = kind() === 'Vehicle'
+                ? r.registration + ' · road tax to ' + A.fmtDate(r.roadTaxExpiry)
+                : r.location + ' · bookable ' + A.fmtTime(r.open) + '–' + A.fmtTime(r.close);
+        }
+
+        function startAt() { return $('cDate').value + 'T' + $('cFrom').value; }
+        function endAt() {
+            const d = kind() === 'Vehicle' ? $('cEndDate').value : $('cDate').value;
+            return d + 'T' + $('cTo').value;
+        }
+
+        function problems(scope) {
+            const q = id => (scope || root).querySelector('#' + id);
+            const out = [];
+            const isVeh = q('cKind').value === 'Vehicle';
+            const res = A.resourceById(Number(q('cRes').value));
+            const s = q('cDate').value + 'T' + q('cFrom').value;
+            const e = (isVeh ? q('cEndDate').value : q('cDate').value) + 'T' + q('cTo').value;
+
+            if (!q('cDate').value) out.push('Choose a date.');
+            if (e <= s) out.push('The end must be after the start.');
+            if (!q('cPurpose').value.trim()) out.push('A purpose is required.');
+
+            if (!isVeh) {
+                const mins = A.minutesBetween(s, e);
+                if (mins > S.maxBookingMinutes)
+                    out.push('A single room booking may last at most ' + (S.maxBookingMinutes / 60) +
+                             ' hours. This is ' + (mins / 60) + '.');
+                const att = Number(q('cAtt').value);
+                if (att > res.capacity) out.push('That exceeds the room capacity of ' + res.capacity + '.');
+            } else {
+                if (!q('cDest').value.trim()) out.push('A destination is required.');
+                const days = A.minutesBetween(s, e) / 1440;
+                if (days > S.maxVehicleTripDays)
+                    out.push('The trip is ' + Math.ceil(days) + ' days; the maximum is ' + S.maxVehicleTripDays + '.');
+                if (Number(q('cPax').value) > res.seats - 1)
+                    out.push('At most ' + (res.seats - 1) + ' passengers, plus the driver.');
+                if (res.roadTaxExpiry < e.slice(0, 10)) out.push('The road tax expires before the trip ends.');
+            }
+
+            /* The same conflict rule as everywhere else. An administrator does
+               not get to double-book. */
+            A.findConflicts(res.id, s, e).forEach(c =>
+                out.push('Already reserved: ' + A.fmtPeriod(c.startAt, c.endAt) + ' (' + c.status.toLowerCase() + ').'));
+            return out;
+        }
+
+        function refresh() {
+            const isVeh = kind() === 'Vehicle';
+            $('cRoomFields').hidden = isVeh;
+            $('cVehFields').hidden = !isVeh;
+            $('cEndDateWrap').hidden = !isVeh;
+            $('cDateLabel').innerHTML = (isVeh ? 'Collection date' : 'Date') +
+                ' <span class="req" aria-hidden="true">*</span>';
+            if (isVeh && $('cEndDate').value < $('cDate').value) $('cEndDate').value = $('cDate').value;
+
+            const errs = problems();
+            $('cErr').innerHTML = errs.length
+                ? '<div class="notice notice-danger"><strong>Cannot be created yet:</strong>' +
+                  '<ul style="margin:.4rem 0 0;padding-left:1.1rem">' +
+                  errs.map(x => '<li>' + A.esc(x) + '</li>').join('') + '</ul></div>'
+                : '<div class="notice notice-success">No conflict. Ready to create.</div>';
+        }
+
+        $('cKind').addEventListener('change', () => { fillUsers(); fillResources(); refresh(); });
+        $('cRes').addEventListener('change', () => { syncRes(); refresh(); });
+        ['cUser', 'cDate', 'cEndDate', 'cFrom', 'cTo', 'cPurpose', 'cAtt', 'cDest', 'cPax']
+            .forEach(id => $(id).addEventListener('input', refresh));
+
+        fillUsers();
+        fillResources();
+        refresh();
+    }
+
+    document.getElementById('onBehalfBtn').addEventListener('click', createBooking);
 })();
 </script>
 </body>
