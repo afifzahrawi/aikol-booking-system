@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Key Register — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Key register</h1>
+                    <p class="lede">Record the issue and return of room keys, access cards and vehicle keys.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom:1.25rem">
+                <div class="stat"><span class="k">Currently issued</span><span class="v" id="sOut">0</span>
+                    <span class="d">Keys in someone's hands</span></div>
+                <div class="stat warn"><span class="k">Outstanding</span><span class="v" id="sOverdue">0</span>
+                    <span class="d">Booking period has ended</span></div>
+                <div class="stat"><span class="k">Awaiting collection</span><span class="v" id="sDue">0</span>
+                    <span class="d">Approved, not yet issued</span></div>
+                <div class="stat accent"><span class="k">Returned</span><span class="v" id="sBack">0</span>
+                    <span class="d">Complete handovers on record</span></div>
+            </div>
+
+            <div class="notice notice-warn" id="overdueNote" hidden></div>
+
+            <section class="card" aria-labelledby="regHead">
+                <div class="card-head">
+                    <h2 id="regHead">Handover records</h2>
+                    <span class="help" id="info"></span>
+                </div>
+
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Reference, resource or holder">
+                    </div>
+                    <div class="field">
+                        <label for="state">Handover state</label>
+                        <select class="select" id="state">
+                            <option value="">All records</option>
+                            <option value="Outstanding">Outstanding — not returned</option>
+                            <option value="Out">Currently issued</option>
+                            <option value="Returned">Returned</option>
+                            <option value="Awaiting">Awaiting collection</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="kind">Resource type</label>
+                        <select class="select" id="kind">
+                            <option value="">All resources</option>
+                            <option value="Venue">Venues</option>
+                            <option value="Vehicle">Vehicles</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th scope="col">Reference</th>
+                                <th scope="col">Resource</th>
+                                <th scope="col">Holder</th>
+                                <th scope="col">Booked period</th>
+                                <th scope="col">Key out</th>
+                                <th scope="col">Key returned</th>
+                                <th scope="col">State</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+
+                <div class="card-foot">
+                    <div class="pagination" id="pager"></div>
+                </div>
+            </section>
+
+            <p class="help" style="margin-top:1rem">
+                A booking may reach <em>Completed</em> while its key is still outstanding. The two are tracked
+                separately on purpose — chasing an unreturned key must not depend on someone remembering to
+                leave the booking open.
+            </p>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-keys.html' });
+    const now = new Date();
+
+    /* A row per booking that either has a handover record or is eligible for
+       one. Eligibility is APPROVED or COMPLETED — a pending booking has no key. */
+    function buildRows() {
+        return A.bookings
+            .filter(b => b.status === 'Approved' || b.status === 'Completed')
+            .map(b => {
+                const k = A.keyForBooking(b.id);
+                const ended = A.toDate(b.endAt) < now;
+                let state;
+                if (!k) state = ended ? 'Never collected' : 'Awaiting';
+                else if (!k.returnedAt) state = ended ? 'Outstanding' : 'Out';
+                else state = 'Returned';
+                return { b: b, k: k, state: state };
+            })
+            .sort((x, y) => {
+                // Outstanding keys first — they are the reason this screen exists.
+                const rank = s => s === 'Outstanding' ? 0 : s === 'Out' ? 1 : s === 'Awaiting' ? 2 : 3;
+                const d = rank(x.state) - rank(y.state);
+                return d !== 0 ? d : (x.b.startAt < y.b.startAt ? 1 : -1);
+            });
+    }
+
+    const all = buildRows();
+
+    /* ---- Summary tiles ---- */
+    const count = s => all.filter(r => r.state === s).length;
+    document.getElementById('sOut').textContent = count('Out');
+    document.getElementById('sOverdue').textContent = count('Outstanding');
+    document.getElementById('sDue').textContent = count('Awaiting');
+    document.getElementById('sBack').textContent = count('Returned');
+
+    const overdue = count('Outstanding');
+    if (overdue) {
+        const note = document.getElementById('overdueNote');
+        note.hidden = false;
+        note.innerHTML = '<strong>' + overdue + ' key' + (overdue === 1 ? '' : 's') +
+            ' outstanding.</strong> The booked period has ended and the key has not been returned. ' +
+            'These appear first in the list below.';
+    }
+
+    const stateBadge = {
+        'Outstanding': 'badge-rejected',
+        'Out': 'badge-pending',
+        'Awaiting': 'badge-muted',
+        'Returned': 'badge-completed',
+        'Never collected': 'badge-inactive'
+    };
+
+    function mileageCell(r) {
+        if (r.b.kind !== 'Vehicle' || !r.k) return '';
+        if (r.k.mileageIn) return '<br><span class="help mono">' + r.k.mileageOut.toLocaleString() +
+            ' → ' + r.k.mileageIn.toLocaleString() + ' km</span>';
+        if (r.k.mileageOut) return '<br><span class="help mono">out at ' + r.k.mileageOut.toLocaleString() + ' km</span>';
+        return '';
+    }
+
+    const ctl = A.tableController({
+        rows: () => all,
+        tbody: document.getElementById('rows'),
+        pager: document.getElementById('pager'),
+        info: document.getElementById('info'),
+        cols: 8,
+        pageSize: 12,
+        controls: [
+            { key: 'q', input: document.getElementById('q') },
+            { key: 'state', input: document.getElementById('state'), event: 'change' },
+            { key: 'kind', input: document.getElementById('kind'), event: 'change' }
+        ],
+        match: (r, f) => {
+            const term = (f.q || '').trim().toLowerCase();
+            const u = A.userById(r.b.userId);
+            if (term && !(r.b.ref + ' ' + r.b.resource.name + ' ' + u.name).toLowerCase().includes(term)) return false;
+            if (f.state && r.state !== f.state) return false;
+            if (f.kind && r.b.kind !== f.kind) return false;
+            return true;
+        },
+        render: r => {
+            const u = A.userById(r.b.userId);
+            const canIssue = !r.k && r.state === 'Awaiting';
+            const canReturn = r.k && !r.k.returnedAt;
+            const action = canIssue
+                ? '<button class="btn btn-sm btn-primary" type="button" data-issue="' + r.b.id + '">Issue key</button>'
+                : canReturn
+                    ? '<button class="btn btn-sm" type="button" data-return="' + r.b.id + '">Record return</button>'
+                    : '<span class="help">—</span>';
+            return '<tr>' +
+                '<td><span class="mono">' + A.esc(r.b.ref) + '</span></td>' +
+                '<td>' + A.esc(r.b.resource.name) +
+                    '<br><span class="help">' + A.esc(r.b.kind) + '</span></td>' +
+                '<td>' + A.esc(u.name) + '<br><span class="help mono">' + A.esc(u.idNo) + '</span></td>' +
+                '<td>' + A.esc(A.fmtPeriod(r.b.startAt, r.b.endAt)) + '</td>' +
+                '<td>' + (r.k ? A.esc(A.fmtStamp(r.k.issuedAt)) : '<span class="help">—</span>') + mileageCell(r) + '</td>' +
+                '<td>' + (r.k && r.k.returnedAt ? A.esc(A.fmtStamp(r.k.returnedAt)) : '<span class="help">—</span>') + '</td>' +
+                '<td><span class="badge ' + stateBadge[r.state] + '">' + A.esc(r.state) + '</span></td>' +
+                '<td>' + action + '</td></tr>';
+        }
+    });
+
+    /* ---- Issue and return dialogues ---- */
+    document.getElementById('rows').addEventListener('click', e => {
+        const issue = e.target.closest('button[data-issue]');
+        const ret = e.target.closest('button[data-return]');
+        if (issue) return openIssue(A.bookingById(Number(issue.dataset.issue)));
+        if (ret) return openReturn(A.bookingById(Number(ret.dataset.return)));
+    });
+
+    /* The vehicle key record AIKOL asked for: dates out and in, driver name,
+       contact and staff number, locations from and to, and the purpose. Every
+       value is read from the booking — there is only one copy of each. */
+    function vehicleRecord(b) {
+        if (b.kind !== 'Vehicle') return '';
+        /* The Kulliyyah provides no driver of its own. A member of staff is
+           ASSIGNED by an administrator — the requester never chooses. Until
+           that has happened the trip is not cleared to leave. */
+        const driver = b.driverId ? A.userById(b.driverId) : null;
+        const assigner = b.driverAssignedBy ? A.userById(b.driverAssignedBy) : null;
+        return '<div class="notice ' + (driver ? 'notice-info' : 'notice-warn') + '" style="margin:14px 0 0">' +
+            '<strong>Vehicle record</strong>' +
+            '<dl class="meta-list" style="margin-top:8px">' +
+            '<div><dt>Date out</dt><dd>' + A.esc(A.fmtStamp(b.startAt)) + '</dd></div>' +
+            '<div><dt>Date in</dt><dd>' + A.esc(A.fmtStamp(b.endAt)) + '</dd></div>' +
+            '<div><dt>Assigned driver</dt><dd>' + (driver
+                ? A.esc(driver.name) + ' <span class="badge badge-approved">Assigned</span>'
+                : '<span class="badge badge-pending">Not yet assigned</span>') + '</dd></div>' +
+            '<div><dt>Contact</dt><dd>' + A.esc(driver ? driver.phone : '—') + '</dd></div>' +
+            '<div><dt>Staff number</dt><dd><span class="mono">' +
+                A.esc(driver ? driver.idNo : '—') + '</span></dd></div>' +
+            '<div><dt>Licence</dt><dd>' + (driver && driver.licenceNo
+                ? '<span class="mono">' + A.esc(driver.licenceNo) + '</span> to ' + A.esc(A.fmtDate(driver.licenceExpiry))
+                : '—') + '</dd></div>' +
+            '<div><dt>Registration</dt><dd><span class="mono">' + A.esc(b.resource.registration) + '</span></dd></div>' +
+            '<div><dt>From</dt><dd>' + A.esc(b.origin || A.HOME_BASE) + '</dd></div>' +
+            '<div><dt>To</dt><dd>' + A.esc(b.destination || '—') + '</dd></div>' +
+            '<div style="grid-column:1/-1"><dt>Purpose</dt><dd>' + A.esc(b.purpose) + '</dd></div>' +
+            (assigner
+                ? '<div style="grid-column:1/-1"><dt>Driver assigned by</dt><dd>' +
+                  A.esc(assigner.name) + ' · administrator</dd></div>'
+                : '<div style="grid-column:1/-1"><dt>Driver</dt><dd>An administrator must assign a ' +
+                  'member of staff before the key can be given out.</dd></div>') +
+            '</dl></div>';
+    }
+
+    function openIssue(b) {
+        const isVehicle = b.kind === 'Vehicle';
+        A.modal({
+            title: 'Issue key — ' + b.ref,
+            body:
+                '<dl class="meta-list">' +
+                '<div><dt>Resource</dt><dd>' + A.esc(b.resource.name) + '</dd></div>' +
+                '<div><dt>Holder</dt><dd>' + A.esc(A.userById(b.userId).name) + '</dd></div>' +
+                '<div><dt>Booked period</dt><dd>' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) + '</dd></div>' +
+                '</dl>' +
+                vehicleRecord(b) +
+                (isVehicle
+                    ? '<div class="field" style="margin-top:14px"><label for="mOut">Mileage at collection (km)</label>' +
+                      '<input class="input" type="number" id="mOut" value="' + b.resource.mileage + '"></div>'
+                    : '') +
+                '<div class="field"><label for="issueNote">Condition noted at issue</label>' +
+                '<textarea class="textarea" id="issueNote" placeholder="Optional"></textarea></div>' +
+                '<p class="help">The issue is recorded against this booking and written to the audit log as ' +
+                '<span class="mono">KEY_ISSUED</span>.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Confirm issue', cls: 'btn-primary', onClick: () => {
+                    /* No driver assigned means nobody is cleared to take the
+                       car out, so the key cannot be handed over. */
+                    if (b.kind === 'Vehicle' && !b.driverId) {
+                        A.toast('No driver has been assigned to this trip yet. An administrator assigns a ' +
+                                'member of staff on the booking before the key can be given out.', 'danger');
+                        return;
+                    }
+                    A.toast('The key would be recorded as issued to ' + A.userById(b.userId).name +
+                            ', with the time of issue and the issuing officer.');
+                } }
+            ]
+        });
+    }
+
+    function openReturn(b) {
+        const k = A.keyForBooking(b.id);
+        const isVehicle = b.kind === 'Vehicle';
+        A.modal({
+            title: 'Record return — ' + b.ref,
+            body:
+                '<dl class="meta-list">' +
+                '<div><dt>Resource</dt><dd>' + A.esc(b.resource.name) + '</dd></div>' +
+                '<div><dt>Issued</dt><dd>' + A.esc(A.fmtStamp(k.issuedAt)) + '</dd></div>' +
+                '<div><dt>Due back</dt><dd>' + A.esc(A.fmtStamp(b.endAt)) + '</dd></div>' +
+                '</dl>' +
+                vehicleRecord(b) +
+                (isVehicle
+                    ? '<div class="field" style="margin-top:14px"><label for="mIn">Mileage at return (km)</label>' +
+                      '<input class="input" type="number" id="mIn" value="' + (k.mileageOut + 120) + '">' +
+                      '<p class="help">Updates the vehicle\'s recorded mileage.</p></div>'
+                    : '') +
+                '<div class="field"><label for="retNote">Condition or damage noted</label>' +
+                '<textarea class="textarea" id="retNote" placeholder="Optional"></textarea></div>' +
+                '<p class="help">Written to the audit log as <span class="mono">KEY_RETURNED</span>.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Confirm return', cls: 'btn-primary', onClick: () => {
+                    A.toast('The return would be recorded with the time, the receiving officer' +
+                            (isVehicle ? ' and the closing mileage.' : '.'));
+                } }
+            ]
+        });
+    }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" role="img">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5efef"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="none"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#8a3a3a" stroke-opacity=".13" stroke-width="3"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="450" fill="url(#wall)"/>
+  <text x="60" y="56" font-family="Georgia, serif" font-size="20" fill="#8a3a3a">Facilities</text>
+  <rect x="60" y="90" width="260" height="110" rx="5" fill="#ffffff"
+        stroke="#8a3a3a" stroke-opacity=".25"/>
+  <rect x="78" y="110" width="44" height="44" rx="6" fill="#8a3a3a" fill-opacity=".16"/>
+  <text x="78" y="180" font-family="Segoe UI, Arial, sans-serif" font-size="12"
+        fill="#8a3a3a" fill-opacity=".7" letter-spacing="1">PROJECTOR</text>
+  <rect x="270" y="90" width="260" height="110" rx="5" fill="#ffffff"
+        stroke="#8a3a3a" stroke-opacity=".25"/>
+  <rect x="288" y="110" width="44" height="44" rx="6" fill="#8a3a3a" fill-opacity=".16"/>
+  <text x="288" y="180" font-family="Segoe UI, Arial, sans-serif" font-size="12"
+        fill="#8a3a3a" fill-opacity=".7" letter-spacing="1">WHITEBOARD</text>
+  <rect x="480" y="90" width="260" height="110" rx="5" fill="#ffffff"
+        stroke="#8a3a3a" stroke-opacity=".25"/>
+  <rect x="498" y="110" width="44" height="44" rx="6" fill="#8a3a3a" fill-opacity=".16"/>
+  <text x="498" y="180" font-family="Segoe UI, Arial, sans-serif" font-size="12"
+        fill="#8a3a3a" fill-opacity=".7" letter-spacing="1">AIR CONDITIONING</text>
+  <rect x="60" y="220" width="260" height="110" rx="5" fill="#ffffff"
+        stroke="#8a3a3a" stroke-opacity=".25"/>
+  <rect x="78" y="240" width="44" height="44" rx="6" fill="#8a3a3a" fill-opacity=".16"/>
+  <text x="78" y="310" font-family="Segoe UI, Arial, sans-serif" font-size="12"
+        fill="#8a3a3a" fill-opacity=".7" letter-spacing="1">INTERNET ACCESS</text>
+  <rect x="270" y="220" width="260" height="110" rx="5" fill="#ffffff"
+        stroke="#8a3a3a" stroke-opacity=".25"/>
+  <rect x="288" y="240" width="44" height="44" rx="6" fill="#8a3a3a" fill-opacity=".16"/>
+  <text x="288" y="310" font-family="Segoe UI, Arial, sans-serif" font-size="12"
+        fill="#8a3a3a" fill-opacity=".7" letter-spacing="1">SOUND SYSTEM</text>
+  <rect x="480" y="220" width="260" height="110" rx="5" fill="#ffffff"
+        stroke="#8a3a3a" stroke-opacity=".25"/>
+  <rect x="498" y="240" width="44" height="44" rx="6" fill="#8a3a3a" fill-opacity=".16"/>
+  <text x="498" y="310" font-family="Segoe UI, Arial, sans-serif" font-size="12"
+        fill="#8a3a3a" fill-opacity=".7" letter-spacing="1">POWER OUTLETS</text>  <rect x="0" y="404" width="800" height="46" fill="#8a3a3a" fill-opacity=".92"/>
+  <text x="24" y="432" font-family="Georgia, serif" font-size="19" fill="#ffffff">Lecture Room 1</text>
+  <text x="776" y="432" text-anchor="end" font-family="Segoe UI, Arial, sans-serif"
+        font-size="12" fill="#ffffff" fill-opacity=".85" letter-spacing="1.5">PLACEHOLDER IMAGE · AIKOL-LR-01 · VIEW 3</text>
+</svg>

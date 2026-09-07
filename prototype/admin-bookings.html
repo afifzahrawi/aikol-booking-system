@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Booking Administration — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Booking administration</h1>
+                    <p class="lede">Review, approve, reject and cancel booking requests. Filtering and paging are performed on the server in the production system.</p>
+                </div>
+                <button class="btn" type="button" id="exportBtn">Export results (CSV)</button>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom:1.25rem">
+                <div class="stat warn"><span class="k">Pending</span><span class="v" id="cPending">0</span><span class="d">awaiting a decision</span></div>
+                <div class="stat accent"><span class="k">Approved</span><span class="v" id="cApproved">0</span><span class="d">confirmed bookings</span></div>
+                <div class="stat"><span class="k">Cancelled</span><span class="v" id="cCancelled">0</span><span class="d">released, record retained</span></div>
+                <div class="stat"><span class="k">Rejected</span><span class="v" id="cRejected">0</span><span class="d">with a reason recorded</span></div>
+            </div>
+
+            <section class="card" aria-labelledby="listHead">
+                <h2 id="listHead" class="visually-hidden">Booking records</h2>
+
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Reference, requester, venue or purpose">
+                    </div>
+                    <div class="field">
+                        <label for="status">Status</label>
+                        <select class="select" id="status">
+                            <option value="">All statuses</option>
+                            <option>Pending</option><option>Approved</option><option>Rejected</option>
+                            <option>Cancelled</option><option>Completed</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="venue">Venue</label>
+                        <select class="select" id="venue"><option value="">All venues</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="from">From date</label>
+                        <input class="input" type="date" id="from">
+                    </div>
+                    <div class="field">
+                        <label for="to">To date</label>
+                        <input class="input" type="date" id="to">
+                    </div>
+                    <div class="field">
+                        <label for="reset" class="visually-hidden">Reset filters</label>
+                        <button class="btn" type="button" id="reset">Reset</button>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data">
+                        <caption class="visually-hidden">All booking records</caption>
+                        <thead><tr>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Requester</th>
+                            <th scope="col">Venue</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Time</th>
+                            <th scope="col">Purpose</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr></thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="card-foot">
+                    <div class="pagination">
+                        <span id="info"></span>
+                        <div class="pager" id="pager"></div>
+                    </div>
+                </div>
+            </section>
+
+            <p class="help" style="margin-top:1rem">
+                Approving a request never overwrites another confirmed booking: the overlap rule is re-checked
+                inside the database transaction at the moment of approval.
+            </p>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-bookings.html' });
+
+    const $ = (id) => document.getElementById(id);
+
+    $('venue').innerHTML += A.venues.map(v =>
+        '<option value="' + v.id + '">' + A.esc(v.name) + '</option>').join('');
+
+    function counts() {
+        ['Pending', 'Approved', 'Cancelled', 'Rejected'].forEach(s =>
+            $('c' + s).textContent = A.bookings.filter(b => b.status === s).length);
+    }
+    counts();
+
+    const ctrl = A.tableController({
+        rows: () => A.bookings,
+        tbody: $('tbody'),
+        pager: $('pager'),
+        info: $('info'),
+        cols: 8,
+        pageSize: 10,
+        controls: [
+            { key: 'q', input: $('q') },
+            { key: 'status', input: $('status'), event: 'change' },
+            { key: 'venue', input: $('venue'), event: 'change' },
+            { key: 'from', input: $('from'), event: 'change' },
+            { key: 'to', input: $('to'), event: 'change' }
+        ],
+        match: function (b, f) {
+            const v = b.resource, u = A.userById(b.userId);
+            const term = (f.q || '').trim().toLowerCase();
+            if (term && !(b.ref + ' ' + u.name + ' ' + u.email + ' ' + v.name + ' ' + b.purpose).toLowerCase().includes(term)) return false;
+            if (f.status && b.status !== f.status) return false;
+            if (f.venue && b.resourceId !== Number(f.venue)) return false;
+            if (f.from && b.date < f.from) return false;
+            if (f.to && b.date > f.to) return false;
+            return true;
+        },
+        render: function (b) {
+            const v = b.resource, u = A.userById(b.userId);
+            let actions = '<button class="btn-link" type="button" data-view="' + b.id + '">Details</button>';
+            if (b.status === 'Pending') {
+                actions += ' · <button class="btn-link" type="button" data-approve="' + b.id + '">Approve</button>' +
+                    ' · <button class="btn-link" type="button" data-reject="' + b.id + '">Reject</button>';
+            } else if (b.status === 'Approved') {
+                actions += ' · <button class="btn-link" type="button" data-cancel="' + b.id + '">Cancel</button>';
+            }
+            return '<tr>' +
+                '<td class="mono nowrap">' + A.esc(b.ref) + '</td>' +
+                '<td>' + A.esc(u.name) + '<br><span class="help">' + A.esc(u.role) + '</span></td>' +
+                '<td>' + A.esc(v.name) + '</td>' +
+                '<td class="nowrap">' + A.fmtDate(b.date) + '</td>' +
+                '<td class="nowrap">' + A.fmtRange(b.start, b.end) + '</td>' +
+                '<td>' + A.esc(b.purpose) + '</td>' +
+                '<td>' + A.badge(b.status) + '</td>' +
+                '<td class="nowrap">' + actions + '</td></tr>';
+        }
+    });
+
+    function after() { ctrl.refresh(); counts(); }
+
+    $('tbody').addEventListener('click', function (e) {
+        const d = e.target.dataset || {};
+        const id = Number(d.view || d.approve || d.reject || d.cancel);
+        if (!id) return;
+        const b = A.bookings.find(x => x.id === id);
+        const v = b.resource, u = A.userById(b.userId);
+
+        if (d.view) {
+            A.modal({
+                title: 'Booking ' + b.ref,
+                body: '<dl class="kv">' +
+                    '<dt>Requester</dt><dd>' + A.esc(u.name) + ' (' + A.esc(u.email) + ')</dd>' +
+                    '<dt>Role</dt><dd>' + A.esc(u.role) + '</dd>' +
+                    '<dt>Venue</dt><dd>' + A.esc(v.name) + ' — ' + A.esc(v.location) + '</dd>' +
+                    '<dt>Date</dt><dd>' + A.fmtDate(b.date) + '</dd>' +
+                    '<dt>Time</dt><dd>' + A.fmtRange(b.start, b.end) + '</dd>' +
+                    '<dt>Purpose</dt><dd>' + A.esc(b.purpose) + '</dd>' +
+                    '<dt>Attendees</dt><dd>' + b.attendees + ' of ' + v.capacity + ' capacity</dd>' +
+                    '<dt>Submitted</dt><dd>' + A.fmtDate(b.created) + '</dd>' +
+                    '<dt>Status</dt><dd>' + A.badge(b.status) + '</dd>' +
+                    (b.rejectReason ? '<dt>Rejection reason</dt><dd>' + A.esc(b.rejectReason) + '</dd>' : '') +
+                    (b.cancelReason ? '<dt>Cancellation reason</dt><dd>' + A.esc(b.cancelReason) + '</dd>' : '') +
+                    '</dl>'
+            });
+        }
+
+        if (d.approve) {
+            const clash = A.findConflicts(b.resourceId, b.startAt, b.endAt, b.id)
+                .filter(c => c.status === 'Approved');
+            A.modal({
+                title: 'Approve booking ' + b.ref,
+                body: (clash.length
+                    ? '<div class="notice notice-danger"><strong>Conflict detected</strong>' +
+                      'An approved booking already occupies this period (' +
+                      A.esc(clash[0].ref) + ', ' + A.fmtRange(clash[0].start, clash[0].end) + '). ' +
+                      'The production system blocks approval in this situation.</div>'
+                    : '<div class="notice notice-success"><strong>No conflict</strong>' +
+                      'No approved booking overlaps this period.</div>') +
+                    '<dl class="kv"><dt>Venue</dt><dd>' + A.esc(v.name) + '</dd>' +
+                    '<dt>Date</dt><dd>' + A.fmtDate(b.date) + '</dd>' +
+                    '<dt>Time</dt><dd>' + A.fmtRange(b.start, b.end) + '</dd>' +
+                    '<dt>Requester</dt><dd>' + A.esc(u.name) + '</dd></dl>',
+                buttons: clash.length
+                    ? [{ label: 'Close' }]
+                    : [{ label: 'Cancel' },
+                       { label: 'Approve booking', cls: 'btn-primary', onClick: () => { b.status = 'Approved'; after(); } }]
+            });
+        }
+
+        if (d.reject) {
+            A.modal({
+                title: 'Reject booking ' + b.ref,
+                body: '<p>The requester will see the rejection and the reason recorded below. The record is retained for audit.</p>' +
+                    '<div class="field"><label for="rr">Reason for rejection <span class="req">*</span></label>' +
+                    '<textarea class="textarea" id="rr" placeholder="For example: the venue is reserved for a Kulliyyah event"></textarea></div>',
+                buttons: [
+                    { label: 'Cancel' },
+                    {
+                        label: 'Reject booking', cls: 'btn-danger', onClick: function (root) {
+                            const reason = root.querySelector('#rr').value.trim();
+                            if (!reason) { root.querySelector('#rr').focus(); return false; }
+                            b.status = 'Rejected'; b.rejectReason = reason; after();
+                        }
+                    }
+                ]
+            });
+        }
+
+        if (d.cancel) {
+            A.modal({
+                title: 'Cancel booking ' + b.ref,
+                body: '<p>Administrators may cancel an approved booking at any time. The record is kept with the status ' +
+                    '<strong>Cancelled</strong> and the time slot is released.</p>' +
+                    '<div class="field"><label for="cr">Reason for cancellation</label>' +
+                    '<textarea class="textarea" id="cr"></textarea></div>',
+                buttons: [
+                    { label: 'Keep booking' },
+                    {
+                        label: 'Cancel booking', cls: 'btn-danger', onClick: function (root) {
+                            b.status = 'Cancelled';
+                            b.cancelReason = root.querySelector('#cr').value.trim() || 'Cancelled by administrator.';
+                            after();
+                        }
+                    }
+                ]
+            });
+        }
+    });
+
+    $('reset').addEventListener('click', function () {
+        ['q', 'status', 'venue', 'from', 'to'].forEach(id => {
+            $(id).value = '';
+            $(id).dispatchEvent(new Event($(id).tagName === 'SELECT' || $(id).type === 'date' ? 'change' : 'input'));
+        });
+    });
+
+    $('exportBtn').addEventListener('click', () =>
+        A.toast('The production system exports the currently filtered result set to CSV, generated on the server in batches so that large exports do not exhaust memory.'));
+})();
+</script>
+</body>
+</html>

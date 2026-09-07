@@ -1,0 +1,54 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Manuscript & Architectural" },
+    { "id": "page-2", "name": "Set aside" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 900, "title": "Manuscript", "page": "page-1" },
+    { "file": "Architectural.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 900, "title": "Architectural", "page": "page-1" },
+    { "file": "Geometric.dc.html", "x": 0, "y": 0, "w": 1440, "h": 900, "title": "Geometric", "page": "page-2" }
+  ],
+  "annotations": [
+    {
+      "id": "features-kept",
+      "x": 0,
+      "y": -380,
+      "w": 900,
+      "page": "page-1",
+      "text": "CORRECTION FROM LAST ROUND — nothing is hidden now.\n\nLast time I removed features to reduce the load. That was the wrong fix. Every user-facing feature is on this screen: venues, vehicles, recurring bookings, booking on someone's behalf, my bookings, my keys, history, profile and licence, search.\n\nWhat does the calming instead is hierarchy. One thing is loud (the booking bar). The sidebar groups seven items into three named sets, so it scans as three things, not seven. The right rail carries tracking as three quiet cards. Nothing was cut — it was ranked."
+    },
+    {
+      "id": "colour-system",
+      "x": 990,
+      "y": -380,
+      "w": 460,
+      "page": "page-1",
+      "text": "THE COLOUR SYSTEM does the wayfinding.\n\nFive muted hues at matched lightness — venues green, vehicles blue, keys clay, approvals ochre, account plum. Each area keeps its hue everywhere it appears, so you navigate by colour before you read a label.\n\nStatus keeps the existing badge colours and never uses a domain hue, so \"approved\" can't be confused with \"venue\"."
+    },
+    {
+      "id": "dir-manuscript",
+      "x": 0,
+      "y": -180,
+      "w": 460,
+      "page": "page-1",
+      "text": "MANUSCRIPT — warm paper, Amiri headings, colour applied as TINTED FILLS.\n\nThe hue sits behind the thing it labels, so areas read as blocks. Warmer and denser; closest to what is already built.\n\nTradeoff: more colour on screen at once. Watch it does not get busy as more states appear."
+    },
+    {
+      "id": "dir-architectural",
+      "x": 1560,
+      "y": -180,
+      "w": 460,
+      "page": "page-1",
+      "text": "ARCHITECTURAL — near-white, Cormorant Garamond, colour applied as LINES.\n\nSame five hues, but only ever as a rule, an underline or a small arch. Nothing is filled, so the page stays calm however many states appear.\n\nTradeoff: quieter, and thin colour is harder to see on a poor screen or projector."
+    },
+    {
+      "id": "geometric-note",
+      "x": 0,
+      "y": -180,
+      "w": 460,
+      "page": "page-2",
+      "text": "GEOMETRIC — set aside, kept here in case it is wanted later.\n\nThis is the earlier version and has not been updated with the colour system or the full feature set."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

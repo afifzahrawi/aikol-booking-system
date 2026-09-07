@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" role="img">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#edf0f4"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="none"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#1f4e79" stroke-opacity=".13" stroke-width="3"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="450" fill="url(#wall)"/>
+  <rect x="150" y="86" width="500" height="140" rx="10" fill="#ffffff"
+        stroke="#1f4e79" stroke-opacity=".45" stroke-width="3"/>
+  <text x="400" y="180" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+        font-size="58" font-weight="bold" letter-spacing="6" fill="#1f4e79" fill-opacity=".8">WXY 1234</text>
+  <rect x="150" y="256" width="240" height="110" rx="6" fill="#ffffff" stroke="#1f4e79" stroke-opacity=".25"/>
+  <text x="170" y="288" font-family="Segoe UI, Arial, sans-serif" font-size="11"
+        fill="#1f4e79" fill-opacity=".6" letter-spacing="1">ROAD TAX</text>
+  <rect x="170" y="300" width="200" height="10" rx="5" fill="#1f4e79" fill-opacity=".18"/>
+  <rect x="170" y="320" width="140" height="10" rx="5" fill="#1f4e79" fill-opacity=".18"/>
+  <rect x="410" y="256" width="240" height="110" rx="6" fill="#ffffff" stroke="#1f4e79" stroke-opacity=".25"/>
+  <text x="430" y="288" font-family="Segoe UI, Arial, sans-serif" font-size="11"
+        fill="#1f4e79" fill-opacity=".6" letter-spacing="1">INSURANCE</text>
+  <rect x="430" y="300" width="200" height="10" rx="5" fill="#1f4e79" fill-opacity=".18"/>
+  <rect x="430" y="320" width="160" height="10" rx="5" fill="#1f4e79" fill-opacity=".18"/>
+  <text x="400" y="62" text-anchor="middle" font-family="Georgia, serif" font-size="19"
+        fill="#1f4e79">Kulliyyah Car 1 - AIKOL-CAR-01</text>
+  <rect x="0" y="404" width="800" height="46" fill="#1f4e79" fill-opacity=".92"/>
+  <text x="24" y="432" font-family="Georgia, serif" font-size="19" fill="#ffffff">Kulliyyah Car 1</text>
+  <text x="776" y="432" text-anchor="end" font-family="Segoe UI, Arial, sans-serif"
+        font-size="12" fill="#ffffff" fill-opacity=".85" letter-spacing="1.5">PLACEHOLDER IMAGE · AIKOL-CAR-01 · VIEW 2</text>
+</svg>

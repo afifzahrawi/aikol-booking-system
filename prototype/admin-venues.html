@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venue Administration — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Venue administration</h1>
+                    <p class="lede">Maintain the list of bookable venues, their facilities, operating hours and photographs.</p>
+                </div>
+                <button class="btn btn-primary" type="button" id="addBtn">Add venue</button>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom:1.25rem">
+                <div class="stat accent"><span class="k">Total venues</span><span class="v" id="sTotal">0</span><span class="d">rooms on record</span></div>
+                <div class="stat"><span class="k">Available</span><span class="v" id="sActive">0</span><span class="d">bookable right now</span></div>
+                <div class="stat warn"><span class="k">Under maintenance</span><span class="v" id="sMaint">0</span><span class="d">temporarily unavailable</span></div>
+                <div class="stat"><span class="k">Total capacity</span><span class="v" id="sCap">0</span><span class="d">Seats across all venues</span></div>
+            </div>
+
+            <section class="card" aria-labelledby="listHead">
+                <h2 id="listHead" class="visually-hidden">Venue records</h2>
+
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Venue name, code or building">
+                    </div>
+                    <div class="field">
+                        <label for="type">Type</label>
+                        <select class="select" id="type"><option value="">All types</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="status">Status</label>
+                        <select class="select" id="status">
+                            <option value="">All statuses</option>
+                            <option value="Active">Available</option>
+                            <option value="Under Maintenance">Under maintenance</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data">
+                        <caption class="visually-hidden">Venues</caption>
+                        <thead><tr>
+                            <th scope="col">Venue</th>
+                            <th scope="col">Code</th>
+                            <th scope="col">Location</th>
+                            <th scope="col" class="num">Capacity</th>
+                            <th scope="col">Hours</th>
+                            <th scope="col">Approval</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr></thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="card-foot">
+                    <div class="pagination">
+                        <span id="info"></span>
+                        <div class="pager" id="pager"></div>
+                    </div>
+                </div>
+            </section>
+
+            <p class="help" style="margin-top:1rem">
+                Venues are never deleted while booking history refers to them. Setting a venue to
+                <em>Under maintenance</em> removes it from the booking screens while preserving its records.
+            </p>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-venues.html' });
+    const $ = (id) => document.getElementById(id);
+
+    [...new Set(A.venues.map(v => v.venueType))].sort().forEach(t =>
+        $('type').insertAdjacentHTML('beforeend', '<option>' + A.esc(t) + '</option>'));
+
+    function stats() {
+        $('sTotal').textContent = A.venues.length;
+        $('sActive').textContent = A.venues.filter(v => v.status === 'Active').length;
+        $('sMaint').textContent = A.venues.filter(v => v.status !== 'Active').length;
+        $('sCap').textContent = A.venues.reduce((n, v) => n + v.capacity, 0);
+    }
+    stats();
+
+    const ctrl = A.tableController({
+        rows: () => A.venues,
+        tbody: $('tbody'), pager: $('pager'), info: $('info'),
+        cols: 8, pageSize: 8,
+        controls: [
+            { key: 'q', input: $('q') },
+            { key: 'type', input: $('type'), event: 'change' },
+            { key: 'status', input: $('status'), event: 'change' }
+        ],
+        match: function (v, f) {
+            const term = (f.q || '').trim().toLowerCase();
+            if (term && !(v.name + ' ' + v.code + ' ' + v.building + ' ' + v.location).toLowerCase().includes(term)) return false;
+            if (f.type && v.venueType !== f.type) return false;
+            if (f.status && v.status !== f.status) return false;
+            return true;
+        },
+        render: function (v) {
+            const active = v.status === 'Active';
+            return '<tr>' +
+                '<td><div style="display:flex;gap:.6rem;align-items:center">' +
+                '<img src="' + A.resourceImg(v) + '" alt="" style="width:56px;border-radius:3px;border:1px solid var(--line)">' +
+                '<span>' + A.esc(v.name) + '<br><span class="help">' + A.esc(v.venueType) + '</span></span></div></td>' +
+                '<td class="mono nowrap">' + A.esc(v.code) + '</td>' +
+                '<td>' + A.esc(v.location) + '</td>' +
+                '<td class="num">' + v.capacity + '</td>' +
+                '<td class="nowrap">' + A.fmtRange(v.open, v.close) + '</td>' +
+                '<td>' + (v.approval ? 'Required' : 'Not required') + '</td>' +
+                '<td>' + (active ? '<span class="badge badge-active">Available</span>'
+                                 : '<span class="badge badge-inactive">Maintenance</span>') + '</td>' +
+                '<td class="nowrap">' +
+                '<button class="btn-link" type="button" data-edit="' + v.id + '">Edit</button> · ' +
+                '<button class="btn-link" type="button" data-img="' + v.id + '">Images</button> · ' +
+                '<button class="btn-link" type="button" data-toggle="' + v.id + '">' +
+                (active ? 'Deactivate' : 'Activate') + '</button></td></tr>';
+        }
+    });
+
+    function venueForm(v) {
+        const val = (k, d) => v ? A.esc(String(v[k])) : d;
+        return '<div class="field"><label for="fName">Venue name <span class="req">*</span></label>' +
+            '<input class="input" id="fName" value="' + val('name', '') + '"></div>' +
+            '<div class="field-row">' +
+            '<div class="field"><label for="fCode">Venue code <span class="req">*</span></label>' +
+            '<input class="input" id="fCode" value="' + val('code', '') + '"></div>' +
+            '<div class="field"><label for="fType">Venue type</label>' +
+            '<input class="input" id="fType" value="' + val('type', '') + '"></div></div>' +
+            '<div class="field-row">' +
+            '<div class="field"><label for="fBuilding">Building</label>' +
+            '<input class="input" id="fBuilding" value="' + val('building', '') + '"></div>' +
+            '<div class="field"><label for="fFloor">Floor</label>' +
+            '<input class="input" id="fFloor" value="' + val('floor', '') + '"></div></div>' +
+            '<div class="field-row">' +
+            '<div class="field"><label for="fCap">Capacity</label>' +
+            '<input class="input" type="number" id="fCap" value="' + val('capacity', '20') + '"></div>' +
+            '<div class="field"><label for="fStatus">Status</label>' +
+            '<select class="select" id="fStatus"><option>Active</option><option>Under Maintenance</option></select></div></div>' +
+            '<div class="field-row">' +
+            '<div class="field"><label for="fOpen">Opening time</label>' +
+            '<input class="input" type="time" id="fOpen" value="' + val('open', '08:00') + '"></div>' +
+            '<div class="field"><label for="fClose">Closing time</label>' +
+            '<input class="input" type="time" id="fClose" value="' + val('close', '22:00') + '"></div></div>' +
+            '<div class="field"><label for="fDesc">Description</label>' +
+            '<textarea class="textarea" id="fDesc">' + (v ? A.esc(v.description) : '') + '</textarea></div>' +
+            '<fieldset style="border:1px solid var(--line);border-radius:4px;padding:.75rem 1rem"><legend class="label">Facilities</legend>' +
+            A.facilitiesFor('Venue').map(f => '<div class="checkline"><input type="checkbox" id="f_' + f.code + '"' +
+                (v && v.facilities.indexOf(f.code) !== -1 ? ' checked' : '') + '>' +
+                '<label for="f_' + f.code + '" style="font-weight:400;margin:0">' + A.esc(f.name) + '</label></div>').join('') +
+            '<p class="help" style="margin:.6rem 0 0">This list is maintained on the ' +
+            '<a href="admin-facilities.html">Facilities</a> screen, not in the code.</p>' +
+            '</fieldset>' +
+            '<div class="checkline" style="margin-top:.75rem"><input type="checkbox" id="fApproval"' +
+            (v && v.approval ? ' checked' : '') + '>' +
+            '<label for="fApproval" style="font-weight:400;margin:0">Bookings for this venue require approval</label></div>';
+    }
+
+    $('addBtn').addEventListener('click', () => A.modal({
+        title: 'Add venue',
+        body: venueForm(null) +
+            '<p class="help" style="margin-top:.75rem">Prototype only — the record is not saved.</p>',
+        buttons: [{ label: 'Cancel' },
+                  { label: 'Save venue', cls: 'btn-primary',
+                    onClick: () => A.toast('The production system validates the form on the server, saves the venue and writes an audit log entry.') }]
+    }));
+
+    $('tbody').addEventListener('click', function (e) {
+        const d = e.target.dataset || {};
+        const id = Number(d.edit || d.img || d.toggle);
+        if (!id) return;
+        const v = A.venueById(id);
+
+        if (d.edit) {
+            const m = A.modal({
+                title: 'Edit ' + v.name,
+                body: venueForm(v),
+                buttons: [{ label: 'Cancel' },
+                          { label: 'Save changes', cls: 'btn-primary',
+                            onClick: () => A.toast('The production system saves the change and records it in the audit log.') }]
+            });
+            m.root.querySelector('#fStatus').value = v.status;
+        }
+
+        if (d.img) {
+            A.modal({
+                title: 'Manage images — ' + v.name,
+                body: '<div class="grid" style="grid-template-columns:repeat(2,1fr);gap:.6rem">' +
+                    [null, 2, 3, 4].map((x, i) =>
+                        '<figure style="margin:0"><img src="' + A.resourceImg(v, x) + '" alt="Placeholder view ' + (i + 1) + '" ' +
+                        'style="border:1px solid var(--line);border-radius:4px">' +
+                        '<figcaption class="help">View ' + (i + 1) + (i === 0 ? ' — main image' : '') + '</figcaption></figure>').join('') +
+                    '</div>' +
+                    '<div class="dropzone" style="margin-top:1rem">Drag photographs here, or choose files to upload' +
+                    '<div style="margin-top:.6rem"><button class="btn btn-sm" type="button">Choose files</button></div></div>' +
+                    '<p class="help" style="margin-top:.75rem">Uploads are validated on the server: permitted formats are JPEG, PNG and WebP, ' +
+                    'with a maximum file size of 5&nbsp;MB. Images are resized and compressed before storage.</p>'
+            });
+        }
+
+        if (d.toggle) {
+            const activating = v.status !== 'Active';
+            A.modal({
+                title: (activating ? 'Activate ' : 'Deactivate ') + v.name,
+                body: activating
+                    ? '<p>The venue will appear in the booking screens again and may be reserved by users.</p>'
+                    : '<p>The venue will be hidden from the booking screens. Existing bookings and history are retained, ' +
+                      'and no records are deleted.</p>',
+                buttons: [{ label: 'Cancel' },
+                          { label: activating ? 'Activate' : 'Deactivate',
+                            cls: activating ? 'btn-primary' : 'btn-danger',
+                            onClick: () => { v.status = activating ? 'Active' : 'Under Maintenance'; ctrl.refresh(); stats(); } }]
+            });
+        }
+    });
+})();
+</script>
+</body>
+</html>

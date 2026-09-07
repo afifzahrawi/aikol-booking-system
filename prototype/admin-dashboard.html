@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administrator Dashboard — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Administrator dashboard</h1>
+                    <p class="lede" id="lede"></p>
+                </div>
+                <div class="btn-group">
+                    <a class="btn" href="data-management.html">Data management</a>
+                    <a class="btn btn-primary" href="admin-bookings.html">Review pending requests</a>
+                </div>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom:1.25rem">
+                <div class="stat accent"><span class="label">Today's bookings</span><span class="value" id="sToday">0</span><span class="meta">Approved for today</span></div>
+                <div class="stat warn"><span class="label">Pending approvals</span><span class="value" id="sPending">0</span><span class="meta">Awaiting a decision</span></div>
+                <div class="stat"><span class="label">Active venues</span><span class="value" id="sVenues">0</span><span class="meta" id="sVenuesMeta"></span></div>
+                <div class="stat"><span class="label">Registered users</span><span class="value" id="sUsers">0</span><span class="meta" id="sUsersMeta"></span></div>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom:1.25rem">
+                <div class="stat"><span class="label">Upcoming bookings</span><span class="value" id="sUpcoming">0</span><span class="meta">Next 30 days</span></div>
+                <div class="stat"><span class="label">Bookings this month</span><span class="value" id="sMonth">0</span><span class="meta">All statuses</span></div>
+                <div class="stat"><span class="label">Cancelled this month</span><span class="value" id="sCancelled">0</span><span class="meta">Released time slots</span></div>
+                <div class="stat"><span class="label">Total booking records</span><span class="value" id="sAll">0</span><span class="meta">Held in the system</span></div>
+            </div>
+
+            <div class="grid grid-2" style="align-items:start;margin-bottom:1.25rem">
+
+                <section class="card" aria-labelledby="trendHead">
+                    <div class="card-head">
+                        <h2 id="trendHead">Monthly booking volume</h2>
+                        <span class="badge badge-muted">Demonstration data</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="trend" role="img" aria-label="Monthly booking volume over the last eight months"></div>
+                    </div>
+                </section>
+
+                <section class="card" aria-labelledby="utilHead">
+                    <div class="card-head">
+                        <h2 id="utilHead">Venue utilisation</h2>
+                        <span class="badge badge-muted">Demonstration data</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="util"></div>
+                        <p class="help" style="margin-top:.85rem">Total booking records per venue.</p>
+                    </div>
+                </section>
+            </div>
+
+            <div class="grid grid-2" style="align-items:start">
+
+                <section class="card" aria-labelledby="pendHead">
+                    <div class="card-head">
+                        <h2 id="pendHead">Requests awaiting approval</h2>
+                        <a class="btn btn-sm" href="admin-bookings.html">Open booking administration</a>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data">
+                            <caption class="visually-hidden">Requests awaiting approval</caption>
+                            <thead><tr>
+                                <th scope="col">Reference</th><th scope="col">Venue</th>
+                                <th scope="col">Date</th><th scope="col">Requester</th>
+                            </tr></thead>
+                            <tbody id="pendBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="card" aria-labelledby="actHead">
+                    <div class="card-head"><h2 id="actHead">Recent activity</h2></div>
+                    <div class="card-body">
+                        <ul class="activity" id="activity"></ul>
+                        <p class="help" style="margin-top:.75rem">
+                            Every administrative action is written to the audit log.
+                        </p>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-dashboard.html' });
+
+    const todayIso = A.iso(A.today);
+    const monthPrefix = todayIso.slice(0, 7);
+    const in30 = A.iso(A.addDays(A.today, 30));
+
+    document.getElementById('lede').textContent =
+        'Overview for ' + A.fmtDate(A.today) + '. Figures are calculated from demonstration data.';
+
+    const B = A.bookings;
+    const set = (id, val) => document.getElementById(id).textContent = val;
+
+    set('sToday', B.filter(b => b.date === todayIso && b.status === 'Approved').length);
+    set('sPending', B.filter(b => b.status === 'Pending').length);
+    set('sVenues', A.venues.filter(v => v.status === 'Active').length);
+    set('sVenuesMeta', A.venues.length + ' venues in total');
+    set('sUsers', A.users.filter(u => u.status === 'Active').length);
+    set('sUsersMeta', A.users.filter(u => u.status === 'Inactive').length + ' deactivated');
+    set('sUpcoming', B.filter(b => b.date >= todayIso && b.date <= in30 && (b.status === 'Approved' || b.status === 'Pending')).length);
+    set('sMonth', B.filter(b => b.date.indexOf(monthPrefix) === 0).length);
+    set('sCancelled', B.filter(b => b.date.indexOf(monthPrefix) === 0 && b.status === 'Cancelled').length);
+    set('sAll', B.length.toLocaleString());
+
+    A.lineChart(document.getElementById('trend'), A.monthlyVolume(8),
+        { caption: 'Bookings per month, last eight months', noun: 'bookings' });
+    A.hBarChart(document.getElementById('util'), A.resourceUtilisation());
+
+    const pending = B.filter(b => b.status === 'Pending')
+        .sort((a, b) => a.date < b.date ? -1 : 1).slice(0, 6);
+    document.getElementById('pendBody').innerHTML = pending.length ? pending.map(b =>
+        '<tr><td class="mono nowrap">' + A.esc(b.ref) + '</td>' +
+        '<td>' + A.esc(b.resource.name) + '</td>' +
+        '<td class="nowrap">' + A.fmtDate(b.date) + '</td>' +
+        '<td>' + A.esc(A.userById(b.userId).name) + '</td></tr>').join('')
+        : '<tr><td colspan="4"><div class="empty-state">Nothing awaiting approval.</div></td></tr>';
+
+    document.getElementById('activity').innerHTML = A.auditLog.map(a =>
+        '<li><span><strong>' + A.esc(a.action) + '</strong><br>' +
+        '<span class="help">' + A.esc(a.detail) + ' — ' + A.esc(a.who) + '</span></span>' +
+        '<span class="when">' + A.esc(a.when) + '</span></li>').join('');
+})();
+</script>
+</body>
+</html>

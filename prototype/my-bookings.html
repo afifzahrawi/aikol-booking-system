@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Bookings — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>My bookings</h1>
+                    <p class="lede">Your booking requests and their current status. Records are retained for reference and audit.</p>
+                </div>
+                <a class="btn btn-primary" href="booking.html">New booking</a>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom:1.25rem">
+                <div class="stat"><span class="label">Total bookings</span><span class="value" id="sTotal">0</span></div>
+                <div class="stat warn"><span class="label">Pending</span><span class="value" id="sPending">0</span></div>
+                <div class="stat accent"><span class="label">Approved</span><span class="value" id="sApproved">0</span></div>
+                <div class="stat"><span class="label">Completed</span><span class="value" id="sCompleted">0</span></div>
+            </div>
+
+            <section class="card" aria-labelledby="listHead">
+                <h2 id="listHead" class="visually-hidden">Booking list</h2>
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Reference, venue or purpose">
+                    </div>
+                    <div class="field">
+                        <label for="status">Status</label>
+                        <select class="select" id="status">
+                            <option value="">All statuses</option>
+                            <option>Pending</option><option>Approved</option><option>Rejected</option>
+                            <option>Cancelled</option><option>Completed</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="period">Period</label>
+                        <select class="select" id="period">
+                            <option value="">All dates</option>
+                            <option value="upcoming">Upcoming only</option>
+                            <option value="past">Past only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data">
+                        <caption class="visually-hidden">Your bookings</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Reference</th>
+                                <th scope="col">Venue</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Time</th>
+                                <th scope="col">Purpose</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="card-foot">
+                    <div class="pagination">
+                        <span id="info"></span>
+                        <div class="pager" id="pager"></div>
+                    </div>
+                </div>
+            </section>
+
+            <p class="help" style="margin-top:1rem">
+                Cancelled bookings are never deleted. The record is retained with the status
+                <em>Cancelled</em> so that booking history remains complete.
+            </p>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'my-bookings.html' });
+
+    const me = A.CURRENT_USER;
+    const todayIso = A.iso(A.today);
+    const mine = () => A.bookings.filter(b => b.userId === me.id);
+
+    function stats() {
+        const m = mine();
+        document.getElementById('sTotal').textContent = m.length;
+        document.getElementById('sPending').textContent = m.filter(b => b.status === 'Pending').length;
+        document.getElementById('sApproved').textContent = m.filter(b => b.status === 'Approved').length;
+        document.getElementById('sCompleted').textContent = m.filter(b => b.status === 'Completed').length;
+    }
+    stats();
+
+    /* Cancellation rule, confirmed by AIKOL (decisions 12 and 13):
+       a user may cancel their own booking freely up to 3 days before it
+       starts, giving a reason. Inside the cutoff they must contact the
+       Kulliyyah office, which can cancel at any time. */
+    const CUTOFF_HOURS = A.SETTINGS.cancellationCutoffHours;   // 72
+    function canCancel(b) {
+        if (b.status !== 'Pending' && b.status !== 'Approved') return false;
+        return (A.toDate(b.startAt) - new Date()) > CUTOFF_HOURS * 3600 * 1000;
+    }
+    /* Distinguishes "too late" from "wrong status", so the reason a booking
+       cannot be cancelled can actually be explained to the user. */
+    function tooLate(b) {
+        return (b.status === 'Pending' || b.status === 'Approved') && !canCancel(b) &&
+               A.toDate(b.startAt) > new Date();
+    }
+
+    const ctrl = A.tableController({
+        rows: mine,
+        tbody: document.getElementById('tbody'),
+        pager: document.getElementById('pager'),
+        info: document.getElementById('info'),
+        cols: 7,
+        pageSize: 8,
+        controls: [
+            { key: 'q', input: document.getElementById('q') },
+            { key: 'status', input: document.getElementById('status'), event: 'change' },
+            { key: 'period', input: document.getElementById('period'), event: 'change' }
+        ],
+        match: function (b, f) {
+            const v = b.resource;
+            const term = (f.q || '').trim().toLowerCase();
+            if (term && !(b.ref + ' ' + v.name + ' ' + b.purpose).toLowerCase().includes(term)) return false;
+            if (f.status && b.status !== f.status) return false;
+            if (f.period === 'upcoming' && b.date < todayIso) return false;
+            if (f.period === 'past' && b.date >= todayIso) return false;
+            if (f.kind && b.kind !== f.kind) return false;
+            return true;
+        },
+        render: function (b) {
+            const v = b.resource;
+            const actions =
+                '<button class="btn-link" type="button" data-view="' + b.id + '">Details</button>' +
+                (canCancel(b) ? ' · <button class="btn-link" type="button" data-cancel="' + b.id + '">Cancel</button>' : '') +
+                (tooLate(b) ? ' · <button class="btn-link" type="button" data-late="' + b.id + '">Why not?</button>' : '');
+            return '<tr>' +
+                '<td class="mono nowrap">' + A.esc(b.ref) + '</td>' +
+                '<td>' + A.esc(v.name) +
+                    (b.kind === 'Vehicle' ? ' <span class="badge badge-muted">Vehicle</span>' : '') +
+                    (b.seriesId ? ' <span class="badge badge-muted">Series</span>' : '') + '</td>' +
+                '<td class="nowrap">' + A.fmtDate(b.date) + '</td>' +
+                '<td class="nowrap">' + (b.multiDay
+                    ? A.fmtTime(b.start) + ' → ' + A.fmtDate(A.dPart(b.endAt)) + ', ' + A.fmtTime(b.end)
+                    : A.fmtRange(b.start, b.end)) + '</td>' +
+                '<td>' + A.esc(b.purpose) + '</td>' +
+                '<td>' + A.badge(b.status) + '</td>' +
+                '<td class="nowrap">' + actions + '</td>' +
+                '</tr>';
+        }
+    });
+
+    document.getElementById('tbody').addEventListener('click', function (e) {
+        const viewId = e.target.dataset && e.target.dataset.view;
+        const cancelId = e.target.dataset && e.target.dataset.cancel;
+
+        if (viewId) {
+            const b = A.bookings.find(x => x.id === Number(viewId));
+            const v = b.resource;
+            A.modal({
+                title: 'Booking ' + b.ref,
+                body: '<dl class="kv">' +
+                    '<dt>' + (b.kind === 'Vehicle' ? 'Vehicle' : 'Venue') + '</dt><dd>' +
+                        A.esc(v.name) + ' (' + A.esc(v.code) + ')</dd>' +
+                    (b.kind === 'Vehicle'
+                        ? '<dt>Registration</dt><dd class="mono">' + A.esc(v.registration) + '</dd>'
+                        : '<dt>Location</dt><dd>' + A.esc(v.location) + '</dd>') +
+                    '<dt>Period</dt><dd>' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) + '</dd>' +
+                    '<dt>Duration</dt><dd>' + A.esc(A.durationLabel(b.startAt, b.endAt)) + '</dd>' +
+                    '<dt>Purpose</dt><dd>' + A.esc(b.purpose) + '</dd>' +
+                    (b.kind === 'Vehicle'
+                        ? '<dt>Destination</dt><dd>' + A.esc(b.destination || '—') + '</dd>' +
+                          '<dt>Passengers</dt><dd>' + (b.passengers || '—') + '</dd>' +
+                          '<dt>Driver</dt><dd>' + A.esc(A.userById(b.userId).name) + '</dd>'
+                        : '<dt>Attendees</dt><dd>' + (b.attendees || '—') + '</dd>') +
+                    (b.seriesId ? '<dt>Part of a series</dt><dd>Recurring booking — this occurrence can be ' +
+                        'cancelled on its own without affecting the rest.</dd>' : '') +
+                    (b.createdById !== b.userId
+                        ? '<dt>Booked by</dt><dd>' + A.esc(A.userById(b.createdById).name) +
+                          ' <span class="badge badge-muted">on your behalf</span></dd>' : '') +
+                    '<dt>Status</dt><dd>' + A.badge(b.status) + '</dd>' +
+                    '<dt>Submitted</dt><dd>' + A.fmtDate(b.created) + '</dd>' +
+                    (function () {
+                        var k = A.keyForBooking(b.id);
+                        if (!k) return '';
+                        return '<dt>Key issued</dt><dd>' + A.esc(A.fmtStamp(k.issuedAt)) + '</dd>' +
+                               '<dt>Key returned</dt><dd>' + (k.returnedAt
+                                   ? A.esc(A.fmtStamp(k.returnedAt))
+                                   : '<span class="badge badge-rejected">Not yet returned</span>') + '</dd>';
+                    })() +
+                    (b.rejectReason ? '<dt>Reason for rejection</dt><dd>' + A.esc(b.rejectReason) + '</dd>' : '') +
+                    (b.cancelReason ? '<dt>Reason for cancellation</dt><dd>' + A.esc(b.cancelReason) + '</dd>' : '') +
+                    '</dl>'
+            });
+        }
+
+        if (cancelId) {
+            const b = A.bookings.find(x => x.id === Number(cancelId));
+            A.modal({
+                title: 'Cancel booking ' + b.ref,
+                body: '<p>The booking record will be retained with the status <strong>Cancelled</strong> ' +
+                    'and the period will be released for other users. Nothing is deleted.</p>' +
+                    (b.seriesId ? '<div class="notice notice-info">This is one occurrence of a recurring ' +
+                        'booking. Only this date is cancelled; the rest of the series is unaffected.</div>' : '') +
+                    '<div class="field"><label for="reason">Reason for cancellation ' +
+                    '<span class="req" aria-hidden="true">*</span></label>' +
+                    '<textarea class="textarea" id="reason" required ' +
+                    'placeholder="For example: the session has been postponed to the following week"></textarea>' +
+                    '<p class="help">A reason is required for every cancellation. It is kept with the record ' +
+                    'and visible to the Kulliyyah office.</p></div>' +
+                    '<div id="cancelErr" aria-live="polite"></div>',
+                buttons: [
+                    { label: 'Keep booking' },
+                    {
+                        label: 'Cancel booking', cls: 'btn-danger', onClick: function (root) {
+                            var reason = root.querySelector('#reason').value.trim();
+                            if (!reason) {
+                                root.querySelector('#cancelErr').innerHTML =
+                                    '<div class="notice notice-danger">A reason is required before this ' +
+                                    'booking can be cancelled.</div>';
+                                root.querySelector('#reason').focus();
+                                return false;   // keeps the dialogue open
+                            }
+                            b.status = 'Cancelled';
+                            b.cancelReason = reason;
+                            ctrl.refresh();
+                            stats();
+                            A.modal({
+                                title: 'Booking cancelled',
+                                body: '<p>Booking <span class="mono">' + A.esc(b.ref) + '</span> is now ' +
+                                    '<strong>Cancelled</strong>. The record is retained for audit.</p>' +
+                                    A.emailNotice(A.CURRENT_USER.email, 'booking cancelled')
+                            });
+                        }
+                    }
+                ]
+            });
+        }
+
+        if (e.target.dataset && e.target.dataset.late) {
+            const b = A.bookings.find(x => x.id === Number(e.target.dataset.late));
+            const days = A.SETTINGS.cancellationCutoffHours / 24;
+            A.modal({
+                title: 'Cancellation cutoff — ' + b.ref,
+                body: '<p>This booking starts on <strong>' + A.esc(A.fmtStamp(b.startAt)) + '</strong>, ' +
+                    'which is less than <strong>' + days + ' days</strong> away.</p>' +
+                    '<p>Users may cancel their own bookings freely up to ' + days + ' days before the ' +
+                    'booking date. Inside that window, please contact the Kulliyyah office — an administrator ' +
+                    'can cancel at any time, with the reason recorded.</p>' +
+                    '<p class="help">The cutoff is a configurable setting, not a fixed rule in the code.</p>'
+            });
+        }
+    });
+})();
+</script>
+</body>
+</html>

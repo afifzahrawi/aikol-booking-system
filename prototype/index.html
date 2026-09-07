@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIKOL Booking System — Interactive Prototype</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+    .cover { min-height: 100vh; display: flex; flex-direction: column; }
+    .cover-hero { background: linear-gradient(180deg, var(--brand-800), var(--brand-700)); color: #fff; padding: 3rem 2rem; }
+    .cover-inner { max-width: 1040px; margin: 0 auto; }
+    .cover-hero h1 { font-family: var(--font-serif); font-size: 2.1rem; margin: 1.2rem 0 .4rem; }
+    .cover-hero p { color: rgba(255,255,255,.86); max-width: 62ch; }
+    .cover-main { max-width: 1040px; margin: 0 auto; padding: 2rem; width: 100%; }
+    .screen-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+    .screen-list a {
+        display: block; padding: .85rem 1rem; background: #fff; border: 1px solid var(--line);
+        border-radius: var(--radius-lg); text-decoration: none; color: var(--ink-900);
+    }
+    .screen-list a:hover { border-color: var(--brand-600); background: var(--brand-050); }
+    .screen-list .t { font-weight: 600; font-size: .95rem; }
+    .screen-list .d { display: block; margin-top: .2rem; font-size: .8rem; color: var(--ink-500); }
+    .section-title { font-family: var(--font-serif); font-size: 1.15rem; margin: 2rem 0 .8rem; padding-bottom: .35rem; border-bottom: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="cover">
+
+    <header class="cover-hero">
+        <div class="cover-inner">
+            <div class="brand">
+                <img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 200px">
+                <span class="brand-text">
+                    <span class="brand-name">Ahmad Ibrahim Kulliyyah of Laws</span><br>
+                    <span class="brand-sub">International Islamic University Malaysia</span>
+                </span>
+            </div>
+            <h1>Room and Vehicle Booking System</h1>
+            <p>
+                This prototype demonstrates the proposed user interface of the AIKOL Room and Vehicle
+                Booking System. It runs entirely in the browser with fictional demonstration data and is
+                intended to support requirement confirmation before development begins. It reflects the
+                decisions AIKOL confirmed in section 24 of the management report, together with the
+                follow-up decisions on vehicles, self-registration, confirmation email and
+                administrator-managed facilities.
+            </p>
+        </div>
+    </header>
+
+    <main class="cover-main" id="main">
+
+        <div class="notice notice-warn">
+            <strong>Demonstration prototype — no live data</strong>
+            All venues, vehicles, users, bookings and images shown are fictional and were created for design
+            review only. They do not represent actual AIKOL facilities, personnel or booking records.
+            Demonstration accounts use <span class="mono">@demo.aikol.test</span> addresses so they are
+            obviously fictional; the live system requires an <span class="mono">@iium.edu.my</span> or
+            <span class="mono">@live.iium.edu.my</span> address. All photographs are generated placeholders
+            and must be replaced with real ones supplied by the Kulliyyah.
+        </div>
+
+        <h2 class="section-title">Standard user screens</h2>
+        <ul class="screen-list">
+            <li><a href="login.html"><span class="t">1. Sign In</span><span class="d">Own authentication — no IIUM single sign-on</span></a></li>
+            <li><a href="register.html"><span class="t">2. Register</span><span class="d">Self-registration, IIUM email verified</span></a></li>
+            <li><a href="dashboard.html"><span class="t">3. Dashboard</span><span class="d">Greeting, one search bar, your activity, browse by type</span></a></li>
+            <li><a href="availability.html"><span class="t">4. Availability board</span><span class="d">Rooms by the hour, cars by the day — click a free block to book</span></a></li>
+            <li><a href="venues.html"><span class="t">5. Rooms</span><span class="d">Room cards with search and filters</span></a></li>
+            <li><a href="venue-details.html?id=1"><span class="t">6. Room detail</span><span class="d">Arch gallery, today's slots, facilities, rules</span></a></li>
+            <li><a href="booking.html?venue=1"><span class="t">7. Room booking form</span><span class="d">Period, purpose, recurrence, conflict check</span></a></li>
+            <li><a href="my-bookings.html"><span class="t">8. My bookings</span><span class="d">History, status and cancellation</span></a></li>
+        </ul>
+
+        <h2 class="section-title">Vehicle screens</h2>
+        <ul class="screen-list">
+            <li><a href="vehicles.html"><span class="t">9. Vehicles</span><span class="d">Kulliyyah cars, with the eligibility rule</span></a></li>
+            <li><a href="vehicle-details.html?id=101"><span class="t">10. Vehicle detail</span><span class="d">Seats, road tax, insurance, recent trips</span></a></li>
+            <li><a href="vehicle-booking.html?vehicle=101"><span class="t">11. Trip request form</span><span class="d">Multi-day, destination, driver and licence</span></a></li>
+        </ul>
+
+        <h2 class="section-title">Administrator screens</h2>
+        <ul class="screen-list">
+            <li><a href="admin-approvals.html"><span class="t">12. Approvals</span><span class="d">The decision queue — approve or reject with a reason</span></a></li>
+            <li><a href="admin-bookings.html"><span class="t">13. Bookings</span><span class="d">Every booking, searchable and filterable</span></a></li>
+            <li><a href="admin-keys.html"><span class="t">14. Key register</span><span class="d">Key issue and return, outstanding keys</span></a></li>
+            <li><a href="admin-venues.html"><span class="t">15. Resources — rooms</span><span class="d">Add, edit, deactivate, manage photographs</span></a></li>
+            <li><a href="admin-vehicles.html"><span class="t">16. Resources — vehicles</span><span class="d">Fleet, mileage, road tax and insurance</span></a></li>
+            <li><a href="admin-facilities.html"><span class="t">17. Resources — facilities</span><span class="d">Administrator-maintained facility list</span></a></li>
+            <li><a href="admin-users.html"><span class="t">18. Users</span><span class="d">Roles, verification, activation</span></a></li>
+            <li><a href="admin-reports.html"><span class="t">19. Reports</span><span class="d">Utilisation, approval rate, audit log</span></a></li>
+            <li><a href="admin-dashboard.html"><span class="t">20. Admin overview</span><span class="d">Indicators, trend chart, recent activity</span></a></li>
+            <li><a href="admin-site-content.html"><span class="t">21. Site content</span><span class="d">Edit the header and footer, with a live preview</span></a></li>
+            <li><a href="data-management.html"><span class="t">22. Data management</span><span class="d">Bulk import, export, retention, backup</span></a></li>
+        </ul>
+
+        <h2 class="section-title">About this design</h2>
+        <div class="card"><div class="card-body">
+            <p style="margin-top:0">These screens implement the AIKOL design supplied by the Kulliyyah
+               (<span class="mono">design/AIKOL Booking 1a.dc.html</span>):</p>
+            <ul style="margin:0;padding-left:1.15rem;font-size:.9rem">
+                <li>Green <span class="mono">#14675b</span> and gold <span class="mono">#d99b28</span>
+                    on warm paper, with the real AIKOL wordmark.</li>
+                <li><strong>Amiri</strong> for headings and resource names, IBM Plex Sans for everything else.</li>
+                <li>A <strong>pointed-arch frame</strong> on the building photograph and room galleries —
+                    the identity is carried by the arch and the Arabic greeting, not applied ornament.</li>
+                <li>Horizontal green navigation replaces the old left sidebar.</li>
+                <li>A new <strong>availability board</strong>: rooms by the hour, cars by the day,
+                    with free time clickable straight into a request.</li>
+            </ul>
+            <p class="help" style="margin-bottom:0">The business rules are unchanged and still confirmed:
+               every booking is approved, 08:00–22:00, 9 hours maximum, 90 days ahead, cancellation up to
+               3 days before with a reason.</p>
+        </div></div>
+
+        <h2 class="section-title">Related documents</h2>
+        <ul class="screen-list">
+            <li><a href="../management-report/index.html"><span class="t">Management Review Report</span><span class="d">Full proposal for AIKOL management</span></a></li>
+        </ul>
+
+        <p class="help" style="margin-top:2rem">
+            The prototype has no backend. Buttons that would normally write to a database open a confirmation
+            dialogue explaining what the production system would do instead. No email is sent from these pages.
+        </p>
+    </main>
+
+    <footer class="app-footer">
+        <span>AIKOL Room and Vehicle Booking System — prototype</span>
+        <span>Placeholder branding pending official AIKOL/IIUM brand assets</span>
+    </footer>
+</div>
+</body>
+</html>

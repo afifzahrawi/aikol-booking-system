@@ -1,0 +1,835 @@
+/* ============================================================================
+   AIKOL Room and Vehicle Booking System — Prototype Stylesheet
+   Ahmad Ibrahim Kulliyyah of Laws, International Islamic University Malaysia
+
+   This stylesheet implements the confirmed AIKOL design (design/AIKOL Booking
+   1a.dc.html). Values below are lifted from that file, not approximated.
+
+   IDENTITY: green #14675b with gold #d99b28 on warm paper #f7f4ed; Amiri for
+   headings and resource names; the Arabic greeting on the dashboard; a faint
+   girih crosshatch over resource imagery. Image frames are plain rectangles —
+   AIKOL asked for the pointed arch to be dropped after review.
+
+   FONTS: the design specifies Amiri and IBM Plex Sans from Google Fonts.
+   Production must vendor these as WOFF2 under static/ — CLAUDE.md forbids CDN
+   assets, and the Kulliyyah network may block them. Fallbacks (Georgia,
+   Segoe UI) are metric-compatible enough that the layout holds without them.
+   ========================================================================= */
+
+/* ---------- 1. Design tokens ---------------------------------------------- */
+:root {
+    /* Institutional palette */
+    --brand:        #14675b;
+    --brand-dark:   #0f5148;
+    --brand-link:   #17756a;
+    --brand-050:    #eef6f3;
+    --brand-100:    #e7f1ec;
+
+    --gold:         #d99b28;
+    --gold-dark:    #b07d15;
+    --gold-ink:     #7d5a14;
+    --gold-pale:    #f7d69a;
+    --gold-bg:      #fdf4e3;
+
+    /* Surfaces */
+    --page:         #f7f4ed;
+    --surface:      #fffdf8;
+    --white:        #ffffff;
+    --thead:        #f4f0e6;
+
+    /* Rules */
+    --line:         #ded4bd;
+    --line-soft:    #ebe3d1;
+    --line-head:    #eae4d6;
+    --line-thead:   #e2d9c4;
+    --line-img:     #e0d9c8;
+    --line-btn:     #c9c0aa;
+
+    /* Ink */
+    --ink:          #1a2420;
+    --ink-700:      #33413a;
+    --ink-600:      #4a564e;
+    --ink-500:      #6d7a70;
+    --muted:        #8a7f66;
+    --muted-2:      #a09884;
+    --muted-3:      #b3ac9b;
+
+    /* Status */
+    --ok-bg:   #e7f1ec; --ok-fg:   #1c6758; --ok-bd:   #bfdccf;
+    --pend-bg: #fdf4e3; --pend-fg: #7d5a14; --pend-bd: #ecdcb0;
+    --rej-bg:  #fbeceb; --rej-fg:  #8e3a30; --rej-bd:  #eccbc6;
+    --neu-bg:  #f1f0ea; --neu-fg:  #6d7a70; --neu-bd:  #e0dccd;
+    --info-bg: #eef2fb; --info-fg: #3d5488; --info-bd: #ccd6ea;
+
+    /* Type */
+    --font-serif: Amiri, Georgia, "Times New Roman", Times, serif;
+    --font-sans:  "IBM Plex Sans", system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-mono:  ui-monospace, Menlo, Consolas, "Courier New", monospace;
+
+    /* Geometry */
+    --r-sm: 3px;
+    --r: 4px;
+    --r-lg: 5px;
+    --r-pill: 10px;
+    /* Image frame. The design's pointed arch was replaced with a plain
+       rectangle at AIKOL's request — the token is kept so every framed image
+       still changes in one place. */
+    --arch: var(--r);
+    --shadow-sm: 0 1px 2px rgba(20, 33, 46, .05);
+    --shadow-md: 0 2px 8px rgba(20, 33, 46, .08);
+    --nav-h: 46px;
+    --gutter: 40px;
+}
+
+/* ---------- 2. Reset / base ----------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--page);
+}
+
+h1, h2, h3, h4 {
+    margin: 0 0 .5em;
+    line-height: 1.2;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    color: var(--brand);
+}
+h1 { font-size: 28px; }
+h2 { font-size: 22px; }
+h3 { font-size: 17px; }
+h4 { font-size: 15.5px; }
+
+p { margin: 0 0 .8em; }
+
+a { color: var(--brand-link); text-decoration: none; }
+a:hover { color: var(--gold-dark); text-decoration: underline; }
+
+img { max-width: 100%; }
+
+button, input, select, textarea { font-family: inherit; }
+
+.visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 200;
+    background: var(--brand); color: #fff; padding: .6rem 1rem;
+}
+.skip-link:focus { left: 0; }
+
+.mono { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-500); }
+.nowrap { white-space: nowrap; }
+
+/* ---------- 3. Application shell ------------------------------------------ */
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+.app-body { flex: 1; display: block; }
+
+.demo-ribbon {
+    background: var(--gold-bg); color: var(--gold-ink);
+    border-bottom: 1px solid var(--pend-bd);
+    padding: 6px var(--gutter); font-size: 11.5px; text-align: center;
+}
+
+/* Brand bar — white, logo left, identity of the account right */
+.app-header {
+    background: var(--white); border-bottom: 1px solid var(--line-head);
+    display: flex; align-items: center; gap: 18px; padding: 13px 26px;
+}
+.app-header .brand { display: flex; align-items: center; gap: 18px; text-decoration: none; }
+.app-header .brand:hover { text-decoration: none; }
+.brand img { width: 200px; display: block; }
+.brand-rule { width: 1px; height: 36px; background: var(--line-head); flex: none; }
+.brand-text { line-height: 1.25; }
+.brand-name { display: block; font-family: var(--font-serif); font-size: 18px; color: var(--brand); }
+.brand-sub {
+    display: block; font-size: 10px; letter-spacing: .11em;
+    text-transform: uppercase; color: var(--muted-2);
+}
+.header-spacer { flex: 1; }
+
+.header-user { display: flex; align-items: center; gap: 10px; }
+.avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--brand);
+    color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 600;
+    flex: none;
+}
+.header-user .who { line-height: 1.2; }
+.header-user .who span { display: block; font-size: 12.5px; color: var(--ink); }
+.header-user .role {
+    font-size: 10.5px !important; color: var(--muted-2) !important;
+    letter-spacing: .05em; text-transform: uppercase;
+}
+.link-plain { font-size: 12px; color: var(--brand); }
+
+/* Green navigation bar */
+.app-nav {
+    background: var(--brand); display: flex; align-items: center; gap: 2px;
+    height: var(--nav-h); padding: 0 26px;
+}
+.app-nav a {
+    display: flex; align-items: center; height: var(--nav-h); padding: 0 14px;
+    font-size: 13px; color: rgba(255, 255, 255, .86); text-decoration: none;
+    white-space: nowrap;
+}
+.app-nav a:hover { color: #fff; text-decoration: none; }
+.app-nav a[aria-current="page"] {
+    color: var(--gold-pale); font-weight: 500;
+    box-shadow: inset 0 -3px 0 var(--gold);
+}
+.nav-badge {
+    margin-left: 7px; background: var(--gold); color: #3d2a05;
+    border-radius: 9px; padding: 1px 6px; font-size: 10.5px; font-weight: 600;
+}
+.nav-search {
+    display: flex; align-items: center; gap: 8px; background: #fff;
+    border-radius: var(--r-sm); padding: 8px 11px; width: 254px;
+    font-size: 12.5px; color: #9aa39d;
+}
+.nav-search .ring {
+    width: 11px; height: 11px; border: 1.5px solid #9aa39d;
+    border-radius: 50%; flex: none;
+}
+.nav-toggle {
+    display: none; background: none; border: 0; color: #fff;
+    font-size: 20px; cursor: pointer; padding: 0 8px;
+}
+
+.main { padding: 26px var(--gutter) 40px; }
+.main-narrow { max-width: 1000px; margin: 0 auto; }
+
+.app-footer {
+    background: var(--brand); color: rgba(255, 255, 255, .78);
+    padding: 26px var(--gutter) 24px;
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 30px;
+    font-size: 12.5px; line-height: 1.7;
+}
+.app-footer h4 { font-family: var(--font-serif); font-size: 17px; color: #fff; margin: 0 0 6px; }
+.app-footer .foot-label {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 6px;
+}
+.app-footer a { color: rgba(255, 255, 255, .82); }
+.app-footer a:hover { color: #fff; }
+
+/* ---------- 4. Page furniture --------------------------------------------- */
+.page-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px; margin-bottom: 18px;
+}
+.page-head h1 { margin: 0; }
+.lede { margin: 4px 0 0; font-size: 13px; color: var(--ink-500); }
+
+.breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.breadcrumb a { color: var(--muted); }
+.breadcrumb span { color: #c4bca7; margin: 0 6px; }
+
+.section-title {
+    font-family: var(--font-serif); font-size: 22px; color: var(--brand);
+    margin: 0 0 14px;
+}
+.label, .field label {
+    display: block; font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+}
+.help { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+.req { color: #8e3a30; }
+
+/* The pointed arch — the design's signature frame */
+.arch {
+    border-radius: var(--arch); overflow: hidden;
+    border: 1px solid var(--line); background: var(--brand);
+}
+.arch img { width: 100%; display: block; object-fit: cover; }
+
+/* ---------- 5. Cards and panels ------------------------------------------- */
+.card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+}
+.card-head {
+    padding: 14px 18px; display: flex; align-items: baseline;
+    justify-content: space-between; gap: 16px;
+}
+.card-head h2, .card-head h3 { margin: 0; }
+.card-body { padding: 16px 18px; }
+.card-foot {
+    padding: 12px 18px; border-top: 1px solid var(--line-soft);
+    background: var(--thead); border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+
+.grid { display: grid; gap: 18px; }
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid-auto { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.span-2 { grid-column: span 2; }
+
+/* Statistic tile — coloured left edge names the category */
+.stat {
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 3px solid var(--brand); border-radius: var(--r);
+    padding: 15px 17px;
+}
+.stat .k {
+    display: block; font-size: 10px; letter-spacing: .11em; font-weight: 600;
+    text-transform: uppercase; color: var(--muted);
+}
+/* The figure is SET IN THE SANS, not Amiri. Amiri's Latin uses old-style
+   numerals — they vary in height and drop below the baseline, which reads as
+   book typography rather than as data, and stops a column of figures aligning.
+   IBM Plex Sans at 600 with lining tabular numerals is the professional
+   choice, and adds no font the page is not already loading. */
+.stat .v {
+    display: block; margin-top: 6px;
+    font-family: var(--font-sans); font-weight: 600;
+    font-size: 32px; line-height: 1; letter-spacing: -.02em;
+    color: var(--brand);
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+}
+.stat .d {
+    display: block; margin-top: 6px; font-size: 11.5px;
+    line-height: 1.45; color: var(--muted);
+}
+.stat.accent { border-left-color: var(--gold); }
+.stat.warn { border-left-color: var(--gold); }
+.stat.info { border-left-color: var(--info-fg); }
+.stat.danger { border-left-color: #a8544a; }
+.stat.neutral { border-left-color: var(--muted); }
+
+.summary-box {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 14px 16px;
+}
+.summary-box dl, .kv, .meta-list { margin: 0; display: grid; gap: 0; }
+.summary-box dt, .kv dt, .meta-list dt {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin-top: 10px;
+}
+.summary-box dt:first-child, .kv dt:first-child, .meta-list dt:first-child { margin-top: 0; }
+.summary-box dd, .kv dd, .meta-list dd { margin: 2px 0 0; font-size: 13px; color: var(--ink); }
+.meta-list { grid-template-columns: 1fr 1fr; gap: 0 20px; }
+.meta-list > div { margin-bottom: 10px; }
+.meta-list dt { margin-top: 0; }
+
+/* ---------- 6. Buttons ---------------------------------------------------- */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+    font: 500 13px var(--font-sans); padding: 9px 16px;
+    border-radius: var(--r-sm); border: 1px solid var(--line-btn);
+    background: var(--white); color: var(--brand);
+    cursor: pointer; text-decoration: none; white-space: nowrap;
+}
+.btn:hover { background: var(--brand-050); text-decoration: none; }
+.btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-dark); }
+.btn-gold { background: var(--gold); border-color: var(--gold); color: #fff; }
+.btn-gold:hover { background: var(--gold-dark); }
+.btn-outline { background: transparent; border-color: var(--brand); color: var(--brand); }
+.btn-outline:hover { background: var(--brand-050); }
+.btn-danger { background: #fff; border-color: #d9c4c0; color: #8e3a30; }
+.btn-danger:hover { background: var(--rej-bg); }
+.btn-sm { padding: 7px 13px; font-size: 12.5px; }
+.btn-block { width: 100%; }
+.btn[disabled], .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn-link {
+    background: none; border: none; padding: 0; font: inherit; font-size: 12.5px;
+    color: var(--brand); text-decoration: none; cursor: pointer;
+}
+.btn-link:hover { text-decoration: underline; }
+
+/* Segmented control (Rooms / Kulliyyah cars, All / Upcoming / Past) */
+.seg {
+    display: inline-flex; gap: 6px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--r); padding: 4px;
+}
+.seg button, .seg span {
+    padding: 7px 15px; border: none; border-radius: var(--r-sm);
+    font: 500 13px var(--font-sans); color: var(--ink-700);
+    background: transparent; cursor: pointer;
+}
+.seg [aria-pressed="true"], .seg .on { background: var(--brand); color: #fff; }
+
+/* ---------- 7. Forms ------------------------------------------------------ */
+.field { margin-bottom: 16px; }
+.field-row { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.input, .select, .textarea {
+    width: 100%; font: 13.5px var(--font-sans);
+    padding: 9px 10px; background: var(--white);
+    border: 1px solid var(--line); border-radius: var(--r-sm);
+    color: var(--ink);
+}
+.input:focus, .select:focus, .textarea:focus {
+    outline: 2px solid var(--brand-link); outline-offset: -1px; border-color: var(--brand-link);
+}
+.textarea { min-height: 84px; resize: vertical; }
+
+.checkline {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-bottom: 8px; font-size: 13px;
+}
+.checkline input { margin-top: 3px; }
+.checkline label { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink); margin: 0; }
+
+.toolbar {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;
+    padding: 14px 18px; border-bottom: 1px solid var(--line-soft);
+}
+.toolbar .field { margin: 0; }
+.toolbar .grow { flex: 1; min-width: 200px; }
+
+/* The landing search bar sits on the Kulliyyah photograph. The scrim is what
+   keeps the labels legible over an arbitrary image — never rely on the photo
+   being dark enough on its own. */
+.search-hero {
+    position: relative; border-radius: var(--r-lg); overflow: hidden;
+    background: var(--brand);
+}
+.search-hero > img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: 50% 62%; display: block;
+}
+.search-hero::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(11, 58, 41, .34) 0%, rgba(11, 58, 41, .72) 100%);
+}
+.search-hero .inner { position: relative; z-index: 1; padding: 34px 30px; }
+.search-hero .hero-line { color: #fff; margin-bottom: 18px; }
+.search-hero .hero-line .arabic {
+    font-family: var(--font-serif); font-size: 24px; color: var(--gold-pale);
+    direction: rtl; display: inline-block; margin-bottom: 2px;
+}
+.search-hero .hero-line h1 {
+    font-family: var(--font-serif); font-size: 36px; line-height: 1.15;
+    color: #fff; margin: 0;
+}
+.search-hero .hero-line .sub {
+    margin-top: 8px; font-size: 13.5px; color: rgba(255, 255, 255, .84); max-width: 70ch;
+}
+.search-hero .caption {
+    position: relative; z-index: 1; padding: 0 30px 16px;
+    font-size: 11.5px; color: rgba(255, 255, 255, .72);
+}
+
+/* The booking search bar on the landing screen */
+.searchbar {
+    display: grid; gap: 0; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+    grid-template-columns: 200px 150px 130px 130px 1fr 190px;
+}
+.searchbar > label { display: block; padding: 12px 16px; border-right: 1px solid var(--line-soft); }
+.searchbar > label:last-of-type { border-right: 0; }
+.searchbar .k {
+    display: block; font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+}
+.searchbar .v { display: block; font-size: 14px; color: var(--ink); }
+.searchbar button {
+    border: none; background: var(--brand); color: #fff;
+    font: 500 14px var(--font-sans); cursor: pointer; letter-spacing: .02em;
+}
+.searchbar button:hover { background: var(--brand-dark); }
+
+/* ---------- 8. Tables ----------------------------------------------------- */
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; }
+table.data th {
+    text-align: left; padding: 11px 14px; background: var(--thead);
+    border-bottom: 2px solid var(--brand);
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--brand); white-space: nowrap; font-weight: 600;
+}
+table.data td {
+    padding: 12px 14px; border-top: 1px solid var(--line-soft);
+    font-size: 13px; vertical-align: middle; color: var(--ink-600);
+}
+/* Zebra striping. These tables run to eight columns, and a warm stripe keeps
+   the eye on one row all the way across. */
+table.data tbody tr:nth-child(even) { background: #faf7ef; }
+table.data tbody tr:hover { background: var(--brand-050); }
+
+/* Each row carries a coloured leading edge in its own status colour, applied
+   from the status badge the row already renders (see tintRows in
+   prototype.js). A queue can then be read by colour before it is read by
+   word — which is the point of colour in a table. */
+table.data tbody tr[data-status] td:first-child {
+    box-shadow: inset 3px 0 0 var(--neu-bd);
+}
+table.data tbody tr[data-status="approved"] td:first-child,
+table.data tbody tr[data-status="active"] td:first-child,
+table.data tbody tr[data-status="administrator"] td:first-child {
+    box-shadow: inset 3px 0 0 var(--ok-fg);
+}
+table.data tbody tr[data-status="pending"] td:first-child,
+table.data tbody tr[data-status="maintenance"] td:first-child,
+table.data tbody tr[data-status="unverified"] td:first-child {
+    box-shadow: inset 3px 0 0 var(--gold);
+}
+table.data tbody tr[data-status="rejected"] td:first-child {
+    box-shadow: inset 3px 0 0 #a8544a;
+}
+table.data tbody tr[data-status="approver"] td:first-child {
+    box-shadow: inset 3px 0 0 var(--info-fg);
+}
+
+/* Reference and figure columns read as data, not prose. */
+table.data td .mono { font-variant-numeric: tabular-nums; }
+table.data .res {
+    font-family: var(--font-serif); font-size: 16px; color: var(--brand);
+    white-space: nowrap;
+}
+table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
+.row-thumb {
+    width: 54px; height: 34px; object-fit: cover; border-radius: var(--r-sm);
+    border: 1px solid var(--line-img); display: block; flex: none;
+}
+
+.pagination, .pager { display: flex; gap: 4px; align-items: center; }
+.pagination button, .pager button {
+    min-width: 30px; height: 30px; padding: 0 8px;
+    border: 1px solid var(--line); background: var(--white);
+    border-radius: var(--r-sm); font-size: 12.5px; color: var(--ink-700); cursor: pointer;
+}
+.pagination button[aria-current="true"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+.pagination button[disabled] { opacity: .45; cursor: default; }
+
+.empty-state { padding: 28px; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* ---------- 9. Badges, pills, tags ---------------------------------------- */
+.badge {
+    display: inline-block; padding: 2px 9px; border-radius: var(--r-pill);
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+    background: var(--neu-bg); color: var(--neu-fg); border: 1px solid var(--neu-bd);
+}
+.badge-approved, .badge-active { background: var(--ok-bg); color: var(--ok-fg); border-color: var(--ok-bd); }
+.badge-pending, .badge-maintenance, .badge-unverified { background: var(--pend-bg); color: var(--pend-fg); border-color: var(--pend-bd); }
+.badge-rejected { background: var(--rej-bg); color: var(--rej-fg); border-color: var(--rej-bd); }
+.badge-cancelled, .badge-completed, .badge-inactive, .badge-deactivated,
+.badge-muted, .badge-under-maintenance { background: var(--neu-bg); color: var(--neu-fg); border-color: var(--neu-bd); }
+.badge-approver { background: var(--info-bg); color: var(--info-fg); border-color: var(--info-bd); }
+.badge-administrator { background: var(--ok-bg); color: var(--brand); border-color: var(--ok-bd); }
+
+.pill {
+    display: inline-block; padding: 4px 10px; background: var(--surface);
+    border: 1px solid var(--line-thead); border-radius: 12px;
+    font-size: 12px; color: var(--ink-600);
+}
+.facilities, .facility-grid { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0; }
+.facility-grid li { list-style: none; }
+
+.tag {
+    display: inline-block; padding: 2px 8px; border-radius: var(--r-pill);
+    font-size: 10.5px; font-weight: 600;
+}
+.tag-confirmed { background: var(--ok-bg); color: var(--ok-fg); border: 1px solid var(--ok-bd); }
+.tag-illustrative { background: var(--pend-bg); color: var(--pend-fg); border: 1px solid var(--pend-bd); }
+
+/* ---------- 10. Notices --------------------------------------------------- */
+.notice {
+    border: 1px solid var(--line); border-left: 3px solid var(--muted);
+    background: var(--surface); border-radius: var(--r);
+    padding: 11px 14px; font-size: 12.5px; line-height: 1.6; margin-bottom: 16px;
+    color: var(--ink-600);
+}
+.notice strong { display: block; margin-bottom: .15rem; color: var(--ink); }
+.notice-info { border-left-color: var(--info-fg); background: var(--info-bg); }
+.notice-warn { border-left-color: var(--gold); background: var(--gold-bg); color: var(--gold-ink); }
+.notice-danger { border-left-color: #8e3a30; background: var(--rej-bg); color: #7a3129; }
+.notice-success { border-left-color: var(--ok-fg); background: var(--ok-bg); color: var(--ok-fg); }
+
+/* ---------- 11. Resource cards -------------------------------------------- */
+.venue-card {
+    display: flex; flex-direction: column; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
+}
+.venue-card .thumb { position: relative; height: 128px; background: var(--brand-050); }
+.venue-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Girih crosshatch over resource imagery — identity, kept faint */
+.venue-card .thumb::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+        repeating-linear-gradient(45deg, transparent 0 17px, rgba(217, 155, 40, .55) 17px 18px),
+        repeating-linear-gradient(-45deg, transparent 0 17px, rgba(217, 155, 40, .55) 17px 18px);
+    opacity: .11;
+}
+.venue-card .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px; }
+.venue-card h3 { font-family: var(--font-serif); font-size: 17px; color: var(--brand); margin: 0; }
+.venue-card .loc { font-size: 12px; color: var(--ink-500); }
+.venue-card .actions {
+    margin-top: auto; padding: 12px 14px; border-top: 1px solid var(--line-soft);
+    display: flex; gap: 8px;
+}
+
+.gallery-main { border-radius: var(--arch); overflow: hidden; border: 1px solid var(--line); }
+.gallery-main img { width: 100%; height: 300px; object-fit: cover; display: block; }
+.gallery-thumbs { display: flex; gap: 10px; margin-top: 12px; }
+.gallery-thumbs button { padding: 0; border: 0; background: none; cursor: pointer; }
+.gallery-thumbs img {
+    width: 118px; height: 70px; object-fit: cover; border-radius: var(--r-sm);
+    border: 1px solid var(--line-img); display: block;
+}
+.gallery-thumbs [aria-current="true"] img { border-color: var(--brand); border-width: 2px; }
+
+/* ---------- 12. Availability board ---------------------------------------- */
+/* The design's central screen: rooms by hour, cars by day. */
+.daypick { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.daypick button {
+    padding: 8px 14px; border-radius: var(--r-sm); border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink-700);
+    font: 500 12.5px var(--font-sans); cursor: pointer; text-align: center;
+}
+.daypick button[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+.daypick .dow {
+    display: block; font-size: 10px; letter-spacing: .09em;
+    text-transform: uppercase; opacity: .72;
+}
+.daypick .dnum { display: block; margin-top: 2px; }
+
+.legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--ink-500); align-items: center; }
+.legend .swatch {
+    display: inline-block; width: 11px; height: 11px; border-radius: 2px;
+    vertical-align: -1px; margin-right: 5px;
+}
+.swatch-approved { background: var(--brand-link); }
+.swatch-pending { background: repeating-linear-gradient(45deg, #d99b28, #d99b28 4px, #b07d15 4px, #b07d15 8px); }
+.swatch-free { background: #eaf1ec; border: 1px dashed #b9cfc0; }
+
+.board {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-lg); padding: 18px 22px 22px;
+}
+.board-head, .board-row {
+    display: grid; grid-template-columns: 216px 1fr; gap: 16px; align-items: center;
+}
+.board-head { padding-bottom: 8px; }
+.board-head .k { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.board-hours {
+    display: flex; justify-content: space-between;
+    font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.board-row { padding: 7px 0; border-top: 1px solid var(--line-soft); }
+.board-res { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.board-res img {
+    width: 58px; height: 36px; object-fit: cover; border-radius: var(--r-sm);
+    border: 1px solid var(--line-img); display: block; flex: none;
+}
+.board-res .n {
+    font-family: var(--font-serif); font-size: 15.5px; color: var(--brand); line-height: 1.2;
+}
+.board-res .m { font-size: 11px; color: var(--ink-500); }
+
+.board-track {
+    position: relative; height: 36px; background: var(--thead);
+    border: 1px solid var(--line-soft); border-radius: var(--r-sm);
+}
+.board-block {
+    position: absolute; top: 3px; bottom: 3px; border-radius: 2px;
+    font-size: 10.5px; font-weight: 500; display: flex; align-items: center;
+    padding: 0 7px; overflow: hidden; white-space: nowrap;
+}
+.board-block span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.blk-approved { background: var(--brand-link); color: #fff; border: 1px solid var(--brand-link); }
+.blk-pending {
+    background: repeating-linear-gradient(45deg, #d99b28, #d99b28 6px, #b07d15 6px, #b07d15 12px);
+    color: #fff; border: 1px solid var(--gold-dark);
+}
+.blk-free { background: #eaf1ec; color: var(--ok-fg); border: 1px dashed #b9cfc0; cursor: pointer; }
+.blk-free:hover { background: #dbe9df; }
+.blk-closed { background: #f0ece2; color: var(--gold-dark); border: 1px solid #e0d6bd; cursor: not-allowed; }
+
+.board-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.board-days .d { text-align: center; font-size: 10.5px; color: var(--muted); }
+.board-week {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+    height: 40px; border: 1px solid var(--line-soft);
+    border-radius: var(--r-sm); overflow: hidden;
+}
+.board-cell {
+    border-right: 1px solid var(--line-soft); font-size: 10.5px; font-weight: 500;
+    display: flex; align-items: center; padding: 0 8px;
+    overflow: hidden; white-space: nowrap;
+}
+.board-cell:last-child { border-right: 0; }
+.board-cell span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Legacy availability strip, still used on resource detail pages */
+.availability { display: flex; flex-direction: column; gap: 5px; }
+.avail-row, .avail-scale { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center; }
+.avail-row > span { font-size: 12px; color: var(--ink-500); }
+.avail-bar {
+    position: relative; height: 30px; background: var(--thead);
+    border: 1px solid var(--line-soft); border-radius: var(--r-sm);
+}
+.avail-block {
+    position: absolute; top: 3px; bottom: 3px; background: var(--brand-link);
+    color: #fff; border-radius: 2px; font-size: 10.5px; font-weight: 500;
+    display: flex; align-items: center; padding: 0 6px; overflow: hidden; white-space: nowrap;
+}
+.avail-block.pending {
+    background: repeating-linear-gradient(45deg, #d99b28, #d99b28 6px, #b07d15 6px, #b07d15 12px);
+}
+.avail-scale .ticks { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+
+/* ---------- 13. Charts (no library) --------------------------------------- */
+.bars { display: flex; gap: 14px; align-items: flex-end; height: 160px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; }
+.bar-col .bar {
+    width: 100%; background: var(--brand); border-radius: 2px 2px 0 0;
+    display: flex; align-items: flex-start; justify-content: center; margin-top: auto;
+}
+.bar-col .bar span { font-size: 10px; color: #fff; padding-top: 3px; }
+.bar-label { font-size: 11px; color: var(--muted); }
+
+.hbars { display: flex; flex-direction: column; }
+.hbar { display: grid; grid-template-columns: 168px 1fr 44px; gap: 12px; align-items: center; padding: 6px 0; }
+.hbar > span { font-size: 12.5px; color: var(--ink-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hbar .track { height: 16px; background: var(--thead); border-radius: 2px; overflow: hidden; }
+.hbar .fill { height: 100%; background: var(--brand); }
+.hbar .fill.gold { background: var(--gold); }
+.hbar .val { font-size: 12px; color: var(--ink-500); text-align: right; font-variant-numeric: tabular-nums; }
+
+.activity { list-style: none; margin: 0; padding: 0; }
+.activity li { padding: 10px 0; border-top: 1px solid var(--line-soft); font-size: 12.5px; }
+.activity li:first-child { border-top: 0; }
+
+/* ---------- 14. Modal ----------------------------------------------------- */
+.modal-backdrop {
+    position: fixed; inset: 0; background: rgba(20, 103, 91, .55);
+    display: grid; place-items: center; padding: 30px; z-index: 100;
+}
+.modal {
+    width: min(560px, 100%); max-height: 88vh; overflow: auto;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 6px; box-shadow: 0 18px 48px rgba(20, 103, 91, .3);
+}
+.modal-head {
+    padding: 16px 22px; background: var(--brand);
+    border-bottom: 2px solid var(--gold);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head h2 { font-family: var(--font-serif); font-size: 19px; color: #fff; margin: 0; }
+.modal-body { padding: 20px 22px; }
+.modal-foot {
+    padding: 14px 22px; background: var(--thead);
+    border-top: 1px solid var(--line-soft);
+    display: flex; justify-content: flex-end; gap: 10px;
+}
+
+/* ---------- 15. Steps ----------------------------------------------------- */
+.steps { display: flex; gap: 0; list-style: none; margin: 0 0 20px; padding: 0; }
+.steps li {
+    flex: 1; padding: 10px 14px; background: var(--surface);
+    border: 1px solid var(--line); border-right: 0; font-size: 12.5px; color: var(--muted);
+}
+.steps li:last-child { border-right: 1px solid var(--line); }
+.steps li .n {
+    display: block; font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted-2);
+}
+.steps li[aria-current="step"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+.steps li[aria-current="step"] .n { color: var(--gold-pale); }
+.steps li.done { background: var(--brand-100); color: var(--brand); }
+
+/* ---------- 16. Data management ------------------------------------------- */
+.danger-zone {
+    border: 1px solid var(--rej-bd); background: var(--rej-bg);
+    border-radius: var(--r); padding: 16px 18px;
+}
+.danger-zone h3 { color: #8e3a30; }
+.dropzone {
+    border: 1px dashed var(--line-btn); border-radius: var(--r);
+    background: var(--white); padding: 26px; text-align: center;
+    font-size: 12.5px; color: var(--muted);
+}
+
+/* ---------- 17. Sign in / register ---------------------------------------- */
+.login-page { min-height: 100vh; display: grid; grid-template-columns: 1.05fr .95fr; background: var(--page); }
+.login-hero {
+    background: var(--brand); color: #fff; padding: 3rem 3.5rem;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 2rem;
+}
+.login-hero .brand { flex-direction: column; align-items: flex-start; gap: .9rem; }
+/* The wordmark is supplied on a white ground. Floating it straight onto the
+   green reads as an untrimmed rectangle, so it is given a deliberate plate. */
+.login-hero .brand img {
+    background: #fff; padding: 12px 16px; border-radius: var(--r);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+}
+.login-hero h1 { font-family: var(--font-serif); font-size: 2rem; color: #fff; margin: 0 0 .5rem; }
+.login-hero p { color: rgba(255, 255, 255, .86); max-width: 44ch; }
+.login-hero ul { padding-left: 1.1rem; color: rgba(255, 255, 255, .86); font-size: .9rem; }
+.login-hero li { margin-bottom: .35rem; }
+.login-hero .foot { font-size: .76rem; color: rgba(255, 255, 255, .62); }
+.login-hero .arabic {
+    font-family: var(--font-serif); font-size: 26px; color: var(--gold);
+    direction: rtl; display: inline-block; margin-bottom: 6px;
+}
+.login-panel { display: grid; place-items: center; padding: 2rem; }
+.login-card { width: min(400px, 100%); }
+.login-card h2 { font-family: var(--font-serif); font-size: 1.3rem; }
+
+/* ---------- 18. Responsive ------------------------------------------------ */
+@media (max-width: 1180px) {
+    .searchbar { grid-template-columns: 1fr 1fr 1fr; }
+    .searchbar > label { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+    .searchbar button { grid-column: 1 / -1; padding: 14px; }
+    .nav-search { display: none; }
+}
+
+@media (max-width: 940px) {
+    :root { --gutter: 20px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .span-2 { grid-column: auto; }
+    .field-row { grid-template-columns: 1fr; }
+    .app-footer { grid-template-columns: 1fr; gap: 20px; }
+    .login-page { grid-template-columns: 1fr; }
+    .login-hero { padding: 2rem 1.5rem; }
+    .board-head, .board-row { grid-template-columns: 140px 1fr; gap: 10px; }
+    .board-res img { display: none; }
+    .hbar { grid-template-columns: 110px 1fr 40px; }
+    .meta-list { grid-template-columns: 1fr; }
+
+    /* Navigation collapses behind a toggle */
+    .nav-toggle { display: block; }
+    .app-nav { flex-wrap: wrap; height: auto; padding: 0 20px; }
+    .app-nav a { display: none; }
+    .app-nav.open a { display: flex; width: 100%; }
+    .app-nav .nav-toggle { display: block; height: var(--nav-h); }
+}
+
+@media (max-width: 640px) {
+    .app-header { flex-wrap: wrap; gap: 12px; padding: 12px 20px; }
+    .brand img { width: 150px; }
+    .brand-rule, .brand-text { display: none; }
+    .header-user .who { display: none; }
+    .searchbar { grid-template-columns: 1fr; }
+    .page-head { flex-direction: column; align-items: flex-start; }
+    .gallery-main img { height: 200px; }
+    .steps { flex-direction: column; }
+    .steps li { border-right: 1px solid var(--line); border-bottom: 0; }
+    .steps li:last-child { border-bottom: 1px solid var(--line); }
+    /* Touch targets on small screens */
+    .btn { padding: 12px 18px; }
+    .daypick button { min-height: 46px; }
+}
+
+/* ---------- 19. Print ----------------------------------------------------- */
+@media print {
+    .app-nav, .demo-ribbon, .nav-search, .btn, .pagination, .skip-link { display: none !important; }
+    body { background: #fff; }
+    .app-header { border-bottom: 1px solid #000; }
+    .card, .board, .stat { border-color: #999; break-inside: avoid; }
+    .app-footer { background: none; color: #000; border-top: 1px solid #999; }
+}

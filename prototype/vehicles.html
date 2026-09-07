@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browse Vehicles — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Browse vehicles</h1>
+                    <p class="lede">Kulliyyah cars available for official travel. Select a vehicle to view full details and availability.</p>
+                </div>
+            </div>
+
+            <div class="notice notice-info" id="eligibility"></div>
+
+            <section class="card" aria-labelledby="filtersHead">
+                <h2 id="filtersHead" class="visually-hidden">Filter vehicles</h2>
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Name, code, registration or model">
+                    </div>
+                    <div class="field">
+                        <label for="seats">Minimum seats</label>
+                        <select class="select" id="seats">
+                            <option value="0">Any</option>
+                            <option value="5">5 or more</option>
+                            <option value="7">7 or more</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="trans">Transmission</label>
+                        <select class="select" id="trans">
+                            <option value="">Any</option>
+                            <option value="Auto">Automatic</option>
+                            <option value="Manual">Manual</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="fac">Feature</label>
+                        <select class="select" id="fac">
+                            <option value="">Any feature</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="avail">Availability</label>
+                        <select class="select" id="avail">
+                            <option value="">All vehicles</option>
+                            <option value="Active">Available for booking</option>
+                            <option value="Under Maintenance">Under maintenance</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="help" id="count" style="margin:0 0 1rem"></p>
+                    <div class="grid grid-auto" id="cards"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'vehicles.html' });
+
+    const me = A.CURRENT_USER;
+    const mayDrive = A.canBookVehicle(me);   /* eligibility to REQUEST a car; the driver is assigned by the office */
+
+    /* Booking a car and driving one are separate permissions. Everyone may
+       book; only lecturers and staff may drive. A student's trip goes out with
+       a driver from the Vehicle Management Unit. */
+    const note = document.getElementById('eligibility');
+    if (mayDrive) {
+        note.className = 'notice notice-info';
+        note.innerHTML = '<strong>You may request a vehicle and drive it yourself.</strong> ' +
+            'A valid driving licence must be recorded on your profile before a self-drive trip can ' +
+            'be submitted. You may also ask the Vehicle Management Unit for a driver instead. ' +
+            'Every vehicle booking requires approval.';
+    } else {
+        note.className = 'notice notice-warn';
+        note.innerHTML = '<strong>You may request a vehicle, but not drive it.</strong> ' +
+            'Your account is registered as <em>' + A.esc(me.affiliation) + '</em>, and a Kulliyyah car ' +
+            'may only be driven by a lecturer, a member of staff, or a driver from the ' +
+            '<strong>Vehicle Management Unit (VMU)</strong>. Your booking will request a VMU driver ' +
+            'through STADD, which needs Kulliyyah management approval as well as the usual booking ' +
+            'approval.';
+    }
+
+    const facSel = document.getElementById('fac');
+    A.facilitiesFor('Vehicle').forEach(f => {
+        facSel.insertAdjacentHTML('beforeend', '<option value="' + f.code + '">' + A.esc(f.name) + '</option>');
+    });
+
+    const inputs = ['q', 'seats', 'trans', 'fac', 'avail'].map(id => document.getElementById(id));
+    const cards = document.getElementById('cards');
+    const count = document.getElementById('count');
+
+    function expiryFlag(v) {
+        const todayISO = A.iso(A.today);
+        if (v.roadTaxExpiry < todayISO) return 'Road tax expired';
+        if (v.insuranceExpiry < todayISO) return 'Insurance expired';
+        return '';
+    }
+
+    function render() {
+        const [q, seats, trans, fac, avail] = inputs.map(i => i.value);
+        const term = q.trim().toLowerCase();
+
+        const list = A.vehicles.filter(v =>
+            (!term || (v.name + ' ' + v.code + ' ' + v.registration + ' ' + v.make + ' ' + v.model).toLowerCase().includes(term)) &&
+            (v.seats >= Number(seats)) &&
+            (!trans || v.transmission === trans) &&
+            (!fac || v.facilities.indexOf(fac) !== -1) &&
+            (!avail || v.status === avail));
+
+        count.textContent = list.length + ' of ' + A.vehicles.length + ' vehicles shown.';
+
+        cards.innerHTML = list.length ? list.map(v => {
+            const flag = expiryFlag(v);
+            const bookable = v.status === 'Active' && !flag;
+            return '<article class="venue-card">' +
+                '<div class="thumb"><img src="' + A.resourceImg(v) + '" alt="Placeholder image of ' + A.esc(v.name) + '"></div>' +
+                '<div class="body">' +
+                '<h3>' + A.esc(v.name) + '</h3>' +
+                '<span class="loc">' + A.esc(v.make + ' ' + v.model + ' ' + v.year) + ' · <span class="mono">' + A.esc(v.registration) + '</span></span>' +
+                '<span class="loc">' + v.seats + ' seats · ' + A.esc(v.transmission === 'Auto' ? 'Automatic' : 'Manual') + ' · ' + A.esc(v.fuelType) + '</span>' +
+                '<div>' + (bookable ? '<span class="badge badge-approved">Available</span>'
+                                    : '<span class="badge badge-cancelled">' + A.esc(flag || 'Under maintenance') + '</span>') +
+                ' <span class="badge badge-muted">Approval required</span></div>' +
+                '<div class="facilities">' +
+                v.facilities.map(f => '<span class="pill">' + A.esc(A.facilityName(f)) + '</span>').join('') +
+                '</div></div>' +
+                '<div class="actions">' +
+                '<a class="btn btn-sm" href="vehicle-details.html?id=' + v.id + '">View details</a>' +
+                (bookable
+                    ? '<a class="btn btn-sm btn-primary" href="vehicle-booking.html?vehicle=' + v.id + '">Request trip</a>'
+                    : '<button class="btn btn-sm" type="button" aria-disabled="true" disabled>Unavailable</button>') +
+                '</div></article>';
+        }).join('')
+        : '<div class="empty-state">No vehicle matches the selected filters.</div>';
+    }
+
+    inputs.forEach(i => i.addEventListener('input', render));
+    render();
+})();
+</script>
+</body>
+</html>

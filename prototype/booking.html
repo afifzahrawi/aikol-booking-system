@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New Booking — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main main-narrow" id="main">
+
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="dashboard.html">Dashboard</a><span>/</span><span>New booking</span>
+            </nav>
+
+            <div class="page-head">
+                <div>
+                    <h1>New venue booking</h1>
+                    <p class="lede">Availability is checked as you type. Looking for a car?
+                        <a href="vehicle-booking.html">Request a vehicle instead</a>.</p>
+                </div>
+            </div>
+
+            <ol class="steps" id="steps">
+                <li aria-current="step"><span class="n">Step 1</span>Booking details</li>
+                <li><span class="n">Step 2</span>Review</li>
+                <li><span class="n">Step 3</span>Confirmation</li>
+            </ol>
+
+            <div id="formStage">
+                <div class="grid grid-2" style="align-items:start">
+
+                    <section class="card" aria-labelledby="detailsHead">
+                        <div class="card-head"><h2 id="detailsHead">Booking details</h2></div>
+                        <div class="card-body">
+                            <form id="bookingForm" novalidate>
+
+                                <div class="field">
+                                    <label for="venue">Venue <span class="req" aria-hidden="true">*</span></label>
+                                    <select class="select" id="venue" required></select>
+                                    <p class="help" id="venueHelp"></p>
+                                </div>
+
+                                <div class="field">
+                                    <label for="date">Date <span class="req" aria-hidden="true">*</span></label>
+                                    <input class="input" type="date" id="date" required>
+                                    <p class="help" id="dateHelp"></p>
+                                </div>
+
+                                <div class="field-row">
+                                    <div class="field">
+                                        <label for="start">Start time <span class="req" aria-hidden="true">*</span></label>
+                                        <select class="select" id="start" required></select>
+                                    </div>
+                                    <div class="field">
+                                        <label for="end">End time <span class="req" aria-hidden="true">*</span></label>
+                                        <select class="select" id="end" required></select>
+                                    </div>
+                                </div>
+                                <p class="help" id="durHelp"></p>
+
+                                <div class="field">
+                                    <label for="purpose">Purpose of booking <span class="req" aria-hidden="true">*</span></label>
+                                    <textarea class="textarea" id="purpose" required
+                                              placeholder="For example: moot court practice session for the Kulliyyah advocacy team"></textarea>
+                                    <p class="help">Please state the activity clearly. This is visible to the approving officer.</p>
+                                </div>
+
+                                <div class="field">
+                                    <label for="attendees">Expected number of attendees <span class="req" aria-hidden="true">*</span></label>
+                                    <input class="input" type="number" id="attendees" min="1" step="1" value="20">
+                                    <p class="help" id="capHelp"></p>
+                                </div>
+
+                                <!-- ---------- Recurrence ---------- -->
+                                <fieldset class="card" style="box-shadow:none;margin:1.25rem 0 1rem;padding:0">
+                                    <div class="card-head">
+                                        <legend style="margin:0;font-size:.95rem;font-weight:600;padding:0">Repeat this booking</legend>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="checkline">
+                                            <input type="checkbox" id="repeat">
+                                            <label for="repeat" style="font-weight:400;margin:0">
+                                                Repeat weekly — for example, a tutorial that runs all semester
+                                            </label>
+                                        </div>
+
+                                        <div id="repeatOpts" hidden>
+                                            <div class="field" style="margin-top:.9rem">
+                                                <span style="display:block;font-weight:600;margin-bottom:.4rem;font-size:.85rem">Repeat on</span>
+                                                <div class="facility-grid" id="dows"></div>
+                                            </div>
+                                            <div class="field">
+                                                <label for="until">Repeat until <span class="req" aria-hidden="true">*</span></label>
+                                                <input class="input" type="date" id="until">
+                                                <p class="help" id="untilHelp"></p>
+                                            </div>
+                                            <div id="occPreview"></div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                <!-- ---------- On behalf of ---------- -->
+                                <fieldset class="card" style="box-shadow:none;margin:0 0 1rem;padding:0">
+                                    <div class="card-head">
+                                        <legend style="margin:0;font-size:.95rem;font-weight:600;padding:0">Booking on behalf of a user</legend>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="help" style="margin-top:0">This control appears for administrators
+                                            only. It is shown here so the behaviour can be reviewed.</p>
+                                        <div class="checkline">
+                                            <input type="checkbox" id="onBehalf">
+                                            <label for="onBehalf" style="font-weight:400;margin:0">
+                                                I am booking for someone else
+                                            </label>
+                                        </div>
+                                        <div class="field" id="behalfField" hidden style="margin-top:.9rem">
+                                            <label for="behalfUser">Booking is for</label>
+                                            <select class="select" id="behalfUser"></select>
+                                            <p class="help">The booking is recorded against that person, with the
+                                                administrator kept as the creator. Both are shown in the history and
+                                                the confirmation email goes to the person it is for.</p>
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                <div id="validation" aria-live="polite"></div>
+
+                                <div class="btn-group" style="margin-top:.5rem">
+                                    <button class="btn btn-primary" type="submit" id="submitBtn">Review booking</button>
+                                    <a class="btn" href="venues.html">Cancel</a>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <div>
+                        <section class="card" style="margin-bottom:1.1rem" aria-labelledby="sumHead">
+                            <div class="card-head"><h2 id="sumHead">Booking summary</h2></div>
+                            <div class="card-body">
+                                <div class="summary-box"><dl id="summary"></dl></div>
+                            </div>
+                        </section>
+
+                        <section class="card" style="margin-bottom:1.1rem" aria-labelledby="rulesHead">
+                            <div class="card-head"><h2 id="rulesHead">Booking rules</h2></div>
+                            <div class="card-body">
+                                <ul id="ruleList" style="margin:0;padding-left:1.1rem;font-size:.86rem"></ul>
+                            </div>
+                        </section>
+
+                        <section class="card" aria-labelledby="dayHead">
+                            <div class="card-head"><h2 id="dayHead">Existing bookings</h2></div>
+                            <div class="card-body">
+                                <div class="availability" id="dayAvail"></div>
+                                <p class="help" style="margin-top:.75rem">
+                                    Only pending and approved bookings reserve the venue. Rejected and cancelled
+                                    bookings release the time slot.
+                                </p>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <div id="confirmStage" hidden>
+                <section class="card">
+                    <div class="card-head"><h2>Booking submitted</h2></div>
+                    <div class="card-body">
+                        <div class="notice notice-success" id="confirmNotice"></div>
+                        <div class="summary-box"><dl id="confirmSummary"></dl></div>
+                        <div id="occList"></div>
+                        <div id="emailNote"></div>
+                        <div class="btn-group" style="margin-top:1.25rem">
+                            <a class="btn btn-primary" href="my-bookings.html">View my bookings</a>
+                            <a class="btn" href="venues.html">Book another venue</a>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'booking.html' });
+
+    const $ = id => document.getElementById(id);
+    const S = A.SETTINGS;
+    const todayISO = A.iso(A.today);
+    const maxISO = A.iso(A.addDays(A.today, S.advanceBookingLimitDays));
+    const preselect = Number(new URLSearchParams(location.search).get('venue')) || 0;
+
+    /* ---- Venue options: active venues only ---- */
+    const bookable = A.venues.filter(v => v.status === 'Active');
+    $('venue').innerHTML = bookable.map(v =>
+        '<option value="' + v.id + '">' + A.esc(v.name) + ' — ' + A.esc(v.location) + ' (' + v.capacity + ' pax)</option>'
+    ).join('');
+    if (preselect && bookable.some(v => v.id === preselect)) $('venue').value = String(preselect);
+
+    $('date').value = A.iso(A.addDays(A.today, 1));
+    $('date').min = todayISO;
+    $('date').max = maxISO;
+    $('until').min = todayISO;
+    $('until').max = maxISO;
+    $('until').value = A.iso(A.addDays(A.today, 84));
+
+    $('dateHelp').textContent = 'Bookings may be made up to ' + S.advanceBookingLimitDays +
+        ' days (3 months) in advance — until ' + A.fmtDate(maxISO) + '.';
+    $('untilHelp').textContent = 'The last date the booking may repeat. At most ' +
+        S.maxSeriesOccurrences + ' occurrences.';
+
+    $('ruleList').innerHTML = [
+        'Bookable window ' + A.fmtTime(S.windowStart) + ' – ' + A.fmtTime(S.windowEnd) + ', seven days a week.',
+        'A single booking may last at most ' + (S.maxBookingMinutes / 60) + ' hours. To occupy a room for longer, submit a second booking for the extra time.',
+        'Bookings may be made up to ' + S.advanceBookingLimitDays + ' days in advance.',
+        'Weekends, public holidays and semester breaks are all bookable.',
+        'Every venue requires approval by the Kulliyyah office.',
+        'You may cancel your own booking until ' + (S.cancellationCutoffHours / 24) + ' days before it starts, giving a reason.'
+    ].map(r => '<li>' + A.esc(r) + '</li>').join('');
+
+    /* ---- Weekday checkboxes for the recurrence ---- */
+    $('dows').innerHTML = A.DAYS.map((d, i) =>
+        '<label class="checkline" style="font-weight:400"><input type="checkbox" class="dow" value="' + i + '"> ' +
+        A.esc(d.slice(0, 3)) + '</label>').join('');
+
+    /* ---- On-behalf-of user list ---- */
+    $('behalfUser').innerHTML = A.users.filter(u => u.status === 'Active').slice(0, 25)
+        .map(u => '<option value="' + u.id + '">' + A.esc(u.name) + ' — ' + A.esc(u.idNo) + '</option>').join('');
+
+    const currentVenue = () => A.resourceById(Number($('venue').value));
+
+    /* ---- Time options across the bookable window ---- */
+    function fillTimes() {
+        const v = currentVenue();
+        const from = A.toMin(v.open), to = A.toMin(v.close);
+        const opts = [];
+        for (let m = from; m <= to; m += 30) {
+            const t = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+            opts.push('<option value="' + t + '">' + A.fmtTime(t) + '</option>');
+        }
+        const prevStart = $('start').value, prevEnd = $('end').value;
+        $('start').innerHTML = opts.slice(0, -1).join('');
+        $('end').innerHTML = opts.slice(1).join('');
+        $('start').value = opts.some(o => o.includes('"' + prevStart + '"')) ? prevStart : '09:00';
+        $('end').value = opts.some(o => o.includes('"' + prevEnd + '"')) ? prevEnd : '11:00';
+        if (!$('start').value) $('start').selectedIndex = 2;
+        if (!$('end').value) $('end').selectedIndex = 4;
+    }
+
+    const selectedDows = () => [...document.querySelectorAll('.dow:checked')].map(c => Number(c.value));
+
+    /* ---- Expand the recurrence into concrete occurrences, exactly as the
+            server would: real rows, each checked against the same rule. ---- */
+    function occurrences() {
+        const date = $('date').value, s = $('start').value, e = $('end').value;
+        if (!date || !s || !e) return [];
+        const first = { date: date, startAt: date + 'T' + s, endAt: date + 'T' + e };
+        if (!$('repeat').checked) return [first];
+
+        const dows = selectedDows();
+        const until = $('until').value;
+        if (!dows.length || !until) return [first];
+
+        const out = [];
+        let d = new Date(date + 'T00:00:00');
+        while (A.iso(d) <= until && out.length < S.maxSeriesOccurrences) {
+            if (dows.indexOf(d.getDay()) !== -1 && A.iso(d) >= date) {
+                out.push({ date: A.iso(d), startAt: A.iso(d) + 'T' + s, endAt: A.iso(d) + 'T' + e });
+            }
+            d = A.addDays(d, 1);
+        }
+        return out.length ? out : [first];
+    }
+
+    function annotate(occs) {
+        const v = currentVenue();
+        return occs.map(o => {
+            const clashes = A.findConflicts(v.id, o.startAt, o.endAt);
+            return Object.assign({}, o, { clashes: clashes });
+        });
+    }
+
+    /* ---- Validation, in the order the server checks it ---- */
+    function validate() {
+        const v = currentVenue();
+        const date = $('date').value, s = $('start').value, e = $('end').value;
+        const problems = [];
+
+        if (!date) problems.push('Please choose a booking date.');
+        else if (date < todayISO) problems.push('The booking date cannot be in the past.');
+        else if (date > maxISO) problems.push('Bookings may be made at most ' + S.advanceBookingLimitDays +
+            ' days (3 months) in advance.');
+
+        if (s && e && A.toMin(e) <= A.toMin(s)) problems.push('The end time must be later than the start time.');
+        if (s && A.toMin(s) < A.toMin(v.open)) problems.push('The start time is before the bookable window opens.');
+        if (e && A.toMin(e) > A.toMin(v.close)) problems.push('The end time is after the bookable window closes.');
+
+        if (s && e && A.toMin(e) > A.toMin(s)) {
+            const mins = A.toMin(e) - A.toMin(s);
+            if (mins > S.maxBookingMinutes)
+                problems.push('A single booking may last at most ' + (S.maxBookingMinutes / 60) +
+                    ' hours. This is ' + (mins / 60) + ' hours — submit a second booking for the extra time.');
+        }
+
+        if (!$('purpose').value.trim()) problems.push('Please describe the purpose of the booking.');
+
+        const att = Number($('attendees').value || 0);
+        if (!att) problems.push('Please give the expected number of attendees.');
+        else if (att > v.capacity)
+            problems.push('The expected attendance exceeds the venue capacity of ' + v.capacity + ' persons.');
+
+        if ($('repeat').checked) {
+            if (!selectedDows().length) problems.push('Choose at least one day of the week to repeat on.');
+            if (!$('until').value) problems.push('Choose the date the repeat should end.');
+            else if ($('until').value < date) problems.push('The repeat end date is before the first booking.');
+            else if ($('until').value > maxISO)
+                problems.push('The repeat cannot run past the ' + S.advanceBookingLimitDays + '-day advance limit.');
+        }
+
+        return problems;
+    }
+
+    function refresh() {
+        const v = currentVenue();
+        $('venueHelp').textContent = v.venueType + ' · ' + v.location + ' · bookable ' +
+            A.fmtTime(v.open) + '–' + A.fmtTime(v.close) + ' · approval required';
+        $('capHelp').textContent = 'Maximum capacity: ' + v.capacity + ' persons.';
+
+        const s = $('start').value, e = $('end').value;
+        if (s && e && A.toMin(e) > A.toMin(s)) {
+            const mins = A.toMin(e) - A.toMin(s);
+            const over = mins > S.maxBookingMinutes;
+            $('durHelp').textContent = 'Duration: ' + (mins / 60) + ' hours' +
+                (over ? ' — over the ' + (S.maxBookingMinutes / 60) + '-hour maximum for a single booking.'
+                      : ' of a maximum ' + (S.maxBookingMinutes / 60) + '.');
+        } else {
+            $('durHelp').textContent = 'The end time must be later than the start time.';
+        }
+
+        $('repeatOpts').hidden = !$('repeat').checked;
+        $('behalfField').hidden = !$('onBehalf').checked;
+
+        const problems = validate();
+        const occs = annotate(occurrences());
+        const clashing = occs.filter(o => o.clashes.length);
+        const free = occs.length - clashing.length;
+
+        /* Occurrence preview — the clashes are named, never silently dropped. */
+        if ($('repeat').checked) {
+            $('occPreview').innerHTML =
+                '<div class="notice ' + (clashing.length ? 'notice-warn' : 'notice-info') + '">' +
+                '<strong>' + occs.length + ' occurrence' + (occs.length === 1 ? '' : 's') + '</strong> ' +
+                (clashing.length
+                    ? free + ' free, <strong>' + clashing.length + ' clashing</strong>. Clashing dates: ' +
+                      clashing.map(o => A.esc(A.fmtDate(o.date))).join(', ') +
+                      '. You will be asked whether to submit the remainder.'
+                    : 'All dates are free.') +
+                '</div>';
+        } else {
+            $('occPreview').innerHTML = '';
+        }
+
+        let html = '';
+        if (!$('repeat').checked && clashing.length) {
+            html += '<div class="notice notice-danger"><strong>This time is already reserved</strong>' +
+                'The venue is not available for the selected period:<ul style="margin:.4rem 0 0;padding-left:1.1rem">' +
+                clashing[0].clashes.map(c => '<li>' + A.esc(A.fmtPeriod(c.startAt, c.endAt)) + ' — ' +
+                    c.status.toLowerCase() + ' booking (' + A.esc(c.ref) + ')</li>').join('') +
+                '</ul></div>';
+        }
+        if (problems.length) {
+            html += '<div class="notice notice-warn"><strong>Please check the following</strong>' +
+                '<ul style="margin:.4rem 0 0;padding-left:1.1rem">' +
+                problems.map(p => '<li>' + A.esc(p) + '</li>').join('') + '</ul></div>';
+        }
+        if (!html) {
+            html = '<div class="notice notice-success"><strong>Venue available</strong>' +
+                (occs.length > 1 ? 'All ' + occs.length + ' occurrences are free.' : 'No other booking overlaps this period.') +
+                '</div>';
+        }
+        $('validation').innerHTML = html;
+
+        /* A fully-clashing single booking cannot be submitted; a partly-clashing
+           series can, because the user chooses what to do with the clashes. */
+        const blocked = problems.length || (!$('repeat').checked && clashing.length) || free === 0;
+        $('submitBtn').disabled = !!blocked;
+
+        const forUser = $('onBehalf').checked
+            ? A.userById(Number($('behalfUser').value))
+            : A.CURRENT_USER;
+
+        $('summary').innerHTML =
+            '<dt>Venue</dt><dd>' + A.esc(v.name) + '</dd>' +
+            '<dt>Location</dt><dd>' + A.esc(v.location) + '</dd>' +
+            '<dt>Date</dt><dd>' + ($('date').value ? A.fmtDate($('date').value) : '—') + '</dd>' +
+            '<dt>Time</dt><dd>' + A.fmtRange(s, e) + '</dd>' +
+            '<dt>Occurrences</dt><dd>' + occs.length + ($('repeat').checked ? ' (weekly)' : ' (one-off)') + '</dd>' +
+            '<dt>Attendees</dt><dd>' + ($('attendees').value || '—') + '</dd>' +
+            '<dt>Booking for</dt><dd>' + A.esc(forUser.name) +
+                ($('onBehalf').checked ? ' <span class="badge badge-muted">on behalf</span>' : '') + '</dd>' +
+            '<dt>Status on submission</dt><dd><span class="badge badge-pending">Pending approval</span></dd>';
+
+        A.availabilityStrip($('dayAvail'), v, $('date').value || todayISO, 3);
+    }
+
+    ['venue', 'date', 'start', 'end', 'purpose', 'attendees', 'repeat', 'until', 'onBehalf', 'behalfUser']
+        .forEach(id => $(id).addEventListener('input', () => { if (id === 'venue') fillTimes(); refresh(); }));
+    $('dows').addEventListener('change', refresh);
+
+    /* Default the repeat weekday to the chosen date's own weekday. */
+    $('repeat').addEventListener('change', () => {
+        if ($('repeat').checked && !selectedDows().length && $('date').value) {
+            const dow = new Date($('date').value + 'T00:00:00').getDay();
+            const box = document.querySelector('.dow[value="' + dow + '"]');
+            if (box) box.checked = true;
+        }
+        refresh();
+    });
+
+    /* ---- Review then confirm ---- */
+    $('bookingForm').addEventListener('submit', e => {
+        e.preventDefault();
+        if (validate().length) return;
+
+        const v = currentVenue();
+        const occs = annotate(occurrences());
+        const clashing = occs.filter(o => o.clashes.length);
+        const free = occs.filter(o => !o.clashes.length);
+        if (!free.length) return;
+
+        const forUser = $('onBehalf').checked ? A.userById(Number($('behalfUser').value)) : A.CURRENT_USER;
+
+        A.modal({
+            title: 'Review your booking request',
+            body: '<div class="summary-box"><dl>' +
+                '<dt>Venue</dt><dd>' + A.esc(v.name) + '</dd>' +
+                '<dt>First date</dt><dd>' + A.fmtDate($('date').value) + '</dd>' +
+                '<dt>Time</dt><dd>' + A.fmtRange($('start').value, $('end').value) + '</dd>' +
+                '<dt>Occurrences</dt><dd>' + free.length + ' to be created' +
+                    (clashing.length ? ', ' + clashing.length + ' clashing and left out' : '') + '</dd>' +
+                '<dt>Purpose</dt><dd>' + A.esc($('purpose').value.trim()) + '</dd>' +
+                '<dt>Attendees</dt><dd>' + A.esc($('attendees').value || '—') + '</dd>' +
+                '<dt>Booking for</dt><dd>' + A.esc(forUser.name) + '</dd>' +
+                '</dl></div>' +
+                (clashing.length
+                    ? '<div class="notice notice-warn" style="margin-top:1rem"><strong>' + clashing.length +
+                      ' occurrence' + (clashing.length === 1 ? '' : 's') + ' cannot be created</strong>' +
+                      clashing.map(o => A.esc(A.fmtDate(o.date))).join(', ') +
+                      ' — already reserved. Submitting will create the other ' + free.length +
+                      '. Nothing is skipped silently.</div>'
+                    : '') +
+                '<p class="help" style="margin-top:1rem">The request will be submitted with status ' +
+                '<strong>Pending</strong> and reviewed by the Kulliyyah office. Every venue requires approval.</p>',
+            buttons: [
+                { label: 'Back' },
+                { label: clashing.length ? 'Submit the ' + free.length + ' free dates' : 'Confirm booking',
+                  cls: 'btn-primary', onClick: () => showConfirmation(v, free, clashing, forUser) }
+            ]
+        });
+    });
+
+    function showConfirmation(v, free, clashing, forUser) {
+        const ref = 'BK-' + A.today.getFullYear() + String(A.today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(1000 + Math.floor((A.bookings.length * 7) % 8999)).padStart(4, '0');
+
+        $('confirmNotice').innerHTML = '<strong>Your request has been recorded</strong>' +
+            free.length + ' booking' + (free.length === 1 ? '' : 's') + ' created with status ' +
+            '<em>Pending</em>, awaiting approval by the Kulliyyah office.' +
+            (clashing.length ? ' ' + clashing.length + ' clashing date' + (clashing.length === 1 ? '' : 's') +
+                ' were reported and not created.' : '');
+
+        $('confirmSummary').innerHTML =
+            '<dt>Booking reference</dt><dd class="mono">' + ref + (free.length > 1 ? ' (series)' : '') + '</dd>' +
+            '<dt>Venue</dt><dd>' + A.esc(v.name) + '</dd>' +
+            '<dt>Location</dt><dd>' + A.esc(v.location) + '</dd>' +
+            '<dt>Time</dt><dd>' + A.fmtRange($('start').value, $('end').value) + '</dd>' +
+            '<dt>Occurrences</dt><dd>' + free.length + '</dd>' +
+            '<dt>Purpose</dt><dd>' + A.esc($('purpose').value.trim()) + '</dd>' +
+            '<dt>Booking for</dt><dd>' + A.esc(forUser.name) + '</dd>' +
+            '<dt>Status</dt><dd>' + A.badge('Pending') + '</dd>';
+
+        if (free.length > 1) {
+            $('occList').innerHTML = '<h3 style="font-size:.95rem;margin:1.25rem 0 .5rem">Dates created</h3>' +
+                '<div class="table-wrap"><table class="data"><thead><tr><th scope="col">#</th>' +
+                '<th scope="col">Date</th><th scope="col">Status</th></tr></thead><tbody>' +
+                free.map((o, i) => '<tr><td>' + (i + 1) + '</td><td>' + A.esc(A.fmtDate(o.date)) +
+                    '</td><td>' + A.badge('Pending') + '</td></tr>').join('') +
+                clashing.map(o => '<tr><td>—</td><td>' + A.esc(A.fmtDate(o.date)) +
+                    '</td><td><span class="badge badge-rejected">Not created — clash</span></td></tr>').join('') +
+                '</tbody></table></div>' +
+                '<p class="help">Every occurrence is a real booking in its own right. Each can be approved or ' +
+                'cancelled individually, or the whole series can be handled at once.</p>';
+        } else {
+            $('occList').innerHTML = '';
+        }
+
+        $('emailNote').innerHTML = A.emailNotice(forUser.email,
+            free.length > 1 ? 'series submitted' : 'booking submitted') +
+            (free.length > 1
+                ? '<p class="help">A series sends <strong>one</strong> summary message, not one per occurrence.</p>'
+                : '');
+
+        $('formStage').hidden = true;
+        $('confirmStage').hidden = false;
+        const steps = $('steps').children;
+        steps[0].classList.add('done'); steps[0].removeAttribute('aria-current');
+        steps[1].classList.add('done');
+        steps[2].setAttribute('aria-current', 'step');
+        window.scrollTo(0, 0);
+    }
+
+    fillTimes();
+    refresh();
+})();
+</script>
+</body>
+</html>

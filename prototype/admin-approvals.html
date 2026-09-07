@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Approvals — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Approvals</h1>
+                    <p class="lede" id="lede"></p>
+                </div>
+                <div class="seg" id="tabs" role="group" aria-label="Queue">
+                    <button type="button" data-view="pending" aria-pressed="true">Pending</button>
+                    <button type="button" data-view="decided" aria-pressed="false">Decided today</button>
+                </div>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom: 18px;" id="stats"></div>
+
+            <section class="card" aria-labelledby="qHead">
+                <div class="card-head">
+                    <h2 id="qHead" class="label" style="margin:0">Requests awaiting a decision</h2>
+                    <span class="help" style="margin:0">Rejecting asks for a reason · the requester is notified either way</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width:170px">Reference</th>
+                                <th scope="col" style="width:200px">Resource</th>
+                                <th scope="col" style="width:180px">Date and time</th>
+                                <th scope="col" style="width:230px">Requester</th>
+                                <th scope="col">Purpose</th>
+                                <th scope="col" style="width:186px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+                <div class="card-foot"><div class="pagination" id="pager"></div></div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-approvals.html' });
+
+    const now = new Date();
+    const todayISO = A.iso(A.today);
+    const state = { view: 'pending' };
+
+    const pending = A.bookings.filter(b => b.status === 'Pending');
+    const decidedToday = A.bookings.filter(b =>
+        (b.status === 'Approved' || b.status === 'Rejected') && b.created === todayISO);
+    const outstandingKeys = A.outstandingKeys();
+
+    /* ---- Summary ---- */
+    const rooms = pending.filter(b => b.kind === 'Venue').length;
+    const cars = pending.filter(b => b.kind === 'Vehicle').length;
+    const oldest = pending.slice().sort((a, b) => a.created < b.created ? -1 : 1)[0];
+
+    document.getElementById('lede').textContent =
+        A.DAYS[A.today.getDay()] + ', ' + A.fmtDate(A.today) + ' · ' +
+        pending.length + ' request' + (pending.length === 1 ? '' : 's') + ' awaiting a decision' +
+        (oldest ? ' · oldest submitted ' + A.fmtDate(oldest.created) : '');
+
+    document.getElementById('stats').innerHTML = [
+        { cls: 'accent', k: 'Awaiting approval', v: pending.length, d: rooms + ' rooms · ' + cars + ' vehicles' },
+        { cls: '', k: 'Approved today', v: decidedToday.filter(b => b.status === 'Approved').length, d: 'by the Kulliyyah office' },
+        { cls: 'danger', k: 'Rejected today', v: decidedToday.filter(b => b.status === 'Rejected').length, d: 'reason recorded on each' },
+        { cls: 'neutral', k: 'Keys not returned', v: outstandingKeys.length,
+          d: outstandingKeys.length ? A.esc(A.bookingById(outstandingKeys[0].bookingId).resource.name) + ' and others' : 'none outstanding' }
+    ].map(s => '<div class="stat ' + s.cls + '"><span class="k">' + s.k + '</span>' +
+               '<span class="v">' + s.v + '</span><span class="d">' + s.d + '</span></div>').join('');
+
+    /* ---- Queue ---- */
+    const ctl = A.tableController({
+        rows: () => state.view === 'pending' ? pending : decidedToday,
+        tbody: document.getElementById('rows'),
+        pager: document.getElementById('pager'),
+        cols: 6,
+        pageSize: 8,
+        match: () => true,
+        render: b => {
+            const u = A.userById(b.userId);
+            const decided = b.status !== 'Pending';
+            const action = decided
+                ? '<span class="badge badge-' + b.status.toLowerCase() + '">' + A.esc(b.status) + '</span>'
+                : '<div class="btn-group" style="justify-content:flex-end">' +
+                  '<button class="btn btn-sm btn-primary" type="button" data-approve="' + b.id + '">Approve</button>' +
+                  '<button class="btn btn-sm btn-danger" type="button" data-reject="' + b.id + '">Reject</button></div>';
+            const clash = A.findConflicts(b.resourceId, b.startAt, b.endAt, b.id)
+                .filter(c => c.status === 'Approved').length;
+            return '<tr data-status="' + b.status.toLowerCase() + '">' +
+                '<td><span class="mono">' + A.esc(b.ref) + '</span></td>' +
+                '<td><span class="res">' + A.esc(b.resource.name) + '</span></td>' +
+                '<td><div class="nowrap">' + A.esc(A.fmtDate(b.date)) + '</div>' +
+                    '<div class="help nowrap" style="margin:0">' +
+                    (b.multiDay ? 'Full days · ' + A.esc(A.durationLabel(b.startAt, b.endAt))
+                                : A.esc(A.fmtRange(b.start, b.end))) + '</div></td>' +
+                '<td><div style="color:var(--ink)">' + A.esc(u.name) + '</div>' +
+                    '<div class="help" style="margin:0">' + A.esc(u.affiliation) + ' · submitted ' + A.esc(A.fmtDate(b.created)) + '</div></td>' +
+                '<td>' + A.esc(b.purpose) +
+                    (clash ? '<br><span class="tag tag-illustrative" style="margin-top:4px">Clash warning</span>' : '') +
+                    (b.kind === 'Vehicle' ? '<br><span class="help" style="margin:2px 0 0">Requester drives</span>' : '') +
+                '</td>' +
+                '<td style="text-align:right">' + action + '</td></tr>';
+        }
+    });
+
+    document.getElementById('tabs').addEventListener('click', e => {
+        const b = e.target.closest('button[data-view]');
+        if (!b) return;
+        state.view = b.dataset.view;
+        [...document.querySelectorAll('#tabs button')].forEach(x =>
+            x.setAttribute('aria-pressed', String(x.dataset.view === state.view)));
+        document.getElementById('qHead').textContent =
+            state.view === 'pending' ? 'Requests awaiting a decision' : 'Decided today';
+        ctl.refresh();
+    });
+
+    document.getElementById('rows').addEventListener('click', e => {
+        const ap = e.target.closest('button[data-approve]');
+        const rj = e.target.closest('button[data-reject]');
+        if (ap) return decide(A.bookingById(Number(ap.dataset.approve)), 'Approved');
+        if (rj) return decide(A.bookingById(Number(rj.dataset.reject)), 'Rejected');
+    });
+
+    function decide(b, outcome) {
+        const u = A.userById(b.userId);
+        const isReject = outcome === 'Rejected';
+        /* Approval re-checks conflicts — a slot free at submission may have
+           been taken since. This is the rule the schema doc calls out. */
+        const clash = A.findConflicts(b.resourceId, b.startAt, b.endAt, b.id)
+            .filter(c => c.status === 'Approved');
+
+        A.modal({
+            title: (isReject ? 'Reject' : 'Approve') + ' ' + b.ref,
+            body:
+                '<dl class="kv">' +
+                '<dt>Resource</dt><dd>' + A.esc(b.resource.name) + '</dd>' +
+                '<dt>Period</dt><dd>' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) + '</dd>' +
+                '<dt>Requester</dt><dd>' + A.esc(u.name) + ' (' + A.esc(u.affiliation) + ')</dd>' +
+                '<dt>Purpose</dt><dd>' + A.esc(b.purpose) + '</dd></dl>' +
+                (clash.length && !isReject
+                    ? '<div class="notice notice-danger" style="margin:14px 0 0"><strong>This slot is no longer free.</strong>' +
+                      A.esc(clash[0].ref) + ' was approved for an overlapping period. Approving would double-book the resource.</div>'
+                    : '') +
+                (isReject
+                    ? '<div class="field" style="margin-top:14px"><label for="why">Reason for rejection <span class="req">*</span></label>' +
+                      '<textarea class="textarea" id="why" placeholder="For example: clashes with timetabled teaching"></textarea>' +
+                      '<p class="help">The reason is sent to the requester and kept with the record.</p></div>' +
+                      '<div id="err" aria-live="polite"></div>'
+                    : ''),
+            buttons: [
+                { label: 'Back' },
+                { label: isReject ? 'Reject request' : 'Approve request',
+                  cls: isReject ? 'btn-danger' : 'btn-primary',
+                  onClick: function (root) {
+                      if (!isReject && clash.length) {
+                          A.toast('Approval refused — the period is already taken by ' + clash[0].ref + '.', 'danger');
+                          return;
+                      }
+                      if (isReject) {
+                          const why = root.querySelector('#why').value.trim();
+                          if (!why) {
+                              root.querySelector('#err').innerHTML =
+                                  '<div class="notice notice-danger" style="margin:12px 0 0">A reason is required.</div>';
+                              root.querySelector('#why').focus();
+                              return false;
+                          }
+                          b.rejectReason = why;
+                      }
+                      b.status = outcome;
+                      const i = pending.indexOf(b);
+                      if (i > -1) pending.splice(i, 1);
+                      decidedToday.push(b);
+                      ctl.refresh();
+                      A.modal({
+                          title: b.ref + ' ' + outcome.toLowerCase(),
+                          body: '<p><strong>' + A.esc(b.resource.name) + '</strong> — ' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) + '</p>' +
+                                A.emailNotice(u.email, 'booking ' + outcome.toLowerCase())
+                      });
+                  } }
+            ]
+        });
+    }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #0e4732; text-decoration: underline; text-underline-offset: 3px; }
+    a:hover { color: #a67c22; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #faf9f5; font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif; color: #1a2420; display: flex; flex-direction: column;">
+
+  <!-- ============ Header ============ -->
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; height: 72px; padding: 0 32px; background: #ffffff; border-bottom: 1px solid #e6e2d8; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 13px;">
+      <svg width="26" height="30" viewBox="0 0 40 46" aria-hidden="true">
+        <path d="M 3 44 L 3 22 Q 3 5 20 3 Q 37 5 37 22 L 37 44" fill="none" stroke="#0e4732" stroke-width="1.8"></path>
+        <path d="M 12 44 L 12 24 Q 12 14 20 13 Q 28 14 28 24 L 28 44" fill="none" stroke="#a67c22" stroke-width="1.4"></path>
+      </svg>
+      <div style="display: flex; flex-direction: column; gap: 1px;">
+        <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; font-weight: 600; letter-spacing: 0.03em; line-height: 1.1; color: #0b3a29;">AIKOL Tempahan</span>
+        <span style="font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #a09883;">Kulliyyah Undang-undang Ahmad Ibrahim</span>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 22px;">
+      <div style="display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 13px; border-bottom: 1px solid #d8d3c6; min-width: 250px;">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#a09883" stroke-width="1.6" aria-hidden="true">
+          <circle cx="9" cy="9" r="6"></circle><path d="M13.5 13.5 L17 17"></path>
+        </svg>
+        <span style="font-size: 13px; color: #a09883;">Cari ruang, kenderaan atau rujukan</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #f1f6f3; color: #0e4732; font-size: 11px; font-weight: 600;">FH</span>
+        <span style="font-size: 13px; color: #3f4a44;">Farhan</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-grow: 1; min-height: 0;">
+
+    <!-- ============ Sidebar: colour as line, never fill ============ -->
+    <div style="width: 248px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #e6e2d8; padding: 30px 0; display: flex; flex-direction: column; gap: 30px;">
+
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="padding: 0 26px 11px; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #b3ab97;">Tempah</span>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 11px 26px;">
+          <svg width="13" height="15" viewBox="0 0 20 24" aria-hidden="true">
+            <path d="M 2 23 L 2 11 Q 2 2 10 1 Q 18 2 18 11 L 18 23" fill="none" stroke="#2f6b4f" stroke-width="2"></path>
+          </svg>
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; font-weight: 600; color: #21402f; border-bottom: 2px solid #2f6b4f; padding-bottom: 1px;">Ruang</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 11px 26px;">
+          <svg width="13" height="15" viewBox="0 0 20 24" aria-hidden="true">
+            <path d="M 2 23 L 2 11 Q 2 2 10 1 Q 18 2 18 11 L 18 23" fill="none" stroke="#3a6285" stroke-width="1.3"></path>
+          </svg>
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; color: #3f4a44;">Kenderaan</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 11px 26px;">
+          <svg width="13" height="15" viewBox="0 0 20 24" aria-hidden="true">
+            <path d="M 2 23 L 2 11 Q 2 2 10 1 Q 18 2 18 11 L 18 23" fill="none" stroke="#8a6a24" stroke-width="1.3"></path>
+          </svg>
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; color: #3f4a44;">Tempahan berulang</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="padding: 0 26px 11px; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #b3ab97;">Jejak</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 26px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <svg width="13" height="15" viewBox="0 0 20 24" aria-hidden="true">
+              <path d="M 2 23 L 2 11 Q 2 2 10 1 Q 18 2 18 11 L 18 23" fill="none" stroke="#2f6b4f" stroke-width="1.3"></path>
+            </svg>
+            <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; color: #3f4a44;">Tempahan saya</span>
+          </div>
+          <span style="font-size: 11px; font-weight: 600; color: #2f6b4f;">4</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 26px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <svg width="13" height="15" viewBox="0 0 20 24" aria-hidden="true">
+              <path d="M 2 23 L 2 11 Q 2 2 10 1 Q 18 2 18 11 L 18 23" fill="none" stroke="#96603a" stroke-width="1.3"></path>
+            </svg>
+            <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; color: #3f4a44;">Kunci saya</span>
+          </div>
+          <span style="font-size: 11px; font-weight: 600; color: #96603a;">1</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 11px 26px;">
+          <svg width="13" height="15" viewBox="0 0 20 24" aria-hidden="true">
+            <path d="M 2 23 L 2 11 Q 2 2 10 1 Q 18 2 18 11 L 18 23" fill="none" stroke="#6f4f6b" stroke-width="1.3"></path>
+          </svg>
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; color: #3f4a44;">Sejarah</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="padding: 0 26px 11px; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #b3ab97;">Akaun</span>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 11px 26px;">
+          <svg width="13" height="15" viewBox="0 0 20 24" aria-hidden="true">
+            <path d="M 2 23 L 2 11 Q 2 2 10 1 Q 18 2 18 11 L 18 23" fill="none" stroke="#6f4f6b" stroke-width="1.3"></path>
+          </svg>
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; color: #3f4a44;">Profil &amp; lesen</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Main column ============ -->
+    <div style="flex-grow: 1; min-width: 0; padding: 40px 40px; display: flex; flex-direction: column; gap: 28px;">
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 38px; font-weight: 500; line-height: 1.12; color: #0b3a29;">Assalamualaikum, Farhan</span>
+        <span style="font-size: 14px; color: #6b6558;">Apa yang anda ingin tempah hari ini?</span>
+      </div>
+
+      <div style="background: #ffffff; border: 1px solid #e6e2d8; padding: 22px 24px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: flex-end; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #b3ab97;">Jenis</span>
+            <div style="display: flex; gap: 0;">
+              <span style="display: flex; align-items: center; justify-content: center; height: 44px; padding: 0 18px; color: #21402f; font-size: 14px; font-weight: 600; border-bottom: 2px solid #2f6b4f;">Ruang</span>
+              <span style="display: flex; align-items: center; justify-content: center; height: 44px; padding: 0 18px; color: #7d8880; font-size: 14px; border-bottom: 2px solid #e6e2d8;">Kenderaan</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+            <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #b3ab97;">Tarikh</span>
+            <div style="display: flex; align-items: center; height: 44px; font-size: 14px; border-bottom: 1px solid #d8d3c6;">31 Ogos 2026</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+            <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #b3ab97;">Masa</span>
+            <div style="display: flex; align-items: center; height: 44px; font-size: 14px; border-bottom: 1px solid #d8d3c6;">2:00 &ndash; 4:00 PM</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; width: 74px;">
+            <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #b3ab97;">Orang</span>
+            <div style="display: flex; align-items: center; height: 44px; font-size: 14px; border-bottom: 1px solid #d8d3c6;">24</div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: center; height: 44px; padding: 0 26px; background: #0e4732; color: #ffffff; font-size: 14px; font-weight: 500; white-space: nowrap;">Semak</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 22px; padding-top: 14px; border-top: 1px solid #f0ede4;">
+          <span style="font-size: 12.5px; color: #6b6558; border-bottom: 1px solid #8a6a24; padding-bottom: 2px;">Ulang mingguan sepanjang semester</span>
+          <span style="font-size: 12.5px; color: #6b6558; border-bottom: 1px solid #6f4f6b; padding-bottom: 2px;">Tempah bagi pihak orang lain</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 14px;">
+        <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 24px; font-weight: 500; color: #0b3a29;">Tersedia pada masa itu &mdash; 6 daripada 8 ruang</span>
+        <a href="#" style="font-size: 12.5px;">Semua ruang</a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px;">
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 2px solid #2f6b4f;">
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; font-weight: 600;">Moot Court Room</span>
+          <span style="font-size: 12px; color: #a09883;">Aras 2 &middot; 80 orang</span>
+          <span style="font-size: 12px; color: #2f6b4f; margin-top: 6px;">Kosong 2:00 &ndash; 4:00 PM</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 2px solid #2f6b4f;">
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; font-weight: 600;">Seminar Room 1</span>
+          <span style="font-size: 12px; color: #a09883;">Aras 1 &middot; 45 orang</span>
+          <span style="font-size: 12px; color: #2f6b4f; margin-top: 6px;">Kosong 2:00 &ndash; 4:00 PM</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 2px solid #2f6b4f;">
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; font-weight: 600;">Seminar Room 2</span>
+          <span style="font-size: 12px; color: #a09883;">Aras 1 &middot; 40 orang</span>
+          <span style="font-size: 12px; color: #2f6b4f; margin-top: 6px;">Kosong 2:00 &ndash; 4:00 PM</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 2px solid #8a6a24;">
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; font-weight: 600;">Meeting Room A</span>
+          <span style="font-size: 12px; color: #a09883;">Aras 3 &middot; 16 orang</span>
+          <span style="font-size: 12px; color: #8a6a24; margin-top: 6px;">Kosong dari 3:00 PM</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 2px solid #2f6b4f;">
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; font-weight: 600;">Meeting Room B</span>
+          <span style="font-size: 12px; color: #a09883;">Anneks &middot; 10 orang</span>
+          <span style="font-size: 12px; color: #2f6b4f; margin-top: 6px;">Kosong 2:00 &ndash; 4:00 PM</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 2px solid #2f6b4f;">
+          <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; font-weight: 600;">Discussion Room 1</span>
+          <span style="font-size: 12px; color: #a09883;">Perpustakaan &middot; 8 orang</span>
+          <span style="font-size: 12px; color: #2f6b4f; margin-top: 6px;">Kosong 2:00 &ndash; 4:00 PM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Right rail ============ -->
+    <div style="width: 300px; flex-shrink: 0; background: #ffffff; border-left: 1px solid #e6e2d8; padding: 40px 26px; display: flex; flex-direction: column; gap: 26px;">
+
+      <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #b3ab97;">Aktiviti anda</span>
+
+      <div style="display: flex; flex-direction: column; gap: 5px; padding-left: 15px; border-left: 2px solid #96603a;">
+        <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #96603a;">Kunci belum dipulangkan</span>
+        <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; font-weight: 600;">Seminar Room 1</span>
+        <span style="font-size: 12px; color: #a09883;">Diambil 28 Ogos, 9:04 AM</span>
+        <span style="font-size: 12.5px; color: #6b6558; margin-top: 3px;">Pulangkan di pejabat Kulliyyah</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px; padding-left: 15px; border-left: 2px solid #8a6a24;">
+        <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #8a6a24;">Menunggu kelulusan</span>
+        <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; font-weight: 600;">Seminar Room 1</span>
+        <span style="font-size: 12px; color: #a09883;">4 Sep, 10:00 AM &ndash; 12:00 PM</span>
+        <span style="font-size: 12.5px; color: #6b6558; margin-top: 3px;">Dihantar 2 hari lalu</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px; padding-left: 15px; border-left: 2px solid #2f6b4f;">
+        <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #2f6b4f;">Tempahan berikutnya</span>
+        <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; font-weight: 600;">Moot Court Room</span>
+        <span style="font-size: 12px; color: #a09883;">29 Ogos, 2:00 &ndash; 4:00 PM</span>
+        <span style="font-size: 12.5px; color: #2f6b4f; margin-top: 3px;">Diluluskan</span>
+      </div>
+
+      <div style="padding-top: 18px; border-top: 1px solid #e6e2d8;">
+        <span style="font-size: 12px; color: #a09883;">Setiap tempahan memerlukan kelulusan pejabat Kulliyyah. Anda boleh batalkan sendiri sehingga 3 hari sebelum tarikh.</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

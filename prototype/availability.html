@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Availability — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Availability</h1>
+                    <p class="lede" id="headline"></p>
+                </div>
+                <div class="seg" id="tabs" role="group" aria-label="Resource type">
+                    <button type="button" data-type="rooms" aria-pressed="true">Rooms</button>
+                    <button type="button" data-type="cars" aria-pressed="false">Kulliyyah cars</button>
+                </div>
+            </div>
+
+            <div class="daypick" style="margin-bottom: 18px;" id="days" role="group" aria-label="Choose a day"></div>
+
+            <div class="legend" style="margin-bottom: 14px;">
+                <span><span class="swatch swatch-approved"></span>Approved</span>
+                <span><span class="swatch swatch-pending"></span>Pending</span>
+                <span><span class="swatch swatch-free"></span>Free — click to book</span>
+            </div>
+
+            <div class="notice notice-warn" id="carsNote" hidden></div>
+
+            <div class="board" id="board"></div>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'availability.html' });
+
+    const H0 = 8, H1 = 22, SPAN = H1 - H0;
+    const pct = (n) => (n / SPAN * 100).toFixed(3) + '%';
+    const hhmm = (h) => String(Math.floor(h)).padStart(2, '0') + ':' + (h % 1 ? '30' : '00');
+
+    const me = A.CURRENT_USER;
+    const mayDrive = A.canBookVehicle(me);   /* eligibility to REQUEST a car; the driver is assigned by the office */
+
+    const state = { type: 'rooms', dayIdx: 0 };
+
+    /* Seven days from today. */
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+        const d = A.addDays(A.today, i);
+        days.push({
+            iso: A.iso(d),
+            dow: A.DAYS[d.getDay()].slice(0, 3),
+            label: String(d.getDate()).padStart(2, '0') + ' ' + A.MONTHS[d.getMonth()],
+            full: A.DAYS[d.getDay()] + ', ' + A.fmtDate(d)
+        });
+    }
+
+    /* ---- Blocks for one room on one day -------------------------------- */
+    /* Busy periods come straight from the booking data and are clipped to the
+       08:00–22:00 window; whatever is left over is free and clickable. */
+    function roomBlocks(resource, dayISO) {
+        if (resource.status !== 'Active') {
+            return [{ kind: 'closed', left: '0%', width: '100%',
+                      label: 'Under maintenance', title: 'Under maintenance' }];
+        }
+        const dayStart = dayISO + 'T00:00', dayEnd = dayISO + 'T23:59';
+        const busy = A.bookings
+            .filter(b => b.resourceId === resource.id &&
+                         A.BLOCKING.indexOf(b.status) !== -1 &&
+                         b.startAt <= dayEnd && b.endAt >= dayStart)
+            .map(b => {
+                const s = A.dPart(b.startAt) < dayISO ? H0 : A.toMin(A.tPart(b.startAt)) / 60;
+                const e = A.dPart(b.endAt) > dayISO ? H1 : A.toMin(A.tPart(b.endAt)) / 60;
+                return { s: Math.max(H0, s), e: Math.min(H1, e), status: b.status, purpose: b.purpose };
+            })
+            .filter(b => b.e > b.s)
+            .sort((x, y) => x.s - y.s);
+
+        const out = [];
+        let cursor = H0;
+        busy.forEach(b => {
+            if (b.s > cursor) out.push(freeBlock(resource, dayISO, cursor, b.s));
+            const w = b.e - b.s;
+            out.push({
+                kind: b.status === 'Pending' ? 'pending' : 'approved',
+                left: pct(b.s - H0), width: pct(w),
+                label: w >= 4 ? hhmm(b.s) + '–' + hhmm(b.e) + ' · ' + b.purpose
+                     : (w >= 2 ? hhmm(b.s) + '–' + hhmm(b.e) : hhmm(b.s)),
+                title: b.purpose + ' (' + (b.status === 'Pending' ? 'pending approval' : 'approved') + ')'
+            });
+            cursor = Math.max(cursor, b.e);
+        });
+        if (cursor < H1) out.push(freeBlock(resource, dayISO, cursor, H1));
+        return out;
+    }
+
+    function freeBlock(resource, dayISO, from, to) {
+        const w = to - from;
+        return {
+            kind: 'free', left: pct(from - H0), width: pct(w),
+            label: w >= 3 ? 'Free ' + hhmm(from) + '–' + hhmm(to)
+                 : (w >= 2 ? hhmm(from) + '–' + hhmm(to) : ''),
+            title: 'Free ' + hhmm(from) + '–' + hhmm(to) + ' — click to request a booking',
+            book: { resId: resource.id, dayISO: dayISO, from: from, to: Math.min(to, from + 2) }
+        };
+    }
+
+    /* ---- Cells for one car across the week ----------------------------- */
+    function carCells(vehicle) {
+        return days.map(d => {
+            if (vehicle.status !== 'Active') {
+                return { kind: 'closed', label: '', title: 'Unavailable — ' + vehicle.name };
+            }
+            const dayStart = d.iso + 'T00:00', dayEnd = d.iso + 'T23:59';
+            const trip = A.bookings.find(b => b.resourceId === vehicle.id &&
+                A.BLOCKING.indexOf(b.status) !== -1 &&
+                b.startAt <= dayEnd && b.endAt >= dayStart);
+            if (trip) {
+                const firstDay = A.dPart(trip.startAt) === d.iso;
+                return {
+                    kind: trip.status === 'Pending' ? 'pending' : 'approved',
+                    label: firstDay ? (trip.destination || trip.purpose) : '',
+                    title: (trip.destination || trip.purpose) + ' (' +
+                           (trip.status === 'Pending' ? 'pending approval' : 'approved') + ')'
+                };
+            }
+            return {
+                kind: 'free', label: 'Free',
+                title: 'Free on ' + d.full + ' — click to request a trip',
+                book: { resId: vehicle.id, dayISO: d.iso, from: 8, to: 17 }
+            };
+        });
+    }
+
+    /* ---- Render -------------------------------------------------------- */
+    function renderDays() {
+        document.getElementById('days').innerHTML = days.map((d, i) =>
+            '<button type="button" data-day="' + i + '" aria-pressed="' + (i === state.dayIdx) + '">' +
+            '<span class="dow">' + A.esc(d.dow) + '</span>' +
+            '<span class="dnum">' + A.esc(d.label) + '</span></button>').join('');
+    }
+
+    function renderBoard() {
+        const board = document.getElementById('board');
+        const day = days[state.dayIdx];
+        const note = document.getElementById('carsNote');
+
+        if (state.type === 'rooms') {
+            note.hidden = true;
+            const rows = A.venues.map(v => {
+                const blocks = roomBlocks(v, day.iso);
+                return '<div class="board-row">' +
+                    '<div class="board-res">' +
+                    '<img src="' + A.resourceImg(v) + '" alt="">' +
+                    '<div style="min-width:0"><div class="n">' + A.esc(v.name) + '</div>' +
+                    '<div class="m">' + A.esc(v.floor + ' · ' + v.capacity + ' persons') + '</div></div></div>' +
+                    '<div class="board-track">' + blocks.map((b, bi) =>
+                        '<div class="board-block blk-' + b.kind + '"' +
+                        (b.book ? ' data-book="' + v.id + ':' + day.iso + ':' + b.book.from + ':' + b.book.to + '" tabindex="0" role="button"' : '') +
+                        ' title="' + A.esc(b.title) + '"' +
+                        ' style="left:' + b.left + ';width:' + b.width + '">' +
+                        '<span>' + A.esc(b.label) + '</span></div>').join('') +
+                    '</div></div>';
+            }).join('');
+
+            board.innerHTML =
+                '<div class="board-head"><div class="k">Room</div><div class="board-hours">' +
+                ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00']
+                    .map(t => '<span>' + t + '</span>').join('') +
+                '</div></div>' + rows;
+
+            const freeRooms = A.venues.filter(v =>
+                roomBlocks(v, day.iso).some(b => b.kind === 'free')).length;
+            document.getElementById('headline').textContent =
+                day.full + ' · ' + freeRooms + ' of ' + A.venues.length +
+                ' rooms have free time · click a free block to request it';
+
+        } else {
+            note.hidden = false;
+            note.innerHTML = '<strong>Cars may be collected one day and returned another.</strong>' +
+                'The board shows whole days across the week. ' +
+                (mayDrive
+                    ? 'You may drive yourself with a licence on file, or ask the Vehicle Management Unit for a driver.'
+                    : 'You may book a car, but a driver from the Vehicle Management Unit will be requested — ' +
+                      'a Kulliyyah car may not be driven by a student.');
+
+            const rows = A.vehicles.map(v => {
+                const cells = carCells(v);
+                return '<div class="board-row">' +
+                    '<div class="board-res">' +
+                    '<img src="' + A.resourceImg(v) + '" alt="">' +
+                    '<div style="min-width:0"><div class="n">' + A.esc(v.name) + '</div>' +
+                    '<div class="m">' + A.esc(v.registration + ' · ' + v.model + ' · ' + v.seats + ' seats') + '</div></div></div>' +
+                    '<div class="board-week">' + cells.map((c, ci) =>
+                        '<div class="board-cell blk-' + c.kind + '"' +
+                        (c.book ? ' data-book="' + v.id + ':' + c.book.dayISO + ':8:17" tabindex="0" role="button"' : '') +
+                        ' title="' + A.esc(c.title) + '">' +
+                        '<span>' + A.esc(c.label) + '</span></div>').join('') +
+                    '</div></div>';
+            }).join('');
+
+            board.innerHTML =
+                '<div class="board-head"><div class="k">Vehicle</div><div class="board-days">' +
+                days.map(d => '<div class="d">' + A.esc(d.dow + ' ' + d.label) + '</div>').join('') +
+                '</div></div>' + rows;
+
+            document.getElementById('headline').textContent =
+                day.full + ' · ' + A.vehicles.length + ' Kulliyyah cars · trips may span several days';
+        }
+    }
+
+    /* ---- Booking dialogue ---------------------------------------------- */
+    function openBooking(resId, dayISO, from, to) {
+        const r = A.resourceById(Number(resId));
+        const startAt = dayISO + 'T' + hhmm(from);
+        const endAt = dayISO + 'T' + hhmm(to);
+        const isCar = r.type === 'Vehicle';
+
+        const m = A.modal({
+            title: 'New booking request',
+            body:
+                '<div style="display:flex;gap:12px;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--line-soft)">' +
+                '<img src="' + A.resourceImg(r) + '" alt="" style="width:78px;height:48px;object-fit:cover;border-radius:3px;border:1px solid var(--line-img);display:block">' +
+                '<div><div style="font-family:var(--font-serif);font-size:17px;color:var(--brand)">' + A.esc(r.name) + '</div>' +
+                '<div style="font-size:12px;color:var(--ink-500)">' + A.esc(days[state.dayIdx].full) + '</div></div></div>' +
+                '<div class="field-row" style="margin-top:16px">' +
+                '<div class="field"><label>From</label>' +
+                '<div style="padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:3px;font-size:13.5px">' + hhmm(from) + '</div></div>' +
+                '<div class="field"><label>To</label>' +
+                '<div style="padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:3px;font-size:13.5px">' + hhmm(to) + '</div></div></div>' +
+                '<div class="field"><label for="purpose">Purpose <span class="req">*</span></label>' +
+                '<input class="input" id="purpose" placeholder="e.g. Postgraduate research seminar"></div>' +
+                '<div id="bkErr" aria-live="polite"></div>' +
+                '<div class="notice notice-warn" style="margin:16px 0 0">' +
+                'Every booking requires administrator approval. Maximum ' +
+                (A.SETTINGS.maxBookingMinutes / 60) + ' hours per booking, within ' +
+                A.SETTINGS.windowStart + '–' + A.SETTINGS.windowEnd +
+                '. You may cancel your own booking up to ' +
+                (A.SETTINGS.cancellationCutoffHours / 24) + ' days before, with a reason.</div>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Submit request', cls: 'btn-primary', onClick: function (root) {
+                    const purpose = root.querySelector('#purpose').value.trim();
+                    if (!purpose) {
+                        root.querySelector('#bkErr').innerHTML =
+                            '<div class="notice notice-danger" style="margin:12px 0 0">A purpose is required.</div>';
+                        root.querySelector('#purpose').focus();
+                        return false;
+                    }
+                    /* The prototype writes the request into the in-memory data so
+                       the board updates — nothing is persisted. */
+                    A.bookings.push({
+                        id: A.bookings.length + 1000,
+                        ref: 'AIKOL-B-2026-' + String(500 + A.bookings.length).slice(0, 4),
+                        userId: me.id, createdById: me.id, resourceId: r.id,
+                        startAt: startAt, endAt: endAt,
+                        date: dayISO, start: hhmm(from), end: hhmm(to), multiDay: false,
+                        resource: r, kind: r.type,
+                        purpose: purpose, status: 'Pending',
+                        attendees: isCar ? null : 10,
+                        destination: isCar ? purpose : null,
+                        passengers: isCar ? 2 : null,
+                        rejectReason: '', cancelReason: '', created: A.iso(A.today)
+                    });
+                    renderBoard();
+                    A.modal({
+                        title: 'Request submitted',
+                        body: '<p>Your request for <strong>' + A.esc(r.name) + '</strong> is now ' +
+                              '<em>pending approval</em> by the Kulliyyah office.</p>' +
+                              A.emailNotice(me.email, 'booking submitted')
+                    });
+                } }
+            ]
+        });
+    }
+
+    /* ---- Wiring -------------------------------------------------------- */
+    document.getElementById('tabs').addEventListener('click', e => {
+        const b = e.target.closest('button[data-type]');
+        if (!b) return;
+        state.type = b.dataset.type;
+        [...document.querySelectorAll('#tabs button')].forEach(x =>
+            x.setAttribute('aria-pressed', String(x.dataset.type === state.type)));
+        renderBoard();
+    });
+
+    document.getElementById('days').addEventListener('click', e => {
+        const b = e.target.closest('button[data-day]');
+        if (!b) return;
+        state.dayIdx = Number(b.dataset.day);
+        renderDays();
+        renderBoard();
+    });
+
+    document.getElementById('board').addEventListener('click', e => {
+        const t = e.target.closest('[data-book]');
+        if (!t) return;
+        const [resId, dayISO, from, to] = t.dataset.book.split(':');
+        openBooking(resId, dayISO, Number(from), Number(to));
+    });
+    document.getElementById('board').addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const t = e.target.closest('[data-book]');
+        if (!t) return;
+        e.preventDefault();
+        const [resId, dayISO, from, to] = t.dataset.book.split(':');
+        openBooking(resId, dayISO, Number(from), Number(to));
+    });
+
+    renderDays();
+    renderBoard();
+})();
+</script>
+</body>
+</html>

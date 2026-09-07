@@ -1,0 +1,1788 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIKOL Room and Vehicle Booking System — Management Review Report</title>
+<meta name="description" content="System proposal and management review package for the AIKOL Room and Vehicle Booking System, Ahmad Ibrahim Kulliyyah of Laws, IIUM.">
+<link rel="stylesheet" href="css/report.css">
+</head>
+<body>
+
+<!-- ======================= TOOLBAR ======================= -->
+<div class="toolbar no-print">
+    <span class="doc-title">AIKOL Room and Vehicle Booking System — Management Review Report</span>
+    <span class="spacer"></span>
+    <button class="btn toc-toggle" type="button" id="tocToggle" aria-expanded="false" aria-controls="toc">Contents</button>
+    <a class="btn" href="../prototype/index.html">Open interactive prototype</a>
+    <button class="btn btn-primary" type="button" id="printBtn">Print / Save as PDF</button>
+</div>
+
+<!-- ======================= COVER ======================= -->
+<header class="cover">
+    <div class="cover-inner">
+        <img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 300px">
+        <p class="inst">Ahmad Ibrahim Kulliyyah of Laws</p>
+        <p class="inst-sub">International Islamic University Malaysia</p>
+
+        <h1>Room and Vehicle Booking System</h1>
+        <p class="subtitle">A proposal for the centralised management of Kulliyyah venue bookings</p>
+        <div class="rule"></div>
+
+        <dl class="cover-meta">
+            <div><dt>Document</dt><dd>Management Review Report</dd></div>
+            <div><dt>Phase</dt><dd>Phase 1 — Discovery and Review</dd></div>
+            <div><dt>Prepared for</dt><dd>AIKOL Management</dd></div>
+            <div><dt>Date</dt><dd id="docDate">—</dd></div>
+            <div><dt>Status</dt><dd>For review and decision</dd></div>
+            <div><dt>Version</dt><dd>1.0</dd></div>
+        </dl>
+
+        <p class="cover-note">
+            This document describes a proposed system. Operational details that have not yet been confirmed by
+            AIKOL management are marked as assumptions throughout, and all figures in charts are illustrative
+            examples rather than measurements of actual AIKOL activity. Section 25 lists every decision required
+            from management before development begins.
+        </p>
+    </div>
+</header>
+
+<div class="layout">
+
+    <!-- ======================= CONTENTS ======================= -->
+    <nav class="toc no-print" id="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <ol id="tocList"></ol>
+    </nav>
+
+    <main class="doc">
+
+    <!-- =================== 1. EXECUTIVE SUMMARY =================== -->
+    <section class="section" id="executive-summary">
+        <h2>Executive Summary</h2>
+
+        <p class="lede">
+            The Ahmad Ibrahim Kulliyyah of Laws manages a number of shared venues — the moot court, lecture rooms,
+            seminar rooms, meeting rooms and discussion rooms — that are used daily by students, lecturers and staff.
+            This proposal recommends replacing the present manual arrangement with a single online system in which
+            every venue, every booking and every decision is recorded in one place.
+        </p>
+
+        <h3>What is being proposed</h3>
+        <p>
+            A web-based booking system for Kulliyyah venues <em>and vehicles</em>, accessible from any browser on a
+            computer or mobile telephone.
+            A member of the Kulliyyah signs in, sees which venues are free at the time they need, submits a
+            booking request in a single form, and follows its progress on screen. The Kulliyyah office reviews
+            requests from an administrative screen, approves or rejects them with a recorded reason, and has
+            immediate access to the full booking history and to usage reports.
+        </p>
+
+        <h3>What it changes</h3>
+        <div class="grid g3">
+            <div class="tile">
+                <div class="metric-label">Availability</div>
+                <div class="metric">Immediate</div>
+                <p>Users see free and occupied periods themselves instead of asking the office.</p>
+            </div>
+            <div class="tile">
+                <div class="metric-label">Double bookings</div>
+                <div class="metric">Prevented</div>
+                <p>The system refuses any request that overlaps a confirmed reservation of the same venue.</p>
+            </div>
+            <div class="tile">
+                <div class="metric-label">Booking history</div>
+                <div class="metric">Complete</div>
+                <p>Every request, approval, rejection and cancellation is retained and searchable.</p>
+            </div>
+        </div>
+
+        <h3>Why it is worth doing</h3>
+        <ul>
+            <li><strong>Less administrative effort.</strong> The office stops acting as a diary, a message channel and a
+                conflict checker, and instead reviews requests that the system has already validated.</li>
+            <li><strong>Fewer disputes.</strong> When two groups believe they have the same room, the record shows who
+                booked it, when and with whose approval.</li>
+            <li><strong>Better information for management.</strong> Which venues are heavily used, which are not, and
+                how demand varies through the academic year become straightforward questions to answer.</li>
+            <li><strong>Transparency for users.</strong> A requester can see the status of their request and the reason
+                for any rejection without contacting anyone.</li>
+        </ul>
+
+        <h3>What it costs</h3>
+        <p>
+            The proposed technology is entirely free and open-source software: Django, Bootstrap, PostgreSQL and
+            Git. There are no licence fees and no subscription products. The only genuine cost is hosting, and if
+            IIUM can provide server space the recurring cost may be nil. Section 15 sets out the full position.
+        </p>
+
+        <div class="callout callout-info">
+            <span class="t">What management is being asked to decide</span>
+            This report does not ask for approval of a finished design. It asks management to confirm the operating
+            rules of the Kulliyyah — who may book what, which venues need approval, who approves, and how long
+            records are kept — so that the system is built around AIKOL's actual practice rather than around
+            assumptions. Section 24 contains 26 questions arranged for completion during a review meeting.
+        </div>
+    </section>
+
+    <!-- =================== 2. PROBLEM STATEMENT =================== -->
+    <section class="section pb" id="problem-statement">
+        <h2>Problem Statement</h2>
+
+        <div class="callout callout-warn">
+            <span class="t">Important qualification</span>
+            The workflow described below is an <strong>assumed</strong> reconstruction of current practice, based on
+            how venue booking is commonly handled where no dedicated system exists. It has not been verified with
+            the Kulliyyah office. Management is asked to correct it. Nothing in this section should be read as an
+            established statement of AIKOL procedure.
+        </div>
+
+        <h3>2.1 The assumed present workflow</h3>
+        <div class="grid g2">
+            <div class="process">
+                <h4><span class="compare-head"><span class="dot" style="background:var(--gold-600)"></span></span>
+                    Current process <span class="tag tag-assumption">Assumed</span></h4>
+                <ol class="flow">
+                    <li>User decides a venue is needed <span class="who">Student, lecturer or staff member</span></li>
+                    <li>User contacts the office to ask whether the room is free <span class="who">In person, by telephone or by message</span></li>
+                    <li>Office checks a diary, a spreadsheet or a paper record <span class="who">Kulliyyah office</span></li>
+                    <li>User completes a booking form <span class="who">Paper or document file</span></li>
+                    <li>Form is submitted and queued for a decision <span class="who">Kulliyyah office</span></li>
+                    <li>User waits for confirmation <span class="who">Duration not visible to the user</span></li>
+                    <li>User collects the key or arranges access <span class="who">Office or custodian</span></li>
+                    <li>Venue is used; the record ends there <span class="who">No structured history</span></li>
+                </ol>
+            </div>
+
+            <div class="process">
+                <h4><span class="compare-head"><span class="dot" style="background:var(--brand-600)"></span></span>
+                    Proposed process <span class="tag tag-mvp">Proposed</span></h4>
+                <ol class="flow flow-new">
+                    <li>User signs in to the system <span class="who">Any browser, any device</span></li>
+                    <li>User views venues and real-time availability <span class="who">No enquiry needed</span></li>
+                    <li>User selects venue, date and time <span class="who">Conflicts are refused immediately</span></li>
+                    <li>User submits the request with its purpose <span class="who">Single online form</span></li>
+                    <li>Office reviews and decides where approval is required <span class="who">Reason recorded</span></li>
+                    <li>User sees the confirmed booking and its reference <span class="who">Status visible at all times</span></li>
+                    <li>Booking is retained as history for reporting and audit <span class="who">Automatic</span></li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="chart">
+            <div class="chart-head">
+                <h4>Steps and hand-offs in each process</h4>
+                <span class="tag tag-illustrative">Illustrative data</span>
+            </div>
+            <div id="chartProcess" role="img" aria-label="Comparison of the number of steps, hand-offs and waiting points in the current and proposed processes"></div>
+            <div class="legend">
+                <span><span class="sw" style="background:var(--gold-600)"></span>Current process (assumed)</span>
+                <span><span class="sw" style="background:var(--brand-600)"></span>Proposed system</span>
+            </div>
+            <p class="fig-caption">
+                <strong>Figure 2.1</strong> — Counted from the workflow diagrams above. These are structural counts of
+                the proposed design, not measurements of AIKOL activity, and no claim is made about time saved.
+            </p>
+        </div>
+
+        <h3>2.2 Difficulties arising from a manual arrangement</h3>
+        <div class="table-wrap">
+            <table>
+                <caption>Operational difficulties addressed by the proposed system</caption>
+                <thead>
+                    <tr><th style="width:30%">Difficulty</th><th>Consequence</th><th style="width:28%">How the system responds</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>No real-time view of availability</td><td>Users must ask before they can plan; the office answers the same question repeatedly</td><td>Availability is shown on every venue page</td></tr>
+                    <tr><td>Risk of double booking</td><td>Two groups arrive at the same room; one session is disrupted</td><td>Overlapping reservations are rejected by the system</td></tr>
+                    <tr><td>Booking information is fragmented</td><td>Records sit in messages, forms and personal notes</td><td>One database holds every booking</td></tr>
+                    <tr><td>Delay between request and confirmation</td><td>Users cannot commit to arrangements</td><td>Status is visible; venues that need no approval confirm at once</td></tr>
+                    <tr><td>High administrative workload</td><td>Staff time is spent on coordination rather than review</td><td>Validation and conflict checking are automatic</td></tr>
+                    <tr><td>Difficulty retrieving past bookings</td><td>Questions about earlier use are hard to answer</td><td>Search and filter across the full history</td></tr>
+                    <tr><td>Limited audit capability</td><td>It is unclear who approved what, and when</td><td>Every administrative action is logged</td></tr>
+                    <tr><td>No utilisation information</td><td>Decisions about facilities rest on impression</td><td>Reports on usage per venue and per period</td></tr>
+                    <tr><td>Inconsistent records</td><td>Forms are completed differently by different people</td><td>Structured fields with server-side validation</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>2.3 Confirmed requirements and assumptions</h3>
+        <div class="grid g2">
+            <div class="tile">
+                <h4>Confirmed requirements <span class="tag tag-confirmed">Confirmed</span></h4>
+                <p>Derived from the project brief and treated as settled:</p>
+                <ul>
+                    <li>Users must be able to browse venues, view details and check availability.</li>
+                    <li>Users must be able to submit, view and cancel their own bookings.</li>
+                    <li>Administrators must be able to manage users, venues, images and bookings.</li>
+                    <li>Double bookings must be prevented.</li>
+                    <li>Booking history must be retained and reportable.</li>
+                    <li>Bulk import, export and configurable retention must be supported.</li>
+                    <li>The system must remain low-cost, simple and maintainable.</li>
+                </ul>
+            </div>
+            <div class="tile">
+                <h4>Assumptions requiring confirmation <span class="tag tag-assumption">Assumption</span></h4>
+                <p>Used provisionally so that design work can proceed; each is a question in section 24:</p>
+                <ul>
+                    <li>Students may book at least some venues themselves.</li>
+                    <li>Certain venues require approval and others do not.</li>
+                    <li>One level of approval is sufficient.</li>
+                    <li>Operating hours are broadly 8:00 a.m. to 6:00 p.m., varying by venue.</li>
+                    <li>Bookings are made in whole or half hours.</li>
+                    <li>Room keys are managed outside the system at first release.</li>
+                    <li>Email notification is not required in the first release.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- =================== 3. OBJECTIVES =================== -->
+    <section class="section" id="objectives">
+        <h2>Project Objectives</h2>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <caption>Objectives and the means by which each is met</caption>
+                <thead><tr><th style="width:3rem" class="num">No.</th><th style="width:34%">Objective</th><th>How the system meets it</th></tr></thead>
+                <tbody>
+                    <tr><td class="num">1</td><td>Centralise booking activity</td><td>A single system of record for all Kulliyyah venues</td></tr>
+                    <tr><td class="num">2</td><td>Provide real-time visibility of availability</td><td>Availability shown on venue pages and in the booking form</td></tr>
+                    <tr><td class="num">3</td><td>Simplify booking submission</td><td>One online form replacing enquiry, paper form and follow-up</td></tr>
+                    <tr><td class="num">4</td><td>Reduce administrative workload</td><td>Automatic validation, conflict checking and record keeping</td></tr>
+                    <tr><td class="num">5</td><td>Prevent scheduling conflicts</td><td>Overlap rule enforced in the application and in the database</td></tr>
+                    <tr><td class="num">6</td><td>Support approval where required</td><td>Per-venue approval setting with recorded decisions</td></tr>
+                    <tr><td class="num">7</td><td>Allow authorised cancellation</td><td>Configurable cancellation rules for users and administrators</td></tr>
+                    <tr><td class="num">8</td><td>Maintain reliable booking history</td><td>Records are never deleted by ordinary operations</td></tr>
+                    <tr><td class="num">9</td><td>Improve room utilisation</td><td>Usage reporting per venue and per period</td></tr>
+                    <tr><td class="num">10</td><td>Provide management reporting</td><td>Dashboard indicators, trends and exportable data</td></tr>
+                    <tr><td class="num">11</td><td>Strengthen governance and accountability</td><td>Audit log of every administrative action</td></tr>
+                    <tr><td class="num">12</td><td>Support AIKOL's digital transformation</td><td>A working institutional service that other processes can follow</td></tr>
+                    <tr><td class="num">13</td><td>Maintain a cost-efficient architecture</td><td>Free and open-source components throughout</td></tr>
+                    <tr><td class="num">14</td><td>Remain easy to maintain and extend</td><td>One conventional Django application, documented and tested</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- =================== 4. USERS AND ROLES =================== -->
+    <section class="section" id="users-and-roles">
+        <h2>Users and Roles</h2>
+        <p>
+            Two roles are proposed for the first release. A third, optional role is described so that management can
+            decide whether it is genuinely needed.
+        </p>
+
+        <div class="grid g2">
+            <div class="role-card">
+                <header>Standard User — students, lecturers and staff</header>
+                <div class="rc-body">
+                    <ul>
+                        <li>Sign in with a Kulliyyah account</li>
+                        <li>Browse venues and view venue details</li>
+                        <li>Check availability before requesting</li>
+                        <li>Submit a booking request</li>
+                        <li>View own bookings and their status</li>
+                        <li>Cancel eligible bookings</li>
+                        <li>View own booking history</li>
+                        <li>Update basic profile information</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="role-card">
+                <header>Administrator — Kulliyyah office</header>
+                <div class="rc-body">
+                    <ul>
+                        <li>Everything a standard user can do</li>
+                        <li>Create, edit, activate and deactivate users</li>
+                        <li>Create and edit venues and venue photographs</li>
+                        <li>Approve, reject and cancel bookings</li>
+                        <li>Search the full booking history</li>
+                        <li>Configure system settings</li>
+                        <li>Perform bulk import and export</li>
+                        <li>Run retention and archiving operations</li>
+                        <li>View reports and the audit log</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h3>4.1 Should there be a separate Approver role?</h3>
+        <p>
+            A separate Approver — able to decide on booking requests but not to manage users, venues or system
+            settings — is straightforward to add. Whether it is worth adding depends on how AIKOL actually works.
+        </p>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:50%">Reasons to include it</th><th>Reasons to leave it out</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <ul style="margin:0">
+                                <li>Approval can be delegated to a head of department or venue custodian without granting full administrative rights.</li>
+                                <li>Different venues can be approved by different people.</li>
+                                <li>Administrative access stays with a small number of officers.</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul style="margin:0">
+                                <li>If one office approves everything, the role adds configuration with no benefit.</li>
+                                <li>Every additional role increases the permission logic that must be tested and maintained.</li>
+                                <li>It can be introduced later without disturbing existing data.</li>
+                            </ul>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="callout">
+            <span class="t">Answered: the Approver role is required</span>
+            AIKOL confirmed that a separate Approver is needed, so that an Administrative Assistant, Executive
+            Officer or Deputy Director can decide bookings when the main approver is away. The first release
+            therefore ships <strong>three roles</strong>, not two.
+            <br><br>
+            An Approver may approve, reject and cancel bookings, and nothing else. User management, resource
+            management, the facility list, system settings, retention and the database reset all remain with the
+            Administrator. That separation is the entire purpose of the role — delegating approval without
+            delegating administration — and building it now is cheaper than retrofitting permission checks later.
+            <br><br>
+            A person's <em>role</em> is held separately from their <em>affiliation</em>: whether they are a student,
+            a lecturer or a member of staff. A lecturer may also be an approver, and vehicle eligibility follows the
+            affiliation while approval rights follow the role. One combined field could not express that.
+        </div>
+    </section>
+
+    <!-- =================== 5. SCOPE =================== -->
+    <section class="section pb" id="scope">
+        <h2>Scope of the Proposed System</h2>
+        <div class="grid g3">
+            <div class="tile"><h4>Authentication</h4><p>Sign in, sign out, password reset, role-based access to every screen.</p></div>
+            <div class="tile"><h4>Venue management</h4><p>Venue records, facilities, operating hours, rules, photographs and availability status.</p></div>
+            <div class="tile"><h4>Booking management</h4><p>Submission, conflict prevention, approval, rejection, cancellation and history.</p></div>
+            <div class="tile"><h4>User management</h4><p>Accounts, roles, activation and deactivation, access reset.</p></div>
+            <div class="tile"><h4>Reporting</h4><p>Dashboard indicators, booking volume, venue utilisation and exports.</p></div>
+            <div class="tile"><h4>Data management</h4><p>Bulk import, export, retention policy, archiving and audit log.</p></div>
+        </div>
+
+        <h3>5.1 Deliberately excluded from the first release</h3>
+        <ul class="check cross">
+            <li>IIUM single sign-on integration <span class="note">Decision 24: the system authenticates its own
+                users. No integration is planned.</span></li>
+            <li>Calendar integration with Outlook or Google</li>
+            <li>QR code check-in and room access</li>
+            <li>Equipment reservation beyond key custody</li>
+            <li>Vehicle classes other than cars</li>
+            <li>Fuel and maintenance scheduling</li>
+            <li>A separate mobile application</li>
+            <li>Advanced analytics and any AI feature</li>
+        </ul>
+        <div class="callout callout-ok">
+            <span class="t">Four items moved <em>into</em> the first release</span>
+            AIKOL's answers changed this list. <strong>Recurring bookings</strong> (decision 15),
+            <strong>key collection and return</strong> (decision 17), a <strong>separate Approver role</strong>
+            (decision 5) and <strong>email</strong> — for registration verification and booking confirmations —
+            were all previously excluded and are now in scope. <strong>Vehicle booking</strong> was added after the
+            review. Section 21 lists the first release as it now stands.
+        </div>
+        <p>
+            Each remaining exclusion is a deliberate decision to keep the first release small enough to deliver,
+            test and operate reliably. None requires an architectural change to add later; section 22 explains how.
+        </p>
+    </section>
+
+    <!-- =================== 6. CURRENT VS PROPOSED =================== -->
+    <section class="section" id="process-comparison">
+        <h2>Where the Difference Is Felt</h2>
+        <div class="table-wrap">
+            <table>
+                <caption>The same activity under each arrangement</caption>
+                <thead><tr><th style="width:24%">Activity</th><th style="width:38%">Current (assumed)</th><th>With the proposed system</th></tr></thead>
+                <tbody>
+                    <tr><td>Checking whether a room is free</td><td>Ask the office and wait for a reply</td><td>Open the venue page and read the availability strip</td></tr>
+                    <tr><td>Requesting a venue</td><td>Complete a form and deliver it</td><td>Submit an online form in under a minute</td></tr>
+                    <tr><td>Avoiding a clash</td><td>Depends on the office noticing it</td><td>The system refuses the overlapping request</td></tr>
+                    <tr><td>Knowing the outcome</td><td>Follow up until told</td><td>Status shown on the user's own screen</td></tr>
+                    <tr><td>Cancelling</td><td>Notify the office, which may or may not be recorded</td><td>Cancel in the system; the slot is released immediately</td></tr>
+                    <tr><td>Finding last semester's bookings</td><td>Search through files and messages</td><td>Filter the booking list by date, venue or status</td></tr>
+                    <tr><td>Reporting to management</td><td>Compiled manually when requested</td><td>Available on the dashboard at any time</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="callout callout-warn">
+            <span class="t">On claimed savings</span>
+            No figure for hours or money saved appears in this report. Such a figure would require measurement of
+            current AIKOL practice, which has not been carried out. If management wishes to quantify the benefit,
+            the honest method is to measure the present workload for a short period before deployment and compare
+            it with the system's own records afterwards.
+        </div>
+    </section>
+
+    <!-- =================== 7. PROPOSED INTERFACE =================== -->
+    <section class="section pb" id="proposed-interface">
+        <h2>The Proposed Interface</h2>
+        <p class="lede">
+            The screens below are taken from a working prototype that accompanies this report. They show the
+            intended appearance and structure of the finished system. All names, venues and bookings shown are
+            fictional, and venue photographs are placeholders.
+        </p>
+        <p class="no-print">
+            The prototype is interactive: <a href="../prototype/index.html">open the prototype</a> to click through
+            the screens.
+        </p>
+
+        <!-- 7.1 Login -->
+        <h3>7.1 Sign in</h3>
+        <div class="mock">
+            <div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">booking.aikol.iium.edu.my/login</span></div>
+            <div class="mock-body">
+                <div class="m-login">
+                    <div class="m-login-hero">
+                        <div style="display:flex;gap:.4rem;align-items:center">
+                            <img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 100px">
+                            <span style="font-family:var(--serif);font-size:.72rem">Ahmad Ibrahim Kulliyyah of Laws</span>
+                        </div>
+                        <h5>Room and Vehicle Booking System</h5>
+                        <p>Check availability, submit booking requests and follow their status in one place.</p>
+                        <ul style="font-size:.62rem;color:rgba(255,255,255,.8);padding-left:.9rem;margin:.5rem 0 0">
+                            <li>Real-time venue availability</li>
+                            <li>No paper booking forms</li>
+                            <li>Automatic conflict prevention</li>
+                        </ul>
+                    </div>
+                    <div class="m-login-form">
+                        <div style="font-family:var(--serif);font-size:.85rem;margin-bottom:.5rem">Sign in</div>
+                        <div class="m-field"><label>Email address</label><div class="ctrl">farhan@iium.edu.my</div></div>
+                        <div class="m-field"><label>Password</label><div class="ctrl">••••••••••</div></div>
+                        <div style="margin-top:.4rem"><span class="m-btn" style="display:block;text-align:center">Sign in</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="fig-caption"><strong>Figure 7.1</strong> — Sign-in screen. Branding shown is a placeholder pending official AIKOL/IIUM brand assets.</p>
+
+        <!-- 7.2 User dashboard -->
+        <h3>7.2 User dashboard</h3>
+        <div class="mock">
+            <div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">booking.aikol.iium.edu.my/dashboard</span></div>
+            <div class="mock-body">
+                <div class="m-top"><img src="assets/images/aikol_logo.png" alt="AIKOL Logo" style="width: 100px"><span class="m-brand">AIKOL Room Booking</span><span class="m-right">Farhan Helmy · Student</span></div>
+                <div class="m-shell">
+                    <div class="m-side">
+                        <span class="on">Dashboard</span><span>Browse Venues</span><span>New Booking</span><span>My Bookings</span>
+                    </div>
+                    <div class="m-main">
+                        <div class="m-h1">Assalamualaikum, Farhan</div>
+                        <div class="m-row">
+                            <div class="m-card"><div class="k">Upcoming</div><div class="v">3</div></div>
+                            <div class="m-card"><div class="k">Awaiting approval</div><div class="v">1</div></div>
+                            <div class="m-card"><div class="k">This year</div><div class="v">12</div></div>
+                            <div class="m-card"><div class="k">Venues open</div><div class="v">7</div></div>
+                        </div>
+                        <div class="m-panel">
+                            <h5>Your next booking</h5>
+                            <div style="display:flex;gap:.5rem">
+                                <img src="assets/images/moot-court.svg" alt="Placeholder image of the Moot Court Room" style="width:90px;border:1px solid var(--line);border-radius:2px">
+                                <div style="font-size:.68rem">
+                                    <div style="font-family:var(--serif);font-size:.8rem">Moot Court Room</div>
+                                    <div style="color:var(--ink-500)">Level 2, AIKOL Main Building</div>
+                                    <div style="margin-top:.2rem">Thursday · 2:00 PM – 4:00 PM</div>
+                                    <div style="margin-top:.2rem">Reference <span style="font-family:var(--mono)">BK-2026-0031</span>
+                                        <span class="m-badge a">Approved</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="m-panel">
+                            <h5>Upcoming bookings</h5>
+                            <table class="m-table">
+                                <tr><th>Venue</th><th>Date</th><th>Time</th><th>Status</th></tr>
+                                <tr><td>Moot Court Room</td><td>16 Aug</td><td>2:00 PM</td><td><span class="m-badge a">Approved</span></td></tr>
+                                <tr><td>Seminar Room 1</td><td>19 Aug</td><td>10:00 AM</td><td><span class="m-badge p">Pending</span></td></tr>
+                                <tr><td>Discussion Room 1</td><td>22 Aug</td><td>4:00 PM</td><td><span class="m-badge a">Approved</span></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="fig-caption"><strong>Figure 7.2</strong> — The user dashboard shows what the user needs first: their next booking and anything awaiting a decision.</p>
+
+        <!-- 7.3 Venue listing -->
+        <h3>7.3 Venue listing</h3>
+        <div class="mock">
+            <div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">booking.aikol.iium.edu.my/venues</span></div>
+            <div class="mock-body">
+                <div class="m-top"><img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 100px"><span class="m-brand">AIKOL Room Booking</span><span class="m-right">Farhan Helmy · Student</span></div>
+                <div class="m-shell">
+                    <div class="m-side"><span>Dashboard</span><span class="on">Browse Venues</span><span>New Booking</span><span>My Bookings</span></div>
+                    <div class="m-main">
+                        <div class="m-h1">Browse venues</div>
+                        <div class="m-row" style="margin-bottom:.5rem">
+                            <div class="m-field" style="flex:2;margin:0"><label>Search</label><div class="ctrl">Venue name, code or building</div></div>
+                            <div class="m-field" style="flex:1;margin:0"><label>Type</label><div class="ctrl">All types</div></div>
+                            <div class="m-field" style="flex:1;margin:0"><label>Capacity</label><div class="ctrl">Any</div></div>
+                            <div class="m-field" style="flex:1;margin:0"><label>Facility</label><div class="ctrl">Any</div></div>
+                        </div>
+                        <div class="m-venues">
+                            <div class="m-venue">
+                                <img src="assets/images/moot-court.svg" alt="Placeholder image of the Moot Court Room">
+                                <div class="vb"><div class="vt">Moot Court Room</div>
+                                    <div class="vs">Level 2 · 80 pax</div>
+                                    <div style="margin-top:.15rem"><span class="m-badge a">Available</span></div></div>
+                            </div>
+                            <div class="m-venue">
+                                <img src="assets/images/seminar-a.svg" alt="Placeholder image of Seminar Room 1">
+                                <div class="vb"><div class="vt">Seminar Room 1</div>
+                                    <div class="vs">Level 1 · 45 pax</div>
+                                    <div style="margin-top:.15rem"><span class="m-badge a">Available</span></div></div>
+                            </div>
+                            <div class="m-venue">
+                                <img src="assets/images/lecture.svg" alt="Placeholder image of Lecture Room 1">
+                                <div class="vb"><div class="vt">Lecture Room 1</div>
+                                    <div class="vs">Level 2 · 120 pax</div>
+                                    <div style="margin-top:.15rem"><span class="m-badge a">Available</span></div></div>
+                            </div>
+                            <div class="m-venue">
+                                <img src="assets/images/meeting-a.svg" alt="Placeholder image of Meeting Room A">
+                                <div class="vb"><div class="vt">Meeting Room A</div>
+                                    <div class="vs">Level 3 · 16 pax</div>
+                                    <div style="margin-top:.15rem"><span class="m-badge a">Available</span></div></div>
+                            </div>
+                            <div class="m-venue">
+                                <img src="assets/images/discussion.svg" alt="Placeholder image of Discussion Room 1">
+                                <div class="vb"><div class="vt">Discussion Room 1</div>
+                                    <div class="vs">Library Wing · 8 pax</div>
+                                    <div style="margin-top:.15rem"><span class="m-badge a">Available</span></div></div>
+                            </div>
+                            <div class="m-venue">
+                                <img src="assets/images/moot-court-v4.svg" alt="Placeholder image of the Conference Room">
+                                <div class="vb"><div class="vt">Conference Room</div>
+                                    <div class="vs">Level 3 · 60 pax</div>
+                                    <div style="margin-top:.15rem"><span class="m-badge c">Maintenance</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="fig-caption"><strong>Figure 7.3</strong> — Venues are browsed visually, with search and filters by type, capacity and facility.</p>
+
+        <!-- 7.4 Venue details -->
+        <h3>7.4 Venue details</h3>
+        <div class="mock">
+            <div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">booking.aikol.iium.edu.my/venues/moot-court</span></div>
+            <div class="mock-body">
+                <div class="m-top"><img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 100px"><span class="m-brand">AIKOL Room Booking</span><span class="m-right">Farhan Helmy · Student</span></div>
+                <div class="m-shell">
+                    <div class="m-side"><span>Dashboard</span><span class="on">Browse Venues</span><span>New Booking</span><span>My Bookings</span></div>
+                    <div class="m-main">
+                        <div class="m-h1">Moot Court Room</div>
+                        <div class="m-gallery">
+                            <img src="assets/images/moot-court.svg" alt="Placeholder image of the Moot Court Room, main view">
+                            <div class="m-thumbs">
+                                <img src="assets/images/moot-court-v2.svg" alt="Placeholder image, seating view">
+                                <img src="assets/images/moot-court-v3.svg" alt="Placeholder image, facilities view">
+                                <img src="assets/images/moot-court-v4.svg" alt="Placeholder image, entrance view">
+                            </div>
+                        </div>
+                        <div class="m-row" style="margin-top:.5rem">
+                            <div class="m-panel" style="flex:1;margin:0">
+                                <h5>Venue information</h5>
+                                <table class="m-table">
+                                    <tr><td style="color:var(--ink-500)">Location</td><td>Level 2, AIKOL Main Building</td></tr>
+                                    <tr><td style="color:var(--ink-500)">Capacity</td><td>80 persons</td></tr>
+                                    <tr><td style="color:var(--ink-500)">Type</td><td>Moot Court</td></tr>
+                                    <tr><td style="color:var(--ink-500)">Hours</td><td>8:00 AM – 6:00 PM</td></tr>
+                                    <tr><td style="color:var(--ink-500)">Approval</td><td>Required</td></tr>
+                                </table>
+                            </div>
+                            <div class="m-panel" style="flex:1;margin:0">
+                                <h5>Facilities</h5>
+                                <div style="font-size:.66rem;display:grid;grid-template-columns:1fr 1fr;gap:.1rem .4rem">
+                                    <span style="color:var(--ok)">✓ Projector</span>
+                                    <span style="color:var(--ok)">✓ Microphone</span>
+                                    <span style="color:var(--ok)">✓ Air conditioning</span>
+                                    <span style="color:var(--ok)">✓ Internet access</span>
+                                    <span style="color:var(--ok)">✓ Sound system</span>
+                                    <span style="color:var(--ink-400)">– Video conferencing</span>
+                                </div>
+                                <h5 style="margin-top:.5rem">Availability this week</h5>
+                                <div style="display:grid;gap:.15rem">
+                                    <div style="display:grid;grid-template-columns:44px 1fr;gap:.3rem;align-items:center;font-size:.6rem">
+                                        <span style="color:var(--ink-500)">Mon</span>
+                                        <span style="position:relative;height:12px;background:#eef3f0;border:1px solid var(--line-soft);border-radius:2px">
+                                            <i style="position:absolute;left:20%;width:22%;top:0;bottom:0;background:var(--brand-600);border-radius:1px"></i></span>
+                                    </div>
+                                    <div style="display:grid;grid-template-columns:44px 1fr;gap:.3rem;align-items:center;font-size:.6rem">
+                                        <span style="color:var(--ink-500)">Tue</span>
+                                        <span style="position:relative;height:12px;background:#eef3f0;border:1px solid var(--line-soft);border-radius:2px">
+                                            <i style="position:absolute;left:55%;width:20%;top:0;bottom:0;background:var(--gold-600);border-radius:1px"></i></span>
+                                    </div>
+                                    <div style="display:grid;grid-template-columns:44px 1fr;gap:.3rem;align-items:center;font-size:.6rem">
+                                        <span style="color:var(--ink-500)">Wed</span>
+                                        <span style="position:relative;height:12px;background:#eef3f0;border:1px solid var(--line-soft);border-radius:2px">
+                                            <i style="position:absolute;left:10%;width:30%;top:0;bottom:0;background:var(--brand-600);border-radius:1px"></i>
+                                            <i style="position:absolute;left:62%;width:18%;top:0;bottom:0;background:var(--brand-600);border-radius:1px"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top:.5rem;text-align:right"><span class="m-btn">Book venue</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="fig-caption"><strong>Figure 7.4</strong> — The venue page carries everything a requester needs: photographs, capacity, facilities, rules, operating hours and current availability.</p>
+
+        <!-- 7.5 Booking form -->
+        <h3>7.5 Booking form</h3>
+        <div class="mock">
+            <div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">booking.aikol.iium.edu.my/booking/new</span></div>
+            <div class="mock-body">
+                <div class="m-top"><img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 100px"><span class="m-brand">AIKOL Room Booking</span><span class="m-right">Farhan Helmy · Student</span></div>
+                <div class="m-shell">
+                    <div class="m-side"><span>Dashboard</span><span>Browse Venues</span><span class="on">New Booking</span><span>My Bookings</span></div>
+                    <div class="m-main">
+                        <div class="m-h1">New booking</div>
+                        <div class="m-row">
+                            <div class="m-panel" style="flex:1.2;margin:0">
+                                <h5>Booking details</h5>
+                                <div class="m-field"><label>Venue</label><div class="ctrl">Moot Court Room — Level 2 (80 pax)</div></div>
+                                <div class="m-field"><label>Date</label><div class="ctrl">16 August 2026</div></div>
+                                <div class="m-two">
+                                    <div class="m-field"><label>Start time</label><div class="ctrl">2:00 PM</div></div>
+                                    <div class="m-field"><label>End time</label><div class="ctrl">4:00 PM</div></div>
+                                </div>
+                                <div class="m-field"><label>Purpose</label><div class="ctrl" style="min-height:2.2em">Moot court practice session for the Kulliyyah advocacy team</div></div>
+                                <div class="m-field"><label>Expected attendees</label><div class="ctrl">24</div></div>
+                                <div style="background:#f1f8f4;border:1px solid #cfe4d8;border-left:3px solid var(--ok);border-radius:2px;padding:.3rem .45rem;font-size:.64rem;color:var(--ok)">
+                                    <strong>Venue available</strong> — no other booking overlaps this period.
+                                </div>
+                                <div style="margin-top:.45rem"><span class="m-btn">Review booking</span> <span class="m-btn ghost">Cancel</span></div>
+                            </div>
+                            <div style="flex:1">
+                                <div class="m-panel" style="margin:0">
+                                    <h5>Booking summary</h5>
+                                    <table class="m-table">
+                                        <tr><td style="color:var(--ink-500)">Venue</td><td>Moot Court Room</td></tr>
+                                        <tr><td style="color:var(--ink-500)">Date</td><td>16 Aug 2026</td></tr>
+                                        <tr><td style="color:var(--ink-500)">Time</td><td>2:00 – 4:00 PM</td></tr>
+                                        <tr><td style="color:var(--ink-500)">Attendees</td><td>24</td></tr>
+                                        <tr><td style="color:var(--ink-500)">Approval</td><td>Required</td></tr>
+                                    </table>
+                                </div>
+                                <div class="m-panel">
+                                    <h5>Existing bookings that day</h5>
+                                    <div style="position:relative;height:14px;background:#eef3f0;border:1px solid var(--line-soft);border-radius:2px">
+                                        <i style="position:absolute;left:8%;width:18%;top:0;bottom:0;background:var(--brand-600);border-radius:1px"></i>
+                                        <i style="position:absolute;left:72%;width:16%;top:0;bottom:0;background:var(--gold-600);border-radius:1px"></i>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;font-size:.58rem;color:var(--ink-400);margin-top:.15rem">
+                                        <span>8:00 AM</span><span>6:00 PM</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="fig-caption"><strong>Figure 7.5</strong> — Availability is checked as the form is completed, so a clash is reported before the request is submitted rather than after.</p>
+
+        <!-- 7.6 My bookings -->
+        <h3>7.6 My bookings</h3>
+        <div class="mock">
+            <div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">booking.aikol.iium.edu.my/my-bookings</span></div>
+            <div class="mock-body">
+                <div class="m-top"><img src="assets/images/aikol_logo.png" alt="AIKOL Logo" style="width: 100px"><span class="m-brand">AIKOL Room Booking</span><span class="m-right">Farhan Helmy · Student</span></div>
+                <div class="m-shell">
+                    <div class="m-side"><span>Dashboard</span><span>Browse Venues</span><span>New Booking</span><span class="on">My Bookings</span></div>
+                    <div class="m-main">
+                        <div class="m-h1">My bookings</div>
+                        <div class="m-panel" style="margin-top:0">
+                            <table class="m-table">
+                                <tr><th>Reference</th><th>Venue</th><th>Date</th><th>Time</th><th>Status</th><th>Action</th></tr>
+                                <tr><td style="font-family:var(--mono)">BK-2026-0031</td><td>Moot Court Room</td><td>16 Aug</td><td>2:00 PM</td><td><span class="m-badge a">Approved</span></td><td>Cancel</td></tr>
+                                <tr><td style="font-family:var(--mono)">BK-2026-0044</td><td>Seminar Room 1</td><td>19 Aug</td><td>10:00 AM</td><td><span class="m-badge p">Pending</span></td><td>Cancel</td></tr>
+                                <tr><td style="font-family:var(--mono)">BK-2026-0018</td><td>Seminar Room 2</td><td>09 Aug</td><td>9:00 AM</td><td><span class="m-badge d">Completed</span></td><td>Details</td></tr>
+                                <tr><td style="font-family:var(--mono)">BK-2026-0009</td><td>Meeting Room B</td><td>02 Aug</td><td>2:00 PM</td><td><span class="m-badge c">Cancelled</span></td><td>Details</td></tr>
+                                <tr><td style="font-family:var(--mono)">BK-2026-0004</td><td>Lecture Room 1</td><td>26 Jul</td><td>11:00 AM</td><td><span class="m-badge r">Rejected</span></td><td>Details</td></tr>
+                            </table>
+                            <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--ink-400);margin-top:.35rem">
+                                <span>Showing 1–5 of 12 records</span><span>‹ 1 2 3 ›</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="fig-caption"><strong>Figure 7.6</strong> — Cancelled and rejected bookings remain visible. A rejection carries the reason recorded by the approving officer.</p>
+
+        <!-- 7.7 Admin dashboard -->
+        <h3>7.7 Administrator dashboard</h3>
+        <div class="mock">
+            <div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">booking.aikol.iium.edu.my/admin/dashboard</span></div>
+            <div class="mock-body">
+                <div class="m-top"><img src="assets/images/aikol_logo.png" alt="AIKOL Logo" style="width: 100px"><span class="m-brand">AIKOL Room Booking</span><span class="m-right">Mohd Hafiz · Administrator</span></div>
+                <div class="m-shell">
+                    <div class="m-side">
+                        <span class="on">Dashboard</span><span>Bookings</span><span>Venues</span><span>Users</span><span>Data Management</span>
+                    </div>
+                    <div class="m-main">
+                        <div class="m-h1">Administrator dashboard</div>
+                        <div class="m-row">
+                            <div class="m-card"><div class="k">Today's bookings</div><div class="v">9</div></div>
+                            <div class="m-card"><div class="k">Pending approvals</div><div class="v">4</div></div>
+                            <div class="m-card"><div class="k">Active venues</div><div class="v">7</div></div>
+                            <div class="m-card"><div class="k">Registered users</div><div class="v">412</div></div>
+                        </div>
+                        <div class="m-row" style="margin-top:.5rem">
+                            <div class="m-panel" style="flex:1;margin:0">
+                                <h5>Monthly booking volume</h5>
+                                <div class="mini-bars">
+                                    <i style="height:58%"></i><i style="height:82%"></i><i style="height:94%"></i><i style="height:40%"></i>
+                                    <i style="height:78%"></i><i style="height:90%"></i><i style="height:100%"></i><i style="height:85%"></i>
+                                </div>
+                            </div>
+                            <div class="m-panel" style="flex:1;margin:0">
+                                <h5>Requests awaiting approval</h5>
+                                <table class="m-table">
+                                    <tr><td>Moot Court Room</td><td>16 Aug</td><td><span class="m-badge p">Pending</span></td></tr>
+                                    <tr><td>Lecture Room 1</td><td>17 Aug</td><td><span class="m-badge p">Pending</span></td></tr>
+                                    <tr><td>Seminar Room 1</td><td>19 Aug</td><td><span class="m-badge p">Pending</span></td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="m-panel">
+                            <h5>Recent activity (audit log)</h5>
+                            <table class="m-table">
+                                <tr><td>Booking approved — BK-2026-0031</td><td>Mohd Hafiz</td><td style="color:var(--ink-400)">2 min ago</td></tr>
+                                <tr><td>Venue updated — Conference Room set to maintenance</td><td>Siti Rohani</td><td style="color:var(--ink-400)">1 hr ago</td></tr>
+                                <tr><td>Bulk import — 58 user records</td><td>Mohd Hafiz</td><td style="color:var(--ink-400)">3 hrs ago</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="fig-caption"><strong>Figure 7.7</strong> — The administrative dashboard answers the day's operational questions and records every action taken.</p>
+    </section>
+
+    <!-- =================== 8. VENUE INFORMATION =================== -->
+    <section class="section" id="venue-information">
+        <h2>Venue Information</h2>
+        <p>Each venue record is proposed to carry the following information.</p>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:26%">Field</th><th style="width:34%">Purpose</th><th>Example <span class="tag tag-illustrative">Fictional</span></th></tr></thead>
+                <tbody>
+                    <tr><td>Venue name</td><td>Shown throughout the system</td><td>Moot Court Room</td></tr>
+                    <tr><td>Venue code</td><td>Stable identifier for imports and reports</td><td>AIKOL-MC-01</td></tr>
+                    <tr><td>Building and floor</td><td>Helps users find the room</td><td>AIKOL Main Building, Level 2</td></tr>
+                    <tr><td>Description</td><td>Explains what the venue is suited to</td><td>Formal moot court chamber for advocacy training</td></tr>
+                    <tr><td>Capacity</td><td>Validates the expected attendance</td><td>80 persons</td></tr>
+                    <tr><td>Venue type</td><td>Grouping for filters and reports</td><td>Moot Court</td></tr>
+                    <tr><td>Facilities</td><td>Lets users filter by what they need</td><td>Projector, microphone, sound system</td></tr>
+                    <tr><td>Operating hours</td><td>Limits the times that may be selected</td><td>8:00 AM – 6:00 PM</td></tr>
+                    <tr><td>Approval required</td><td>Determines whether a request is auto-confirmed</td><td>Yes</td></tr>
+                    <tr><td>Booking restrictions</td><td>Rules such as maximum duration or eligible roles</td><td>Maximum 4 hours</td></tr>
+                    <tr><td>Venue rules</td><td>Displayed before booking</td><td>No food or drink in the chamber</td></tr>
+                    <tr><td>Status</td><td>Removes a venue from booking without deleting it</td><td>Active / Under maintenance</td></tr>
+                    <tr><td>Main image and gallery</td><td>Lets users recognise the room</td><td>One main photograph, several additional</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h4>Facilities recorded</h4>
+        <ul class="check two-col">
+            <li>Projector</li><li>Microphone</li><li>Smart television</li><li>Whiteboard</li><li>Computer</li>
+            <li>Internet access</li><li>Air conditioning</li><li>Sound system</li><li>Video conferencing</li>
+        </ul>
+
+        <div class="callout">
+            <span class="t">Who supplies this information?</span>
+            The system cannot be deployed without an accurate venue list, photographs and rules. Identifying the
+            officer responsible for supplying these is question 26 in section 24.
+        </div>
+    </section>
+
+    <!-- =================== 9. BOOKING RULES =================== -->
+    <section class="section pb" id="booking-rules">
+        <h2>Booking Workflow and Conflict Prevention</h2>
+
+        <h3>9.1 Booking lifecycle</h3>
+        <div class="lifecycle">
+            <div class="lc-node start">Booking created</div>
+            <div class="lc-arrow">↓</div>
+            <div class="lc-node pending">Pending</div>
+            <div class="lc-arrow">↓</div>
+            <div class="lc-row">
+                <div class="lc-node approved">Approved</div>
+                <div class="lc-node rejected">Rejected</div>
+            </div>
+            <div class="lc-arrow">↓</div>
+            <div class="lc-row">
+                <div class="lc-node completed">Completed</div>
+                <div class="lc-node cancelled">Cancelled</div>
+            </div>
+        </div>
+        <p class="fig-caption"><strong>Figure 9.1</strong> — Where a venue is configured not to require approval, a new booking enters the Approved state directly. Completed is applied automatically once the booked period has passed.</p>
+
+        <div class="table-wrap">
+            <table class="table-compact">
+                <caption>What each status means</caption>
+                <thead><tr><th style="width:16%">Status</th><th style="width:20%">Reserves the venue?</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="tag" style="background:#fdf3dc;color:var(--warn)">Pending</span></td><td>Yes</td><td>Submitted and awaiting a decision. The slot is held so that two people cannot request it at once.</td></tr>
+                    <tr><td><span class="tag" style="background:#e2f1e8;color:var(--ok)">Approved</span></td><td>Yes</td><td>Confirmed. The venue is reserved for the requester.</td></tr>
+                    <tr><td><span class="tag" style="background:#fbe9e9;color:var(--bad)">Rejected</span></td><td>No</td><td>Declined with a recorded reason. The slot is released.</td></tr>
+                    <tr><td><span class="tag" style="background:#eceef0;color:var(--ink-600)">Cancelled</span></td><td>No</td><td>Withdrawn by the requester or an administrator. The record is kept; the slot is released.</td></tr>
+                    <tr><td><span class="tag" style="background:#e4eef7;color:var(--info)">Completed</span></td><td>No</td><td>The booked period has passed. Retained as history.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>9.2 Preventing double bookings</h3>
+        <p>
+            This is the central business rule of the system. For a given venue and date, a new booking conflicts with
+            an existing one when the two periods overlap at any point:
+        </p>
+        <div class="callout callout-info">
+            <span class="t">The overlap rule</span>
+            <code>new_start &lt; existing_end</code> <strong>and</strong> <code>new_end &gt; existing_start</code><br>
+            applied only to existing bookings whose status is <strong>Pending</strong> or <strong>Approved</strong>.
+            Rejected and cancelled bookings do not reserve the venue.
+        </div>
+
+        <div class="table-wrap">
+            <table class="table-compact">
+                <caption>The rule applied to an existing 10:00 – 12:00 booking</caption>
+                <thead><tr><th style="width:22%">New request</th><th style="width:14%">Overlaps?</th><th>Why</th></tr></thead>
+                <tbody>
+                    <tr><td>10:00 – 12:00</td><td><strong style="color:var(--bad)">Blocked</strong></td><td>Identical period</td></tr>
+                    <tr><td>11:00 – 13:00</td><td><strong style="color:var(--bad)">Blocked</strong></td><td>Starts before the existing booking ends</td></tr>
+                    <tr><td>10:30 – 11:00</td><td><strong style="color:var(--bad)">Blocked</strong></td><td>Falls entirely inside the existing booking</td></tr>
+                    <tr><td>09:00 – 13:00</td><td><strong style="color:var(--bad)">Blocked</strong></td><td>Surrounds the existing booking</td></tr>
+                    <tr><td>08:00 – 10:00</td><td><strong style="color:var(--ok)">Allowed</strong></td><td>Ends exactly when the existing booking starts</td></tr>
+                    <tr><td>12:00 – 14:00</td><td><strong style="color:var(--ok)">Allowed</strong></td><td>Starts exactly when the existing booking ends</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h4>Where the rule is enforced</h4>
+        <ol>
+            <li><strong>In the browser</strong>, as the user completes the form, so that a clash is visible immediately.
+                This is a convenience only and is never trusted.</li>
+            <li><strong>On the server</strong>, when the request is submitted and again when it is approved, inside a
+                database transaction that locks the venue's bookings for that date.</li>
+            <li><strong>In the database</strong>, through a constraint on the venue, date and time range for active
+                bookings, so that even a defect elsewhere in the software cannot create an overlap.</li>
+        </ol>
+
+        <div class="callout callout-ok">
+            <span class="t">Tested explicitly</span>
+            Automated tests cover all six cases in the table above, plus two requests submitted at the same instant
+            for the same slot. These tests run before every release.
+        </div>
+
+        <h3>9.3 Cancellation</h3>
+        <p>
+            Cancellation must not remove information. When a booking is cancelled the record remains, its status
+            becomes <em>Cancelled</em>, the reason and time are recorded, and the venue becomes available again.
+            The proposed rules are configurable rather than fixed in the software:
+        </p>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:38%">Setting</th><th style="width:22%">Proposed default</th><th>Note</th></tr></thead>
+                <tbody>
+                    <tr><td>Users may cancel pending bookings</td><td>Yes</td><td>No decision has been made yet</td></tr>
+                    <tr><td>Users may cancel approved bookings</td><td>Yes, subject to notice</td><td>Question 12</td></tr>
+                    <tr><td>Cancellation notice required</td><td>24 hours before start</td><td>Question 13</td></tr>
+                    <tr><td>Administrators may cancel at any time</td><td>Yes</td><td>Reason recorded in the audit log</td></tr>
+                    <tr><td>Cancellation reason</td><td>Optional for users, recorded for administrators</td><td>—</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- =================== 10. REPORTING =================== -->
+    <section class="section" id="reporting">
+        <h2>Reporting for Management</h2>
+        <p>
+            The dashboard is intended to answer the questions the Kulliyyah asks regularly, not to become an
+            analytics platform. The indicators proposed are: total venues, today's bookings, upcoming bookings,
+            pending approvals, bookings this month and cancellations this month.
+        </p>
+
+        <div class="chart">
+            <div class="chart-head">
+                <h4>Example monthly booking volume</h4>
+                <span class="tag tag-illustrative">Illustrative data</span>
+            </div>
+            <div id="chartMonthly" role="img" aria-label="Example monthly booking volume across an academic year"></div>
+            <p class="fig-caption">
+                <strong>Figure 10.1</strong> — A hypothetical academic year, showing the pattern the report would
+                reveal: peaks in the middle of each semester and troughs during examination and holiday periods.
+                <strong>These are invented numbers</strong> used to show the shape of the report, not AIKOL measurements.
+            </p>
+        </div>
+
+        <div class="chart">
+            <div class="chart-head">
+                <h4>Example venue utilisation</h4>
+                <span class="tag tag-illustrative">Illustrative data</span>
+            </div>
+            <div id="chartUtilisation" role="img" aria-label="Example distribution of bookings across venues"></div>
+            <p class="fig-caption">
+                <strong>Figure 10.2</strong> — Bookings per venue over a hypothetical year. A report of this kind
+                supports decisions about which rooms need better equipment and which are under-used.
+                <strong>Invented figures.</strong>
+            </p>
+        </div>
+
+        <h4>Exportable data</h4>
+        <p>
+            Any filtered list — bookings, venues or users — can be exported to CSV for use in a spreadsheet, so that
+            management is never dependent on the system's own charts for a particular analysis.
+        </p>
+    </section>
+
+    <!-- =================== 11. LARGE VOLUMES =================== -->
+    <section class="section pb" id="large-volumes">
+        <h2>Handling a Large Volume of Records</h2>
+        <p>
+            The system is expected to accumulate records for many years. It must remain fast when the booking table
+            holds hundreds of thousands of rows, and it must never load an entire table into memory in order to draw
+            a screen.
+        </p>
+
+        <div class="chart">
+            <div class="chart-head">
+                <h4>Example growth of stored booking records</h4>
+                <span class="tag tag-illustrative">Illustrative data</span>
+            </div>
+            <div id="chartGrowth" role="img" aria-label="Example cumulative growth of booking records over five years"></div>
+            <p class="fig-caption">
+                <strong>Figure 11.1</strong> — An illustrative projection at roughly 1,200–1,500 bookings per year.
+                Even at ten times this rate the design below remains comfortable for PostgreSQL.
+            </p>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:28%">Measure</th><th>What it means in practice</th></tr></thead>
+                <tbody>
+                    <tr><td>Database indexes</td><td>Indexes on the fields actually used to search and filter, so that queries do not scan the whole table. Section 18 sets out the strategy.</td></tr>
+                    <tr><td>Pagination</td><td>Every list screen fetches one page at a time — typically 10 to 25 rows — never the whole table.</td></tr>
+                    <tr><td>Server-side filtering</td><td>Search and filters are applied in the database query, not in the browser.</td></tr>
+                    <tr><td>Efficient queries</td><td>Related records (venue, requester) are fetched together in one query rather than one query per row.</td></tr>
+                    <tr><td>Bulk operations</td><td>Imports and cleanups use batched statements rather than one statement per record.</td></tr>
+                    <tr><td>Transactions</td><td>Operations that change several records either complete entirely or leave nothing behind.</td></tr>
+                    <tr><td>Archiving</td><td>A retention policy moves very old records out of the active table, keeping day-to-day operation fast.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- =================== 12. BULK IMPORT =================== -->
+    <section class="section" id="bulk-import">
+        <h2>Bulk Data Import and Export</h2>
+        <p>
+            Entering hundreds of users or several years of historical bookings one screen at a time is not
+            practical. The system therefore accepts CSV files, which any officer can produce from a spreadsheet.
+        </p>
+
+        <div class="grid g2">
+            <div class="process">
+                <h4>Import workflow</h4>
+                <ol class="flow flow-new">
+                    <li>Download the template for the record type <span class="who">Users, venues or historical bookings</span></li>
+                    <li>Upload the completed CSV file <span class="who">Maximum 10 MB</span></li>
+                    <li>The file is validated before anything is written <span class="who">Format, required fields, duplicates</span></li>
+                    <li>A preview is shown with errors marked by row <span class="who">Nothing has been saved yet</span></li>
+                    <li>The administrator confirms the import <span class="who">Valid rows only</span></li>
+                    <li>Records are inserted in one transaction <span class="who">All or nothing</span></li>
+                    <li>A summary is shown and written to the audit log <span class="who">Imported, skipped, by whom</span></li>
+                </ol>
+            </div>
+            <div>
+                <h4>Validation performed before import</h4>
+                <ul class="check">
+                    <li>Required columns are present</li>
+                    <li>Email addresses are well formed</li>
+                    <li>Roles and statuses are recognised values</li>
+                    <li>Capacities and dates are valid</li>
+                    <li>Records already in the system are detected as duplicates</li>
+                    <li>Rows repeated within the same file are detected</li>
+                    <li>Historical bookings reference an existing user and venue</li>
+                    <li>Overlapping historical bookings are reported</li>
+                </ul>
+                <div class="callout callout-warn" style="margin-top:1rem">
+                    <span class="t">Errors are reported by row</span>
+                    An administrator sees exactly which line of the file is wrong and why, corrects the spreadsheet
+                    and uploads it again. A file is never partially imported without the administrator knowing.
+                </div>
+            </div>
+        </div>
+
+        <p class="no-print">
+            The import screen is demonstrated in the prototype:
+            <a href="../prototype/data-management.html">open the data management screen</a> and choose
+            <em>Use sample file</em>, which deliberately contains invalid rows.
+        </p>
+
+        <h4>Export</h4>
+        <p>
+            Booking records, venue lists and user accounts can be exported to CSV. Exports are produced on the
+            server in batches so that a large export does not exhaust memory, and are limited to the data the
+            requesting administrator is authorised to see. Passwords are never exported in any form.
+        </p>
+    </section>
+
+    <!-- =================== 13. RETENTION =================== -->
+    <section class="section pb" id="retention">
+        <h2>Data Retention, Archiving, Backup and Safe Deletion</h2>
+
+        <div class="callout callout-bad">
+            <span class="t">Governing principle</span>
+            The system must never destroy institutional data as a side effect of ordinary operation. Deletion is a
+            deliberate, authorised, logged act — never a default behaviour, and never automatic without an approved
+            policy.
+        </div>
+
+        <h3>13.1 Retention policy</h3>
+        <p>
+            Management sets how long booking records are held in the active database.
+            <strong>AIKOL confirmed 7 years, for audit purposes</strong> (decision 19). The period is stored as a
+            configurable setting, so it can be changed later without a software release.
+            <br><br>
+            Retention does not delete anything by itself. It makes older records <em>eligible</em> for a cleanup that
+            an administrator must review and confirm. Seven years of Kulliyyah bookings is a small dataset:
+            retention exists here for governance, not to keep the database manageable.
+        </p>
+
+        <div class="table-wrap">
+            <table class="table-compact">
+                <caption>What happens to records that pass the retention period</caption>
+                <thead><tr><th style="width:22%">Option</th><th style="width:16%">Recommended</th><th>Behaviour</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Export and delete</strong></td><td><span class="tag tag-confirmed">Confirmed</span></td><td>Records are written to a CSV file, the file is verified against the number of records selected, and only then are the records removed from the database. <strong>Decision 20.</strong></td></tr>
+                    <tr><td><strong>Archive</strong></td><td>Alternative</td><td>Records are copied to an archive table before being removed from the active table. Retained as an option, but export is the confirmed default.</td></tr>
+                    <tr><td><strong>Permanent deletion</strong></td><td>Restricted</td><td>Records are removed with no archive copy. Available only to the highest administrator level and only where institutional policy permits.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>13.2 How a cleanup runs</h3>
+        <div class="process">
+            <ol class="flow flow-new">
+                <li>The retention policy identifies records older than the cut-off <span class="who">Nothing is changed yet</span></li>
+                <li>The number of affected records is displayed and logged <span class="who">The administrator sees the count before acting</span></li>
+                <li>A database backup is taken <span class="who">Automatic, before the first batch</span></li>
+                <li>Records are archived or exported according to the policy <span class="who">Copy verified before removal</span></li>
+                <li>Records are deleted in batches of 1,000 <span class="who">Each batch in its own transaction</span></li>
+                <li>The outcome is written to the audit log <span class="who">Who, when, how many</span></li>
+            </ol>
+        </div>
+        <p>
+            An administrator can preview the eligible records at any time without running anything. A cleanup that
+            would permanently delete records requires a typed confirmation naming the number of records affected.
+        </p>
+
+        <h3>13.3 Backup</h3>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:30%">Measure</th><th>Proposal</th></tr></thead>
+                <tbody>
+                    <tr><td>Scheduled backup</td><td>A full database backup each night, retained for 14 days</td></tr>
+                    <tr><td>Weekly backup</td><td>One backup per week retained for 8 weeks</td></tr>
+                    <tr><td>Before major changes</td><td>A backup is taken before any migration or bulk deletion</td></tr>
+                    <tr><td>Storage location</td><td>Outside the application directory, and preferably on separate storage</td></tr>
+                    <tr><td>Restore procedure</td><td>Documented, and tested at least once before the system goes live</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="callout callout-warn">
+            <span class="t">A backup that has never been restored is not a backup</span>
+            The restore procedure must be exercised on a test server before the system carries real bookings.
+        </div>
+
+        <h3>13.4 Full database reset</h3>
+        <p>
+            A command to clear the entire database is useful during development, testing and migration. Because it
+            is destructive, it is deliberately kept separate from retention and surrounded by safeguards:
+        </p>
+        <ul class="check">
+            <li>Available only to the highest administrator level</li>
+            <li>Disabled by default in the production configuration</li>
+            <li>States plainly what will be destroyed, with record counts</li>
+            <li>Requires the phrase <code>DELETE ALL DATA</code> to be typed in full</li>
+            <li>Requires a backup to be taken first</li>
+            <li>Never appears among ordinary administrative actions</li>
+            <li>Is written to the audit log</li>
+        </ul>
+    </section>
+
+    <!-- =================== 14. TECHNOLOGY =================== -->
+    <section class="section pb" id="technology">
+        <h2>Cost-Efficient Technology Strategy</h2>
+        <p class="lede">
+            Every component proposed is free and open-source, widely used, and maintainable by any competent
+            developer. The guiding rule is to use the simplest technology that reliably meets the requirement.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <caption>Recommended components</caption>
+                <thead><tr><th style="width:16%">Layer</th><th style="width:20%">Recommendation</th><th>Why</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>Backend</td><td><strong>Python + Django</strong></td>
+                        <td>Mature, free and open source. Authentication, permissions, an administrative interface, database migrations and protection against common web attacks are built in, so much less code must be written and maintained.</td>
+                    </tr>
+                    <tr>
+                        <td>Frontend</td><td><strong>Django templates + Bootstrap 5</strong></td>
+                        <td>No separate frontend application to build, deploy or keep in step. One codebase, one deployment, responsive on mobile devices. A React or Vue interface would add significant complexity for no benefit this system requires.</td>
+                    </tr>
+                    <tr>
+                        <td>Database (development)</td><td><strong>SQLite</strong></td>
+                        <td>Requires no server; a developer can start work immediately.</td>
+                    </tr>
+                    <tr>
+                        <td>Database (production)</td><td><strong>PostgreSQL</strong></td>
+                        <td>Free, reliable and well suited to concurrent use and large tables. It also supports the range constraint that guarantees no overlapping bookings at the database level.</td>
+                    </tr>
+                    <tr>
+                        <td>Charts</td><td><strong>Plain HTML and CSS; Chart.js only if needed</strong></td>
+                        <td>The charts required are bar charts and simple comparisons, which HTML and CSS draw well with no dependency, no download and no library to update. Chart.js remains available at no cost should richer charts be needed later.</td>
+                    </tr>
+                    <tr>
+                        <td>Icons</td><td><strong>Bootstrap Icons</strong></td>
+                        <td>Free, open source, and served from the application rather than an external network.</td>
+                    </tr>
+                    <tr>
+                        <td>Images</td><td><strong>Local storage with server-side compression</strong></td>
+                        <td>Venue photographs are few and small. Paid image hosting is unnecessary.</td>
+                    </tr>
+                    <tr>
+                        <td>Version control</td><td><strong>Git</strong></td>
+                        <td>Free, standard, and essential for handing the project to another developer.</td>
+                    </tr>
+                    <tr>
+                        <td>Web server</td><td><strong>Nginx + Gunicorn</strong></td>
+                        <td>The conventional free deployment for a Django application on a Linux server.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>14.1 Approaches deliberately not taken</h3>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:26%">Not proposed</th><th>Reason</th></tr></thead>
+                <tbody>
+                    <tr><td>A separate React or Vue frontend</td><td>Doubles the codebase and the deployment for an interface that is mostly forms and tables.</td></tr>
+                    <tr><td>Microservices</td><td>Introduces network complexity and failure modes that a single Kulliyyah system does not need.</td></tr>
+                    <tr><td>A message queue for imports</td><td>Only justified if testing shows imports are too slow to run directly. It can be added later if measurement demands it.</td></tr>
+                    <tr><td>Paid cloud services</td><td>Creates a recurring cost and a dependency on a commercial provider for a system that can run on one modest server.</td></tr>
+                    <tr><td>Artificial intelligence features</td><td>The business problem is scheduling and record keeping. AI would add cost and unpredictability without solving it.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- =================== 15. COST =================== -->
+    <section class="section" id="cost">
+        <h2>Estimated Cost</h2>
+        <div class="table-wrap">
+            <table>
+                <caption>Software and infrastructure position</caption>
+                <thead><tr><th style="width:24%">Component</th><th style="width:30%">Preferred option</th><th style="width:16%" class="num">Software cost</th><th>Note</th></tr></thead>
+                <tbody>
+                    <tr><td>Backend framework</td><td>Django</td><td class="num">RM 0</td><td>Open source (BSD licence)</td></tr>
+                    <tr><td>Frontend</td><td>Django templates + Bootstrap</td><td class="num">RM 0</td><td>Open source (MIT licence)</td></tr>
+                    <tr><td>Database</td><td>PostgreSQL</td><td class="num">RM 0</td><td>Open source</td></tr>
+                    <tr><td>Charts</td><td>HTML/CSS, or Chart.js</td><td class="num">RM 0</td><td>Open source</td></tr>
+                    <tr><td>Icons</td><td>Bootstrap Icons</td><td class="num">RM 0</td><td>Open source</td></tr>
+                    <tr><td>Web server</td><td>Nginx + Gunicorn</td><td class="num">RM 0</td><td>Open source</td></tr>
+                    <tr><td>Version control</td><td>Git</td><td class="num">RM 0</td><td>Open source</td></tr>
+                    <tr><td>Development environment</td><td>Local machine</td><td class="num">RM 0</td><td>No cost to the Kulliyyah</td></tr>
+                    <tr><td>SSL certificate</td><td>Let's Encrypt</td><td class="num">RM 0</td><td>Free certificates renew automatically</td></tr>
+                    <tr><td><strong>Hosting</strong></td><td><strong>Self-provided VPS</strong></td><td class="num"><strong>Recurring</strong></td><td><strong>Confirmed: not IIUM ITD.</strong> A genuine recurring cost. See section 16</td></tr>
+                    <tr><td><strong>Domain</strong></td><td><strong>Self-provided domain</strong></td><td class="num"><strong>Recurring</strong></td><td><strong>Confirmed: not an IIUM subdomain.</strong> An annual renewal</td></tr>
+                    <tr><td>Backup storage</td><td>External storage, off the application server</td><td class="num">Recurring</td><td>Decision 21. Small; database backups compress well</td></tr>
+                    <tr><td>Outbound email</td><td>SMTP relay</td><td class="num">To confirm</td><td>Needed for registration verification and booking confirmations</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout callout-warn">
+            <span class="t">The software is free. The total is not.</span>
+            AIKOL confirmed that hosting and the domain are <strong>self-provided rather than supplied by IIUM
+            ITD</strong> (decisions 22 and 23). Every software component in the table above remains free and open
+            source, but a server, a domain name and off-server backup storage are now a real recurring expense for
+            the project, and this report should not be read as promising a total of RM 0.
+            <br><br>
+            No prices are quoted here. Commercial hosting prices change and vary by provider and region, and a
+            figure that proves wrong at procurement would be worse than none. Actual prices should be obtained when
+            the provider is chosen — which, together with who pays, is one of the two operational items still open
+            in section 24.
+        </div>
+
+        <h4>Costs that are real but not monetary</h4>
+        <ul>
+            <li><strong>Development effort</strong> — approximately 18 weeks as set out in section 20.</li>
+            <li><strong>Venue information and photographs</strong> — Kulliyyah staff time to compile.</li>
+            <li><strong>Administrator training</strong> — a short session, supported by written guidance.</li>
+            <li><strong>Ongoing maintenance</strong> — periodic security updates to Django and the operating system.</li>
+        </ul>
+    </section>
+
+    <!-- =================== 16. HOSTING =================== -->
+    <section class="section" id="hosting">
+        <h2>Hosting Strategy</h2>
+        <div class="grid g3">
+            <div class="tile">
+                <h4>Development</h4>
+                <p>Runs on a developer's own computer with SQLite. No cost, no server, no institutional dependency.</p>
+            </div>
+            <div class="tile">
+                <h4>Demonstration</h4>
+                <p>A temporary deployment for user acceptance testing, on a free tier or a small server. Suitable for
+                   review only — no real bookings should depend on it.</p>
+            </div>
+            <div class="tile">
+                <h4>Production</h4>
+                <p>A modest self-provided Linux VPS. One server is sufficient for this system's expected
+                   load. Confirmed as not IIUM-hosted.</p>
+            </div>
+        </div>
+
+        <div class="callout callout-info">
+            <span class="t">Answered: hosting and the domain are self-provided</span>
+            AIKOL confirmed that the application will <strong>not</strong> be hosted by IIUM Information Technology
+            Division and will <strong>not</strong> use an IIUM subdomain (decisions 22 and 23). A modest Linux VPS
+            and an independently registered domain are therefore the arrangement.
+            <br><br>
+            This has a consequence worth stating plainly to management. Operating-system patching, firewall rules,
+            TLS certificate renewal, and verifying that backups actually restore all become <strong>this project's
+            responsibility</strong>. No institutional IT department performs them in the background. These are
+            modest tasks for one server, but they are ongoing, and they need a named owner rather than an
+            assumption.
+            <br><br>
+            Which provider, which specification, who pays, and where external backup storage lives are the two
+            operational items still open in section 24. Neither blocks development.
+        </div>
+
+        <h4>A caution about free hosting tiers</h4>
+        <p>
+            Several providers offer free hosting for small applications. These are appropriate for demonstration but
+            not for a system the Kulliyyah depends on: free tiers are withdrawn or changed at the provider's
+            discretion, often suspend applications that are idle, and rarely guarantee that data is retained. The
+            report distinguishes deliberately between <em>free software</em> — which is permanent and safe to rely
+            upon — and <em>free hosting</em>, which is neither.
+        </p>
+    </section>
+
+    <!-- =================== 17. ARCHITECTURE =================== -->
+    <section class="section pb" id="architecture">
+        <h2>Proposed Technical Architecture</h2>
+        <p>
+            A single Django application organised into modules — a modular monolith. One codebase, one deployment,
+            one database.
+        </p>
+
+        <div class="arch">
+            <div class="arch-layer"><div class="t">Browser</div><div class="s">Desktop, laptop, tablet or mobile telephone</div></div>
+            <div class="arch-down">↓  HTTPS  ↓</div>
+            <div class="arch-layer"><div class="t">Nginx</div><div class="s">Web server · TLS termination · static files</div></div>
+            <div class="arch-down">↓</div>
+            <div class="arch-layer app">
+                <div class="t">Django Application (Gunicorn)</div>
+                <div class="s">Authentication · authorisation · business rules · templates</div>
+                <div class="arch-modules">
+                    <div class="arch-mod">Accounts</div>
+                    <div class="arch-mod">Venues</div>
+                    <div class="arch-mod">Bookings</div>
+                    <div class="arch-mod">Administration</div>
+                    <div class="arch-mod">Reporting</div>
+                    <div class="arch-mod">Import / Export</div>
+                    <div class="arch-mod">Audit</div>
+                </div>
+            </div>
+            <div class="arch-down">↓  Django ORM  ↓</div>
+            <div class="arch-layer"><div class="t">PostgreSQL</div><div class="s">Bookings · venues · users · settings · audit log · archive</div></div>
+            <div class="arch-down">↓</div>
+            <div class="arch-layer"><div class="t">Server file system</div><div class="s">Venue images · CSV exports · database backups</div></div>
+        </div>
+        <p class="fig-caption"><strong>Figure 17.1</strong> — The whole system. There is no separate frontend application, no message broker and no external service dependency.</p>
+
+        <h4>Why a monolith rather than services</h4>
+        <p>
+            The modules above share the same data and are used by the same people at the same time. Separating them
+            into independent services would introduce network calls, partial failures and deployment coordination —
+            real costs, in exchange for scaling properties that a single Kulliyyah's booking system will never need.
+            Keeping the modules clearly separated <em>within</em> one application preserves the ability to split them
+            later should that ever become necessary.
+        </p>
+    </section>
+
+    <!-- =================== 18. DATABASE =================== -->
+    <section class="section pb" id="database">
+        <h2>Proposed Database Design</h2>
+
+        <div class="table-wrap">
+            <table class="table-compact">
+                <caption>Tables and their purpose</caption>
+                <thead><tr><th style="width:20%">Table</th><th style="width:34%">Holds</th><th>Key fields</th></tr></thead>
+                <tbody>
+                    <tr><td><code>users</code></td><td>Accounts and roles</td><td>id, name, email, password_hash, role, status, created_at, updated_at</td></tr>
+                    <tr><td><code>venues</code></td><td>Bookable venues</td><td>id, name, code, description, building, floor, location, capacity, venue_type, facilities, status, approval_required, opening_time, closing_time, created_at, updated_at</td></tr>
+                    <tr><td><code>venue_images</code></td><td>Photographs per venue</td><td>id, venue_id, image_path, display_order, created_at</td></tr>
+                    <tr><td><code>bookings</code></td><td>Every booking request</td><td>id, booking_reference, user_id, venue_id, booking_date, start_time, end_time, purpose, attendee_count, status, rejection_reason, cancellation_reason, approved_by, approved_at, cancelled_at, created_at, updated_at</td></tr>
+                    <tr><td><code>booking_archive</code></td><td>Records past the retention period</td><td>Same shape as <code>bookings</code>, plus archived_at</td></tr>
+                    <tr><td><code>audit_logs</code></td><td>Administrative actions</td><td>id, user_id, action, entity_type, entity_id, description, created_at</td></tr>
+                    <tr><td><code>system_settings</code></td><td>Configurable rules</td><td>key, value, updated_by, updated_at</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>18.1 Configurable settings</h3>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:34%">Setting</th><th style="width:20%">Proposed default</th><th>Effect</th></tr></thead>
+                <tbody>
+                    <tr><td><code>default_booking_duration</code></td><td>2 hours</td><td>Pre-filled duration on the booking form</td></tr>
+                    <tr><td><code>maximum_booking_duration</code></td><td>9 hours</td><td>Longest period a user may request</td></tr>
+                    <tr><td><code>advance_booking_limit</code></td><td>90 days</td><td>How far ahead a booking may be made</td></tr>
+                    <tr><td><code>cancellation_cutoff</code></td><td>72 hours (3 days)</td><td>Notice required to cancel an approved booking</td></tr>
+                    <tr><td><code>approval_required</code></td><td>Per venue</td><td>Whether a request needs a decision</td></tr>
+                    <tr><td><code>booking_retention_period</code></td><td>7 years</td><td>When records become eligible for archiving</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>18.2 Facilities: a separate table</h3>
+        <p>
+            This report originally proposed storing facilities as a structured field on the venue record, on a
+            stated rule: introduce a separate table only when a facility needs attributes of its own. That was
+            correct while the list was nine fixed values defined in the software.
+        </p>
+        <p>
+            AIKOL then asked that <strong>administrators be able to add facilities themselves</strong>. The moment
+            they can, each facility needs a stored display name, an ordering, an active flag and a note of whether
+            it applies to venues, vehicles or both — attributes of its own. The rule's condition is met, so
+            facilities become a table. This is the original rule working as intended, not a reversal of it.
+        </p>
+        <p>
+            The alternative would have been to keep the list in the software, which would mean a code release every
+            time the Kulliyyah wanted to add "Hearing Loop" to a room. That is precisely what the design's
+            preference for configurable settings over hard-coded values exists to avoid.
+        </p>
+        <div class="callout callout-info">
+            <span class="t">Why a facility has both a code and a name</span>
+            The <em>code</em> is the stable identity that CSV imports and saved filter links refer to, and it never
+            changes. The <em>name</em> is the label people see and may be edited freely. If the display name were
+            also the key, correcting a spelling mistake would break every import template that referred to it.
+        </div>
+
+        <h3>18.3 Indexing strategy</h3>
+        <p>
+            Indexes make reads fast and writes slightly slower, and each one occupies space. They are therefore
+            proposed only where the system actually searches.
+        </p>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:34%">Index</th><th style="width:26%">Table</th><th>Supports</th></tr></thead>
+                <tbody>
+                    <tr><td><code>(venue_id, booking_date)</code></td><td>bookings</td><td>The conflict check and the venue availability screen — the most frequent query in the system</td></tr>
+                    <tr><td><code>(user_id, booking_date DESC)</code></td><td>bookings</td><td>"My bookings", newest first</td></tr>
+                    <tr><td><code>(status, booking_date)</code></td><td>bookings</td><td>Pending approval queue and status filters</td></tr>
+                    <tr><td><code>booking_date</code></td><td>bookings</td><td>Date-range reporting and retention cut-off queries</td></tr>
+                    <tr><td><code>booking_reference</code> (unique)</td><td>bookings</td><td>Look-up by reference; guarantees references are unique</td></tr>
+                    <tr><td><code>email</code> (unique)</td><td>users</td><td>Sign-in and duplicate detection during import</td></tr>
+                    <tr><td><code>code</code> (unique)</td><td>venues</td><td>Venue look-up during import</td></tr>
+                    <tr><td><code>(entity_type, entity_id)</code></td><td>audit_logs</td><td>Retrieving the history of one booking or venue</td></tr>
+                    <tr><td>Exclusion constraint on venue, date and time range</td><td>bookings</td><td>Database-level guarantee that two active bookings cannot overlap</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="callout">
+            <span class="t">Why not simply index everything?</span>
+            Every index must be updated on each insert and update, and consumes disk space. Indexing fields the
+            system never searches on would slow down booking creation to no benefit.
+        </div>
+    </section>
+
+    <!-- =================== 19. SECURITY =================== -->
+    <section class="section" id="security">
+        <h2>Security</h2>
+        <p>
+            The system holds names, email addresses and a record of who used which room and when. That warrants
+            careful, proportionate protection — not the measures appropriate to a financial system.
+        </p>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:28%">Measure</th><th>Implementation</th></tr></thead>
+                <tbody>
+                    <tr><td>Password storage</td><td>Hashed with a modern algorithm (PBKDF2 or Argon2) through Django's authentication system. Passwords are never stored or transmitted in readable form, and administrators cannot see them.</td></tr>
+                    <tr><td>Authentication</td><td>Django's built-in authentication, with session expiry and secure, HTTP-only session cookies.</td></tr>
+                    <tr><td>Authorisation</td><td>Every view checks the signed-in user's role. Administrative routes are unreachable for standard users, not merely hidden from the menu.</td></tr>
+                    <tr><td>Ownership checks</td><td>A user can view and cancel only their own bookings; the check is on the record, not on the URL.</td></tr>
+                    <tr><td>CSRF protection</td><td>Enabled on every form, as provided by Django.</td></tr>
+                    <tr><td>XSS prevention</td><td>Template auto-escaping; user-supplied text is never rendered as markup.</td></tr>
+                    <tr><td>SQL injection</td><td>All database access through the Django ORM with parameterised queries.</td></tr>
+                    <tr><td>Server-side validation</td><td>Every rule enforced on the server. Browser validation is a convenience only and is never trusted.</td></tr>
+                    <tr><td>Upload validation</td><td>Images only, permitted formats JPEG, PNG and WebP, maximum 5 MB, content type verified, files stored outside the executable path.</td></tr>
+                    <tr><td>Transport security</td><td>HTTPS enforced; HTTP redirected. Free certificates renew automatically.</td></tr>
+                    <tr><td>Destructive operations</td><td>Restricted by role, confirmed by typed phrase, preceded by a backup and written to the audit log.</td></tr>
+                    <tr><td>Dependency updates</td><td>Django security releases applied promptly; the version in use is recorded in the project documentation.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- =================== 20. ROADMAP =================== -->
+    <section class="section pb" id="roadmap">
+        <h2>Implementation Roadmap</h2>
+        <p>
+            Ten phases over approximately 18 weeks. Phases overlap where work can proceed in parallel. The estimate
+            assumes one developer working consistently and prompt responses to the questions in section 24.
+        </p>
+
+        <div class="chart">
+            <div class="chart-head"><h4>Proposed schedule</h4><span class="tag tag-illustrative">Estimate</span></div>
+            <div id="chartRoadmap" role="img" aria-label="Project timeline showing ten phases over approximately eighteen weeks"></div>
+            <div class="legend">
+                <span><span class="sw" style="background:var(--ink-600)"></span>Discovery and review</span>
+                <span><span class="sw" style="background:var(--brand-600)"></span>Construction</span>
+                <span><span class="sw" style="background:var(--gold-600)"></span>Testing and deployment</span>
+            </div>
+            <p class="fig-caption"><strong>Figure 20.1</strong> — Indicative schedule. Phase 1 and Phase 2 are complete on delivery of this report and the accompanying prototype.</p>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:10%">Phase</th><th style="width:32%">Work</th><th>Deliverable</th></tr></thead>
+                <tbody>
+                    <tr><td>1</td><td>Discovery and management review</td><td>This report <span class="tag tag-confirmed">Delivered</span></td></tr>
+                    <tr><td>2</td><td>UI prototype and requirement confirmation</td><td>Interactive prototype <span class="tag tag-confirmed">Delivered</span></td></tr>
+                    <tr><td>3</td><td>Database and authentication</td><td>Schema, migrations, sign-in, roles</td></tr>
+                    <tr><td>4</td><td>Venue management</td><td>Venue records, images, browsing, details</td></tr>
+                    <tr><td>5</td><td>Booking system</td><td>Booking form, conflict prevention, approval workflow, tests</td></tr>
+                    <tr><td>6</td><td>Administrative features</td><td>Booking, venue and user administration; audit log</td></tr>
+                    <tr><td>7</td><td>Bulk data and reporting</td><td>CSV import and export, dashboard, retention</td></tr>
+                    <tr><td>8</td><td>Testing and security review</td><td>Automated test suite, performance check with a large data set</td></tr>
+                    <tr><td>9</td><td>User acceptance testing</td><td>Kulliyyah staff and student trial on demonstration data</td></tr>
+                    <tr><td>10</td><td>Deployment and training</td><td>Live system, administrator guide, backup procedure</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- =================== 21. MVP =================== -->
+    <section class="section" id="mvp">
+        <h2>The First Release</h2>
+        <p>
+            The first production release is defined so that it is genuinely useful on the day it is deployed, while
+            remaining small enough to build and test properly.
+        </p>
+        <div class="grid g2">
+            <div>
+                <h4>Included <span class="tag tag-mvp">First release</span></h4>
+                <ul class="check">
+            <li>Self-registration with IIUM email verification <span class="tag tag-confirmed">New</span></li>
+            <li>Sign in, sign out and password reset</li>
+            <li>Role-based access (user, <strong>approver</strong>, administrator) <span class="tag tag-confirmed">New</span></li>
+            <li>User management with activation and deactivation</li>
+            <li>Venue management with photographs</li>
+            <li><strong>Vehicle (car) management with photographs</strong> <span class="tag tag-confirmed">New</span></li>
+            <li><strong>Administrator-maintained facility list</strong> <span class="tag tag-confirmed">New</span></li>
+            <li>Resource browsing, filtering and details</li>
+            <li>Availability display</li>
+            <li>Booking submission for venues and vehicles</li>
+            <li><strong>Multi-day vehicle trips</strong> <span class="tag tag-confirmed">New</span></li>
+            <li><strong>Recurring bookings</strong> <span class="tag tag-confirmed">New</span></li>
+            <li>Conflict prevention with automated tests</li>
+            <li>Approval and rejection with recorded reasons</li>
+            <li><strong>Booking on behalf of a user</strong> <span class="tag tag-confirmed">New</span></li>
+            <li>Cancellation with a mandatory reason and a 3-day cutoff</li>
+            <li><strong>Key issue and return recording</strong> <span class="tag tag-confirmed">New</span></li>
+            <li><strong>Booking confirmation email</strong> <span class="tag tag-confirmed">New</span></li>
+            <li>Booking history with search, filter and pagination</li>
+            <li>Management dashboard and basic reporting</li>
+            <li>CSV import and export</li>
+            <li>Audit log</li>
+            <li>Configurable retention with export</li>
+            <li>Documented backup procedure to external storage</li>
+        </ul>
+            </div>
+            <div>
+                <h4>Not included</h4>
+                <ul class="check cross">
+            <li>IIUM single sign-on <span class="note">Not planned — decision 24</span></li>
+            <li>Calendar integration</li>
+            <li>QR check-in or room access</li>
+            <li>Equipment tracking beyond key custody</li>
+            <li>Vehicle classes other than cars</li>
+            <li>Fuel and maintenance scheduling</li>
+            <li>Mobile application</li>
+            <li>Advanced analytics or forecasting</li>
+            <li>Any AI feature</li>
+        </ul>
+                <div class="callout" style="margin-top:1rem">
+                    <span class="t">Why the release grew</span>
+                    This list is larger than the one proposed at review. AIKOL's answers put recurring bookings
+                    (decision 15), key custody tracking (decision 17) and a separate Approver role (decision 5) into
+                    the first release, and vehicle booking, self-registration and confirmation email were added in
+                    follow-up decisions.
+                    <br><br>
+                    Two of these carry real schedule cost and management should know it. <strong>Recurring
+                    bookings</strong> are not a small feature: they need a series definition, conflict checking for
+                    every occurrence, sensible handling when only some dates clash, and the ability to approve or
+                    cancel a whole series. <strong>Email</strong> makes a mail server a dependency of ordinary
+                    operation rather than of sign-up alone. Neither changes the architecture, but neither was in the
+                    original estimate.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =================== 22. FUTURE =================== -->
+    <section class="section" id="future">
+        <h2>Possible Later Enhancements</h2>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:26%">Enhancement</th><th style="width:14%">Effort</th><th>Depends on</th></tr></thead>
+                <tbody>
+                    <tr><td>Email notification</td><td>Low</td><td>An institutional mail relay and a decision on which events notify</td></tr>
+                    <tr><td>IIUM single sign-on</td><td>Medium</td><td>Cooperation from the IIUM Information Technology Division</td></tr>
+                    <tr><td>Recurring bookings</td><td>Medium</td><td>Rules for how a series behaves when one occurrence clashes</td></tr>
+                    <tr><td>Calendar integration (Outlook / Google)</td><td>Medium</td><td>Institutional accounts and consent</td></tr>
+                    <tr><td>QR check-in</td><td>Medium</td><td>A decision on whether attendance is to be recorded</td></tr>
+                    <tr><td>Room key tracking</td><td>Medium</td><td>Confirmation of who holds keys today (question 16)</td></tr>
+                    <tr><td>Equipment reservation</td><td>Medium</td><td>An equipment inventory</td></tr>
+                    <tr><td>QR room access</td><td>High</td><td>Physical access control hardware</td></tr>
+                    <tr><td>Mobile application</td><td>High</td><td>Evidence that the responsive website is insufficient</td></tr>
+                    <tr><td>Advanced analytics and forecasting</td><td>High</td><td>Several years of accumulated data</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>
+            Each of these is additive. None requires the architecture proposed in this report to change, which is a
+            deliberate property of the design.
+        </p>
+    </section>
+
+    <!-- =================== 23. RISKS =================== -->
+    <section class="section" id="risks">
+        <h2>Risks and How They Are Managed</h2>
+        <div class="table-wrap">
+            <table class="table-compact">
+                <thead><tr><th style="width:26%">Risk</th><th style="width:12%">Likelihood</th><th>Response</th></tr></thead>
+                <tbody>
+                    <tr><td>Requirements differ from the assumptions in this report</td><td>High</td><td>Section 24 exists precisely to surface this before construction begins. Corrections cost days now, months later.</td></tr>
+                    <tr><td>Venue information and photographs are slow to arrive</td><td>Medium</td><td>Identify the responsible officer early; the bulk import allows the venue list to be loaded from a spreadsheet in one operation.</td></tr>
+                    <tr><td>Hosting is not resolved in time</td><td>Medium</td><td>Development and user acceptance testing do not depend on production hosting. Begin the enquiry with IIUM early.</td></tr>
+                    <tr><td>Users continue booking through the office out of habit</td><td>Medium</td><td>Administrators can create bookings on behalf of users (question 14), so the record stays complete during transition.</td></tr>
+                    <tr><td>Data loss</td><td>Low</td><td>Nightly backups, a backup before every destructive operation, and a restore procedure tested before go-live.</td></tr>
+                    <tr><td>Accidental mass deletion</td><td>Low</td><td>Archiving by default, typed confirmation, record counts shown in advance, and the reset command disabled in production.</td></tr>
+                    <tr><td>The developer becomes unavailable</td><td>Medium</td><td>Conventional framework, no unusual technology, documented codebase and schema, everything in Git.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- =================== 24. MANAGEMENT QUESTIONS =================== -->
+    <section class="section pb" id="management-decisions">
+        <h2>Items Requiring AIKOL Management Confirmation</h2>
+        <p class="lede">
+            These are the decisions that shape the system. <strong>All twenty-six have been answered by AIKOL</strong>,
+            and the answers are recorded below. They are settled requirements, not proposals.
+        </p>
+        <div class="callout callout-ok">
+            <span class="t">Answered by the Kulliyyah system administrator</span>
+            Who will also act as system administrator once the system is live, and will supply the resource list,
+            rules and photographs. The original responses are held verbatim in <span class="mono">Section 24.docx</span>
+            in the project repository; that file is never edited. Where a response needed clarification it was settled
+            directly with the Kulliyyah, and the clarification is noted in the relevant row.
+        </div>
+
+        <h3>Access and eligibility</h3>
+        <div class="table-wrap">
+            <table class="decisions table-compact">
+                <thead><tr><th class="qnum">No.</th><th style="width:44%">Question</th><th>Decision</th></tr></thead>
+                <tbody>
+                    <tr><td class="qnum">1</td><td>Who may use the system — students, lecturers, staff, or a subset?</td><td class="answered">Everyone with an IIUM matriculation number or staff number.</td></tr>
+                    <tr><td class="qnum">2</td><td>May students reserve rooms independently, or only through a lecturer or society?</td><td class="answered">Students may book independently. Approval is granted on the strength of the reason and availability.</td></tr>
+                    <tr><td class="qnum">3</td><td>Which venues may students book?</td><td class="answered">All venues.</td></tr>
+                    <tr><td class="qnum">4</td><td>Which venues require approval, and which may be confirmed automatically?</td><td class="answered"><strong>All venues require approval by the administrator.</strong> No venue is confirmed automatically.</td></tr>
+                    <tr><td class="qnum">5</td><td>Who approves bookings? Is a separate Approver role needed (section 4.1)?</td><td class="answered"><strong>A separate Approver role is needed</strong> — for an Administrative Assistant, Executive Officer or Deputy Director to decide bookings when the main approver is away.</td></tr>
+                    <tr><td class="qnum">6</td><td>Is one level of approval sufficient, or is a second required for certain venues?</td><td class="answered">One level of approval is sufficient.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Booking rules</h3>
+        <div class="table-wrap">
+            <table class="decisions table-compact">
+                <thead><tr><th class="qnum">No.</th><th style="width:44%">Question</th><th>Decision</th></tr></thead>
+                <tbody>
+                    <tr><td class="qnum">7</td><td>How far in advance may a booking be made?</td><td class="answered">3 months (90 days) in advance.</td></tr>
+                    <tr><td class="qnum">8</td><td>What is the maximum duration of a single booking?</td><td class="answered">9 hours. A longer occupation requires a second booking for the extra time.</td></tr>
+                    <tr><td class="qnum">9</td><td>What are the operating hours, and do they differ by venue?</td><td class="answered">08:00 – 22:00.</td></tr>
+                    <tr><td class="qnum">10</td><td>Are weekend bookings permitted?</td><td class="answered">Yes.</td></tr>
+                    <tr><td class="qnum">11</td><td>Are bookings on public holidays and semester breaks permitted?</td><td class="answered">Yes.</td></tr>
+                    <tr><td class="qnum">12</td><td>May users cancel an approved booking themselves?</td><td class="answered">A user may cancel their own booking freely, up to 3 days before the booking date, giving a reason. <span class="note">Clarified with AIKOL: only <em>approval</em> is an administrator function; cancellation by the requester needs no approval.</span></td></tr>
+                    <tr><td class="qnum">13</td><td>What notice must be given for a cancellation?</td><td class="answered">3 days before, with a reasonable excuse. A reason is mandatory.</td></tr>
+                    <tr><td class="qnum">14</td><td>Should administrators be able to create bookings on behalf of users?</td><td class="answered">Yes.</td></tr>
+                    <tr><td class="qnum">15</td><td>Are recurring bookings required in the first release?</td><td class="answered"><strong>Yes — required in the first release</strong>, so a whole semester's schedule can be entered at once.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Resource access and information</h3>
+        <div class="table-wrap">
+            <table class="decisions table-compact">
+                <thead><tr><th class="qnum">No.</th><th style="width:44%">Question</th><th>Decision</th></tr></thead>
+                <tbody>
+                    <tr><td class="qnum">16</td><td>Who controls room keys or access cards at present?</td><td class="answered">The system administrator personally. There is no maintenance partner.</td></tr>
+                    <tr><td class="qnum">17</td><td>Should key collection and return be recorded in the system?</td><td class="answered"><strong>Yes.</strong> Recording key collection and return would help key management.</td></tr>
+                    <tr><td class="qnum">18</td><td>What user information should be stored — matriculation or staff number, department, telephone?</td><td class="answered">Per user: name, matriculation or staff number, telephone number. Per booking: remarks / purpose, time key taken out, time key returned.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Records and data</h3>
+        <div class="table-wrap">
+            <table class="decisions table-compact">
+                <thead><tr><th class="qnum">No.</th><th style="width:44%">Question</th><th>Decision</th></tr></thead>
+                <tbody>
+                    <tr><td class="qnum">19</td><td>How long should booking records be retained (1, 3, 5, 7 years, or indefinitely)?</td><td class="answered">7 years, for audit purposes.</td></tr>
+                    <tr><td class="qnum">20</td><td>Should records past that period be archived, exported, or deleted?</td><td class="answered"><strong>Exported</strong> — not archived in place, and never silently deleted.</td></tr>
+                    <tr><td class="qnum">21</td><td>Is a database backup required before any bulk deletion, and where should backups be stored?</td><td class="answered">Yes, a backup is required before any bulk deletion. Backups go to external storage.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Infrastructure and ownership</h3>
+        <div class="table-wrap">
+            <table class="decisions table-compact">
+                <thead><tr><th class="qnum">No.</th><th style="width:44%">Question</th><th>Decision</th></tr></thead>
+                <tbody>
+                    <tr><td class="qnum">22</td><td>Can IIUM provide server hosting for the application?</td><td class="answered"><strong>No — hosting is self-provided.</strong> Confirmed after the review: the project provides its own VPS.</td></tr>
+                    <tr><td class="qnum">23</td><td>Can an IIUM subdomain be used (for example booking.aikol.iium.edu.my)?</td><td class="answered"><strong>No — the domain is self-provided.</strong> An IIUM subdomain will not be used.</td></tr>
+                    <tr><td class="qnum">24</td><td>Should IIUM authentication be integrated eventually, and if so when?</td><td class="answered"><strong>No IIUM authentication integration.</strong> The system implements its own sign-in using Django's built-in authentication.</td></tr>
+                    <tr><td class="qnum">25</td><td>Who will act as system administrator once the system is live?</td><td class="answered">the Kulliyyah system administrator.</td></tr>
+                    <tr><td class="qnum">26</td><td>Who will supply the venue list, rules and photographs?</td><td class="answered">the Kulliyyah system administrator — resource list, rules and photographs.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Decisions taken after this review</h3>
+        <p>
+            Vehicle booking was added after section 24 was answered, and section 24 says nothing about it. The
+            following decisions are the authority for vehicles, registration, confirmation email and the facility
+            list. They carry the same weight as the answers above.
+        </p>
+        <div class="table-wrap">
+            <table class="decisions table-compact">
+                <thead><tr><th style="width:30%">Topic</th><th>Decision</th></tr></thead>
+                <tbody>
+                    <tr><td>Vehicle scope</td><td class="answered"><strong>Cars only</strong> in the first release.
+                        The design must not make other vehicle classes hard to add later.</td></tr>
+                    <tr><td>Who may book a vehicle</td><td class="answered"><strong>Lecturers and staff only.</strong>
+                        A student cannot request a car directly; a lecturer or staff member books on their behalf
+                        under decision 14.</td></tr>
+                    <tr><td>Trip length</td><td class="answered"><strong>Multi-day trips are permitted.</strong>
+                        A vehicle may be collected one day and returned another. A configurable setting caps the
+                        maximum trip length.</td></tr>
+                    <tr><td>Driver</td><td class="answered"><strong>The requester drives.</strong> The booking
+                        records the driver's licence number and expiry, checked against the end of the trip.</td></tr>
+                    <tr><td>Vehicle approval</td><td class="answered">Every vehicle booking requires approval,
+                        as with venues.</td></tr>
+                    <tr><td>Registration</td><td class="answered"><strong>Self-registration</strong>, restricted to
+                        <span class="mono">@iium.edu.my</span> and <span class="mono">@live.iium.edu.my</span>
+                        addresses and confirmed by a verification email. One administrator cannot create accounts
+                        by hand for a whole Kulliyyah.</td></tr>
+                    <tr><td>Matriculation number</td><td class="answered">Collected for documentation and reporting.
+                        It is <strong>not</strong> the sign-in credential — the email address remains the login
+                        field.</td></tr>
+                    <tr><td>Booking confirmation email</td><td class="answered">Sent on submission, approval,
+                        rejection and cancellation. These are transactional messages about the recipient's own
+                        booking, so there is no opt-out in the first release.</td></tr>
+                    <tr><td>Facility list</td><td class="answered"><strong>Maintained by administrators</strong>,
+                        who may create, rename and deactivate facilities without a software release.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout callout-warn">
+            <span class="t">Two operational items remain open</span>
+            Neither blocks development, but both must be settled before deployment (phase 10):
+            <strong>which VPS provider and specification, and who pays for it</strong>; and
+            <strong>which domain name, and where external backup storage will live</strong>.
+        </div>
+
+        <div class="callout callout-info">
+            <span class="t">What these answers changed</span>
+            The answers materially widened the first release. Vehicle booking, recurring bookings, key custody
+            tracking, a separate Approver role, self-registration and confirmation email are all now in scope, and
+            several of them were previously listed as excluded. Sections 5.1, 21 and 22 have been updated
+            accordingly. Every limit above is stored as a configurable setting rather than fixed in the software,
+            so AIKOL can change any of them later without a code release.
+        </div>
+    </section>
+
+    <!-- =================== 25. CONCLUSION =================== -->
+    <section class="section pb" id="conclusion">
+        <h2>Conclusion and Recommended Next Steps</h2>
+
+        <p class="lede">
+            The AIKOL Room and Vehicle Booking System is a well-understood problem with a well-understood solution. It does not
+            require novel technology, substantial expenditure or a large team. It requires an accurate description of
+            how the Kulliyyah wishes to work, and a careful, conventional implementation of it.
+        </p>
+
+        <h3>What has been delivered in this phase</h3>
+        <ul class="check">
+            <li>This management review report, presentable on screen and printable to PDF</li>
+            <li>A working interactive prototype of every proposed screen</li>
+            <li>A recommended technology stack composed entirely of free and open-source software</li>
+            <li>A proposed database design with a specific indexing strategy</li>
+            <li>A data retention, archiving, backup and safe deletion strategy</li>
+            <li>A defined first release and a phased implementation plan</li>
+            <li>A list of 26 decisions required from management</li>
+        </ul>
+
+        <h3>Recommended next steps</h3>
+        <ol>
+            <li><strong>Review the prototype.</strong> Click through the screens and note anything that does not match how the Kulliyyah works.</li>
+            <li><strong>Answer the questions in section 24</strong>, or mark those that require further consultation.</li>
+            <li><strong>Confirm the venue list</strong> and identify who will supply photographs and rules.</li>
+            <li><strong>Begin the hosting enquiry with IIUM</strong>, since this has the longest lead time and does not depend on anything else.</li>
+            <li><strong>Authorise Phase 3</strong> — database and authentication — so that construction can begin.</li>
+        </ol>
+
+        <div class="callout callout-ok">
+            <span class="t">A note on what has deliberately been left out</span>
+            This proposal is smaller than it could be. Notification, calendar integration, QR access and recurring
+            bookings have all been set aside for later. A first release that does a few things reliably will serve
+            the Kulliyyah better than an ambitious one that arrives late and is not trusted. Every item set aside can
+            be added to the proposed architecture without redesign.
+        </div>
+
+        <div class="print-footer">
+            AIKOL Room and Vehicle Booking System — Management Review Report · Ahmad Ibrahim Kulliyyah of Laws, IIUM ·
+            Prepared for management review · Branding and venue images are placeholders
+        </div>
+    </section>
+
+    </main>
+</div>
+
+<footer class="doc-footer no-print">
+    <span>AIKOL Room and Vehicle Booking System — Management Review Report, version 1.0</span>
+    <span>All sample data is fictional · Branding is a placeholder pending official AIKOL/IIUM assets</span>
+</footer>
+
+<script src="js/report.js"></script>
+</body>
+</html>

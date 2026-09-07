@@ -1,0 +1,33 @@
+# Dependencies pulled in only for local checks
+node_modules/
+package-lock.json
+package.json
+
+# Temporary patch and check scripts
+_*.py
+_*.js
+prototype/_*.py
+prototype/_*.js
+
+# OS and editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.vscode/
+.idea/
+
+# AIKOL's verbatim internal answers — held locally, deliberately not published
+Section 24.docx
+
+# Uploaded media (supplied by the Kulliyyah, not source)
+prototype/media/
+prototype/assets/images/AIKOL-building-scaled.jpg
+
+# Django, for when Phase 3 starts
+*.pyc
+__pycache__/
+db.sqlite3
+.env
+/aikol_booking/media/
+/aikol_booking/staticfiles/

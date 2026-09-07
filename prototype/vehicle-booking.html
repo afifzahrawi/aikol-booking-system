@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Request a Vehicle — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main main-narrow" id="main">
+
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="dashboard.html">Dashboard</a><span>/</span>
+                <a href="vehicles.html">Vehicles</a><span>/</span><span>Request a trip</span>
+            </nav>
+
+            <div class="page-head">
+                <div>
+                    <h1>Request a vehicle</h1>
+                    <p class="lede">A trip may run across several days. Availability is checked as you type.</p>
+                </div>
+            </div>
+
+            <!-- Eligibility gate, rendered before anything else -->
+            <div id="gate"></div>
+
+            <div id="formStage">
+                <ol class="steps" id="steps">
+                    <li aria-current="step"><span class="n">Step 1</span>Trip details</li>
+                    <li><span class="n">Step 2</span>Review</li>
+                    <li><span class="n">Step 3</span>Confirmation</li>
+                </ol>
+
+                <div class="grid grid-2" style="align-items: start;">
+
+                    <section class="card" aria-labelledby="detailsHead">
+                        <div class="card-head"><h2 id="detailsHead">Trip details</h2></div>
+                        <div class="card-body">
+                            <form id="tripForm" novalidate>
+
+                                <div class="field">
+                                    <label for="vehicle">Vehicle <span class="req" aria-hidden="true">*</span></label>
+                                    <select class="select" id="vehicle" required></select>
+                                    <p class="help" id="vehicleHelp"></p>
+                                </div>
+
+                                <fieldset style="border: 0; padding: 0; margin: 0 0 4px;">
+                                    <legend class="visually-hidden">Collection and return</legend>
+                                    <div class="field-row">
+                                        <div class="field">
+                                            <label for="outDate">Collection date <span class="req" aria-hidden="true">*</span></label>
+                                            <input class="input" type="date" id="outDate" required>
+                                        </div>
+                                        <div class="field">
+                                            <label for="outTime">Collection time <span class="req" aria-hidden="true">*</span></label>
+                                            <select class="select" id="outTime" required></select>
+                                        </div>
+                                    </div>
+                                    <div class="field-row">
+                                        <div class="field">
+                                            <label for="inDate">Return date <span class="req" aria-hidden="true">*</span></label>
+                                            <input class="input" type="date" id="inDate" required>
+                                        </div>
+                                        <div class="field">
+                                            <label for="inTime">Return time <span class="req" aria-hidden="true">*</span></label>
+                                            <select class="select" id="inTime" required></select>
+                                        </div>
+                                    </div>
+                                    <p class="help" id="tripLenHelp"></p>
+                                </fieldset>
+
+                                <div class="field-row">
+                                    <div class="field">
+                                        <label for="origin">Collect from</label>
+                                        <input class="input" type="text" id="origin" readonly>
+                                    </div>
+                                    <div class="field">
+                                        <label for="destination">Destination <span class="req" aria-hidden="true">*</span></label>
+                                        <input class="input" type="text" id="destination" required
+                                               placeholder="For example: Palace of Justice, Putrajaya">
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label for="purpose">Purpose of trip <span class="req" aria-hidden="true">*</span></label>
+                                    <textarea class="textarea" id="purpose" required
+                                              placeholder="For example: accompanying the moot team to an inter-varsity competition"></textarea>
+                                    <p class="help">This is visible to the approving officer.</p>
+                                </div>
+
+                                <div class="field">
+                                    <label for="passengers">Number of passengers <span class="req" aria-hidden="true">*</span></label>
+                                    <input class="input" type="number" id="passengers" min="1" step="1" value="3">
+                                    <p class="help" id="seatHelp"></p>
+                                </div>
+
+                                <!-- The driver is NOT chosen here. -->
+                                <div class="notice notice-info">
+                                    <strong>A driver is assigned by the Kulliyyah office.</strong>
+                                    The Kulliyyah does not keep a driver of its own. After this request is
+                                    approved, an administrator assigns a member of staff to drive and records
+                                    it against the booking. You cannot nominate one, and the key is not
+                                    handed over until a driver has been assigned.
+                                </div>
+
+                                <div id="validation" aria-live="polite"></div>
+
+                                <div class="btn-group" style="margin-top: 6px;">
+                                    <button class="btn btn-primary" type="submit" id="submitBtn">Review request</button>
+                                    <a class="btn" href="vehicles.html">Cancel</a>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <div style="display: flex; flex-direction: column; gap: 18px;">
+                        <section class="card" aria-labelledby="sumHead">
+                            <div class="card-head"><h2 id="sumHead">Trip summary</h2></div>
+                            <div class="card-body">
+                                <div class="summary-box"><dl id="summary"></dl></div>
+                            </div>
+                        </section>
+
+                        <section class="card" aria-labelledby="dayHead">
+                            <div class="card-head"><h2 id="dayHead">Vehicle availability</h2></div>
+                            <div class="card-body">
+                                <div class="availability" id="dayAvail"></div>
+                                <p class="help" style="margin-top: .75rem;">
+                                    Only pending and approved bookings reserve the vehicle. A trip that runs
+                                    overnight occupies every day between collection and return.
+                                </p>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <div id="confirmStage" hidden>
+                <section class="card">
+                    <div class="card-head"><h2>Trip request submitted</h2></div>
+                    <div class="card-body">
+                        <div class="notice notice-success" id="confirmNotice"></div>
+                        <div class="summary-box"><dl id="confirmSummary"></dl></div>
+                        <div id="emailNote"></div>
+                        <div class="btn-group" style="margin-top: 1.25rem;">
+                            <a class="btn btn-primary" href="my-bookings.html">View my bookings</a>
+                            <a class="btn" href="vehicles.html">Request another vehicle</a>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'vehicles.html' });
+
+    const S = A.SETTINGS;
+    const todayISO = A.iso(A.today);
+    const maxISO = A.iso(A.addDays(A.today, S.advanceBookingLimitDays));
+    const params = new URLSearchParams(location.search);
+
+    /* ---- Eligibility -------------------------------------------------------
+       Kulliyyah cars are for lecturers and staff. A student activity is not
+       refused so much as redirected: transport for it is arranged through the
+       Vehicle Management Unit via STADD, outside this system. */
+    const signedIn = A.CURRENT_USER;
+    const gate = document.getElementById('gate');
+
+    if (!A.canBookVehicle(signedIn)) {
+        const isStudent = signedIn.affiliation === 'Student';
+        gate.innerHTML =
+            '<div class="notice notice-warn">' +
+            '<strong>Kulliyyah cars are booked by lecturers and staff.</strong>' +
+            'Your account is registered as <em>' + A.esc(signedIn.affiliation) + '</em>, so this form is ' +
+            'not available to you — in the live system this page returns ' +
+            '<span class="mono">403 Forbidden</span>.</div>' +
+            (isStudent
+                ? '<div class="notice notice-info"><strong>Transport for a student activity</strong>' +
+                  A.esc(A.STUDENT_TRANSPORT.note) +
+                  '<div class="btn-group" style="margin-top:10px">' +
+                  '<span class="badge badge-approver">' + A.esc(A.STUDENT_TRANSPORT.unit) + '</span>' +
+                  '<span class="badge badge-muted">Requested via ' + A.esc(A.STUDENT_TRANSPORT.via) + '</span>' +
+                  '</div>' +
+                  '<p class="help" style="margin-bottom:0">Ask your society adviser or the Kulliyyah office ' +
+                  'to raise the STADD request. Rooms for the activity are still booked here.</p></div>'
+                : '') +
+            '<div class="btn-group" style="margin-bottom:20px">' +
+            '<a class="btn btn-primary" href="venues.html">Book a room instead</a>' +
+            '<a class="btn" href="vehicles.html">Back to vehicles</a></div>';
+    }
+
+    /* For demonstration the form continues as an eligible member of staff, so
+       the rest of the screen can be reviewed. */
+    const me = A.canBookVehicle(signedIn)
+        ? signedIn
+        : A.users.find(u => A.canBookVehicle(u) && u.role === 'User');
+
+    if (!A.canBookVehicle(signedIn)) {
+        gate.insertAdjacentHTML('beforeend',
+            '<p class="help" style="margin:-8px 0 18px">For review, the form below continues as ' +
+            '<strong>' + A.esc(me.name) + '</strong> (' + A.esc(me.affiliation) + ').</p>');
+    }
+
+    /* ---- Vehicle options ---- */
+    const vehSel = document.getElementById('vehicle');
+    const bookable = A.vehicles.filter(v =>
+        v.status === 'Active' && v.roadTaxExpiry >= todayISO && v.insuranceExpiry >= todayISO);
+    vehSel.innerHTML = bookable.map(v =>
+        '<option value="' + v.id + '">' + A.esc(v.name + ' — ' + v.make + ' ' + v.model +
+        ' (' + v.registration + ')') + '</option>').join('');
+    const preset = Number(params.get('vehicle'));
+    if (preset && bookable.some(v => v.id === preset)) vehSel.value = String(preset);
+
+    function timeOptions(sel) {
+        const from = A.toMin(S.windowStart), to = A.toMin(S.windowEnd);
+        let html = '';
+        for (let m = from; m <= to; m += 30) {
+            const t = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+            html += '<option value="' + t + '">' + A.fmtTime(t) + '</option>';
+        }
+        sel.innerHTML = html;
+    }
+    const outTime = document.getElementById('outTime'), inTime = document.getElementById('inTime');
+    timeOptions(outTime); timeOptions(inTime);
+    outTime.value = '08:00'; inTime.value = '17:00';
+
+    const outDate = document.getElementById('outDate'), inDate = document.getElementById('inDate');
+    [outDate, inDate].forEach(d => { d.min = todayISO; d.max = maxISO; });
+    outDate.value = A.iso(A.addDays(A.today, 7));
+    inDate.value = A.iso(A.addDays(A.today, 7));
+    document.getElementById('origin').value = A.HOME_BASE;
+
+    const els = {
+        purpose: document.getElementById('purpose'),
+        destination: document.getElementById('destination'),
+        passengers: document.getElementById('passengers'),
+        validation: document.getElementById('validation'),
+        summary: document.getElementById('summary'),
+        seatHelp: document.getElementById('seatHelp'),
+        vehicleHelp: document.getElementById('vehicleHelp'),
+        tripLenHelp: document.getElementById('tripLenHelp')
+    };
+
+    const current = () => A.vehicleById(Number(vehSel.value));
+    const startAt = () => outDate.value + 'T' + outTime.value;
+    const endAt = () => inDate.value + 'T' + inTime.value;
+
+    function validate() {
+        const v = current();
+        const s = startAt(), e = endAt();
+        const errors = [];
+
+        if (!outDate.value || !inDate.value) errors.push('Enter both a collection and a return date.');
+        else {
+            if (e <= s) errors.push('The return must be after the collection.');
+            if (outDate.value < todayISO) errors.push('The collection date is in the past.');
+            if (outDate.value > maxISO)
+                errors.push('Bookings may be made at most ' + S.advanceBookingLimitDays + ' days (3 months) in advance.');
+
+            const days = A.minutesBetween(s, e) / 1440;
+            if (days > S.maxVehicleTripDays)
+                errors.push('The trip is ' + Math.ceil(days) + ' days. The maximum trip length is ' +
+                            S.maxVehicleTripDays + ' days.');
+
+            /* The vehicle must stay road-legal to the END of the trip. The
+               driver's licence is checked when an administrator assigns one —
+               not here, because the driver is not known yet. */
+            if (v.roadTaxExpiry < inDate.value)
+                errors.push('The road tax for this vehicle expires on ' + A.fmtDate(v.roadTaxExpiry) +
+                            ', before the trip ends.');
+            if (v.insuranceExpiry < inDate.value)
+                errors.push('The insurance for this vehicle expires on ' + A.fmtDate(v.insuranceExpiry) +
+                            ', before the trip ends.');
+        }
+
+        if (!els.destination.value.trim()) errors.push('A destination is required.');
+        if (!els.purpose.value.trim()) errors.push('A purpose is required.');
+
+        const pax = Number(els.passengers.value);
+        if (!pax || pax < 1) errors.push('Enter the number of passengers.');
+        else if (pax > v.seats - 1)
+            errors.push('This vehicle seats ' + v.seats + ' including the driver, so at most ' +
+                        (v.seats - 1) + ' passengers. Reduce the count or choose a larger vehicle.');
+
+        A.findConflicts(v.id, s, e).forEach(c => errors.push(
+            'The vehicle is already reserved: ' + A.fmtPeriod(c.startAt, c.endAt) + ' (' + c.status.toLowerCase() + ').'));
+
+        return errors;
+    }
+
+    function refresh() {
+        const v = current();
+        els.vehicleHelp.textContent = v.seats + ' seats · ' + (v.transmission === 'Auto' ? 'Automatic' : 'Manual') +
+            ' · road tax to ' + A.fmtDate(v.roadTaxExpiry) + ' · mileage ' + v.mileage.toLocaleString() + ' km';
+        els.seatHelp.textContent = 'Up to ' + (v.seats - 1) + ' passengers, plus the assigned driver.';
+
+        const s = startAt(), e = endAt();
+        els.tripLenHelp.textContent = e > s
+            ? 'Trip length: ' + A.durationLabel(s, e) +
+              (A.minutesBetween(s, e) / 1440 > 1
+                  ? ' — a multi-day trip. Maximum ' + S.maxVehicleTripDays + ' days.'
+                  : ' — same-day trip.')
+            : 'The return must be after the collection.';
+
+        const errors = validate();
+        els.validation.innerHTML = errors.length
+            ? '<div class="notice notice-danger"><strong>This request cannot be submitted:</strong>' +
+              '<ul style="margin:.5rem 0 0;padding-left:1.1rem">' +
+              errors.map(x => '<li>' + A.esc(x) + '</li>').join('') + '</ul></div>'
+            : '<div class="notice notice-success">No conflict found for the selected period. The request will ' +
+              'be submitted for approval.</div>';
+        document.getElementById('submitBtn').disabled = errors.length > 0;
+
+        els.summary.innerHTML = [
+            ['Vehicle', A.esc(v.name)],
+            ['Registration', '<span class="mono">' + A.esc(v.registration) + '</span>'],
+            ['Collection', outDate.value ? A.esc(A.fmtDate(outDate.value) + ', ' + A.fmtTime(outTime.value)) : '—'],
+            ['Return', inDate.value ? A.esc(A.fmtDate(inDate.value) + ', ' + A.fmtTime(inTime.value)) : '—'],
+            ['Duration', e > s ? A.esc(A.durationLabel(s, e)) : '—'],
+            ['From', A.esc(A.HOME_BASE)],
+            ['To', A.esc(els.destination.value || '—')],
+            ['Passengers', A.esc(els.passengers.value || '—') + ' of ' + (v.seats - 1)],
+            ['Requested by', A.esc(me.name)],
+            ['Driver', '<span class="badge badge-pending">Assigned by the office after approval</span>'],
+            ['Status on submission', '<span class="badge badge-pending">Pending approval</span>']
+        ].map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('');
+
+        A.availabilityStrip(document.getElementById('dayAvail'), v, outDate.value || todayISO, 7);
+    }
+
+    [vehSel, outDate, outTime, inDate, inTime, els.purpose, els.destination, els.passengers]
+        .forEach(i => i.addEventListener('input', refresh));
+
+    outDate.addEventListener('input', () => {
+        if (inDate.value < outDate.value) { inDate.value = outDate.value; refresh(); }
+    });
+
+    document.getElementById('tripForm').addEventListener('submit', e => {
+        e.preventDefault();
+        if (validate().length) return;
+        const v = current();
+        const ref = 'AIKOL-B-' + A.iso(A.today).slice(0, 4) + '-' +
+                    String(1000 + Math.floor(Math.random() * 8999)).slice(0, 4);
+
+        document.getElementById('formStage').hidden = true;
+        document.getElementById('confirmStage').hidden = false;
+        document.getElementById('confirmNotice').innerHTML =
+            '<strong>Reference ' + A.esc(ref) + '</strong> — your request is <em>pending approval</em>. ' +
+            'Once approved, the Kulliyyah office assigns a driver and records it against the booking.';
+        document.getElementById('confirmSummary').innerHTML = els.summary.innerHTML;
+        document.getElementById('emailNote').innerHTML = A.emailNotice(me.email, 'trip submitted');
+        window.scrollTo(0, 0);
+    });
+
+    refresh();
+})();
+</script>
+</body>
+</html>

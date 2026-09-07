@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign In — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="login-page">
+
+    <section class="login-hero">
+        <div class="brand">
+            <img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 200px">
+            <span class="brand-text">
+                <span class="brand-name">Ahmad Ibrahim Kulliyyah of Laws</span>
+                <span class="brand-sub">International Islamic University Malaysia</span>
+            </span>
+        </div>
+
+        <div>
+            <h1>Room and Vehicle Booking System</h1>
+            <p>
+                A single place for AIKOL students, lecturers and staff to check venue availability,
+                submit booking requests for venues and Kulliyyah vehicles, and follow their status.
+            </p>
+            <ul>
+                <li>Real-time availability for every Kulliyyah venue and vehicle</li>
+                <li>Booking requests submitted online, without paper forms</li>
+                <li>Automatic prevention of double bookings</li>
+                <li>Complete booking history for reference and audit</li>
+            </ul>
+        </div>
+
+        <p class="foot">
+            Prototype for management review. Branding shown is a placeholder pending official
+            AIKOL/IIUM brand assets.
+        </p>
+    </section>
+
+    <section class="login-panel">
+        <main class="card login-card" id="main">
+            <div class="card-body">
+                <h2>Sign in</h2>
+                <p class="help" style="margin-bottom:1.25rem">
+                    Use your Kulliyyah account to continue.
+                </p>
+
+                <form id="loginForm" novalidate>
+                    <div class="field">
+                        <label for="email">Email address <span class="req" aria-hidden="true">*</span></label>
+                        <input class="input" type="email" id="email" name="email" autocomplete="username"
+                               value="farhan@demo.aikol.test" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Password <span class="req" aria-hidden="true">*</span></label>
+                        <input class="input" type="password" id="password" name="password"
+                               autocomplete="current-password" value="demo-password" required>
+                    </div>
+
+                    <div class="checkline">
+                        <input type="checkbox" id="remember">
+                        <label for="remember" style="font-weight:400;margin:0">Keep me signed in on this device</label>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+                </form>
+
+                <p class="help" style="margin-top:1rem">
+                    Forgotten your password? <a href="#" id="reset">Reset it by email</a>.
+                </p>
+                <p class="help">
+                    No account yet? <a href="register.html">Register with your IIUM email address</a>.
+                    Registration is open to anyone with an IIUM matriculation or staff number.
+                </p>
+            </div>
+
+            <div class="card-foot">
+                <p class="help" style="margin:0">
+                    <strong>Prototype shortcut:</strong>
+                    open the <a href="dashboard.html">standard user view</a> or the
+                    <a href="admin-dashboard.html">administrator view</a>.
+                </p>
+            </div>
+        </main>
+    </section>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        // The prototype has no authentication; the production system will use
+        // Django's built-in authentication with hashed passwords.
+        window.location.href = 'dashboard.html';
+    });
+</script>
+</body>
+</html>

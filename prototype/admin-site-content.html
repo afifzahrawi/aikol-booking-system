@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site Content — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Site content</h1>
+                    <p class="lede">The wording in the header and footer of every screen. Changes apply
+                        across the whole system.</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" type="button" id="revertBtn">Discard changes</button>
+                    <button class="btn btn-primary" type="button" id="saveBtn">Save content</button>
+                </div>
+            </div>
+
+            <div class="notice notice-info">
+                <strong>Administrators only.</strong>
+                Approvers and standard users cannot reach this screen — it changes what every visitor
+                sees. Each field below is stored as a setting, so the Kulliyyah can correct an address
+                or a telephone number without a software release.
+            </div>
+
+            <div class="grid grid-2" style="align-items: start;" id="cols">
+
+                <!-- ================= Form ================= -->
+                <div style="display: flex; flex-direction: column; gap: 18px;">
+
+                    <section class="card" aria-labelledby="hHead">
+                        <div class="card-head"><h2 id="hHead">Header</h2></div>
+                        <div class="card-body">
+
+                            <div class="field">
+                                <span class="label">Wordmark</span>
+
+                                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                    <div style="flex: none; width: 172px;">
+                                        <img id="logoPreview" src="" alt="Current wordmark"
+                                             style="width: 100%; border: 1px solid var(--line-img); background: #fff; padding: 6px;">
+                                        <p class="help" id="logoMeta" style="margin-top: 6px;"></p>
+                                    </div>
+
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div class="dropzone" id="drop" tabindex="0" role="button"
+                                             aria-describedby="logoRules"
+                                             style="cursor: pointer; padding: 20px 16px;">
+                                            <strong style="display: block; color: var(--brand); font-size: 13px;">Choose an image, or drag one here</strong>
+                                            <span style="display: block; margin-top: 4px;">PNG, JPEG or WebP · up to 5 MB</span>
+                                        </div>
+                                        <input type="file" id="logoFile" class="visually-hidden"
+                                               accept="image/png,image/jpeg,image/webp">
+
+                                        <div class="btn-group" style="margin-top: 10px;">
+                                            <button class="btn btn-sm" type="button" id="restoreLogo" hidden>Restore current wordmark</button>
+                                        </div>
+
+                                        <div id="logoErr" aria-live="polite"></div>
+
+                                        <p class="help" id="logoRules">On save the file is checked by its actual
+                                            content rather than its name, resized, renamed and stored outside the
+                                            code directory. SVG is deliberately not accepted — an SVG can carry
+                                            script, and this image renders on every page.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label for="name">System name <span class="req" aria-hidden="true">*</span></label>
+                                <input class="input" type="text" id="name" maxlength="60">
+                                <p class="help">Shown beside the wordmark. Keep it short — it sits on one line.</p>
+                            </div>
+
+                            <div class="field" style="margin-bottom: 0;">
+                                <label for="subtitle">Sub-heading</label>
+                                <input class="input" type="text" id="subtitle" maxlength="90">
+                                <p class="help">Small capitals under the system name.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card" aria-labelledby="fHead">
+                        <div class="card-head"><h2 id="fHead">Footer</h2></div>
+                        <div class="card-body">
+
+                            <div class="field">
+                                <label for="org">Organisation <span class="req" aria-hidden="true">*</span></label>
+                                <input class="input" type="text" id="org" maxlength="90">
+                            </div>
+
+                            <div class="field">
+                                <label for="address">Address</label>
+                                <textarea class="textarea" id="address" rows="3"></textarea>
+                                <p class="help">One line per line. Line breaks are kept exactly as typed.</p>
+                            </div>
+
+                            <div class="field-row">
+                                <div class="field">
+                                    <label for="contactHead">Contact heading</label>
+                                    <input class="input" type="text" id="contactHead" maxlength="40">
+                                </div>
+                                <div class="field">
+                                    <label for="phone">Telephone</label>
+                                    <input class="input" type="text" id="phone" maxlength="40">
+                                </div>
+                            </div>
+
+                            <div class="field-row">
+                                <div class="field">
+                                    <label for="email">Email address</label>
+                                    <input class="input" type="email" id="email" maxlength="80">
+                                </div>
+                                <div class="field">
+                                    <label for="hours">Office hours</label>
+                                    <input class="input" type="text" id="hours" maxlength="60">
+                                </div>
+                            </div>
+
+                            <div class="field" style="margin-bottom: 0;">
+                                <label for="linksHead">Links heading</label>
+                                <input class="input" type="text" id="linksHead" maxlength="40">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card" aria-labelledby="lHead">
+                        <div class="card-head">
+                            <h2 id="lHead">Footer links</h2>
+                            <button class="btn btn-sm" type="button" id="addLink">Add link</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="links" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                            <p class="help">Order here is the order shown. Leave the list empty to drop the
+                                column entirely.</p>
+                        </div>
+                    </section>
+
+                    <div id="validation" aria-live="polite"></div>
+                </div>
+
+                <!-- ================= Live preview ================= -->
+                <div style="position: sticky; top: 18px; display: flex; flex-direction: column; gap: 18px;">
+                    <section class="card" aria-labelledby="pHead">
+                        <div class="card-head">
+                            <h2 id="pHead">Preview</h2>
+                            <span class="help" style="margin: 0;">Updates as you type</span>
+                        </div>
+                        <div class="card-body" style="padding: 0; background: var(--page);">
+                            <div id="previewHeader"></div>
+                            <div style="padding: 22px 20px; text-align: center; color: var(--muted); font-size: 12px;">
+                                Page content sits here
+                            </div>
+                            <div id="previewFooter"></div>
+                        </div>
+                    </section>
+
+                    <section class="card" aria-labelledby="wHead">
+                        <div class="card-head"><h2 id="wHead" class="label" style="margin:0">Where these are used</h2></div>
+                        <div class="card-body">
+                            <p class="help" style="margin-top: 0;">Every screen draws its header and footer from
+                                these values — twenty-one screens in the user and administrator views, plus the
+                                sign-in and registration pages.</p>
+                            <p class="help" style="margin-bottom: 0;">Typed text is escaped before it is
+                                rendered, so a stray angle bracket appears as a character and never as markup.</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-site-content.html' });
+
+    /* Editing site content is an administrator action. An approver reaching
+       this URL gets 403 in production; the prototype says so rather than
+       silently rendering the form. */
+    const me = A.ADMIN_USER;
+    if (me.role !== 'Administrator') {
+        document.getElementById('main').innerHTML =
+            '<div class="notice notice-danger"><strong>Not permitted.</strong>' +
+            'Site content is edited by administrators only.</div>';
+        return;
+    }
+
+    /* `logo` is not here — it is set by the upload control below, not typed. */
+    const FIELDS = ['name', 'subtitle', 'org', 'address',
+                    'contactHead', 'phone', 'email', 'hours', 'linksHead'];
+
+    const MAX_BYTES = 5 * 1024 * 1024;
+    const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp'];
+
+    /* Work on a copy, so "Discard changes" is a real operation. */
+    const original = JSON.parse(JSON.stringify(A.siteContent));
+    let draft = JSON.parse(JSON.stringify(A.siteContent));
+
+    /* ---- Load the form from the draft ---- */
+    function load() {
+        FIELDS.forEach(k => { document.getElementById(k).value = draft[k] || ''; });
+        renderLinks();
+        refresh();
+        document.getElementById('logoMeta').textContent = 'Current wordmark';
+    }
+
+    function renderLinks() {
+        const host = document.getElementById('links');
+        host.innerHTML = draft.links.length ? draft.links.map((l, i) =>
+            '<div style="display:flex;gap:8px;align-items:flex-start">' +
+            '<input class="input" type="text" data-k="label" data-i="' + i + '" ' +
+                'value="' + A.esc(l.label) + '" aria-label="Link ' + (i + 1) + ' label" placeholder="Label">' +
+            '<input class="input" type="text" data-k="url" data-i="' + i + '" ' +
+                'value="' + A.esc(l.url) + '" aria-label="Link ' + (i + 1) + ' address" placeholder="https://">' +
+            '<button class="btn btn-sm btn-danger" type="button" data-remove="' + i + '" ' +
+                'aria-label="Remove link ' + (i + 1) + '">Remove</button>' +
+            '</div>').join('')
+            : '<p class="help" style="margin:0">No links. The third footer column will be omitted.</p>';
+    }
+
+    /* ---- Validation ---- */
+    function problems() {
+        const out = [];
+        if (!draft.name.trim()) out.push('A system name is required — it names the service in the header.');
+        if (!draft.org.trim()) out.push('An organisation name is required for the footer.');
+        if (draft.email.trim() && draft.email.indexOf('@') < 1)
+            out.push('The email address does not look like an address.');
+        draft.links.forEach((l, i) => {
+            if (!l.label.trim() && l.url.trim())
+                out.push('Link ' + (i + 1) + ' has an address but no label.');
+        });
+        return out;
+    }
+
+    /* ---- Preview, built with the real chrome markup ---- */
+    function refresh() {
+        const errs = problems();
+        document.getElementById('validation').innerHTML = errs.length
+            ? '<div class="notice notice-danger"><strong>Fix before saving:</strong>' +
+              '<ul style="margin:.4rem 0 0;padding-left:1.1rem">' +
+              errs.map(e => '<li>' + A.esc(e) + '</li>').join('') + '</ul></div>'
+            : '';
+        document.getElementById('saveBtn').disabled = errs.length > 0;
+
+        document.getElementById('logoPreview').src = draft.logo || '';
+        document.getElementById('restoreLogo').hidden = (draft.logo === original.logo);
+
+        document.getElementById('previewHeader').innerHTML =
+            '<header class="app-header" style="padding:10px 16px;gap:12px">' +
+            '<span class="brand" style="gap:12px">' +
+            '<img src="' + A.esc(draft.logo) + '" alt="" style="width:130px">' +
+            '<span class="brand-rule"></span>' +
+            '<span class="brand-text">' +
+            '<span class="brand-name" style="font-size:15px">' + A.esc(draft.name) + '</span>' +
+            '<span class="brand-sub">' + A.esc(draft.subtitle) + '</span>' +
+            '</span></span></header>' +
+            '<nav class="app-nav" style="padding:0 16px">' +
+            '<a href="#" aria-current="page">Approvals</a><a href="#">Bookings</a>' +
+            '<a href="#">Resources</a></nav>';
+
+        /* The same builder the live footer uses, so the preview cannot drift. */
+        const saved = JSON.stringify(A.siteContent);
+        Object.keys(draft).forEach(k => { A.siteContent[k] = draft[k]; });
+        document.getElementById('previewFooter').innerHTML = A.buildFooterHtml();
+        const restored = JSON.parse(saved);
+        Object.keys(restored).forEach(k => { A.siteContent[k] = restored[k]; });
+
+        const pf = document.querySelector('#previewFooter .app-footer');
+        if (pf) { pf.style.padding = '18px 16px'; pf.style.gap = '16px'; pf.style.fontSize = '11px'; }
+    }
+
+    /* ---- Wiring ---- */
+    FIELDS.forEach(k => {
+        document.getElementById(k).addEventListener('input', e => {
+            draft[k] = e.target.value;
+            refresh();
+        });
+    });
+
+    /* ---- Wordmark upload ----------------------------------------------- */
+    /* The prototype reads the file in the browser and never sends it anywhere.
+       Production applies the same three rules on the server, where they count:
+       sniff the real content type, cap the size, rename on save. */
+    const dropEl = document.getElementById('drop');
+    const fileEl = document.getElementById('logoFile');
+    const errEl = document.getElementById('logoErr');
+    const metaEl = document.getElementById('logoMeta');
+
+    function uploadError(msg) {
+        errEl.innerHTML = '<div class="notice notice-danger" style="margin:10px 0 0">' +
+            A.esc(msg) + '</div>';
+    }
+
+    function describe(bytes) {
+        return bytes < 1024 * 1024
+            ? Math.round(bytes / 1024) + ' KB'
+            : (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    function acceptFile(file) {
+        errEl.innerHTML = '';
+        if (!file) return;
+
+        /* Checked by declared type here; the server re-checks by reading the
+           file's actual header, because a declared type is trivially faked. */
+        if (ACCEPTED.indexOf(file.type) === -1) {
+            uploadError('That file is ' + (file.type || 'of an unrecognised type') +
+                '. The wordmark must be a PNG, JPEG or WebP image.');
+            return;
+        }
+        if (file.size > MAX_BYTES) {
+            uploadError('That file is ' + describe(file.size) +
+                '. The limit is 5 MB — resize it and try again.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onerror = () => uploadError('The file could not be read. Try choosing it again.');
+        reader.onload = () => {
+            const probe = new Image();
+            probe.onerror = () => uploadError('That file is not a readable image.');
+            probe.onload = () => {
+                draft.logo = reader.result;
+                refresh();
+
+                const ratio = probe.width / probe.height;
+                metaEl.innerHTML = A.esc(file.name) + '<br>' +
+                    probe.width + ' × ' + probe.height + ' · ' + describe(file.size);
+
+                /* The brand bar renders the wordmark 200px wide in a 36px-tall
+                   space. A near-square image will tower over the header, so say
+                   so rather than letting it break the layout silently. */
+                if (ratio < 2.2) {
+                    errEl.innerHTML = '<div class="notice notice-warn" style="margin:10px 0 0">' +
+                        '<strong>This wordmark is tall for the header.</strong>' +
+                        'It is ' + probe.width + ' × ' + probe.height +
+                        '. The brand bar gives the wordmark a wide, short space — a landscape image ' +
+                        'of roughly 4:1 or wider sits best. Check the preview before saving.</div>';
+                }
+            };
+            probe.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    dropEl.addEventListener('click', () => fileEl.click());
+    dropEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileEl.click(); }
+    });
+    fileEl.addEventListener('change', e => acceptFile(e.target.files[0]));
+
+    ['dragenter', 'dragover'].forEach(evt =>
+        dropEl.addEventListener(evt, e => {
+            e.preventDefault();
+            dropEl.style.borderColor = 'var(--brand)';
+            dropEl.style.background = 'var(--brand-050)';
+        }));
+    ['dragleave', 'drop'].forEach(evt =>
+        dropEl.addEventListener(evt, e => {
+            e.preventDefault();
+            dropEl.style.borderColor = '';
+            dropEl.style.background = '';
+        }));
+    dropEl.addEventListener('drop', e => {
+        if (e.dataTransfer && e.dataTransfer.files.length) acceptFile(e.dataTransfer.files[0]);
+    });
+
+    document.getElementById('restoreLogo').addEventListener('click', () => {
+        draft.logo = original.logo;
+        fileEl.value = '';
+        errEl.innerHTML = '';
+        metaEl.textContent = 'Current wordmark';
+        refresh();
+    });
+
+    document.getElementById('links').addEventListener('input', e => {
+        const t = e.target.closest('input[data-k]');
+        if (!t) return;
+        draft.links[Number(t.dataset.i)][t.dataset.k] = t.value;
+        refresh();
+    });
+
+    document.getElementById('links').addEventListener('click', e => {
+        const r = e.target.closest('button[data-remove]');
+        if (!r) return;
+        draft.links.splice(Number(r.dataset.remove), 1);
+        renderLinks();
+        refresh();
+    });
+
+    document.getElementById('addLink').addEventListener('click', () => {
+        draft.links.push({ label: '', url: '' });
+        renderLinks();
+        refresh();
+        const inputs = document.querySelectorAll('#links input[data-k="label"]');
+        if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+
+    document.getElementById('revertBtn').addEventListener('click', () => {
+        A.modal({
+            title: 'Discard changes',
+            body: '<p>The form returns to the content currently in use. Nothing that has been saved ' +
+                  'is affected.</p>',
+            buttons: [
+                { label: 'Keep editing' },
+                { label: 'Discard', cls: 'btn-danger', onClick: () => {
+                    draft = JSON.parse(JSON.stringify(original));
+                    load();
+                } }
+            ]
+        });
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        if (problems().length) return;
+        A.modal({
+            title: 'Save site content',
+            body: '<p>The header and footer will change on <strong>every screen</strong>, for every ' +
+                  'user, immediately.</p>' +
+                  '<dl class="kv">' +
+                  '<dt>System name</dt><dd>' + A.esc(draft.name) + '</dd>' +
+                  '<dt>Organisation</dt><dd>' + A.esc(draft.org) + '</dd>' +
+                  '<dt>Footer links</dt><dd>' + draft.links.filter(l => l.label.trim()).length + '</dd>' +
+                  '</dl>' +
+                  (draft.logo !== original.logo
+                    ? '<div class="notice notice-info" style="margin:14px 0 0">' +
+                      '<strong>A new wordmark will be uploaded.</strong>' +
+                      'It is stored outside the code directory, renamed, and the old file is kept ' +
+                      'until an administrator removes it.</div>'
+                    : '') +
+                  '<p class="help">Each field is written to the settings table and the change is ' +
+                  'recorded in the audit log with your name and the time.</p>',
+            buttons: [
+                { label: 'Back' },
+                { label: 'Save content', cls: 'btn-primary', onClick: () => {
+                    /* Apply to the live chrome so the change is visible at once.
+                       Nothing is persisted — this prototype has no backend. */
+                    Object.keys(draft).forEach(k => { A.siteContent[k] = draft[k]; });
+                    document.querySelector('.app-header .brand-name').textContent = draft.name;
+                    document.querySelector('.app-header .brand-sub').textContent = draft.subtitle;
+                    const logoEl = document.querySelector('.app-header .brand img');
+                    if (logoEl) logoEl.src = draft.logo;
+                    const foot = document.querySelector('.app > .app-footer');
+                    if (foot) foot.outerHTML = A.buildFooterHtml();
+
+                    A.modal({
+                        title: 'Site content saved',
+                        body: '<p>The header and footer above have been updated — scroll to the foot of ' +
+                              'the page to see the new footer.</p>' +
+                              '<p class="help">In the live system the new values are written to the ' +
+                              'settings table, an audit entry is recorded, and every open page picks ' +
+                              'them up on its next load. Nothing is stored by this prototype.</p>'
+                    });
+                } }
+            ]
+        });
+    });
+
+    /* Stack the preview under the form on narrow screens. */
+    function reflow() {
+        const cols = document.getElementById('cols');
+        cols.style.gridTemplateColumns = window.innerWidth < 1100 ? '1fr' : '1fr 1fr';
+    }
+    window.addEventListener('resize', reflow);
+    reflow();
+
+    load();
+})();
+</script>
+</body>
+</html>

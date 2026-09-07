@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browse Venues — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Browse venues</h1>
+                    <p class="lede">Kulliyyah venues available for booking. Select a venue to view full details.</p>
+                </div>
+            </div>
+
+            <section class="card" aria-labelledby="filtersHead">
+                <h2 id="filtersHead" class="visually-hidden">Filter venues</h2>
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Venue name, code or building">
+                    </div>
+                    <div class="field">
+                        <label for="type">Venue type</label>
+                        <select class="select" id="type">
+                            <option value="">All types</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="cap">Minimum capacity</label>
+                        <select class="select" id="cap">
+                            <option value="0">Any capacity</option>
+                            <option value="10">10 or more</option>
+                            <option value="25">25 or more</option>
+                            <option value="50">50 or more</option>
+                            <option value="100">100 or more</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="fac">Facility</label>
+                        <select class="select" id="fac">
+                            <option value="">Any facility</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="avail">Availability</label>
+                        <select class="select" id="avail">
+                            <option value="">All venues</option>
+                            <option value="Active">Available for booking</option>
+                            <option value="Under Maintenance">Under maintenance</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="help" id="count" style="margin:0 0 1rem"></p>
+                    <div class="grid grid-auto" id="cards"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'venues.html' });
+
+    const typeSel = document.getElementById('type');
+    [...new Set(A.venues.map(v => v.venueType))].sort().forEach(t => {
+        typeSel.insertAdjacentHTML('beforeend', '<option>' + A.esc(t) + '</option>');
+    });
+    const facSel = document.getElementById('fac');
+    A.facilitiesFor('Venue').forEach(f => {
+        facSel.insertAdjacentHTML('beforeend', '<option value="' + f.code + '">' + A.esc(f.name) + '</option>');
+    });
+
+    const inputs = ['q', 'type', 'cap', 'fac', 'avail'].map(id => document.getElementById(id));
+    const cards = document.getElementById('cards');
+    const count = document.getElementById('count');
+
+    function render() {
+        const [q, type, cap, fac, avail] = inputs.map(i => i.value);
+        const term = q.trim().toLowerCase();
+
+        const list = A.venues.filter(v =>
+            (!term || (v.name + ' ' + v.code + ' ' + v.building + ' ' + v.location).toLowerCase().includes(term)) &&
+            (!type || v.venueType === type) &&
+            (v.capacity >= Number(cap)) &&
+            (!fac || v.facilities.indexOf(fac) !== -1) &&
+            (!avail || v.status === avail));
+
+        count.textContent = list.length + ' of ' + A.venues.length + ' venues shown.';
+
+        cards.innerHTML = list.length ? list.map(v => {
+            const bookable = v.status === 'Active';
+            return '<article class="venue-card">' +
+                '<div class="thumb"><img src="' + A.resourceImg(v) + '" alt="Placeholder image of ' + A.esc(v.name) + '"></div>' +
+                '<div class="body">' +
+                '<h3>' + A.esc(v.name) + '</h3>' +
+                '<span class="loc">' + A.esc(v.location) + '</span>' +
+                '<span class="loc">Capacity ' + v.capacity + ' persons · ' + A.esc(v.venueType) + '</span>' +
+                '<div>' + (bookable ? '<span class="badge badge-approved">Available</span>'
+                                    : '<span class="badge badge-cancelled">Under maintenance</span>') +
+                ' <span class="badge badge-muted">Approval required</span>' + '</div>' +
+                '<div class="facilities">' +
+                v.facilities.slice(0, 4).map(f => '<span class="pill">' + A.esc(A.facilityName(f)) + '</span>').join('') +
+                (v.facilities.length > 4 ? '<span class="pill">+' + (v.facilities.length - 4) + ' more</span>' : '') +
+                '</div></div>' +
+                '<div class="actions">' +
+                '<a class="btn btn-sm" href="venue-details.html?id=' + v.id + '">View details</a>' +
+                (bookable
+                    ? '<a class="btn btn-sm btn-primary" href="booking.html?venue=' + v.id + '">Book venue</a>'
+                    : '<button class="btn btn-sm" type="button" aria-disabled="true" disabled>Unavailable</button>') +
+                '</div></article>';
+        }).join('')
+        : '<div class="empty-state">No venue matches the selected filters.</div>';
+    }
+
+    inputs.forEach(i => i.addEventListener('input', render));
+    render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facilities — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Facilities</h1>
+                    <p class="lede">The list of facilities and vehicle features that can be attached to a resource.</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" type="button" id="addBtn">Add facility</button>
+                </div>
+            </div>
+
+            <div class="notice notice-info">
+                <strong>This list is maintained here, not in the code.</strong> Adding a facility makes it
+                available on the venue and vehicle forms immediately, with no software release. The nine
+                facilities marked <em>Seeded</em> were created when the system was first installed.
+            </div>
+
+            <section class="card" aria-labelledby="facHead">
+                <div class="card-head">
+                    <h2 id="facHead">Facility list</h2>
+                    <span class="help" id="info"></span>
+                </div>
+
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Facility name or code">
+                    </div>
+                    <div class="field">
+                        <label for="applies">Applies to</label>
+                        <select class="select" id="applies">
+                            <option value="">All resources</option>
+                            <option value="Venue">Venues</option>
+                            <option value="Vehicle">Vehicles</option>
+                            <option value="Both">Both</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="status">Status</label>
+                        <select class="select" id="status">
+                            <option value="">All</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">Code</th>
+                                <th scope="col">Applies to</th>
+                                <th scope="col">In use</th>
+                                <th scope="col">Origin</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+
+                <div class="card-foot">
+                    <div class="pagination" id="pager"></div>
+                </div>
+            </section>
+
+            <section class="card" style="margin-top:1.25rem" aria-labelledby="ruleHead">
+                <div class="card-head"><h2 id="ruleHead">How the code and the name differ</h2></div>
+                <div class="card-body">
+                    <p>Each facility has a <strong>code</strong> and a <strong>name</strong>. The code is the stable
+                       identity: CSV imports and saved filter links refer to it, and it never changes once created.
+                       The name is the label people see, and may be edited freely.</p>
+                    <p class="help" style="margin-bottom:0">If the display name were also the key, correcting a
+                       spelling mistake would break every import template and saved link that referred to it.</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-facilities.html' });
+
+    /* How many resources currently carry each facility. This is what decides
+       whether a facility may be deleted or only deactivated. */
+    function usageCount(code) {
+        return A.resources.filter(r => r.facilities.indexOf(code) !== -1).length;
+    }
+
+    const ctl = A.tableController({
+        rows: () => A.facilities.slice().sort((a, b) => a.order - b.order),
+        tbody: document.getElementById('rows'),
+        pager: document.getElementById('pager'),
+        info: document.getElementById('info'),
+        cols: 7,
+        pageSize: 12,
+        controls: [
+            { key: 'q', input: document.getElementById('q') },
+            { key: 'applies', input: document.getElementById('applies'), event: 'change' },
+            { key: 'status', input: document.getElementById('status'), event: 'change' }
+        ],
+        match: (f, flt) => {
+            const term = (flt.q || '').trim().toLowerCase();
+            if (term && !(f.name + ' ' + f.code).toLowerCase().includes(term)) return false;
+            if (flt.applies && f.appliesTo !== flt.applies) return false;
+            if (flt.status && f.status !== flt.status) return false;
+            return true;
+        },
+        render: f => {
+            const used = usageCount(f.code);
+            return '<tr>' +
+                '<td><strong>' + A.esc(f.name) + '</strong></td>' +
+                '<td><span class="mono">' + A.esc(f.code) + '</span></td>' +
+                '<td>' + A.esc(f.appliesTo) + '</td>' +
+                '<td>' + (used ? used + ' resource' + (used === 1 ? '' : 's') : '<span class="help">Not used</span>') + '</td>' +
+                '<td>' + (f.seeded ? '<span class="badge badge-muted">Seeded</span>'
+                                   : '<span class="badge badge-active">Administrator</span>') + '</td>' +
+                '<td>' + A.badge(f.status) + '</td>' +
+                '<td><div class="btn-group">' +
+                '<button class="btn btn-sm" type="button" data-edit="' + f.id + '">Edit</button>' +
+                '<button class="btn btn-sm" type="button" data-toggle="' + f.id + '">' +
+                    (f.status === 'Active' ? 'Deactivate' : 'Reactivate') + '</button>' +
+                '<button class="btn btn-sm btn-danger" type="button" data-del="' + f.id + '"' +
+                    (used ? ' aria-disabled="true" disabled title="In use by ' + used + ' resource(s)"' : '') +
+                    '>Delete</button>' +
+                '</div></td></tr>';
+        }
+    });
+
+    document.getElementById('rows').addEventListener('click', e => {
+        const ed = e.target.closest('button[data-edit]');
+        const tg = e.target.closest('button[data-toggle]');
+        const dl = e.target.closest('button[data-del]');
+        if (ed) return openEdit(A.facilities.find(f => f.id === Number(ed.dataset.edit)));
+        if (tg) return openToggle(A.facilities.find(f => f.id === Number(tg.dataset.toggle)));
+        if (dl) return openDelete(A.facilities.find(f => f.id === Number(dl.dataset.del)));
+    });
+
+    document.getElementById('addBtn').addEventListener('click', () => openEdit(null));
+
+    function slugify(s) {
+        return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+    }
+
+    function openEdit(f) {
+        const isNew = !f;
+        const m = A.modal({
+            title: isNew ? 'Add facility' : 'Edit facility',
+            body:
+                '<div class="field"><label for="fName">Display name <span class="req" aria-hidden="true">*</span></label>' +
+                '<input class="input" type="text" id="fName" value="' + (f ? A.esc(f.name) : '') + '" placeholder="For example: Hearing Loop"></div>' +
+                '<div class="field"><label for="fCode">Code</label>' +
+                '<input class="input mono" type="text" id="fCode" value="' + (f ? A.esc(f.code) : '') + '"' +
+                    (isNew ? ' placeholder="generated from the name"' : ' readonly') + '>' +
+                '<p class="help">' + (isNew
+                    ? 'Generated from the name. Once saved it never changes.'
+                    : 'The code is fixed. Renaming the facility does not change it, so imports and saved links keep working.') +
+                '</p></div>' +
+                '<div class="field"><label for="fApplies">Applies to</label>' +
+                '<select class="select" id="fApplies">' +
+                ['Venue', 'Vehicle', 'Both'].map(o =>
+                    '<option' + (f && f.appliesTo === o ? ' selected' : '') + '>' + o + '</option>').join('') +
+                '</select><p class="help">Controls which resource forms offer this facility.</p></div>' +
+                '<div class="field"><label for="fOrder">Display order</label>' +
+                '<input class="input" type="number" id="fOrder" min="1" value="' + (f ? f.order : A.facilities.length + 1) + '"></div>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: isNew ? 'Create facility' : 'Save changes', cls: 'btn-primary', onClick: () => {
+                    const name = m.root.querySelector('#fName').value.trim();
+                    if (!name) { A.toast('A display name is required.', 'danger'); return false; }
+                    const code = isNew ? slugify(name) : f.code;
+                    if (isNew && A.facilities.some(x => x.code === code)) {
+                        A.toast('A facility with the code "' + code + '" already exists. Codes must be unique.', 'danger');
+                        return false;
+                    }
+                    A.toast(isNew
+                        ? 'The facility "' + name + '" would be created with the code "' + code +
+                          '" and become available on the resource forms immediately.'
+                        : 'The facility would be renamed to "' + name + '". Its code "' + code +
+                          '" is unchanged, so existing resources keep their link.');
+                } }
+            ]
+        });
+
+        if (isNew) {
+            const nameI = m.root.querySelector('#fName'), codeI = m.root.querySelector('#fCode');
+            nameI.addEventListener('input', () => { codeI.value = slugify(nameI.value); });
+        }
+    }
+
+    function openToggle(f) {
+        const used = usageCount(f.code);
+        const off = f.status === 'Active';
+        A.modal({
+            title: (off ? 'Deactivate' : 'Reactivate') + ' ' + f.name,
+            body: off
+                ? '<p>Deactivating <strong>' + A.esc(f.name) + '</strong> hides it from the resource forms and ' +
+                  'from the browse filters.</p>' +
+                  '<p>The ' + used + ' resource' + (used === 1 ? '' : 's') + ' that currently carry it are ' +
+                  '<strong>not</strong> changed. Nothing is deleted.</p>' +
+                  '<p class="help">Deactivating rather than deleting is how every other record in this system ' +
+                  'is retired, and facilities are no exception.</p>'
+                : '<p>Reactivating <strong>' + A.esc(f.name) + '</strong> returns it to the resource forms ' +
+                  'and browse filters.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: off ? 'Deactivate' : 'Reactivate', cls: off ? 'btn-danger' : 'btn-primary', onClick: () => {
+                    A.toast('The facility would be set to ' + (off ? 'Inactive' : 'Active') + '.');
+                } }
+            ]
+        });
+    }
+
+    function openDelete(f) {
+        const used = usageCount(f.code);
+        if (used) {
+            A.toast('"' + f.name + '" is used by ' + used + ' resource' + (used === 1 ? '' : 's') +
+                    ' and cannot be deleted. Deactivate it instead.', 'danger');
+            return;
+        }
+        A.modal({
+            title: 'Delete ' + f.name,
+            body: '<p>No resource currently uses <strong>' + A.esc(f.name) + '</strong>, so it can be deleted ' +
+                  'permanently.</p><p class="help">A facility that is in use can only be deactivated — the ' +
+                  'database refuses to delete it while any resource still refers to it.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Delete permanently', cls: 'btn-danger', onClick: () => {
+                    A.toast('The facility would be deleted and the action written to the audit log.');
+                } }
+            ]
+        });
+    }
+})();
+</script>
+</body>
+</html>

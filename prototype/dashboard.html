@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main" style="padding-top: 26px;">
+
+            <!-- ===== Greeting and search, over the Kulliyyah photograph ===== -->
+            <section class="search-hero" style="margin-bottom: 30px;" aria-labelledby="greeting">
+                <img src="assets/images/AIKOL-building-scaled.jpg" alt="" id="heroImg">
+
+                <div class="inner">
+                    <div class="hero-line">
+                        <div class="arabic">السلام عليكم</div>
+                        <h1 id="greeting">Assalamualaikum</h1>
+                        <div class="sub" id="subline"></div>
+                    </div>
+
+                    <form class="searchbar" id="searchbar">
+                        <label>
+                            <span class="k">Resource</span>
+                            <span class="v" id="fResource">Rooms</span>
+                        </label>
+                        <label>
+                            <span class="k">Date</span>
+                            <span class="v" id="fDate">—</span>
+                        </label>
+                        <label>
+                            <span class="k">From</span>
+                            <span class="v">10:00</span>
+                        </label>
+                        <label>
+                            <span class="k">To</span>
+                            <span class="v">12:00</span>
+                        </label>
+                        <label>
+                            <span class="k">Building</span>
+                            <span class="v">Any AIKOL building</span>
+                        </label>
+                        <button type="submit">Check availability</button>
+                    </form>
+                </div>
+
+                <div class="caption">Search opens the availability board for that day with 10:00–12:00 highlighted.</div>
+            </section>
+
+            <!-- ===== Your activity ===== -->
+            <div id="strip" style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--brand); border-radius: var(--r); overflow: hidden;"></div>
+
+            <!-- ===== Browse by type ===== -->
+            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
+                <h2 style="margin: 0;">Browse by room type</h2>
+                <a href="venues.html" id="allLink">All rooms and cars →</a>
+            </div>
+            <div class="grid grid-4" id="cats"></div>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'dashboard.html' });
+
+    const me = A.CURRENT_USER;
+    const now = new Date();
+
+    /* ---- Greeting ---- */
+    const first = me.name.replace(/^(Dr\.|Prof\.|Assoc\. Prof\. Dr\.)\s+/, '').split(' ')[0];
+    document.getElementById('greeting').textContent = 'Assalamualaikum, ' + first;
+    document.getElementById('subline').textContent =
+        A.DAYS[A.today.getDay()] + ', ' + A.fmtDate(A.today) +
+        ' · Kulliyyah rooms and cars, bookable ' + A.SETTINGS.windowStart + '–' + A.SETTINGS.windowEnd +
+        ', up to ' + A.SETTINGS.advanceBookingLimitDays + ' days ahead.';
+
+    document.getElementById('fDate').textContent = A.fmtDate(A.today);
+    document.getElementById('allLink').textContent =
+        'All ' + A.venues.length + ' rooms and ' + A.vehicles.length + ' cars →';
+
+    /* Prefer the Kulliyyah's own photograph; fall back to the generated
+       placeholder so the hero is never a blank green panel. */
+    const heroImg = document.getElementById('heroImg');
+    heroImg.addEventListener('error', function onFail() {
+        this.removeEventListener('error', onFail);
+        this.src = 'assets/images/aikol-building.svg';
+    });
+
+    document.getElementById('searchbar').addEventListener('submit', function (e) {
+        e.preventDefault();
+        window.location.href = 'availability.html';
+    });
+
+    /* ---- Your activity ---- */
+    const mine = A.bookings.filter(b => b.userId === me.id);
+    const next = mine.filter(b => b.status === 'Approved' && A.toDate(b.startAt) > now)
+        .sort((a, b) => a.startAt < b.startAt ? -1 : 1)[0];
+    const pending = mine.filter(b => b.status === 'Pending');
+    const keysOut = A.keyHandovers.filter(k => {
+        const b = A.bookingById(k.bookingId);
+        return b.userId === me.id && !k.returnedAt;
+    });
+
+    function cell(label, value, dim, last) {
+        return '<div style="padding: 13px 18px;' +
+            (last ? '' : ' border-right: 1px solid rgba(255,255,255,.14);') + '">' +
+            '<div style="font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold);">' +
+            A.esc(label) + '</div>' +
+            '<div style="margin-top: 3px; font-size: 13.5px; color: ' +
+            (dim ? 'rgba(255,255,255,.72)' : '#fff') + ';">' + value + '</div></div>';
+    }
+
+    document.getElementById('strip').innerHTML =
+        cell('Your next booking',
+             next ? A.esc(next.resource.name) + ' · ' + A.esc(A.fmtDate(next.date)) + ', ' + A.fmtTime(next.start)
+                  : 'Nothing booked yet', !next) +
+        cell('Awaiting approval',
+             pending.length
+                ? pending.length + ' request' + (pending.length === 1 ? '' : 's') + ' · ' +
+                  A.esc(pending[0].resource.name)
+                : 'None', !pending.length) +
+        cell('Keys to collect',
+             keysOut.length
+                ? keysOut.length + ' outstanding · ' + A.esc(A.bookingById(keysOut[0].bookingId).resource.name)
+                : 'None outstanding', !keysOut.length, true);
+
+    /* ---- Browse by room type ---- */
+    const byType = {};
+    A.venues.forEach(v => { (byType[v.venueType] = byType[v.venueType] || []).push(v); });
+
+    document.getElementById('cats').innerHTML = Object.keys(byType).slice(0, 4).map(type => {
+        const list = byType[type];
+        const caps = list.map(v => v.capacity).sort((a, b) => a - b);
+        const free = list.filter(v => v.status === 'Active').length;
+        const count = list.length + ' room' + (list.length === 1 ? '' : 's') + ' · ' +
+            (caps[0] === caps[caps.length - 1] ? 'up to ' + caps[0] : caps[0] + '–' + caps[caps.length - 1]) + ' persons';
+        const freeText = free === list.length
+            ? (list.length === 1 ? 'Available today' : 'All free at some point today')
+            : free + ' of ' + list.length + ' available';
+        return '<a class="venue-card" href="venues.html" style="text-decoration: none;">' +
+            '<div class="thumb"><img src="' + A.resourceImg(list[0]) +
+            '" alt="Placeholder image of ' + A.esc(type) + '"></div>' +
+            '<div class="body">' +
+            '<h3>' + A.esc(type + (list.length > 1 ? 's' : '')) + '</h3>' +
+            '<span class="loc">' + A.esc(count) + '</span>' +
+            '<div style="margin-top: 6px;"><span class="badge badge-approved">' + A.esc(freeText) + '</span></div>' +
+            '</div></a>';
+    }).join('');
+})();
+</script>
+</body>
+</html>

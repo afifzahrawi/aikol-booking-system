@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #c9a34e; text-decoration: underline; text-underline-offset: 2px; }
+    a:hover { color: #e0c07a; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #0b3a29; font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif; color: #ffffff;">
+
+  <!-- The lattice is the identity here: forward, gold, unmistakable. -->
+  <svg width="1440" height="900" viewBox="0 0 1440 900" style="position: absolute; inset: 0; pointer-events: none;" aria-hidden="true">
+    <defs>
+      <pattern id="lattice" width="96" height="96" patternUnits="userSpaceOnUse">
+        <rect x="18" y="18" width="60" height="60" fill="none" stroke="#c9a34e" stroke-opacity="0.17" stroke-width="1.2"></rect>
+        <polygon points="48,6 90,48 48,90 6,48" fill="none" stroke="#c9a34e" stroke-opacity="0.17" stroke-width="1.2"></polygon>
+        <circle cx="48" cy="48" r="2.4" fill="#c9a34e" fill-opacity="0.24"></circle>
+      </pattern>
+    </defs>
+    <rect width="1440" height="900" fill="url(#lattice)"></rect>
+  </svg>
+
+  <!-- ============ Header ============ -->
+  <div style="position: relative; display: flex; align-items: center; justify-content: space-between; gap: 24px; height: 80px; padding: 0 56px; border-bottom: 1px solid rgba(201,163,78,0.34);">
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <svg width="34" height="34" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="9" y="9" width="30" height="30" fill="none" stroke="#c9a34e" stroke-width="1.8"></rect>
+        <polygon points="24,4 44,24 24,44 4,24" fill="none" stroke="#c9a34e" stroke-width="1.8"></polygon>
+        <polygon points="24,15 33,24 24,33 15,24" fill="#c9a34e"></polygon>
+      </svg>
+      <span style="font-family: Marcellus, Georgia, serif; font-size: 23px; letter-spacing: 0.09em; text-transform: uppercase;">AIKOL Tempahan</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 26px;">
+      <a href="#" style="color: rgba(255,255,255,0.9); font-size: 14px; text-decoration: none;">Tempahan saya</a>
+      <span style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid #c9a34e; color: #c9a34e; font-size: 12px; font-weight: 600;">FH</span>
+    </div>
+  </div>
+
+  <!-- ============ Body ============ -->
+  <div style="position: relative; padding: 46px 56px 0;">
+
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px;">
+      <span style="font-family: Marcellus, Georgia, serif; font-size: 38px; line-height: 1.15; color: #ffffff;">Assalamualaikum, Farhan</span>
+      <span style="font-size: 15px; color: rgba(255,255,255,0.7);">Apa yang anda ingin tempah hari ini?</span>
+    </div>
+
+    <!-- Primary action, floated bright against the dark field -->
+    <div style="background: #ffffff; padding: 22px 24px; color: #1a2420;">
+      <div style="display: flex; align-items: flex-end; gap: 18px;">
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5c6560;">Jenis</span>
+          <div style="display: flex; gap: 0;">
+            <span style="display: flex; align-items: center; justify-content: center; height: 46px; padding: 0 20px; background: #0b3a29; color: #ffffff; font-size: 14px; font-weight: 500;">Ruang</span>
+            <span style="display: flex; align-items: center; justify-content: center; height: 46px; padding: 0 20px; background: #f2f4f1; color: #33414f; font-size: 14px; font-weight: 500;">Kenderaan</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px; flex-grow: 1;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5c6560;">Tarikh</span>
+          <div style="display: flex; align-items: center; height: 46px; padding: 0 14px; border: 1px solid #c6ccc6; font-size: 15px;">Isnin, 31 Ogos 2026</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px; flex-grow: 1;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5c6560;">Masa</span>
+          <div style="display: flex; align-items: center; height: 46px; padding: 0 14px; border: 1px solid #c6ccc6; font-size: 15px;">2:00 PM &ndash; 4:00 PM</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px; width: 118px;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5c6560;">Orang</span>
+          <div style="display: flex; align-items: center; height: 46px; padding: 0 14px; border: 1px solid #c6ccc6; font-size: 15px;">24</div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; height: 46px; padding: 0 32px; background: #c9a34e; color: #0b3a29; font-size: 15px; font-weight: 600; white-space: nowrap;">Semak</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 34px 0 14px;">
+      <span style="font-family: Marcellus, Georgia, serif; font-size: 22px; letter-spacing: 0.03em;">Tersedia &mdash; 4 ruang</span>
+      <span style="font-size: 13px; color: rgba(255,255,255,0.62);">Semua tempahan memerlukan kelulusan</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px;">
+
+      <div style="background: #ffffff; color: #1a2420; padding: 18px; display: flex; flex-direction: column; gap: 6px; border-top: 4px solid #c9a34e;">
+        <span style="font-family: Marcellus, Georgia, serif; font-size: 18px;">Moot Court Room</span>
+        <span style="font-size: 12.5px; color: #5c6560;">Aras 2 &middot; 80 orang</span>
+        <span style="font-size: 12.5px; color: #1f6b45; font-weight: 500; margin-top: 8px;">Kosong 2:00 &ndash; 4:00 PM</span>
+      </div>
+
+      <div style="background: #ffffff; color: #1a2420; padding: 18px; display: flex; flex-direction: column; gap: 6px; border-top: 4px solid #c9a34e;">
+        <span style="font-family: Marcellus, Georgia, serif; font-size: 18px;">Seminar Room 1</span>
+        <span style="font-size: 12.5px; color: #5c6560;">Aras 1 &middot; 45 orang</span>
+        <span style="font-size: 12.5px; color: #1f6b45; font-weight: 500; margin-top: 8px;">Kosong 2:00 &ndash; 4:00 PM</span>
+      </div>
+
+      <div style="background: #ffffff; color: #1a2420; padding: 18px; display: flex; flex-direction: column; gap: 6px; border-top: 4px solid #c9a34e;">
+        <span style="font-family: Marcellus, Georgia, serif; font-size: 18px;">Meeting Room A</span>
+        <span style="font-size: 12.5px; color: #5c6560;">Aras 3 &middot; 16 orang</span>
+        <span style="font-size: 12.5px; color: #7a5300; font-weight: 500; margin-top: 8px;">Kosong dari 3:00 PM</span>
+      </div>
+
+      <div style="background: #ffffff; color: #1a2420; padding: 18px; display: flex; flex-direction: column; gap: 6px; border-top: 4px solid #c9a34e;">
+        <span style="font-family: Marcellus, Georgia, serif; font-size: 18px;">Discussion Room 1</span>
+        <span style="font-size: 12.5px; color: #5c6560;">Sayap Perpustakaan &middot; 8 orang</span>
+        <span style="font-size: 12.5px; color: #1f6b45; font-weight: 500; margin-top: 8px;">Kosong 2:00 &ndash; 4:00 PM</span>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 34px; padding-top: 22px; border-top: 1px solid rgba(201,163,78,0.34);">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.6);">Tempahan berikutnya</span>
+        <span style="font-family: Marcellus, Georgia, serif; font-size: 17px;">Moot Court Room</span>
+        <span style="font-size: 13.5px; color: rgba(255,255,255,0.7);">29 Ogos, 2:00 &ndash; 4:00 PM</span>
+        <span style="padding: 3px 9px; border: 1px solid rgba(201,163,78,0.6); color: #c9a34e; font-size: 12px;">Diluluskan</span>
+      </div>
+      <a href="#" style="font-size: 13.5px;">Semua tempahan saya (4)</a>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

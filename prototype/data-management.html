@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Management — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Data management</h1>
+                    <p class="lede">Bulk import, export, retention and backup. Destructive operations are restricted and require explicit confirmation.</p>
+                </div>
+            </div>
+
+            <!-- ==================== BULK IMPORT ==================== -->
+            <section class="card" style="margin-bottom:1.25rem" aria-labelledby="impHead">
+                <div class="card-head">
+                    <h2 id="impHead">Bulk data import</h2>
+                    <span class="badge badge-muted">CSV</span>
+                </div>
+                <div class="card-body">
+
+                    <ol class="steps" id="impSteps">
+                        <li aria-current="step"><span class="n">Step 1</span>Choose file</li>
+                        <li><span class="n">Step 2</span>Validate</li>
+                        <li><span class="n">Step 3</span>Preview and errors</li>
+                        <li><span class="n">Step 4</span>Confirm import</li>
+                        <li><span class="n">Step 5</span>Summary</li>
+                    </ol>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="impType">Record type</label>
+                            <select class="select" id="impType">
+                                <option value="users">Users</option>
+                                <option value="venues">Venues</option>
+                                <option value="bookings">Historical bookings</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="tpl">CSV template</label>
+                            <button class="btn" type="button" id="tpl">Download template</button>
+                        </div>
+                    </div>
+
+                    <div class="dropzone">
+                        <p style="margin:0 0 .6rem"><strong>Upload a CSV file</strong></p>
+                        <p class="help" style="margin:0 0 .8rem">Maximum file size 10 MB. The file is validated before any record is written.</p>
+                        <div class="btn-group" style="justify-content:center">
+                            <label class="btn" for="csvFile">Choose file</label>
+                            <input type="file" id="csvFile" accept=".csv,text/csv" class="visually-hidden">
+                            <button class="btn" type="button" id="useSample">Use sample file</button>
+                        </div>
+                        <p class="help" id="fileName" style="margin:.75rem 0 0"></p>
+                    </div>
+
+                    <div id="impResult" style="margin-top:1.25rem"></div>
+                </div>
+            </section>
+
+            <!-- ==================== EXPORT ==================== -->
+            <section class="card" style="margin-bottom:1.25rem" aria-labelledby="expHead">
+                <div class="card-head"><h2 id="expHead">Data export</h2></div>
+                <div class="card-body">
+                    <p class="help" style="margin-top:0">
+                        Exports are generated on the server and streamed in batches, so a large export does not
+                        exhaust server memory.
+                    </p>
+                    <div class="grid grid-3">
+                        <div class="card"><div class="card-body">
+                            <h3>Booking records</h3>
+                            <p class="help">All booking fields, filtered by date range and status.</p>
+                            <div class="field-row" style="gap:.5rem">
+                                <div class="field"><label for="expFrom">From</label><input class="input" type="date" id="expFrom"></div>
+                                <div class="field"><label for="expTo">To</label><input class="input" type="date" id="expTo"></div>
+                            </div>
+                            <button class="btn btn-block" type="button" data-export="bookings">Export bookings</button>
+                        </div></div>
+                        <div class="card"><div class="card-body">
+                            <h3>Venue list</h3>
+                            <p class="help">Venue details, facilities, capacity and operating hours.</p>
+                            <p id="expVenueCount" class="help"></p>
+                            <button class="btn btn-block" type="button" data-export="venues">Export venues</button>
+                        </div></div>
+                        <div class="card"><div class="card-body">
+                            <h3>User accounts</h3>
+                            <p class="help">Name, email, role, status and registration date. Passwords are never exported.</p>
+                            <p id="expUserCount" class="help"></p>
+                            <button class="btn btn-block" type="button" data-export="users">Export users</button>
+                        </div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== RETENTION ==================== -->
+            <section class="card" style="margin-bottom:1.25rem" aria-labelledby="retHead">
+                <div class="card-head"><h2 id="retHead">Data retention policy</h2></div>
+                <div class="card-body">
+
+                    <div class="notice notice-warn">
+                        <strong>Requires management approval</strong>
+                        No booking record is removed automatically. A retention period only makes older records
+                        <em>eligible</em> for archiving; an administrator must review and confirm each cleanup run.
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="retention">Retain booking records for</label>
+                            <select class="select" id="retention">
+                                <option value="1">1 year</option>
+                                <option value="3">3 years</option>
+                                <option value="5">5 years</option>
+                                <option value="7" selected>7 years</option>
+                                <option value="0">Indefinitely (no cleanup)</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="action">Action for expired records</label>
+                            <select class="select" id="action">
+                                <option value="export" selected>Export to CSV, then delete (confirmed)</option>
+                                <option value="archive">Archive to the archive table</option>
+                                <option value="delete">Permanent deletion</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="summary-box" style="margin-bottom:1rem">
+                        <dl id="retSummary"></dl>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn" type="button" id="previewBtn">Preview eligible records</button>
+                        <button class="btn btn-primary" type="button" id="runBtn">Run cleanup</button>
+                        <button class="btn" type="button" id="saveRet">Save policy</button>
+                    </div>
+
+                    <p class="help" style="margin-top:.9rem">
+                        AIKOL confirmed <strong>7 years</strong> for audit purposes, with expired records
+                        <strong>exported</strong> rather than archived in place or silently deleted.
+                        Cleanup runs in batches of 1,000 records inside a transaction, and every run is written to the
+                        audit log with the number of records exported or deleted. A database backup is taken first
+                        and copied to external storage.
+                    </p>
+                </div>
+            </section>
+
+            <!-- ==================== BACKUP ==================== -->
+            <section class="card" style="margin-bottom:1.25rem" aria-labelledby="bkHead">
+                <div class="card-head"><h2 id="bkHead">Database backup</h2></div>
+                <div class="card-body">
+                    <dl class="kv">
+                        <dt>Scheduled backup</dt><dd>Nightly, retained for 14 days (proposed)</dd>
+                        <dt>Weekly backup</dt><dd>Retained for 8 weeks (proposed)</dd>
+                        <dt>Last backup</dt><dd>Illustrative value — configured during deployment</dd>
+                        <dt>Before bulk deletion</dt><dd>An on-demand backup is taken automatically</dd>
+                    </dl>
+                    <div class="btn-group" style="margin-top:1rem">
+                        <button class="btn" type="button" id="backupBtn">Create backup now</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== DANGER ZONE ==================== -->
+            <section class="card danger-zone" aria-labelledby="dzHead">
+                <div class="card-head"><h2 id="dzHead">Restricted operations</h2></div>
+                <div class="card-body">
+                    <p>
+                        A full database reset removes every booking, venue and user record. It exists for
+                        development, testing and migration work and is not intended for normal production use.
+                    </p>
+                    <ul class="help" style="padding-left:1.1rem">
+                        <li>Available only to the highest administrator level.</li>
+                        <li>A confirmation phrase must be typed in full.</li>
+                        <li>A backup is created before the operation proceeds.</li>
+                        <li>The action is written to the audit log.</li>
+                    </ul>
+                    <button class="btn btn-danger" type="button" id="resetBtn">Full database reset…</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'data-management.html' });
+    const $ = (id) => document.getElementById(id);
+
+    /* ---------------- CSV templates and sample content ------------------- */
+    const TEMPLATES = {
+        users: {
+            headers: ['name', 'email', 'role', 'status'],
+            sample:
+                'name,email,role,status\n' +
+                'Aiman bin Yusof,aiman.yusof@iium.edu.my,Student,Active\n' +
+                'Dr. Laila binti Hamid,laila.hamid@iium.edu.my,Lecturer,Active\n' +
+                'Rosmah binti Karim,rosmah.karim@iium.edu.my,Staff,Active\n' +
+                'Broken Row,not-an-email,Student,Active\n' +
+                'Farhan bin Helmy,farhan.helmy@iium.edu.my,Student,Active\n' +
+                'Zaid bin Salleh,zaid.salleh@iium.edu.my,Wizard,Active\n'
+        },
+        venues: {
+            headers: ['name', 'code', 'building', 'floor', 'capacity', 'opening_time', 'closing_time'],
+            sample:
+                'name,code,building,floor,capacity,opening_time,closing_time\n' +
+                'Tutorial Room 1,AIKOL-TR-01,AIKOL Main Building,Level 1,30,08:00,18:00\n' +
+                'Tutorial Room 2,AIKOL-TR-02,AIKOL Main Building,Level 1,30,08:00,18:00\n' +
+                'Moot Court Room,AIKOL-MC-01,AIKOL Main Building,Level 2,80,08:00,18:00\n' +
+                'Broken Room,AIKOL-BR-01,AIKOL Annex,Level 1,abc,08:00,18:00\n'
+        },
+        bookings: {
+            headers: ['booking_reference', 'user_email', 'venue_code', 'booking_date', 'start_time', 'end_time', 'purpose', 'status'],
+            sample:
+                'booking_reference,user_email,venue_code,booking_date,start_time,end_time,purpose,status\n' +
+                'BK-2023-0001,farhan.helmy@iium.edu.my,AIKOL-MC-01,2023-03-14,09:00,11:00,Moot practice,Completed\n' +
+                'BK-2023-0002,ahmad.faiz@iium.edu.my,AIKOL-SR-01,2023-03-15,14:00,16:00,Postgraduate seminar,Completed\n' +
+                'BK-2023-0003,unknown.person@iium.edu.my,AIKOL-SR-01,2023-03-16,10:00,12:00,Meeting,Completed\n' +
+                'BK-2023-0004,ahmad.faiz@iium.edu.my,AIKOL-SR-01,2023-03-16,11:00,13:00,Overlapping session,Completed\n'
+        }
+    };
+
+    /* ---------------- Minimal CSV parser --------------------------------- */
+    function parseCSV(text) {
+        const lines = text.replace(/\r\n?/g, '\n').split('\n').filter(l => l.trim() !== '');
+        return lines.map(line => {
+            const out = []; let cur = '', inQ = false;
+            for (let i = 0; i < line.length; i++) {
+                const c = line[i];
+                if (inQ) {
+                    if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+                    else if (c === '"') inQ = false;
+                    else cur += c;
+                } else if (c === '"') inQ = true;
+                else if (c === ',') { out.push(cur); cur = ''; }
+                else cur += c;
+            }
+            out.push(cur);
+            return out.map(s => s.trim());
+        });
+    }
+
+    /* ---------------- Row validation ------------------------------------- */
+    function validateRows(type, headers, rows) {
+        const expected = TEMPLATES[type].headers;
+        const results = [];
+        const seen = new Set();
+
+        rows.forEach((cells, i) => {
+            const rec = {}; expected.forEach((h, k) => rec[h] = cells[headers.indexOf(h)] || '');
+            const errors = [];
+
+            if (cells.length !== headers.length) errors.push('Row has ' + cells.length + ' columns, expected ' + headers.length);
+
+            if (type === 'users') {
+                if (!rec.name) errors.push('Name is required');
+                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(rec.email)) errors.push('Email address is not valid');
+                if (['Student', 'Lecturer', 'Staff', 'Administrator'].indexOf(rec.role) === -1)
+                    errors.push('Role must be Student, Lecturer, Staff or Administrator');
+                if (A.users.some(u => u.email.toLowerCase() === rec.email.toLowerCase()))
+                    errors.push('Duplicate: this email already exists in the system');
+                if (seen.has(rec.email.toLowerCase())) errors.push('Duplicate: repeated within this file');
+                seen.add(rec.email.toLowerCase());
+            }
+
+            if (type === 'venues') {
+                if (!rec.name) errors.push('Name is required');
+                if (!rec.code) errors.push('Venue code is required');
+                if (!/^\d+$/.test(rec.capacity)) errors.push('Capacity must be a whole number');
+                if (A.venues.some(v => v.code === rec.code)) errors.push('Duplicate: venue code already exists');
+                if (seen.has(rec.code)) errors.push('Duplicate: repeated within this file');
+                seen.add(rec.code);
+            }
+
+            if (type === 'bookings') {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.booking_date)) errors.push('Booking date must use the format YYYY-MM-DD');
+                if (!A.users.some(u => u.email.toLowerCase() === rec.user_email.toLowerCase()))
+                    errors.push('No user account matches ' + (rec.user_email || '(blank)'));
+                if (!A.venues.some(v => v.code === rec.venue_code))
+                    errors.push('No venue matches code ' + (rec.venue_code || '(blank)'));
+                if (rec.start_time && rec.end_time && rec.end_time <= rec.start_time)
+                    errors.push('End time must be later than start time');
+                const key = rec.venue_code + '|' + rec.booking_date + '|' + rec.start_time;
+                if (seen.has(key)) errors.push('Overlaps another row in this file for the same venue and time');
+                seen.add(key);
+            }
+
+            results.push({ line: i + 2, rec: rec, errors: errors });
+        });
+        return results;
+    }
+
+    /* ---------------- Import flow ---------------------------------------- */
+    function stepTo(n) {
+        [...$('impSteps').children].forEach((li, i) => {
+            li.classList.toggle('done', i < n);
+            if (i === n) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+        });
+    }
+
+    function runImport(type, text, fileLabel) {
+        $('fileName').textContent = 'Selected file: ' + fileLabel;
+        stepTo(1);
+
+        const grid = parseCSV(text);
+        if (grid.length < 2) {
+            $('impResult').innerHTML = '<div class="notice notice-danger"><strong>File rejected</strong>' +
+                'The file contains no data rows.</div>';
+            stepTo(0);
+            return;
+        }
+        const headers = grid[0].map(h => h.toLowerCase());
+        const expected = TEMPLATES[type].headers;
+        const missing = expected.filter(h => headers.indexOf(h) === -1);
+        if (missing.length) {
+            $('impResult').innerHTML = '<div class="notice notice-danger"><strong>File rejected</strong>' +
+                'Missing required column' + (missing.length > 1 ? 's' : '') + ': <code>' + missing.join(', ') + '</code>. ' +
+                'Download the template to see the expected format.</div>';
+            stepTo(0);
+            return;
+        }
+
+        const results = validateRows(type, headers, grid.slice(1));
+        const bad = results.filter(r => r.errors.length);
+        const good = results.filter(r => !r.errors.length);
+        stepTo(2);
+
+        $('impResult').innerHTML =
+            '<div class="grid grid-3" style="margin-bottom:1rem">' +
+            '<div class="stat"><span class="label">Rows read</span><span class="value">' + results.length + '</span></div>' +
+            '<div class="stat accent"><span class="label">Valid</span><span class="value">' + good.length + '</span></div>' +
+            '<div class="stat warn"><span class="label">With errors</span><span class="value">' + bad.length + '</span></div>' +
+            '</div>' +
+            (bad.length
+                ? '<div class="notice notice-warn"><strong>' + bad.length + ' row' + (bad.length > 1 ? 's' : '') +
+                  ' cannot be imported</strong>Correct the file and upload it again, or import only the valid rows.</div>'
+                : '<div class="notice notice-success"><strong>All rows passed validation</strong>' +
+                  'No duplicates or format errors were found.</div>') +
+            '<h3>Preview</h3>' +
+            '<div class="table-wrap"><table class="data"><thead><tr><th>Line</th>' +
+            expected.map(h => '<th>' + A.esc(h) + '</th>').join('') + '<th>Result</th></tr></thead><tbody>' +
+            results.slice(0, 12).map(r =>
+                '<tr>' + '<td class="num">' + r.line + '</td>' +
+                expected.map(h => '<td>' + A.esc(r.rec[h] || '') + '</td>').join('') +
+                '<td>' + (r.errors.length
+                    ? '<span class="badge badge-rejected">Error</span><br><span class="help">' +
+                      A.esc(r.errors.join('; ')) + '</span>'
+                    : '<span class="badge badge-approved">Valid</span>') + '</td></tr>').join('') +
+            '</tbody></table></div>' +
+            (results.length > 12 ? '<p class="help">Showing the first 12 of ' + results.length + ' rows.</p>' : '') +
+            '<div class="btn-group" style="margin-top:1rem">' +
+            '<button class="btn btn-primary" type="button" id="confirmImp"' + (good.length ? '' : ' disabled') + '>' +
+            'Import ' + good.length + ' valid row' + (good.length === 1 ? '' : 's') + '</button>' +
+            '<button class="btn" type="button" id="cancelImp">Cancel</button></div>';
+
+        $('cancelImp').addEventListener('click', () => { $('impResult').innerHTML = ''; $('fileName').textContent = ''; stepTo(0); });
+        if (good.length) {
+            $('confirmImp').addEventListener('click', function () {
+                stepTo(3);
+                A.modal({
+                    title: 'Confirm import',
+                    body: '<p><strong>' + good.length + '</strong> record' + (good.length === 1 ? '' : 's') +
+                        ' will be inserted into the <strong>' + type + '</strong> table' +
+                        (bad.length ? ', and <strong>' + bad.length + '</strong> row' + (bad.length > 1 ? 's' : '') + ' will be skipped' : '') + '.</p>' +
+                        '<p class="help">The insertion runs inside a single database transaction using bulk insertion. ' +
+                        'If any statement fails, the whole import is rolled back and nothing is written.</p>',
+                    buttons: [{ label: 'Back' }, {
+                        label: 'Import records', cls: 'btn-primary', onClick: function () {
+                            stepTo(4);
+                            $('impResult').innerHTML =
+                                '<div class="notice notice-success"><strong>Import completed</strong>' +
+                                good.length + ' record' + (good.length === 1 ? '' : 's') + ' imported, ' +
+                                bad.length + ' skipped. In the production system this summary, together with the ' +
+                                'file name and the administrator responsible, is written to the audit log.</div>' +
+                                '<p class="help">Prototype only — the demonstration data set has not been changed.</p>';
+                        }
+                    }]
+                });
+            });
+        }
+    }
+
+    function download(filename, text) {
+        const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    $('tpl').addEventListener('click', () => {
+        const t = $('impType').value;
+        download('aikol-' + t + '-template.csv', TEMPLATES[t].headers.join(',') + '\n');
+    });
+
+    $('useSample').addEventListener('click', () => {
+        const t = $('impType').value;
+        runImport(t, TEMPLATES[t].sample, 'sample-' + t + '.csv (contains deliberate errors)');
+    });
+
+    $('csvFile').addEventListener('change', function () {
+        const f = this.files && this.files[0];
+        if (!f) return;
+        if (f.size > 10 * 1024 * 1024) {
+            $('impResult').innerHTML = '<div class="notice notice-danger"><strong>File rejected</strong>' +
+                'The file exceeds the 10 MB limit.</div>';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => runImport($('impType').value, String(reader.result), f.name);
+        reader.readAsText(f);
+    });
+
+    $('impType').addEventListener('change', () => { $('impResult').innerHTML = ''; $('fileName').textContent = ''; stepTo(0); });
+
+    /* ---------------- Export --------------------------------------------- */
+    $('expVenueCount').textContent = A.venues.length + ' venue records available.';
+    $('expUserCount').textContent = A.users.length + ' user records available.';
+    document.querySelectorAll('[data-export]').forEach(b => b.addEventListener('click', () =>
+        A.toast('The production system builds the CSV on the server from the current filters and streams it to the browser. ' +
+            'Personal data is limited to what the requesting administrator is authorised to see.')));
+
+    /* ---------------- Retention ------------------------------------------ */
+    function eligible() {
+        const years = Number($('retention').value);
+        if (!years) return { years: 0, cutoff: null, rows: [] };
+        const cutoff = new Date(A.today); cutoff.setFullYear(cutoff.getFullYear() - years);
+        const c = A.iso(cutoff);
+        return { years: years, cutoff: c, rows: A.bookings.filter(b => b.date < c) };
+    }
+
+    function retSummary() {
+        const e = eligible();
+        const actionText = { archive: 'Archive to the archive table', export: 'Export to CSV, then delete', delete: 'Permanent deletion' }[$('action').value];
+        $('retSummary').innerHTML =
+            '<dt>Retention period</dt><dd>' + (e.years ? e.years + ' year' + (e.years > 1 ? 's' : '') : 'Indefinite') + '</dd>' +
+            '<dt>Cut-off date</dt><dd>' + (e.cutoff ? A.fmtDate(e.cutoff) : 'Not applicable') + '</dd>' +
+            '<dt>Records eligible</dt><dd>' + (e.years ? e.rows.length.toLocaleString() : '0') + ' of ' + A.bookings.length.toLocaleString() + '</dd>' +
+            '<dt>Action</dt><dd>' + actionText + '</dd>';
+        $('runBtn').disabled = !e.years || !e.rows.length;
+    }
+    $('retention').addEventListener('change', retSummary);
+    $('action').addEventListener('change', retSummary);
+    retSummary();
+
+    $('previewBtn').addEventListener('click', function () {
+        const e = eligible();
+        if (!e.years) { A.toast('Retention is set to indefinite, so no record is eligible for cleanup.'); return; }
+        A.modal({
+            title: 'Records eligible for cleanup',
+            body: '<p><strong>' + e.rows.length.toLocaleString() + '</strong> booking record' +
+                (e.rows.length === 1 ? '' : 's') + ' dated before <strong>' + A.fmtDate(e.cutoff) + '</strong>.</p>' +
+                (e.rows.length
+                    ? '<div class="table-wrap"><table class="data"><thead><tr><th>Reference</th><th>Venue</th><th>Date</th><th>Status</th></tr></thead><tbody>' +
+                      e.rows.slice(0, 8).map(b => '<tr><td class="mono">' + A.esc(b.ref) + '</td><td>' +
+                        A.esc(b.resource.name) + '</td><td>' + A.fmtDate(b.date) + '</td><td>' +
+                        A.badge(b.status) + '</td></tr>').join('') +
+                      '</tbody></table></div><p class="help">Showing the oldest 8 records.</p>'
+                    : '<p class="help">Nothing is currently eligible.</p>')
+        });
+    });
+
+    $('runBtn').addEventListener('click', function () {
+        const e = eligible();
+        const action = $('action').value;
+        const destructive = action === 'delete';
+        A.modal({
+            title: 'Run data cleanup',
+            body: (destructive
+                    ? '<div class="notice notice-danger"><strong>Permanent deletion selected</strong>' +
+                      'The records cannot be recovered except from a database backup.</div>'
+                    : '<div class="notice notice-info"><strong>Records are preserved</strong>' +
+                      (action === 'archive'
+                        ? 'Eligible records are copied to the archive table before removal from the active table.'
+                        : 'Eligible records are exported to CSV before removal from the active table.') + '</div>') +
+                '<dl class="kv"><dt>Records affected</dt><dd>' + e.rows.length.toLocaleString() + '</dd>' +
+                '<dt>Cut-off date</dt><dd>' + A.fmtDate(e.cutoff) + '</dd>' +
+                '<dt>Batch size</dt><dd>1,000 records per transaction</dd>' +
+                '<dt>Backup</dt><dd>Taken automatically before the first batch</dd></dl>' +
+                (destructive
+                    ? '<div class="field" style="margin-top:1rem"><label for="cf">Type <code>DELETE ' +
+                      e.rows.length + ' RECORDS</code> to confirm</label>' +
+                      '<input class="input" id="cf" autocomplete="off"></div>'
+                    : ''),
+            buttons: [{ label: 'Cancel' }, {
+                label: 'Run cleanup', cls: destructive ? 'btn-danger' : 'btn-primary',
+                onClick: function (root) {
+                    if (destructive) {
+                        const inp = root.querySelector('#cf');
+                        if (inp.value.trim() !== 'DELETE ' + e.rows.length + ' RECORDS') { inp.focus(); return false; }
+                    }
+                    A.toast('The production system would process ' + e.rows.length.toLocaleString() +
+                        ' records in batches and record the outcome in the audit log. Nothing has been changed in this prototype.');
+                }
+            }]
+        });
+    });
+
+    $('saveRet').addEventListener('click', () =>
+        A.toast('The retention period is stored in the system settings table and takes effect from the next cleanup run.'));
+
+    $('backupBtn').addEventListener('click', () =>
+        A.toast('The production system runs a database dump on the server, stores it outside the application directory and records the action in the audit log.'));
+
+    /* ---------------- Full database reset -------------------------------- */
+    $('resetBtn').addEventListener('click', function () {
+        A.modal({
+            title: 'Full database reset',
+            body: '<div class="notice notice-danger"><strong>This action is destructive and cannot be undone</strong>' +
+                'Every booking, venue, user and audit record will be removed. This operation exists for development, ' +
+                'testing and migration work.</div>' +
+                '<dl class="kv"><dt>Booking records</dt><dd>' + A.bookings.length.toLocaleString() + '</dd>' +
+                '<dt>Venue records</dt><dd>' + A.venues.length + '</dd>' +
+                '<dt>User accounts</dt><dd>' + A.users.length + '</dd></dl>' +
+                '<div class="checkline" style="margin-top:1rem"><input type="checkbox" id="ackBackup">' +
+                '<label for="ackBackup" style="font-weight:400;margin:0">Create a full backup before proceeding</label></div>' +
+                '<div class="field" style="margin-top:.75rem"><label for="phrase">Type <code>DELETE ALL DATA</code> to confirm</label>' +
+                '<input class="input" id="phrase" autocomplete="off" placeholder="DELETE ALL DATA"></div>',
+            buttons: [{ label: 'Cancel' }, {
+                label: 'Reset database', cls: 'btn-danger', onClick: function (root) {
+                    const phrase = root.querySelector('#phrase');
+                    if (phrase.value.trim() !== 'DELETE ALL DATA') { phrase.focus(); return false; }
+                    if (!root.querySelector('#ackBackup').checked) {
+                        A.toast('A backup must be selected before a full reset can proceed.', 'danger');
+                        return false;
+                    }
+                    A.toast('In the production system this command is restricted to the highest administrator level, ' +
+                        'is disabled by default in production settings, and is recorded in the audit log. ' +
+                        'Nothing has been changed in this prototype.');
+                }
+            }]
+        });
+    });
+})();
+</script>
+</body>
+</html>

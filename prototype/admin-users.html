@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User Administration — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>User administration</h1>
+                    <p class="lede">Maintain accounts and roles. Accounts with booking history are deactivated rather than deleted.</p>
+                </div>
+                <div class="btn-group">
+                    <a class="btn" href="data-management.html">Bulk import users</a>
+                    <button class="btn btn-primary" type="button" id="addBtn">Add user</button>
+                </div>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom:1.25rem">
+                <div class="stat accent"><span class="k">Total accounts</span><span class="v" id="sTotal">0</span><span class="d">self-registered and imported</span></div>
+                <div class="stat"><span class="k">Active</span><span class="v" id="sActive">0</span><span class="d">may sign in and book</span></div>
+                <div class="stat"><span class="k">Deactivated</span><span class="v" id="sInactive">0</span><span class="d">history retained for audit</span></div>
+                <div class="stat"><span class="k">Administrators</span><span class="v" id="sAdmin">0</span><span class="d">plus approvers</span></div>
+            </div>
+
+            <section class="card" aria-labelledby="listHead">
+                <h2 id="listHead" class="visually-hidden">User accounts</h2>
+
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Name or email address">
+                    </div>
+                    <div class="field">
+                        <label for="role">Role</label>
+                        <select class="select" id="role">
+                            <option value="">All roles</option>
+                            <option>Student</option><option>Lecturer</option>
+                            <option>Staff</option><option>Administrator</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="status">Status</label>
+                        <select class="select" id="status">
+                            <option value="">All statuses</option>
+                            <option>Active</option><option>Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data">
+                        <caption class="visually-hidden">User accounts</caption>
+                        <thead><tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="num">Bookings</th>
+                            <th scope="col">Registered</th>
+                            <th scope="col">Actions</th>
+                        </tr></thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="card-foot">
+                    <div class="pagination">
+                        <span id="info"></span>
+                        <div class="pager" id="pager"></div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-users.html' });
+    const $ = (id) => document.getElementById(id);
+
+    const bookingCount = {};
+    A.bookings.forEach(b => bookingCount[b.userId] = (bookingCount[b.userId] || 0) + 1);
+
+    function stats() {
+        $('sTotal').textContent = A.users.length;
+        $('sActive').textContent = A.users.filter(u => u.status === 'Active').length;
+        $('sInactive').textContent = A.users.filter(u => u.status === 'Inactive').length;
+        $('sAdmin').textContent = A.users.filter(u => u.role === 'Administrator').length;
+    }
+    stats();
+
+    const ctrl = A.tableController({
+        rows: () => A.users,
+        tbody: $('tbody'), pager: $('pager'), info: $('info'),
+        cols: 7, pageSize: 10,
+        controls: [
+            { key: 'q', input: $('q') },
+            { key: 'role', input: $('role'), event: 'change' },
+            { key: 'status', input: $('status'), event: 'change' }
+        ],
+        match: function (u, f) {
+            const term = (f.q || '').trim().toLowerCase();
+            if (term && !(u.name + ' ' + u.email).toLowerCase().includes(term)) return false;
+            if (f.role && u.role !== f.role) return false;
+            if (f.status && u.status !== f.status) return false;
+            return true;
+        },
+        render: function (u) {
+            const active = u.status === 'Active';
+            const n = bookingCount[u.id] || 0;
+            return '<tr>' +
+                '<td>' + A.esc(u.name) + '</td>' +
+                '<td class="mono">' + A.esc(u.email) + '</td>' +
+                '<td>' + A.esc(u.role) + '</td>' +
+                '<td>' + (active ? '<span class="badge badge-active">Active</span>'
+                                 : '<span class="badge badge-inactive">Deactivated</span>') + '</td>' +
+                '<td class="num">' + n + '</td>' +
+                '<td class="nowrap">' + A.fmtDate(u.created) + '</td>' +
+                '<td class="nowrap">' +
+                '<button class="btn-link" type="button" data-edit="' + u.id + '">Edit</button> · ' +
+                '<button class="btn-link" type="button" data-reset="' + u.id + '">Reset access</button> · ' +
+                '<button class="btn-link" type="button" data-toggle="' + u.id + '">' +
+                (active ? 'Deactivate' : 'Activate') + '</button></td></tr>';
+        }
+    });
+
+    function userForm(u) {
+        return '<div class="field"><label for="uName">Full name <span class="req">*</span></label>' +
+            '<input class="input" id="uName" value="' + (u ? A.esc(u.name) : '') + '"></div>' +
+            '<div class="field"><label for="uEmail">Email address <span class="req">*</span></label>' +
+            '<input class="input" type="email" id="uEmail" value="' + (u ? A.esc(u.email) : '') + '"></div>' +
+            '<div class="field-row">' +
+            '<div class="field"><label for="uRole">Role <span class="req">*</span></label>' +
+            '<select class="select" id="uRole"><option>Student</option><option>Lecturer</option>' +
+            '<option>Staff</option><option>Administrator</option></select></div>' +
+            '<div class="field"><label for="uStatus">Status</label>' +
+            '<select class="select" id="uStatus"><option>Active</option><option>Inactive</option></select></div>' +
+            '</div>' +
+            '<p class="help">Passwords are never stored in readable form. New accounts receive an activation ' +
+            'link and set their own password.</p>';
+    }
+
+    $('addBtn').addEventListener('click', () => A.modal({
+        title: 'Add user',
+        body: userForm(null),
+        buttons: [{ label: 'Cancel' },
+                  { label: 'Create account', cls: 'btn-primary',
+                    onClick: () => A.toast('The production system validates the form on the server, creates the account and writes an audit log entry.') }]
+    }));
+
+    $('tbody').addEventListener('click', function (e) {
+        const d = e.target.dataset || {};
+        const id = Number(d.edit || d.reset || d.toggle);
+        if (!id) return;
+        const u = A.userById(id);
+        const n = bookingCount[u.id] || 0;
+
+        if (d.edit) {
+            const m = A.modal({
+                title: 'Edit ' + u.name,
+                body: userForm(u),
+                buttons: [{ label: 'Cancel' },
+                          { label: 'Save changes', cls: 'btn-primary',
+                            onClick: () => A.toast('The production system saves the change and records it in the audit log.') }]
+            });
+            m.root.querySelector('#uRole').value = u.role;
+            m.root.querySelector('#uStatus').value = u.status;
+        }
+
+        if (d.reset) {
+            A.modal({
+                title: 'Reset access for ' + u.name,
+                body: '<p>A password reset link will be sent to <strong>' + A.esc(u.email) + '</strong>. ' +
+                      'The existing password is invalidated immediately.</p>' +
+                      '<p class="help">Administrators never see or choose a user password.</p>',
+                buttons: [{ label: 'Cancel' },
+                          { label: 'Send reset link', cls: 'btn-primary',
+                            onClick: () => A.toast('The production system invalidates the password and records the action in the audit log.') }]
+            });
+        }
+
+        if (d.toggle) {
+            const activating = u.status !== 'Active';
+            A.modal({
+                title: (activating ? 'Activate ' : 'Deactivate ') + u.name,
+                body: activating
+                    ? '<p>The account will be able to sign in and submit bookings again.</p>'
+                    : '<p>The account will no longer be able to sign in. Its ' + n + ' booking record' +
+                      (n === 1 ? '' : 's') + ' will be retained so that booking history and reporting remain complete.</p>' +
+                      '<div class="notice notice-info" style="margin-top:.75rem"><strong>Deactivation, not deletion</strong>' +
+                      'Accounts linked to booking history are never permanently removed.</div>',
+                buttons: [{ label: 'Cancel' },
+                          { label: activating ? 'Activate account' : 'Deactivate account',
+                            cls: activating ? 'btn-primary' : 'btn-danger',
+                            onClick: () => { u.status = activating ? 'Active' : 'Inactive'; ctrl.refresh(); stats(); } }]
+            });
+        }
+    });
+})();
+</script>
+</body>
+</html>

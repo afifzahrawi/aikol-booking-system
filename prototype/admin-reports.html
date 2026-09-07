@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reports — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Reports</h1>
+                    <p class="lede" id="period"></p>
+                </div>
+                <div class="btn-group">
+                    <span class="btn" aria-hidden="true">This semester</span>
+                    <a class="btn" href="data-management.html">Export CSV</a>
+                    <button class="btn btn-primary" type="button" id="printBtn">Print report</button>
+                </div>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom: 18px;" id="stats"></div>
+
+            <div class="grid grid-2" style="align-items: start;">
+
+                <section class="card" aria-labelledby="utilHead">
+                    <div class="card-head">
+                        <h2 id="utilHead" class="label" style="margin:0">Utilisation by resource</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="help" style="margin: 0 0 10px;">Share of the 08:00–22:00 window booked.
+                            <span class="tag tag-illustrative">Illustrative data</span></p>
+                        <div id="roomBars"></div>
+                        <div class="label" style="margin: 16px 0 2px; padding-top: 12px; border-top: 1px solid var(--line-soft);">Vehicles</div>
+                        <p class="help" style="margin: 0 0 8px;">Share of days out on an approved trip.</p>
+                        <div id="carBars"></div>
+                    </div>
+                </section>
+
+                <div style="display: flex; flex-direction: column; gap: 18px;">
+                    <section class="card" aria-labelledby="monthHead">
+                        <div class="card-head"><h2 id="monthHead" class="label" style="margin:0">Bookings per month</h2></div>
+                        <div class="card-body"><div id="months"></div></div>
+                    </section>
+
+                    <section class="card" aria-labelledby="reqHead">
+                        <div class="card-head"><h2 id="reqHead" class="label" style="margin:0">Most frequent requesters</h2></div>
+                        <div class="table-wrap">
+                            <table class="data">
+                                <thead>
+                                    <tr><th scope="col">Name</th>
+                                        <th scope="col" style="width:90px;text-align:right">Requests</th>
+                                        <th scope="col" style="width:90px;text-align:right">Approved</th>
+                                        <th scope="col" style="width:90px;text-align:right">Rejected</th></tr>
+                                </thead>
+                                <tbody id="requesters"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 26px 0 14px;">
+                <h2 style="margin:0">Audit log</h2>
+                <span class="help" style="margin:0">Append-only · records retained 7 years</span>
+            </div>
+            <section class="card">
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr><th scope="col" style="width:160px">When</th>
+                                <th scope="col" style="width:280px">Administrator</th>
+                                <th scope="col" style="width:200px">Action</th>
+                                <th scope="col">Detail</th></tr>
+                        </thead>
+                        <tbody id="audit"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-reports.html' });
+
+    const all = A.bookings;
+    const approved = all.filter(b => b.status === 'Approved' || b.status === 'Completed');
+    const rejected = all.filter(b => b.status === 'Rejected');
+    const cancelled = all.filter(b => b.status === 'Cancelled');
+    const decided = approved.length + rejected.length;
+
+    document.getElementById('period').textContent =
+        'Semester to ' + A.fmtDate(A.today) + ' · ' + all.length + ' booking records';
+
+    /* ---- Headline numbers, all counted from the booking data ---- */
+    const roomHours = approved.filter(b => b.kind === 'Venue')
+        .reduce((n, b) => n + A.minutesBetween(b.startAt, b.endAt) / 60, 0);
+    const tripDays = approved.filter(b => b.kind === 'Vehicle')
+        .reduce((n, b) => n + Math.max(1, Math.round(A.minutesBetween(b.startAt, b.endAt) / 1440)), 0);
+
+    document.getElementById('stats').innerHTML = [
+        { cls: '', k: 'Bookings', v: all.length,
+          d: approved.length + ' approved · ' + rejected.length + ' rejected · ' + cancelled.length + ' cancelled' },
+        { cls: 'info', k: 'Approval rate', v: decided ? Math.round(approved.length / decided * 100) + '%' : '—',
+          d: 'of all decided requests' },
+        { cls: 'accent', k: 'Room hours booked', v: Math.round(roomHours).toLocaleString(),
+          d: 'across ' + A.venues.length + ' rooms' },
+        { cls: 'neutral', k: 'Vehicle trip days', v: tripDays,
+          d: 'across ' + A.vehicles.length + ' cars' }
+    ].map(s => '<div class="stat ' + s.cls + '"><span class="k">' + s.k + '</span>' +
+               '<span class="v">' + s.v + '</span><span class="d">' + s.d + '</span></div>').join('');
+
+    /* ---- Utilisation bars ---- */
+    function bars(host, pool, gold) {
+        const openHours = 14 * 180; // 14 h/day over the window sampled
+        const rows = pool.map(r => {
+            const booked = approved.filter(b => b.resourceId === r.id)
+                .reduce((n, b) => n + A.minutesBetween(b.startAt, b.endAt) / 60, 0);
+            return { label: r.name, value: Math.min(100, Math.round(booked / openHours * 100)) };
+        }).sort((a, b) => b.value - a.value);
+
+        host.innerHTML = '<div class="hbars">' + rows.map(r =>
+            '<div class="hbar"><span>' + A.esc(r.label) + '</span>' +
+            '<div class="track"><div class="fill' + (gold ? ' gold' : '') + '" style="width:' + r.value + '%"></div></div>' +
+            '<span class="val">' + r.value + '%</span></div>').join('') + '</div>';
+    }
+    bars(document.getElementById('roomBars'), A.venues, false);
+    bars(document.getElementById('carBars'), A.vehicles, true);
+
+    /* ---- Bookings per month ---- */
+    A.lineChart(document.getElementById('months'), A.monthlyVolume(6),
+        { caption: 'Bookings per month this semester', noun: 'bookings' });
+
+    /* ---- Most frequent requesters ---- */
+    const tally = {};
+    all.forEach(b => {
+        const t = tally[b.userId] || (tally[b.userId] = { n: 0, ok: 0, no: 0 });
+        t.n++;
+        if (b.status === 'Approved' || b.status === 'Completed') t.ok++;
+        if (b.status === 'Rejected') t.no++;
+    });
+    const top = Object.keys(tally).map(id => ({ u: A.userById(Number(id)), t: tally[id] }))
+        .sort((a, b) => b.t.n - a.t.n).slice(0, 5);
+
+    document.getElementById('requesters').innerHTML = top.map(r =>
+        '<tr><td style="color:var(--ink)">' + A.esc(r.u.name) + '</td>' +
+        '<td class="num">' + r.t.n + '</td>' +
+        '<td class="num">' + r.t.ok + '</td>' +
+        '<td class="num">' + r.t.no + '</td></tr>').join('');
+
+    /* ---- Audit log ---- */
+    document.getElementById('audit').innerHTML = A.auditLog.map(a =>
+        '<tr><td class="nowrap">' + A.esc(a.when) + '</td>' +
+        '<td style="color:var(--ink)">' + A.esc(a.who) + '</td>' +
+        '<td class="nowrap">' + A.esc(a.action) + '</td>' +
+        '<td>' + A.esc(a.detail) + '</td></tr>').join('');
+
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+})();
+</script>
+</body>
+</html>

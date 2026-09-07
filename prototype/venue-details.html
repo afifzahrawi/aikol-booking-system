@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venue Details — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="dashboard.html">Dashboard</a><span>/</span>
+                <a href="venues.html">Venues</a><span>/</span>
+                <span id="crumb">Venue</span>
+            </nav>
+
+            <div class="page-head">
+                <div>
+                    <h1 id="vName">Venue</h1>
+                    <p class="lede" id="vSub"></p>
+                </div>
+                <div class="btn-group">
+                    <a class="btn" href="venues.html">Back to venues</a>
+                    <a class="btn btn-primary" id="bookTop" href="#">Book venue</a>
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="align-items:start;margin-bottom:1.25rem">
+
+                <div>
+                    <div class="gallery-main">
+                        <img id="mainImg" src="" alt="">
+                    </div>
+                    <div class="gallery-thumbs" id="thumbs"></div>
+                    <p class="help">Placeholder illustrations. Actual venue photographs will be supplied by the Kulliyyah.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><h2>Venue information</h2></div>
+                    <div class="card-body">
+                        <dl class="meta-list" id="info"></dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="align-items:start;margin-bottom:1.25rem">
+
+                <section class="card" aria-labelledby="aboutHead">
+                    <div class="card-head"><h2 id="aboutHead">About this venue</h2></div>
+                    <div class="card-body">
+                        <p id="vDesc"></p>
+                        <h3 style="margin-top:1.25rem">Facilities</h3>
+                        <ul class="facility-grid" id="facList" style="padding:0;margin:0"></ul>
+                    </div>
+                </section>
+
+                <section class="card" aria-labelledby="rulesHead">
+                    <div class="card-head"><h2 id="rulesHead">Room rules</h2></div>
+                    <div class="card-body">
+                        <ul id="rules" style="padding-left:1.1rem;margin:0;font-size:.9rem"></ul>
+                        <div class="notice notice-info" style="margin:1.1rem 0 0" id="approvalNote"></div>
+                    </div>
+                </section>
+            </div>
+
+            <section class="card" aria-labelledby="availHead">
+                <div class="card-head">
+                    <h2 id="availHead">Availability — next seven days</h2>
+                    <div class="legend">
+                        <span><span class="swatch" style="background:var(--brand-600)"></span>Approved booking</span>
+                        <span><span class="swatch" style="background:#c99a2e"></span>Pending request</span>
+                        <span><span class="swatch" style="background:var(--brand-050);border:1px solid var(--line)"></span>Free</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="availability" id="avail"></div>
+                </div>
+                <div class="card-foot" style="display:flex;justify-content:flex-end">
+                    <a class="btn btn-primary" id="bookBottom" href="#">Book venue</a>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'venues.html' });
+
+    const id = Number(new URLSearchParams(location.search).get('id')) || 1;
+    const v = A.venueById(id);
+    const bookable = v.status === 'Active';
+
+    document.title = v.name + ' — AIKOL Booking System';
+    document.getElementById('crumb').textContent = v.name;
+    document.getElementById('vName').textContent = v.name;
+    document.getElementById('vSub').textContent = v.code + ' · ' + v.venueType + ' · ' + v.location;
+
+    /* Gallery */
+    const variants = [null, 2, 3, 4];
+    const mainImg = document.getElementById('mainImg');
+    function show(i) {
+        mainImg.src = A.resourceImg(v, variants[i]);
+        mainImg.alt = 'Placeholder illustration of ' + v.name + ' — view ' + (i + 1);
+        document.querySelectorAll('#thumbs button').forEach((b, k) =>
+            b.setAttribute('aria-current', String(k === i)));
+    }
+    document.getElementById('thumbs').innerHTML = variants.map((x, i) =>
+        '<button type="button" data-i="' + i + '" aria-label="Show view ' + (i + 1) + '">' +
+        '<img src="' + A.resourceImg(v, x) + '" alt=""></button>').join('');
+    document.querySelectorAll('#thumbs button').forEach(b =>
+        b.addEventListener('click', () => show(Number(b.dataset.i))));
+    show(0);
+
+    /* Information */
+    document.getElementById('info').innerHTML =
+        '<dt>Venue code</dt><dd class="mono">' + A.esc(v.code) + '</dd>' +
+        '<dt>Location</dt><dd>' + A.esc(v.location) + '</dd>' +
+        '<dt>Building</dt><dd>' + A.esc(v.building) + '</dd>' +
+        '<dt>Capacity</dt><dd>' + v.capacity + ' persons</dd>' +
+        '<dt>Venue type</dt><dd>' + A.esc(v.venueType) + '</dd>' +
+        '<dt>Operating hours</dt><dd>' + A.fmtRange(v.open, v.close) + '</dd>' +
+        '<dt>Approval</dt><dd>' + (v.approval ? 'Required' : 'Not required') + '</dd>' +
+        '<dt>Status</dt><dd>' + (bookable
+            ? '<span class="badge badge-approved">Available</span>'
+            : '<span class="badge badge-cancelled">Under maintenance</span>') + '</dd>';
+
+    document.getElementById('vDesc').textContent = v.description;
+
+    document.getElementById('facList').innerHTML = A.facilitiesFor('Venue').map(f => {
+        const has = v.facilities.indexOf(f.code) !== -1;
+        return '<li><span class="' + (has ? 'tick' : 'off') + '" aria-hidden="true">' + (has ? '✓' : '–') + '</span>' +
+            '<span class="' + (has ? '' : 'off') + '">' + A.esc(A.facilityName(f.code)) + '</span></li>';
+    }).join('');
+
+    document.getElementById('rules').innerHTML = v.rules.map(r => '<li>' + A.esc(r) + '</li>').join('');
+    document.getElementById('approvalNote').innerHTML = v.approval
+        ? '<strong>Approval required</strong>Requests for this venue are reviewed by the Kulliyyah office before confirmation.'
+        : '<strong>Immediate confirmation</strong>Bookings for this venue are confirmed automatically, subject to availability.';
+
+    /* Availability */
+    A.availabilityStrip(document.getElementById('avail'), v, A.iso(A.today), 7);
+
+    /* Book actions */
+    ['bookTop', 'bookBottom'].forEach(bid => {
+        const el = document.getElementById(bid);
+        if (bookable) {
+            el.href = 'booking.html?venue=' + v.id;
+        } else {
+            el.href = '#';
+            el.setAttribute('aria-disabled', 'true');
+            el.classList.add('btn');
+            el.classList.remove('btn-primary');
+            el.textContent = 'Unavailable';
+            el.addEventListener('click', e => {
+                e.preventDefault();
+                A.toast('This venue is currently under maintenance and cannot be booked.');
+            });
+        }
+    });
+})();
+</script>
+</body>
+</html>

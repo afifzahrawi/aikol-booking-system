@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create an Account — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="login-page">
+
+    <section class="login-hero">
+        <div class="brand">
+            <img src="assets/images/aikol_logo.png" alt="Placeholder image of the AIKOL Logo" style="width: 200px">
+            <span class="brand-text">
+                <span class="brand-name">Ahmad Ibrahim Kulliyyah of Laws</span>
+                <span class="brand-sub">International Islamic University Malaysia</span>
+            </span>
+        </div>
+
+        <div>
+            <h1>Create an account</h1>
+            <p>
+                Registration is open to anyone with an IIUM matriculation number or staff number.
+                The Kulliyyah does not create accounts by hand.
+            </p>
+            <ul>
+                <li>An IIUM email address is required and is verified before you can book</li>
+                <li>Your matriculation or staff number is recorded for documentation</li>
+                <li>Students may book any venue; vehicles are for lecturers and staff</li>
+                <li>The system has its own sign-in — it is not IIUM single sign-on</li>
+            </ul>
+        </div>
+
+        <p class="foot">
+            Prototype for management review. Nothing entered on this page is stored or sent.
+        </p>
+    </section>
+
+    <section class="login-panel">
+        <main class="card login-card" id="main">
+            <div class="card-body">
+                <h2>Register</h2>
+                <p class="help" style="margin-bottom:1.25rem">
+                    All fields are required unless marked otherwise.
+                </p>
+
+                <form id="regForm" novalidate>
+                    <div class="field">
+                        <label for="name">Full name <span class="req" aria-hidden="true">*</span></label>
+                        <input class="input" type="text" id="name" autocomplete="name" required
+                               placeholder="As it appears on your matriculation or staff card">
+                    </div>
+
+                    <div class="field">
+                        <label for="email">IIUM email address <span class="req" aria-hidden="true">*</span></label>
+                        <input class="input" type="email" id="email" autocomplete="username" required
+                               placeholder="yourname@live.iium.edu.my">
+                        <p class="help" id="emailHelp"></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="affiliation">You are <span class="req" aria-hidden="true">*</span></label>
+                        <select class="select" id="affiliation" required>
+                            <option value="Student">A student</option>
+                            <option value="Lecturer">A lecturer</option>
+                            <option value="Staff">A member of staff</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="idno" id="idLabel">Matriculation number <span class="req" aria-hidden="true">*</span></label>
+                        <input class="input" type="text" id="idno" required placeholder="For example: A21EC0123">
+                        <p class="help" id="idHelp">Recorded for documentation and reporting. It is not your sign-in credential.</p>
+                    </div>
+
+                    <div class="field">
+                        <label for="phone">Telephone number <span class="req" aria-hidden="true">*</span></label>
+                        <input class="input" type="tel" id="phone" autocomplete="tel" required placeholder="011-2345 6789">
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Password <span class="req" aria-hidden="true">*</span></label>
+                        <input class="input" type="password" id="password" autocomplete="new-password" required>
+                        <p class="help">At least 10 characters. Stored only as a hash — nobody, including the
+                            administrator, can read it back.</p>
+                    </div>
+
+                    <div class="field">
+                        <label for="password2">Confirm password <span class="req" aria-hidden="true">*</span></label>
+                        <input class="input" type="password" id="password2" autocomplete="new-password" required>
+                    </div>
+
+                    <div id="validation" aria-live="polite"></div>
+
+                    <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Create account</button>
+                </form>
+
+                <p class="help" style="margin-top:1rem">
+                    Already registered? <a href="login.html">Sign in instead</a>.
+                </p>
+            </div>
+
+            <div class="card-foot">
+                <p class="help" style="margin:0">
+                    <strong>Note on demonstration data:</strong> the sample accounts in this prototype use
+                    <span class="mono">@demo.aikol.test</span> addresses so they are obviously fictional. The rule
+                    enforced above is the real one.
+                </p>
+            </div>
+        </main>
+    </section>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    const S = A.SETTINGS;
+
+    const els = {
+        name: document.getElementById('name'),
+        email: document.getElementById('email'),
+        affiliation: document.getElementById('affiliation'),
+        idno: document.getElementById('idno'),
+        phone: document.getElementById('phone'),
+        password: document.getElementById('password'),
+        password2: document.getElementById('password2'),
+        validation: document.getElementById('validation'),
+        emailHelp: document.getElementById('emailHelp'),
+        idLabel: document.getElementById('idLabel'),
+        idHelp: document.getElementById('idHelp')
+    };
+
+    els.emailHelp.textContent = 'Must end in ' + S.allowedEmailDomains.map(d => '@' + d).join(' or ') +
+        '. A verification link is sent to this address.';
+
+    /* The label follows the affiliation — a lecturer does not have a
+       matriculation number, and asking for one invites bad data. */
+    function syncIdField() {
+        const student = els.affiliation.value === 'Student';
+        els.idLabel.innerHTML = (student ? 'Matriculation number' : 'Staff number') +
+            ' <span class="req" aria-hidden="true">*</span>';
+        els.idno.placeholder = student ? 'For example: A21EC0123' : 'For example: S1042';
+        els.idHelp.textContent = student
+            ? 'Recorded for documentation and reporting. It is not your sign-in credential.'
+            : 'Recorded for documentation. Lecturers and staff may also request Kulliyyah vehicles.';
+    }
+    els.affiliation.addEventListener('change', () => { syncIdField(); validate(); });
+    syncIdField();
+
+    function domainOk(email) {
+        const at = email.lastIndexOf('@');
+        if (at < 1) return false;
+        const domain = email.slice(at + 1).toLowerCase();
+        return S.allowedEmailDomains.indexOf(domain) !== -1;
+    }
+
+    function validate() {
+        const errors = [];
+        const email = els.email.value.trim();
+
+        if (!els.name.value.trim()) errors.push('Enter your full name.');
+
+        if (!email) errors.push('Enter your IIUM email address.');
+        else if (email.indexOf('@') < 1) errors.push('Enter a complete email address.');
+        else if (!domainOk(email))
+            errors.push('Registration is restricted to IIUM addresses. "' + email.slice(email.lastIndexOf('@')) +
+                        '" is not accepted — use ' + S.allowedEmailDomains.map(d => '@' + d).join(' or ') + '.');
+        else if (A.users.some(u => u.email.toLowerCase() === email.toLowerCase()))
+            errors.push('An account already exists for this address.');
+
+        const idno = els.idno.value.trim();
+        const student = els.affiliation.value === 'Student';
+        if (!idno) errors.push('Enter your ' + (student ? 'matriculation' : 'staff') + ' number.');
+        else if (A.users.some(u => u.idNo.toLowerCase() === idno.toLowerCase()))
+            errors.push('That ' + (student ? 'matriculation' : 'staff') + ' number is already registered. ' +
+                        'Each number may hold one account.');
+
+        if (!els.phone.value.trim()) errors.push('Enter a telephone number.');
+
+        if (els.password.value.length < 10) errors.push('The password must be at least 10 characters.');
+        else if (els.password.value !== els.password2.value) errors.push('The two passwords do not match.');
+
+        return errors;
+    }
+
+    function refresh() {
+        const errors = validate();
+        const touched = els.name.value || els.email.value || els.idno.value ||
+                        els.phone.value || els.password.value;
+        els.validation.innerHTML = !touched ? ''
+            : errors.length
+                ? '<div class="notice notice-danger"><strong>Please correct the following:</strong>' +
+                  '<ul style="margin:.5rem 0 0;padding-left:1.1rem">' +
+                  errors.map(x => '<li>' + A.esc(x) + '</li>').join('') + '</ul></div>'
+                : '<div class="notice notice-success">Ready to submit. A verification link will be sent to ' +
+                  A.esc(els.email.value.trim()) + '.</div>';
+        document.getElementById('submitBtn').disabled = errors.length > 0;
+    }
+
+    Object.keys(els).forEach(k => {
+        if (els[k] && els[k].addEventListener && els[k].tagName) els[k].addEventListener('input', refresh);
+    });
+
+    document.getElementById('regForm').addEventListener('submit', e => {
+        e.preventDefault();
+        if (validate().length) return;
+        A.modal({
+            title: 'Check your email',
+            body:
+                '<p>An account would be created for <strong>' + A.esc(els.email.value.trim()) + '</strong> ' +
+                'with the status <em>unverified</em>.</p>' +
+                '<p>A verification link would be emailed. Until it is followed, the account can sign in but ' +
+                '<strong>cannot book anything</strong>.</p>' +
+                '<p class="help">The message is written to the email outbox in the same transaction as the ' +
+                'account, and delivered by the mail sender. Nothing is sent from this prototype.</p>',
+            buttons: [{ label: 'Back to sign in', cls: 'btn-primary', onClick: () => {
+                window.location.href = 'login.html';
+            } }]
+        });
+    });
+
+    refresh();
+})();
+</script>
+</body>
+</html>

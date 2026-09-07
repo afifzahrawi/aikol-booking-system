@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manage Vehicles — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <div class="page-head">
+                <div>
+                    <h1>Manage vehicles</h1>
+                    <p class="lede">Kulliyyah cars, their road-legal status and their booking availability.</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" type="button" id="importBtn">Import from CSV</button>
+                    <button class="btn btn-primary" type="button" id="addBtn">Add vehicle</button>
+                </div>
+            </div>
+
+            <div class="grid grid-4" style="margin-bottom:1.25rem">
+                <div class="stat"><span class="k">Fleet size</span><span class="v" id="sTotal">0</span>
+                    <span class="d">Cars on record</span></div>
+                <div class="stat accent"><span class="k">Available</span><span class="v" id="sActive">0</span>
+                    <span class="d">Bookable right now</span></div>
+                <div class="stat warn"><span class="k">Attention needed</span><span class="v" id="sFlag">0</span>
+                    <span class="d">Expired or expiring documents</span></div>
+                <div class="stat"><span class="k">Trips this month</span><span class="v" id="sTrips">0</span>
+                    <span class="d">Bookings against vehicles</span></div>
+            </div>
+
+            <div class="notice notice-warn" id="expiryNote" hidden></div>
+
+            <section class="card" aria-labelledby="vHead">
+                <div class="card-head">
+                    <h2 id="vHead">Vehicle list</h2>
+                    <span class="help" id="info"></span>
+                </div>
+
+                <div class="toolbar">
+                    <div class="field grow">
+                        <label for="q">Search</label>
+                        <input class="input" type="search" id="q" placeholder="Name, code, registration or model">
+                    </div>
+                    <div class="field">
+                        <label for="status">Status</label>
+                        <select class="select" id="status">
+                            <option value="">All</option>
+                            <option value="Active">Active</option>
+                            <option value="Under Maintenance">Under maintenance</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="docs">Documents</label>
+                        <select class="select" id="docs">
+                            <option value="">All</option>
+                            <option value="ok">In order</option>
+                            <option value="soon">Renewal due within 60 days</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th scope="col">Vehicle</th>
+                                <th scope="col">Registration</th>
+                                <th scope="col">Seats</th>
+                                <th scope="col">Mileage</th>
+                                <th scope="col">Road tax</th>
+                                <th scope="col">Insurance</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+
+                <div class="card-foot">
+                    <div class="pagination" id="pager"></div>
+                </div>
+            </section>
+
+            <p class="help" style="margin-top:1rem">
+                A vehicle whose road tax or insurance has expired cannot be booked, whatever its status.
+                The check is against the <strong>end</strong> of the requested trip, not the day it is requested.
+            </p>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'admin', active: 'admin-vehicles.html' });
+
+    const todayISO = A.iso(A.today);
+    const soonISO = A.iso(A.addDays(A.today, 60));
+
+    function docState(v) {
+        if (v.roadTaxExpiry < todayISO || v.insuranceExpiry < todayISO) return 'expired';
+        if (v.roadTaxExpiry < soonISO || v.insuranceExpiry < soonISO) return 'soon';
+        return 'ok';
+    }
+
+    /* ---- Summary tiles ---- */
+    const monthPrefix = todayISO.slice(0, 7);
+    document.getElementById('sTotal').textContent = A.vehicles.length;
+    document.getElementById('sActive').textContent =
+        A.vehicles.filter(v => v.status === 'Active' && docState(v) !== 'expired').length;
+    const flagged = A.vehicles.filter(v => docState(v) !== 'ok');
+    document.getElementById('sFlag').textContent = flagged.length;
+    document.getElementById('sTrips').textContent =
+        A.bookings.filter(b => b.kind === 'Vehicle' && b.startAt.indexOf(monthPrefix) === 0).length;
+
+    if (flagged.length) {
+        const note = document.getElementById('expiryNote');
+        note.hidden = false;
+        note.innerHTML = '<strong>' + flagged.length + ' vehicle' + (flagged.length === 1 ? '' : 's') +
+            ' need attention:</strong> ' +
+            flagged.map(v => A.esc(v.name) + ' (' +
+                (docState(v) === 'expired' ? 'expired' : 'renewal due') + ')').join(', ') + '.';
+    }
+
+    function expiryCell(dateISO) {
+        const expired = dateISO < todayISO;
+        const soon = !expired && dateISO < soonISO;
+        const cls = expired ? 'badge-rejected' : (soon ? 'badge-pending' : 'badge-approved');
+        return '<span class="badge ' + cls + '">' + A.fmtDate(dateISO) + '</span>';
+    }
+
+    A.tableController({
+        rows: () => A.vehicles,
+        tbody: document.getElementById('rows'),
+        pager: document.getElementById('pager'),
+        info: document.getElementById('info'),
+        cols: 8,
+        pageSize: 10,
+        controls: [
+            { key: 'q', input: document.getElementById('q') },
+            { key: 'status', input: document.getElementById('status'), event: 'change' },
+            { key: 'docs', input: document.getElementById('docs'), event: 'change' }
+        ],
+        match: (v, f) => {
+            const term = (f.q || '').trim().toLowerCase();
+            if (term && !(v.name + ' ' + v.code + ' ' + v.registration + ' ' + v.make + ' ' + v.model)
+                .toLowerCase().includes(term)) return false;
+            if (f.status && v.status !== f.status) return false;
+            if (f.docs && docState(v) !== f.docs) return false;
+            return true;
+        },
+        render: v => '<tr>' +
+            '<td><strong>' + A.esc(v.name) + '</strong>' +
+                '<br><span class="help">' + A.esc(v.make + ' ' + v.model + ' ' + v.year) + ' · ' +
+                '<span class="mono">' + A.esc(v.code) + '</span></span></td>' +
+            '<td><span class="mono">' + A.esc(v.registration) + '</span></td>' +
+            '<td>' + v.seats + '<br><span class="help">' + A.esc(v.transmission === 'Auto' ? 'Auto' : 'Manual') + '</span></td>' +
+            '<td>' + v.mileage.toLocaleString() + ' km</td>' +
+            '<td>' + expiryCell(v.roadTaxExpiry) + '</td>' +
+            '<td>' + expiryCell(v.insuranceExpiry) + '</td>' +
+            '<td>' + (v.status === 'Active'
+                ? '<span class="badge badge-active">Active</span>'
+                : '<span class="badge badge-inactive">Maintenance</span>') + '</td>' +
+            '<td><div class="btn-group">' +
+            '<a class="btn btn-sm" href="vehicle-details.html?id=' + v.id + '">View</a>' +
+            '<button class="btn btn-sm" type="button" data-edit="' + v.id + '">Edit</button>' +
+            '<button class="btn btn-sm" type="button" data-toggle="' + v.id + '">' +
+                (v.status === 'Active' ? 'Set maintenance' : 'Set active') + '</button>' +
+            '</div></td></tr>'
+    });
+
+    document.getElementById('rows').addEventListener('click', e => {
+        const ed = e.target.closest('button[data-edit]');
+        const tg = e.target.closest('button[data-toggle]');
+        if (ed) return openEdit(A.vehicleById(Number(ed.dataset.edit)));
+        if (tg) return openToggle(A.vehicleById(Number(tg.dataset.toggle)));
+    });
+    document.getElementById('addBtn').addEventListener('click', () => openEdit(null));
+    document.getElementById('importBtn').addEventListener('click', () => {
+        A.toast('The vehicle CSV template carries code, name, registration, class, make, model, year, seats, ' +
+                'transmission, fuel type, features, road tax and insurance expiry, and current mileage. ' +
+                'Rows are validated and previewed before anything is written.');
+    });
+
+    function facilityCheckboxes(v) {
+        return A.facilitiesFor('Vehicle').map(f =>
+            '<label class="checkline" style="font-weight:400">' +
+            '<input type="checkbox" value="' + f.code + '"' +
+            (v && v.facilities.indexOf(f.code) !== -1 ? ' checked' : '') + '> ' + A.esc(f.name) + '</label>'
+        ).join('');
+    }
+
+    function openEdit(v) {
+        const isNew = !v;
+        A.modal({
+            title: isNew ? 'Add vehicle' : 'Edit ' + v.name,
+            body:
+                '<div class="field-row">' +
+                '<div class="field"><label for="eName">Display name</label>' +
+                '<input class="input" type="text" id="eName" value="' + (v ? A.esc(v.name) : '') + '"></div>' +
+                '<div class="field"><label for="eCode">Resource code</label>' +
+                '<input class="input mono" type="text" id="eCode" value="' + (v ? A.esc(v.code) : '') + '"' +
+                (isNew ? ' placeholder="AIKOL-CAR-05"' : ' readonly') + '></div></div>' +
+
+                '<div class="field-row">' +
+                '<div class="field"><label for="eReg">Registration</label>' +
+                '<input class="input mono" type="text" id="eReg" value="' + (v ? A.esc(v.registration) : '') + '"></div>' +
+                '<div class="field"><label for="eClass">Class</label>' +
+                '<select class="select" id="eClass"><option>Car</option></select>' +
+                '<p class="help">Cars only in the first release.</p></div></div>' +
+
+                '<div class="field-row">' +
+                '<div class="field"><label for="eSeats">Seats</label>' +
+                '<input class="input" type="number" id="eSeats" min="2" value="' + (v ? v.seats : 5) + '"></div>' +
+                '<div class="field"><label for="eTrans">Transmission</label>' +
+                '<select class="select" id="eTrans">' +
+                ['Auto', 'Manual'].map(t => '<option' + (v && v.transmission === t ? ' selected' : '') + '>' + t + '</option>').join('') +
+                '</select></div></div>' +
+
+                '<div class="field-row">' +
+                '<div class="field"><label for="eTax">Road tax expiry</label>' +
+                '<input class="input" type="date" id="eTax" value="' + (v ? v.roadTaxExpiry : '') + '"></div>' +
+                '<div class="field"><label for="eIns">Insurance expiry</label>' +
+                '<input class="input" type="date" id="eIns" value="' + (v ? v.insuranceExpiry : '') + '"></div></div>' +
+
+                '<div class="field"><label for="eMileage">Current mileage (km)</label>' +
+                '<input class="input" type="number" id="eMileage" value="' + (v ? v.mileage : 0) + '">' +
+                '<p class="help">Updated automatically from the mileage recorded at each key return.</p></div>' +
+
+                '<div class="field"><span class="label" style="display:block;font-weight:600;margin-bottom:.4rem">Features</span>' +
+                '<div class="facility-grid">' + facilityCheckboxes(v) + '</div>' +
+                '<p class="help">Maintained on the <a href="admin-facilities.html">Facilities</a> screen.</p></div>' +
+
+                '<div class="field"><label for="eDesc">Description</label>' +
+                '<textarea class="textarea" id="eDesc">' + (v ? A.esc(v.description) : '') + '</textarea></div>' +
+
+                '<div class="field"><span class="label" style="display:block;font-weight:600;margin-bottom:.4rem">Photographs</span>' +
+                '<div class="dropzone">Drag photographs here, or choose files. JPEG, PNG or WebP, up to 5 MB each.</div></div>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: isNew ? 'Create vehicle' : 'Save changes', cls: 'btn-primary', onClick: () => {
+                    A.toast(isNew
+                        ? 'The vehicle would be created as a resource, so it books through exactly the same rules as a venue.'
+                        : 'The changes would be saved and written to the audit log.');
+                } }
+            ]
+        });
+    }
+
+    function openToggle(v) {
+        const off = v.status === 'Active';
+        const future = A.bookings.filter(b =>
+            b.resourceId === v.id && A.BLOCKING.indexOf(b.status) !== -1 && b.startAt > todayISO).length;
+        A.modal({
+            title: (off ? 'Set to maintenance' : 'Return to service') + ' — ' + v.name,
+            body: off
+                ? '<p><strong>' + A.esc(v.name) + '</strong> would stop appearing on the vehicle list and could ' +
+                  'not be requested.</p>' +
+                  (future
+                    ? '<div class="notice notice-warn">There ' + (future === 1 ? 'is' : 'are') + ' <strong>' + future +
+                      '</strong> pending or approved booking' + (future === 1 ? '' : 's') + ' in the future for this ' +
+                      'vehicle. They are <strong>not</strong> cancelled — each must be handled deliberately, with a ' +
+                      'reason recorded.</div>'
+                    : '<p class="help">No future bookings are affected.</p>') +
+                  '<p class="help">The vehicle and its booking history are retained. Nothing is deleted.</p>'
+                : '<p><strong>' + A.esc(v.name) + '</strong> would return to the vehicle list and become ' +
+                  'requestable, provided its road tax and insurance are current.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: off ? 'Set to maintenance' : 'Set active', cls: off ? 'btn-danger' : 'btn-primary',
+                  onClick: () => A.toast('The vehicle status would be updated and the change written to the audit log.') }
+            ]
+        });
+    }
+})();
+</script>
+</body>
+</html>

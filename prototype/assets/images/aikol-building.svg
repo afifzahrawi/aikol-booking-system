@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" role="img">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dcebf4"/>
+      <stop offset="1" stop-color="#f4f1e7"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="400" fill="url(#sky)"/>
+  <rect x="110" y="150" width="680" height="185" fill="#faf7ee" stroke="#14675b" stroke-opacity=".3"/>
+  <path d="M 330 150 L 450 96 L 570 150 Z" fill="#faf7ee" stroke="#14675b" stroke-opacity=".34" stroke-width="1.6"/>
+  <circle cx="450" cy="136" r="9" fill="none" stroke="#d99b28" stroke-width="2"/>
+  <polygon points="450,127 459,136 450,145 441,136" fill="#d99b28" fill-opacity=".8"/>
+  <path d="M 150 330 L 150 250 Q 150 205 194 200 Q 238 205 238 250 L 238 330 Z" fill="#f2efe6" stroke="#14675b" stroke-opacity=".38" stroke-width="1.6"/>
+  <path d="M 166 330 L 166 256 Q 166 222 194 218 Q 222 222 222 256 L 222 330 Z" fill="#14675b" fill-opacity=".13"/>
+  <path d="M 272 330 L 272 250 Q 272 205 316 200 Q 360 205 360 250 L 360 330 Z" fill="#f2efe6" stroke="#14675b" stroke-opacity=".38" stroke-width="1.6"/>
+  <path d="M 288 330 L 288 256 Q 288 222 316 218 Q 344 222 344 256 L 344 330 Z" fill="#14675b" fill-opacity=".13"/>
+  <path d="M 394 330 L 394 250 Q 394 205 438 200 Q 482 205 482 250 L 482 330 Z" fill="#f2efe6" stroke="#14675b" stroke-opacity=".38" stroke-width="1.6"/>
+  <path d="M 410 330 L 410 256 Q 410 222 438 218 Q 466 222 466 256 L 466 330 Z" fill="#14675b" fill-opacity=".13"/>
+  <path d="M 516 330 L 516 250 Q 516 205 560 200 Q 604 205 604 250 L 604 330 Z" fill="#f2efe6" stroke="#14675b" stroke-opacity=".38" stroke-width="1.6"/>
+  <path d="M 532 330 L 532 256 Q 532 222 560 218 Q 588 222 588 256 L 588 330 Z" fill="#14675b" fill-opacity=".13"/>
+  <path d="M 638 330 L 638 250 Q 638 205 682 200 Q 726 205 726 250 L 726 330 Z" fill="#f2efe6" stroke="#14675b" stroke-opacity=".38" stroke-width="1.6"/>
+  <path d="M 654 330 L 654 256 Q 654 222 682 218 Q 710 222 710 256 L 710 330 Z" fill="#14675b" fill-opacity=".13"/>
+  <rect x="74" y="150" width="8" height="185" fill="#14675b" fill-opacity=".42"/>
+  <path d="M 78 150 Q 92 150 106 191" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 78 150 Q 105 142 132 175" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 78 150 Q 110 132 143 154" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 78 150 Q 108 121 139 132" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 78 150 Q 98 111 118 113" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <rect x="832" y="150" width="8" height="185" fill="#14675b" fill-opacity=".42"/>
+  <path d="M 836 150 Q 848 147 860 185" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 836 150 Q 859 141 883 172" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 836 150 Q 864 132 892 154" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 836 150 Q 862 122 888 135" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 836 150 Q 853 114 870 118" fill="none" stroke="#14675b" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <rect x="0" y="335" width="900" height="65" fill="#14675b" fill-opacity=".09"/>
+  <rect x="0" y="366" width="900" height="34" fill="#14675b" fill-opacity=".92"/>
+  <text x="20" y="388" font-family="Georgia, serif" font-size="15" fill="#ffffff">Ahmad Ibrahim Kulliyyah of Laws</text>
+  <text x="880" y="388" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="10.5" fill="#ffffff" fill-opacity=".85" letter-spacing="1.4">PLACEHOLDER IMAGE</text>
+</svg>

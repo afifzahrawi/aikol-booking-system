@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vehicle Details — AIKOL Booking System</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <div class="app-body">
+        <main class="main" id="main">
+
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="dashboard.html">Dashboard</a><span>/</span>
+                <a href="vehicles.html">Vehicles</a><span>/</span>
+                <span id="crumb">Vehicle</span>
+            </nav>
+
+            <div class="page-head">
+                <div>
+                    <h1 id="vName">Vehicle</h1>
+                    <p class="lede" id="vSub"></p>
+                </div>
+                <div class="btn-group">
+                    <a class="btn" href="vehicles.html">Back to vehicles</a>
+                    <a class="btn btn-primary" id="bookTop" href="#">Request trip</a>
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="align-items:start;margin-bottom:1.25rem">
+
+                <div>
+                    <div class="gallery-main">
+                        <img id="mainImg" src="" alt="">
+                    </div>
+                    <div class="gallery-thumbs" id="thumbs"></div>
+                    <p class="help">Placeholder illustrations. Actual vehicle photographs will be supplied by the Kulliyyah.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><h2>Vehicle information</h2></div>
+                    <div class="card-body">
+                        <dl class="meta-list" id="info"></dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="align-items:start;margin-bottom:1.25rem">
+
+                <section class="card" aria-labelledby="aboutHead">
+                    <div class="card-head"><h2 id="aboutHead">About this vehicle</h2></div>
+                    <div class="card-body">
+                        <p id="vDesc"></p>
+                        <h3 style="margin-top:1.25rem">Features</h3>
+                        <ul class="facility-grid" id="facList" style="padding:0;margin:0"></ul>
+                    </div>
+                </section>
+
+                <section class="card" aria-labelledby="rulesHead">
+                    <div class="card-head"><h2 id="rulesHead">Conditions of use</h2></div>
+                    <div class="card-body">
+                        <ul id="rules" style="padding-left:1.1rem;margin:0;font-size:.9rem"></ul>
+                        <div class="notice notice-info" style="margin:1.1rem 0 0" id="approvalNote"></div>
+                    </div>
+                </section>
+            </div>
+
+            <section class="card" aria-labelledby="availHead" style="margin-bottom:1.25rem">
+                <div class="card-head">
+                    <h2 id="availHead">Availability — next fourteen days</h2>
+                    <div class="legend">
+                        <span><span class="swatch" style="background:var(--brand-600)"></span>Approved booking</span>
+                        <span><span class="swatch" style="background:#c99a2e"></span>Pending request</span>
+                        <span><span class="swatch" style="background:var(--brand-050);border:1px solid var(--line)"></span>Free</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="help" style="margin:0 0 .9rem">A trip that runs overnight occupies the whole of each
+                        intervening day. Multi-day bookings appear as <em>All day</em> on the days between collection
+                        and return.</p>
+                    <div class="availability" id="avail"></div>
+                </div>
+                <div class="card-foot" style="display:flex;justify-content:flex-end">
+                    <a class="btn btn-primary" id="bookBottom" href="#">Request trip</a>
+                </div>
+            </section>
+
+            <section class="card" aria-labelledby="tripHead">
+                <div class="card-head"><h2 id="tripHead">Recent trips</h2></div>
+                <div class="card-body" style="padding:0">
+                    <div class="table-wrap">
+                        <table class="data">
+                            <thead>
+                                <tr><th scope="col">Reference</th><th scope="col">Period</th>
+                                    <th scope="col">Destination</th><th scope="col">Mileage</th>
+                                    <th scope="col">Status</th></tr>
+                            </thead>
+                            <tbody id="trips"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="js/prototype.js"></script>
+<script>
+(function () {
+    const A = AIKOL;
+    A.buildChrome({ mode: 'user', active: 'vehicles.html' });
+
+    const id = Number(new URLSearchParams(location.search).get('id')) || A.vehicles[0].id;
+    const v = A.vehicleById(id);
+    const me = A.CURRENT_USER;
+    const todayISO = A.iso(A.today);
+
+    document.title = v.name + ' — AIKOL Booking System';
+    document.getElementById('crumb').textContent = v.name;
+    document.getElementById('vName').textContent = v.name;
+    document.getElementById('vSub').textContent =
+        v.make + ' ' + v.model + ' ' + v.year + ' · ' + v.registration + ' · ' + v.code;
+    document.getElementById('vDesc').textContent = v.description;
+
+    /* Gallery */
+    const main = document.getElementById('mainImg');
+    main.src = A.resourceImg(v);
+    main.alt = 'Placeholder image of ' + v.name;
+    document.getElementById('thumbs').innerHTML = [1, 2, 3, 4].map((n, i) =>
+        '<button type="button" data-v="' + n + '"' + (i === 0 ? ' aria-current="true"' : '') + '>' +
+        '<img src="' + A.resourceImg(v, n === 1 ? 0 : n) + '" alt="View ' + n + ' of ' + A.esc(v.name) + '"></button>'
+    ).join('');
+    document.getElementById('thumbs').addEventListener('click', e => {
+        const b = e.target.closest('button[data-v]');
+        if (!b) return;
+        const n = Number(b.dataset.v);
+        main.src = A.resourceImg(v, n === 1 ? 0 : n);
+        document.querySelectorAll('#thumbs button').forEach(x => x.removeAttribute('aria-current'));
+        b.setAttribute('aria-current', 'true');
+    });
+
+    /* Expiry is a booking blocker, so it is shown plainly rather than buried. */
+    function expiryCell(dateISO) {
+        const expired = dateISO < todayISO;
+        const soon = !expired && dateISO < A.iso(A.addDays(A.today, 60));
+        const cls = expired ? 'badge-rejected' : (soon ? 'badge-pending' : 'badge-approved');
+        const tail = expired ? ' — expired' : (soon ? ' — renewal due' : '');
+        return '<span class="badge ' + cls + '">' + A.fmtDate(dateISO) + A.esc(tail) + '</span>';
+    }
+
+    document.getElementById('info').innerHTML = [
+        ['Resource code', '<span class="mono">' + A.esc(v.code) + '</span>'],
+        ['Registration', '<span class="mono">' + A.esc(v.registration) + '</span>'],
+        ['Class', A.esc(v.vehicleClass)],
+        ['Seats', v.seats + ' (driver plus ' + (v.seats - 1) + ' passengers)'],
+        ['Transmission', A.esc(v.transmission === 'Auto' ? 'Automatic' : 'Manual')],
+        ['Fuel', A.esc(v.fuelType)],
+        ['Current mileage', v.mileage.toLocaleString() + ' km'],
+        ['Road tax', expiryCell(v.roadTaxExpiry)],
+        ['Insurance', expiryCell(v.insuranceExpiry)],
+        ['Bookable window', A.fmtTime(v.open) + ' – ' + A.fmtTime(v.close)],
+        ['Maximum trip', A.SETTINGS.maxVehicleTripDays + ' days'],
+        ['Status', A.badge(v.status === 'Active' ? 'Active' : 'Cancelled').replace('Cancelled', 'Under maintenance')]
+    ].map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('');
+
+    document.getElementById('facList').innerHTML = v.facilities
+        .map(f => '<li><span class="pill">' + A.esc(A.facilityName(f)) + '</span></li>').join('');
+    document.getElementById('rules').innerHTML = v.rules.map(r => '<li>' + A.esc(r) + '</li>').join('');
+
+    /* Why the booking button may be unavailable — stated, not just disabled. */
+    const mayDrive = A.canBookVehicle(me);   /* eligibility to REQUEST a car; the driver is assigned by the office */
+    const hasLicence = !!me.licenceNo;
+    const roadTaxOk = v.roadTaxExpiry >= todayISO;
+    const insuranceOk = v.insuranceExpiry >= todayISO;
+    const active = v.status === 'Active';
+    /* Everyone may book. Whether they may DRIVE is a separate question, and
+       it changes the wording below rather than blocking the button. */
+    const canBook = active && roadTaxOk && insuranceOk;
+
+    const note = document.getElementById('approvalNote');
+    const reasons = [];
+    /* Eligibility is no longer a reason a vehicle cannot be requested. */
+    if (!active) reasons.push('this vehicle is currently under maintenance');
+    if (!roadTaxOk) reasons.push('its road tax expired on ' + A.fmtDate(v.roadTaxExpiry));
+    if (!insuranceOk) reasons.push('its insurance expired on ' + A.fmtDate(v.insuranceExpiry));
+
+    if (canBook) {
+        note.className = 'notice notice-info';
+        note.innerHTML = '<strong>Every vehicle booking requires approval.</strong> ' +
+            (mayDrive
+                ? 'You may drive this car yourself. ' + (hasLicence
+                    ? 'Your licence <span class="mono">' + A.esc(me.licenceNo) + '</span> expires ' + A.fmtDate(me.licenceExpiry) + '.'
+                    : 'You will be asked for your driving licence number and expiry when you submit a trip.')
+                : 'A Kulliyyah car may not be driven by a student, so your trip will request a driver from the ' +
+                  '<strong>Vehicle Management Unit</strong> through STADD. That route also needs ' +
+                  '<strong>Kulliyyah management approval</strong>, in addition to the booking approval.');
+    } else {
+        note.className = 'notice notice-warn';
+        note.innerHTML = '<strong>This vehicle cannot be requested at the moment</strong> because ' +
+            reasons.join(', and ') + '.';
+    }
+
+    ['bookTop', 'bookBottom'].forEach(bid => {
+        const btn = document.getElementById(bid);
+        if (canBook) {
+            btn.href = 'vehicle-booking.html?vehicle=' + v.id;
+        } else {
+            btn.removeAttribute('href');
+            btn.setAttribute('aria-disabled', 'true');
+            btn.classList.add('btn-outline');
+            btn.textContent = 'Unavailable';
+        }
+    });
+
+    A.availabilityStrip(document.getElementById('avail'), v, A.iso(A.today), 14);
+
+    /* Recent trips, newest first, with the mileage recorded at key return. */
+    const trips = A.bookings
+        .filter(b => b.resourceId === v.id && (b.status === 'Completed' || b.status === 'Approved'))
+        .slice(0, 8);
+    document.getElementById('trips').innerHTML = trips.length ? trips.map(b => {
+        const k = A.keyForBooking(b.id);
+        const mileage = k && k.mileageIn
+            ? (k.mileageOut.toLocaleString() + ' → ' + k.mileageIn.toLocaleString() + ' km')
+            : (k && k.mileageOut ? k.mileageOut.toLocaleString() + ' km out' : '—');
+        return '<tr>' +
+            '<td><span class="mono">' + A.esc(b.ref) + '</span></td>' +
+            '<td>' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) +
+                (b.multiDay ? ' <span class="badge badge-muted">' + A.esc(A.durationLabel(b.startAt, b.endAt)) + '</span>' : '') + '</td>' +
+            '<td>' + A.esc(b.destination || '—') + '</td>' +
+            '<td>' + mileage + '</td>' +
+            '<td>' + A.badge(b.status) + '</td></tr>';
+    }).join('') : '<tr><td colspan="5"><div class="empty-state">No trips recorded for this vehicle.</div></td></tr>';
+})();
+</script>
+</body>
+</html>
