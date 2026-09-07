@@ -6,6 +6,7 @@ package.json
 # Temporary patch and check scripts
 _*.py
 _*.js
+_*.txt
 prototype/_*.py
 prototype/_*.js
 
