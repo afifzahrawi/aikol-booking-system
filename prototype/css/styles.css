@@ -359,7 +359,14 @@ button, input, select, textarea { font-family: inherit; }
     font: 500 13px var(--font-sans); color: var(--ink-700);
     background: transparent; cursor: pointer;
 }
+.seg a {
+    padding: 7px 15px; border-radius: var(--r-sm);
+    font: 500 13px var(--font-sans); color: var(--ink-700);
+    display: inline-flex; align-items: center;
+}
+.seg a:hover { background: var(--brand-050); color: var(--brand); text-decoration: none; }
 .seg [aria-pressed="true"], .seg .on { background: var(--brand); color: #fff; }
+.seg a[aria-pressed="true"], .seg .on { color: #fff; }
 
 /* ---------- 7. Forms ------------------------------------------------------ */
 .field { margin-bottom: 16px; }
@@ -436,6 +443,16 @@ button, input, select, textarea { font-family: inherit; }
     text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
 }
 .searchbar .v { display: block; font-size: 14px; color: var(--ink); }
+/* The fields are real controls now. They sit flush in the bar rather than
+   carrying their own boxes, so the bar still reads as one object. */
+.searchbar select.v, .searchbar input.v {
+    width: 100%; border: 0; background: transparent; padding: 0;
+    font: 14px var(--font-sans); color: var(--ink); cursor: pointer;
+}
+.searchbar select.v:focus, .searchbar input.v:focus {
+    outline: 2px solid var(--brand-link); outline-offset: 3px; border-radius: 2px;
+}
+.searchbar select.v:disabled { color: var(--muted); cursor: default; }
 .searchbar button {
     border: none; background: var(--brand); color: #fff;
     font: 500 14px var(--font-sans); cursor: pointer; letter-spacing: .02em;
@@ -469,6 +486,18 @@ button, input, select, textarea { font-family: inherit; }
 .combo-picked .who { flex: 1; min-width: 0; }
 .combo-picked .who b { display: block; }
 .combo-picked .who span { font-size: 11.5px; color: var(--ink-500); }
+
+/* One row per weekday in a recurring booking. A class is rarely at the same
+   hour every day it meets, so each day carries its own times. */
+.dowrow {
+    display: grid; grid-template-columns: 108px 1fr 12px 1fr; gap: 8px;
+    align-items: center; padding: 5px 0;
+}
+.dowrow + .dowrow { border-top: 1px solid var(--line-soft); }
+.dowrow .checkline { margin: 0; }
+.dowrow .sep { text-align: center; color: var(--muted); }
+.dowrow select { padding: 6px 8px; font-size: 12.5px; }
+.dowrow[data-on="false"] select, .dowrow[data-on="false"] .sep { visibility: hidden; }
 
 /* ---------- 8. Tables ----------------------------------------------------- */
 .table-wrap { overflow-x: auto; }

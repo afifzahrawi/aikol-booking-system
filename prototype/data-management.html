@@ -101,6 +101,55 @@
             </section>
 
             <!-- ==================== RETENTION ==================== -->
+            <!-- The calendar recurring bookings are generated against. -->
+            <section class="card" style="margin-bottom:1.25rem" aria-labelledby="calHead">
+                <div class="card-head">
+                    <h2 id="calHead">Academic calendar</h2>
+                    <span class="help" style="margin:0">Recurring bookings are generated inside these dates</span>
+                </div>
+                <div class="card-body">
+                    <p class="help" style="margin-top:0">
+                        A weekly class does not run before the semester starts, after it ends, or through a
+                        break. Setting the dates here is what stops a semester-long booking holding a lecture
+                        room across the break, against everyone else, for a class nobody attends.
+                    </p>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="termName">Semester</label>
+                            <input class="input" type="text" id="termName" maxlength="60">
+                        </div>
+                        <div class="field">
+                            <span class="label">Teaching weeks</span>
+                            <p class="help" id="termWeeks" style="margin-top:6px"></p>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="termStart">First day of teaching</label>
+                            <input class="input" type="date" id="termStart">
+                        </div>
+                        <div class="field">
+                            <label for="termEnd">Last day of teaching</label>
+                            <input class="input" type="date" id="termEnd">
+                        </div>
+                    </div>
+
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px">
+                        <span class="label" style="margin:0">Breaks</span>
+                        <button class="btn btn-sm" type="button" id="addBreak">Add a break</button>
+                    </div>
+                    <div id="breaks" style="display:flex;flex-direction:column;gap:10px"></div>
+
+                    <div id="calErr" aria-live="polite" style="margin-top:14px"></div>
+                </div>
+                <div class="card-foot" style="display:flex;justify-content:flex-end;gap:10px">
+                    <button class="btn" type="button" id="calRevert">Discard changes</button>
+                    <button class="btn btn-primary" type="button" id="calSave">Save calendar</button>
+                </div>
+            </section>
+
             <section class="card" style="margin-bottom:1.25rem" aria-labelledby="retHead">
                 <div class="card-head"><h2 id="retHead">Data retention policy</h2></div>
                 <div class="card-body">
@@ -542,6 +591,128 @@
             }]
         });
     });
+
+    /* ---- Academic calendar ---------------------------------------------- */
+    (function calendar() {
+        const T = A.academicTerm;
+        const original = JSON.parse(JSON.stringify(T));
+        let draft = JSON.parse(JSON.stringify(T));
+        const g = id => document.getElementById(id);
+
+        function renderBreaks() {
+            g('breaks').innerHTML = draft.breaks.length ? draft.breaks.map((b, i) =>
+                '<div style="display:grid;grid-template-columns:1fr 150px 150px auto;gap:8px;align-items:end">' +
+                '<div class="field" style="margin:0"><label for="bn' + i + '">Name</label>' +
+                '<input class="input" type="text" id="bn' + i + '" data-i="' + i + '" data-k="name" value="' +
+                A.esc(b.name) + '"></div>' +
+                '<div class="field" style="margin:0"><label for="bs' + i + '">From</label>' +
+                '<input class="input" type="date" id="bs' + i + '" data-i="' + i + '" data-k="start" value="' +
+                A.esc(b.start) + '"></div>' +
+                '<div class="field" style="margin:0"><label for="be' + i + '">To</label>' +
+                '<input class="input" type="date" id="be' + i + '" data-i="' + i + '" data-k="end" value="' +
+                A.esc(b.end) + '"></div>' +
+                '<button class="btn btn-sm btn-danger" type="button" data-rm="' + i + '">Remove</button></div>'
+            ).join('') : '<p class="help" style="margin:0">No breaks. Teaching runs straight through.</p>';
+        }
+
+        function problems() {
+            const out = [];
+            if (!draft.name.trim()) out.push('Give the semester a name.');
+            if (!draft.start || !draft.end) out.push('Set the first and last day of teaching.');
+            else if (draft.end <= draft.start) out.push('Teaching must end after it starts.');
+            draft.breaks.forEach((b, i) => {
+                const n = b.name.trim() || ('Break ' + (i + 1));
+                if (!b.start || !b.end) out.push(n + ': set both dates.');
+                else if (b.end < b.start) out.push(n + ': ends before it starts.');
+                else if (draft.start && draft.end && (b.start < draft.start || b.end > draft.end))
+                    out.push(n + ' falls outside the teaching period, so it would have no effect.');
+            });
+            return out;
+        }
+
+        function refresh() {
+            const errs = problems();
+            g('calErr').innerHTML = errs.length
+                ? '<div class="notice notice-danger"><strong>Fix before saving:</strong>' +
+                  '<ul style="margin:.4rem 0 0;padding-left:1.1rem">' +
+                  errs.map(e => '<li>' + A.esc(e) + '</li>').join('') + '</ul></div>'
+                : '';
+            g('calSave').disabled = errs.length > 0;
+
+            if (draft.start && draft.end && draft.end > draft.start) {
+                const days = Math.round((A.toDate(draft.end + 'T00:00') - A.toDate(draft.start + 'T00:00')) / 86400000) + 1;
+                const off = draft.breaks.reduce((t, b) => t + (b.start && b.end && b.end >= b.start
+                    ? Math.round((A.toDate(b.end + 'T00:00') - A.toDate(b.start + 'T00:00')) / 86400000) + 1 : 0), 0);
+                g('termWeeks').textContent = Math.round((days - off) / 7) + ' teaching weeks · ' +
+                    days + ' days, less ' + off + ' on break';
+            } else {
+                g('termWeeks').textContent = '—';
+            }
+        }
+
+        function load() {
+            g('termName').value = draft.name;
+            g('termStart').value = draft.start;
+            g('termEnd').value = draft.end;
+            renderBreaks();
+            refresh();
+        }
+
+        ['termName', 'termStart', 'termEnd'].forEach(id =>
+            g(id).addEventListener('input', e => {
+                draft[id === 'termName' ? 'name' : id === 'termStart' ? 'start' : 'end'] = e.target.value;
+                refresh();
+            }));
+
+        g('breaks').addEventListener('input', e => {
+            const t = e.target.closest('input[data-i]');
+            if (!t) return;
+            draft.breaks[Number(t.dataset.i)][t.dataset.k] = t.value;
+            refresh();
+        });
+        g('breaks').addEventListener('click', e => {
+            const rm = e.target.closest('button[data-rm]');
+            if (!rm) return;
+            draft.breaks.splice(Number(rm.dataset.rm), 1);
+            renderBreaks(); refresh();
+        });
+        g('addBreak').addEventListener('click', () => {
+            draft.breaks.push({ name: '', start: draft.start || '', end: draft.start || '' });
+            renderBreaks(); refresh();
+        });
+        g('calRevert').addEventListener('click', () => {
+            draft = JSON.parse(JSON.stringify(original));
+            load();
+        });
+        g('calSave').addEventListener('click', () => {
+            if (problems().length) return;
+            A.modal({
+                title: 'Save the academic calendar',
+                body: '<p>Recurring bookings created from now on are generated inside these dates.</p>' +
+                      '<dl class="kv"><dt>Semester</dt><dd>' + A.esc(draft.name) + '</dd>' +
+                      '<dt>Teaching</dt><dd>' + A.esc(A.fmtDate(draft.start)) + ' to ' +
+                      A.esc(A.fmtDate(draft.end)) + '</dd>' +
+                      '<dt>Breaks</dt><dd>' + (draft.breaks.length
+                          ? draft.breaks.map(b => A.esc(b.name || 'Unnamed') + ' · ' +
+                              A.esc(A.fmtDate(b.start)) + '–' + A.esc(A.fmtDate(b.end))).join('<br>')
+                          : 'None') + '</dd></dl>' +
+                      '<div class="notice notice-warn"><strong>Existing bookings are not touched.</strong>' +
+                      'Changing the calendar does not cancel bookings already made inside a date that is now ' +
+                      'a break. Cancel those deliberately, with a reason, so the requester is told.</div>',
+                buttons: [
+                    { label: 'Back' },
+                    { label: 'Save calendar', cls: 'btn-primary', onClick: () => {
+                        Object.keys(draft).forEach(k => { A.academicTerm[k] = draft[k]; });
+                        A.toast('The calendar would be saved and written to the audit log. Nothing is stored ' +
+                                'by this prototype.');
+                    } }
+                ]
+            });
+        });
+
+        load();
+    })();
+
 })();
 </script>
 </body>

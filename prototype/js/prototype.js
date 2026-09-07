@@ -92,6 +92,43 @@
         return days + ' days';
     }
 
+    /* ---------- Academic calendar ----------------------------------------- */
+    /* A recurring class does not run before the semester starts, after it ends,
+       or through a break. Without this the system would cheerfully reserve a
+       lecture room for a tutorial that nobody is going to attend, and hold it
+       against everyone else for the whole break.
+
+       Production stores this as a small `academic_terms` table (one row per
+       semester, plus a `term_breaks` child) rather than in system_settings,
+       because a break has a start, an end and a name of its own — the same
+       test that made facilities a table. */
+    function mondayOf(d) {
+        const x = new Date(d);
+        x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+        return x;
+    }
+    const termStart = mondayOf(addDays(today, -21));
+    const academicTerm = {
+        name: 'Semester 1, 2026/2027',
+        start: iso(termStart),
+        end: iso(addDays(termStart, 15 * 7 - 3)),          // fifteen teaching weeks
+        breaks: [
+            { name: 'Mid-semester break',
+              start: iso(addDays(termStart, 7 * 7)),
+              end: iso(addDays(termStart, 7 * 7 + 6)) }
+        ]
+    };
+
+    /* Why a given date cannot carry a class. Returns '' when it can. */
+    function termExclusion(isoDate) {
+        if (!isoDate) return '';
+        if (isoDate < academicTerm.start) return 'before the semester begins';
+        if (isoDate > academicTerm.end) return 'after the semester ends';
+        const br = academicTerm.breaks.find(b => isoDate >= b.start && isoDate <= b.end);
+        return br ? br.name.toLowerCase() : '';
+    }
+    const inTerm = (isoDate) => !termExclusion(isoDate);
+
     /* ---------- Facilities (a table, maintained by administrators) --------- */
     /* Nine seeded values match the data migration described in the schema doc.
        The rest demonstrate facilities an administrator has since created.     */
@@ -1162,6 +1199,7 @@
     global.AIKOL = {
         // data
         SETTINGS, siteContent, buildFooterHtml, contentLines,
+        academicTerm, termExclusion, inTerm,
         facilities, resources, venues, vehicles, users, bookings, series,
         keyHandovers, emailOutbox, auditLog, CURRENT_USER, ADMIN_USER,
         // date helpers

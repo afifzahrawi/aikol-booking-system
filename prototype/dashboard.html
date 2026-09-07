@@ -26,31 +26,37 @@
 
                     <form class="searchbar" id="searchbar">
                         <label>
-                            <span class="k">Resource</span>
-                            <span class="v" id="fResource">Rooms</span>
+                            <span class="k" for="fKind">Resource</span>
+                            <select class="v" id="fKind">
+                                <option value="Venue">Rooms</option>
+                                <option value="Vehicle">Vehicles</option>
+                            </select>
                         </label>
                         <label>
                             <span class="k">Date</span>
-                            <span class="v" id="fDate">—</span>
+                            <input class="v" type="date" id="fDate">
                         </label>
                         <label>
                             <span class="k">From</span>
-                            <span class="v">10:00</span>
+                            <select class="v" id="fFrom"></select>
                         </label>
                         <label>
                             <span class="k">To</span>
-                            <span class="v">12:00</span>
+                            <select class="v" id="fTo"></select>
                         </label>
                         <label>
                             <span class="k">Building</span>
-                            <span class="v">Any AIKOL building</span>
+                            <select class="v" id="fBuilding"></select>
                         </label>
                         <button type="submit">Check availability</button>
                     </form>
                 </div>
 
-                <div class="caption">Search opens the availability board for that day with 10:00–12:00 highlighted.</div>
+                <div class="caption" id="searchCaption">Pick a time and check — the answer appears below, and you can book straight from it.</div>
             </section>
+
+            <!-- The answer to the search, in place. -->
+            <div id="searchResult" style="margin-bottom: 30px;"></div>
 
             <!-- ===== Your activity ===== -->
             <div id="strip" style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; background: var(--brand); border-radius: var(--r); overflow: hidden;"></div>
@@ -83,9 +89,162 @@
         ' · Kulliyyah rooms and cars, bookable ' + A.SETTINGS.windowStart + '–' + A.SETTINGS.windowEnd +
         ', up to ' + A.SETTINGS.advanceBookingLimitDays + ' days ahead.';
 
-    document.getElementById('fDate').textContent = A.fmtDate(A.today);
     document.getElementById('allLink').textContent =
         'All ' + A.venues.length + ' rooms and ' + A.vehicles.length + ' cars →';
+
+    /* ---- The search answers in place ------------------------------------
+       The old bar navigated to the availability board and left the user to
+       find the answer themselves. It now says yes or no, and books. */
+    const S = A.SETTINGS;
+    const todayISO = A.iso(A.today);
+    const maxISO = A.iso(A.addDays(A.today, S.advanceBookingLimitDays));
+    const $ = id => document.getElementById(id);
+
+    function timeOpts(sel) {
+        let h = '';
+        for (let mm = A.toMin(S.windowStart); mm <= A.toMin(S.windowEnd); mm += 30) {
+            const t = String(Math.floor(mm / 60)).padStart(2, '0') + ':' + String(mm % 60).padStart(2, '0');
+            h += '<option value="' + t + '"' + (t === sel ? ' selected' : '') + '>' + A.fmtTime(t) + '</option>';
+        }
+        return h;
+    }
+    $('fFrom').innerHTML = timeOpts('10:00');
+    $('fTo').innerHTML = timeOpts('12:00');
+    $('fDate').min = todayISO;
+    $('fDate').max = maxISO;
+    $('fDate').value = todayISO;
+
+    function fillBuildings() {
+        const rooms = $('fKind').value === 'Venue';
+        const opts = rooms
+            ? ['Any AIKOL building'].concat([...new Set(A.venues.map(v => v.building))])
+            : ['Any vehicle'];
+        $('fBuilding').innerHTML = opts.map(o => '<option>' + A.esc(o) + '</option>').join('');
+        $('fBuilding').disabled = !rooms;
+    }
+    fillBuildings();
+    $('fKind').addEventListener('change', () => { fillBuildings(); $('searchResult').innerHTML = ''; });
+
+    function freeResources() {
+        const kind = $('fKind').value;
+        const date = $('fDate').value, from = $('fFrom').value, to = $('fTo').value;
+        const s = date + 'T' + from, e = date + 'T' + to;
+        const building = $('fBuilding').value;
+        const pool = (kind === 'Venue' ? A.venues : A.vehicles).filter(r =>
+            r.status === 'Active' &&
+            (kind !== 'Venue' || building.indexOf('Any') === 0 || r.building === building));
+        return {
+            s: s, e: e, kind: kind, date: date, from: from, to: to,
+            free: pool.filter(r => !A.findConflicts(r.id, s, e).length),
+            busy: pool.filter(r => A.findConflicts(r.id, s, e).length)
+        };
+    }
+
+    function render(r) {
+        const box = $('searchResult');
+        const label = A.fmtDate(r.date) + ', ' + A.fmtRange(r.from, r.to);
+        const noun = r.kind === 'Venue' ? 'room' : 'vehicle';
+
+        /* Kulliyyah cars are for lecturers and staff. Say so here rather than
+           letting someone pick a car and be refused two screens later. */
+        if (r.kind === 'Vehicle' && !A.canBookVehicle(me)) {
+            box.innerHTML = '<div class="notice notice-warn"><strong>Vehicles are booked by lecturers and staff.</strong>' +
+                A.esc(A.STUDENT_TRANSPORT.note) + '</div>';
+            return;
+        }
+        if (A.toMin(r.to) <= A.toMin(r.from)) {
+            box.innerHTML = '<div class="notice notice-danger">The end time must be after the start time.</div>';
+            return;
+        }
+        if (A.minutesBetween(r.s, r.e) > S.maxBookingMinutes && r.kind === 'Venue') {
+            box.innerHTML = '<div class="notice notice-danger"><strong>That is longer than ' +
+                (S.maxBookingMinutes / 60) + ' hours.</strong>A single booking may last at most ' +
+                (S.maxBookingMinutes / 60) + ' hours — book a second period to continue.</div>';
+            return;
+        }
+
+        if (!r.free.length) {
+            box.innerHTML = '<div class="notice notice-warn">' +
+                '<strong>Nothing free ' + A.esc(label) + '.</strong>' +
+                'All ' + r.busy.length + ' ' + noun + 's are taken for that period. The availability board ' +
+                'shows the whole day at once, so you can find the nearest gap.</div>' +
+                '<a class="btn btn-primary" href="availability.html">Open the availability board</a>';
+            return;
+        }
+
+        box.innerHTML = '<div class="notice notice-success"><strong>' + r.free.length + ' ' + noun +
+            (r.free.length === 1 ? ' is' : 's are') + ' free ' + A.esc(label) + '.</strong>' +
+            'Choose one to book. Every booking is confirmed by the Kulliyyah office.</div>' +
+            '<div class="grid grid-4">' + r.free.slice(0, 8).map(x =>
+                '<div class="venue-card"><div class="body">' +
+                '<h3>' + A.esc(x.name) + '</h3>' +
+                '<span class="loc">' + A.esc(r.kind === 'Venue'
+                    ? x.location + ' · ' + x.capacity + ' persons'
+                    : x.registration + ' · ' + x.seats + ' seats') + '</span>' +
+                '<div style="margin-top:8px"><span class="badge badge-approved">Free</span></div>' +
+                '</div><div class="actions">' +
+                '<button class="btn btn-sm btn-primary" type="button" data-book="' + x.id + '">Book this ' +
+                noun + '</button></div></div>').join('') +
+            '</div>' +
+            (r.busy.length ? '<p class="help">' + r.busy.length + ' other ' + noun +
+                (r.busy.length === 1 ? ' is' : 's are') + ' taken for that period.</p>' : '');
+
+        box.querySelectorAll('button[data-book]').forEach(btn =>
+            btn.addEventListener('click', () => confirmBooking(A.resourceById(Number(btn.dataset.book)), r)));
+    }
+
+    function confirmBooking(res, r) {
+        const m = A.modal({
+            title: 'Confirm your booking',
+            body: '<dl class="kv">' +
+                '<dt>' + (r.kind === 'Venue' ? 'Room' : 'Vehicle') + '</dt><dd>' + A.esc(res.name) + '</dd>' +
+                '<dt>When</dt><dd>' + A.esc(A.fmtDate(r.date) + ', ' + A.fmtRange(r.from, r.to)) + '</dd>' +
+                '<dt>Booked for</dt><dd>' + A.esc(me.name) + '</dd>' +
+                '</dl>' +
+                '<div class="field" style="margin-top:14px">' +
+                '<label for="bPurpose">Purpose <span class="req" aria-hidden="true">*</span></label>' +
+                '<textarea class="textarea" id="bPurpose" placeholder="For example: postgraduate research seminar"></textarea>' +
+                '<p class="help">Visible to the approving officer.</p></div>' +
+                '<div id="bErr" aria-live="polite"></div>' +
+                '<div class="notice notice-info">The request is submitted as <strong>pending</strong>. ' +
+                'Every booking is decided by the Kulliyyah office, and you may cancel your own up to ' +
+                (S.cancellationCutoffHours / 24) + ' days before.</div>',
+            buttons: [
+                { label: 'Back' },
+                { label: 'Confirm booking', cls: 'btn-primary', onClick: root => {
+                    const purpose = root.querySelector('#bPurpose').value.trim();
+                    if (!purpose) {
+                        root.querySelector('#bErr').innerHTML =
+                            '<div class="notice notice-danger">A purpose is required.</div>';
+                        return false;
+                    }
+                    /* Re-checked at the moment of booking, not only at search:
+                       someone may have taken the slot in between. */
+                    if (A.findConflicts(res.id, r.s, r.e).length) {
+                        A.toast('That slot was taken while you were filling this in. Search again to see ' +
+                                'what is still free.', 'danger');
+                        return;
+                    }
+                    const ref = 'AIKOL-B-' + todayISO.slice(0, 4) + '-' +
+                                String(1000 + Math.floor(Math.random() * 8999)).slice(0, 4);
+                    A.modal({
+                        title: 'Request submitted',
+                        body: '<div class="notice notice-success"><strong>Reference ' + A.esc(ref) + '</strong>' +
+                              A.esc(res.name) + ' · ' + A.esc(A.fmtDate(r.date) + ', ' + A.fmtRange(r.from, r.to)) +
+                              ' — pending approval.</div>' +
+                              A.emailNotice(me.email, 'booking submitted'),
+                        buttons: [{ label: 'View my bookings', cls: 'btn-primary',
+                                    onClick: () => { window.location.href = 'my-bookings.html'; } },
+                                  { label: 'Close' }]
+                    });
+                } }
+            ]
+        });
+    }
+
+    $('searchbar').addEventListener('submit', e => { e.preventDefault(); render(freeResources()); });
+    ['fDate', 'fFrom', 'fTo', 'fBuilding'].forEach(id =>
+        $(id).addEventListener('change', () => { $('searchResult').innerHTML = ''; }));
 
     /* Prefer the Kulliyyah's own photograph; fall back to the generated
        placeholder so the hero is never a blank green panel. */
@@ -93,11 +252,6 @@
     heroImg.addEventListener('error', function onFail() {
         this.removeEventListener('error', onFail);
         this.src = 'assets/images/aikol-building.svg';
-    });
-
-    document.getElementById('searchbar').addEventListener('submit', function (e) {
-        e.preventDefault();
-        window.location.href = 'availability.html';
     });
 
     /* ---- Your activity ---- */

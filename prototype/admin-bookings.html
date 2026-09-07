@@ -465,11 +465,19 @@
                 '<div class="checkline"><input type="checkbox" id="cRepeat">' +
                 '<label for="cRepeat">Repeat weekly — a class or tutorial across the semester</label></div>' +
                 '<div id="cRepeatOpts" hidden style="padding-left:24px">' +
-                '<div class="field"><span class="label">Repeat on</span>' +
-                '<div class="facility-grid" id="cDows"></div></div>' +
+                '<div class="notice notice-info" style="margin-bottom:12px">' +
+                '<strong>' + A.esc(A.academicTerm.name) + '</strong>' +
+                'Teaching runs ' + A.esc(A.fmtDate(A.academicTerm.start)) + ' to ' +
+                A.esc(A.fmtDate(A.academicTerm.end)) + '. ' +
+                A.academicTerm.breaks.map(b => A.esc(b.name) + ' ' + A.esc(A.fmtDate(b.start)) +
+                    ' to ' + A.esc(A.fmtDate(b.end))).join('; ') + '. ' +
+                'Dates outside teaching are left out automatically.</div>' +
+                '<div class="field"><span class="label">Repeat on — each day keeps its own times</span>' +
+                '<div id="cDows"></div></div>' +
                 '<div class="field"><label for="cUntil">Repeat until</label>' +
-                '<input class="input" type="date" id="cUntil" min="' + todayIso + '" max="' + maxIso + '" value="' +
-                A.iso(A.addDays(A.today, 84)) + '"></div>' +
+                '<input class="input" type="date" id="cUntil" min="' + todayIso + '" max="' + maxIso +
+                '" value="' + A.academicTerm.end + '">' +
+                '<p class="help">Defaults to the last day of the semester.</p></div>' +
                 '<div id="cOccs"></div></div></div>' +
 
                 '<div class="field" style="margin-top:14px"><label for="cPurpose">Purpose <span class="req" aria-hidden="true">*</span></label>' +
@@ -498,15 +506,19 @@
                     if (problems().length || !picked) { refresh(); return false; }
                     const res = A.resourceById(Number($('cRes').value));
                     const occs = occurrences();
-                    const free = occs.filter(o => !A.findConflicts(res.id, o.s, o.e).length);
-                    const clash = occs.length - free.length;
+                    const live = occs.filter(o => !o.skip);
+                    const free = live.filter(o => !A.findConflicts(res.id, o.s, o.e).length);
+                    const clash = live.length - free.length;
+                    const outside = occs.length - live.length;
                     const approved = $('cApprove').checked;
                     A.toast(
                         (occs.length > 1
-                            ? free.length + ' of ' + occs.length + ' weekly occurrences would be created on '
+                            ? free.length + ' of ' + occs.length + ' candidate dates would be created on '
                             : 'A booking on ') + res.name + ' for ' + picked.name +
                         ', with ' + A.ADMIN_USER.name + ' recorded as its creator' +
                         (approved ? ' and approver' : ' and the request left pending') + '. ' +
+                        (outside ? outside + ' date' + (outside === 1 ? '' : 's') +
+                            ' fall outside teaching and are left out. ' : '') +
                         (clash ? clash + ' clashing date' + (clash === 1 ? '' : 's') + ' would be reported, not skipped. ' : '') +
                         'One confirmation would be queued to ' + picked.email + '.');
                 } }
@@ -517,11 +529,31 @@
         const $ = id => root.querySelector('#' + id);
         const kind = () => $('cKind').value;
 
-        /* ---- Weekday boxes ---- */
+        /* ---- Weekday rows, each with its own times ---- */
+        /* Monday 09:00-11:00 and Wednesday 14:00-16:00 is the ordinary case for
+           a class, so the times belong to the day rather than to the series. */
         $('cDows').innerHTML = A.DAYS.map((d, i) =>
-            '<label class="checkline" style="font-weight:400;margin:0">' +
-            '<input type="checkbox" class="cDow" value="' + i + '"> ' + A.esc(d.slice(0, 3)) + '</label>').join('');
+            '<div class="dowrow" data-on="false" data-d="' + i + '">' +
+            '<label class="checkline"><input type="checkbox" class="cDow" value="' + i + '"> ' +
+            A.esc(d.slice(0, 3)) + '</label>' +
+            '<select class="select cDowFrom" data-d="' + i + '" aria-label="' + A.esc(d) + ' start" disabled>' +
+            timeOpts('09:00') + '</select>' +
+            '<span class="sep">–</span>' +
+            '<select class="select cDowTo" data-d="' + i + '" aria-label="' + A.esc(d) + ' end" disabled>' +
+            timeOpts('11:00') + '</select></div>').join('');
+
         const dows = () => [...root.querySelectorAll('.cDow:checked')].map(c => Number(c.value));
+        const dowTime = (d) => ({
+            from: root.querySelector('.cDowFrom[data-d="' + d + '"]').value,
+            to: root.querySelector('.cDowTo[data-d="' + d + '"]').value
+        });
+        function syncDowRows() {
+            root.querySelectorAll('.dowrow').forEach(row => {
+                const on = row.querySelector('.cDow').checked;
+                row.dataset.on = String(on);
+                row.querySelectorAll('select').forEach(sel => { sel.disabled = !on; });
+            });
+        }
 
         /* ---- The searchable picker ---- */
         function eligible() {
@@ -610,23 +642,33 @@
         }
 
         /* ---- Occurrences ---- */
+        /* Every candidate date the series touches, each carrying the reason it
+           cannot be booked, if there is one. Nothing is dropped silently —
+           the caller decides what to show and what to create. */
         function occurrences() {
             const one = [{ date: $('cDate').value, s: $('cDate').value + 'T' + $('cFrom').value,
-                           e: (kind() === 'Vehicle' ? $('cEndDate').value : $('cDate').value) + 'T' + $('cTo').value }];
+                           e: (kind() === 'Vehicle' ? $('cEndDate').value : $('cDate').value) + 'T' + $('cTo').value,
+                           skip: '' }];
             if (kind() === 'Vehicle' || !$('cRepeat').checked) return one;
             const days = dows(), until = $('cUntil').value;
             if (!days.length || !until) return one;
+
             const out = [];
             let d = new Date($('cDate').value + 'T00:00:00');
             while (A.iso(d) <= until && out.length < S.maxSeriesOccurrences) {
-                if (days.indexOf(d.getDay()) !== -1 && A.iso(d) >= $('cDate').value) {
-                    out.push({ date: A.iso(d), s: A.iso(d) + 'T' + $('cFrom').value,
-                               e: A.iso(d) + 'T' + $('cTo').value });
+                const iso = A.iso(d);
+                if (days.indexOf(d.getDay()) !== -1 && iso >= $('cDate').value) {
+                    const t = dowTime(d.getDay());
+                    out.push({ date: iso, dow: d.getDay(),
+                               s: iso + 'T' + t.from, e: iso + 'T' + t.to,
+                               skip: A.termExclusion(iso) });
                 }
                 d = A.addDays(d, 1);
             }
             return out.length ? out : one;
         }
+        /* Only dates inside teaching are candidates for an actual booking. */
+        const teaching = (occs) => occs.filter(o => !o.skip);
 
         function problems() {
             const out = [];
@@ -651,6 +693,16 @@
                     if (!dows().length) out.push('Choose at least one day of the week to repeat on.');
                     if ($('cUntil').value && $('cUntil').value < $('cDate').value)
                         out.push('The repeat ends before the first booking.');
+                    /* Each day carries its own times, so each is checked. */
+                    dows().forEach(d => {
+                        const t = dowTime(d);
+                        const day = A.DAYS[d];
+                        if (A.toMin(t.to) <= A.toMin(t.from))
+                            out.push(day + ': the end time must be after the start.');
+                        else if (A.toMin(t.to) - A.toMin(t.from) > S.maxBookingMinutes)
+                            out.push(day + ': ' + ((A.toMin(t.to) - A.toMin(t.from)) / 60) +
+                                     ' hours exceeds the ' + (S.maxBookingMinutes / 60) + '-hour maximum.');
+                    });
                 }
             } else {
                 if (!$('cDest').value.trim()) out.push('A destination is required.');
@@ -665,18 +717,23 @@
             /* A single booking that clashes cannot be created. A SERIES that
                partly clashes can — the clashing dates are reported, never
                silently skipped. */
-            const clashing = occs.filter(o => A.findConflicts(res.id, o.s, o.e).length);
+            const live = teaching(occs);
+            const clashing = live.filter(o => A.findConflicts(res.id, o.s, o.e).length);
             if (occs.length === 1 && clashing.length) {
                 A.findConflicts(res.id, first.s, first.e).forEach(c =>
                     out.push('Already reserved: ' + A.fmtPeriod(c.startAt, c.endAt) + ' (' + c.status.toLowerCase() + ').'));
-            } else if (clashing.length === occs.length) {
-                out.push('Every occurrence clashes with an existing booking.');
+            } else if (live.length && clashing.length === live.length) {
+                out.push('Every teaching date in this series clashes with an existing booking.');
+            } else if ($('cRepeat').checked && !live.length) {
+                out.push('No date in that range falls inside the semester. Check the start date and the ' +
+                         'repeat-until date against ' + A.academicTerm.name + '.');
             }
             return out;
         }
 
         function refresh() {
             const isVeh = kind() === 'Vehicle';
+            syncDowRows();
             $('cRoomFields').hidden = isVeh;
             $('cVehFields').hidden = !isVeh;
             $('cEndDateWrap').hidden = !isVeh;
@@ -694,15 +751,39 @@
             const res = A.resourceById(Number($('cRes').value));
             const occs = occurrences();
             if (!isVeh && $('cRepeat').checked) {
-                const clashing = occs.filter(o => A.findConflicts(res.id, o.s, o.e).length);
-                $('cOccs').innerHTML = '<div class="notice ' + (clashing.length ? 'notice-warn' : 'notice-info') + '">' +
-                    '<strong>' + occs.length + ' occurrence' + (occs.length === 1 ? '' : 's') + '</strong>' +
-                    (clashing.length
-                        ? (occs.length - clashing.length) + ' free, ' + clashing.length + ' clashing: ' +
-                          clashing.slice(0, 6).map(o => A.esc(A.fmtDate(o.date))).join(', ') +
-                          (clashing.length > 6 ? ' and others' : '') +
-                          '. Creating will make the free ones and report these.'
-                        : 'All dates are free.') + '</div>';
+                const live = teaching(occs);
+                const outside = occs.filter(o => o.skip);
+                const clashing = live.filter(o => A.findConflicts(res.id, o.s, o.e).length);
+                const willMake = live.length - clashing.length;
+
+                /* Three distinct reasons a date does not become a booking, and
+                   they mean different things: outside teaching is the calendar
+                   working, a clash is someone else already there. */
+                const lines = [];
+                if (outside.length) {
+                    const byReason = {};
+                    outside.forEach(o => { (byReason[o.skip] = byReason[o.skip] || []).push(o.date); });
+                    lines.push(Object.keys(byReason).map(r =>
+                        byReason[r].length + ' ' + A.esc(r)).join(', ') + ' — left out');
+                }
+                if (clashing.length) {
+                    lines.push(clashing.length + ' clashing (' +
+                        clashing.slice(0, 4).map(o => A.esc(A.fmtDate(o.date))).join(', ') +
+                        (clashing.length > 4 ? ' and others' : '') + ') — reported, not skipped silently');
+                }
+
+                $('cOccs').innerHTML =
+                    '<div class="notice ' + (clashing.length ? 'notice-warn' : 'notice-info') + '">' +
+                    '<strong>' + willMake + ' booking' + (willMake === 1 ? '' : 's') + ' would be created</strong>' +
+                    'from ' + occs.length + ' candidate date' + (occs.length === 1 ? '' : 's') + '. ' +
+                    (lines.length ? lines.join('. ') + '.' : 'Every date is inside teaching and free.') +
+                    '</div>' +
+                    (dows().length > 1
+                        ? '<p class="help" style="margin-top:6px">' +
+                          dows().map(d => A.esc(A.DAYS[d].slice(0, 3)) + ' ' +
+                              A.fmtTime(dowTime(d).from) + '–' + A.fmtTime(dowTime(d).to)).join(' · ') +
+                          '</p>'
+                        : '');
             } else {
                 $('cOccs').innerHTML = '';
             }
@@ -727,11 +808,21 @@
             if ($('cRepeat').checked && !dows().length && $('cDate').value) {
                 const dow = new Date($('cDate').value + 'T00:00:00').getDay();
                 const box = root.querySelector('.cDow[value="' + dow + '"]');
-                if (box) box.checked = true;
+                if (box) { box.checked = true; seedDay(dow); }
             }
             refresh();
         });
-        $('cDows').addEventListener('change', refresh);
+        /* A day just ticked starts from the main pair of times, so the common
+           case — every day the same — needs no extra clicks. */
+        function seedDay(d) {
+            root.querySelector('.cDowFrom[data-d="' + d + '"]').value = $('cFrom').value;
+            root.querySelector('.cDowTo[data-d="' + d + '"]').value = $('cTo').value;
+        }
+        $('cDows').addEventListener('change', e => {
+            const box = e.target.closest('.cDow');
+            if (box && box.checked) seedDay(Number(box.value));
+            refresh();
+        });
         ['cDate', 'cEndDate', 'cFrom', 'cTo', 'cUntil', 'cPurpose', 'cAtt', 'cDest', 'cPax']
             .forEach(id => $(id).addEventListener('input', refresh));
 

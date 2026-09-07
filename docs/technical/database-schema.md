@@ -382,6 +382,24 @@ Editing these is an **administrator** action, never an approver's: it changes wh
 sees. Each change is written to `audit_logs` as `SITE_CONTENT_UPDATED` with the acting administrator
 and the keys that changed.
 
+## The academic calendar
+
+Recurring bookings are generated against a teaching calendar, not against a bare date range.
+
+`academic_terms` — one row per semester: `name`, `start_date`, `end_date`.
+`term_breaks` — child rows: `term_id`, `name`, `start_date`, `end_date`.
+
+This is a table rather than a `system_settings` value because a break has a start, an end and a name
+of its own — the same test that made facilities a table, applied the same way.
+
+An occurrence outside teaching is **left out**, and an occurrence that clashes with another booking
+is **reported**. They are different outcomes and the interface says which is which: a date outside
+teaching is the calendar working as intended, a clash is somebody already being there.
+
+Changing the calendar does not touch bookings already made. A booking that now falls inside a break
+stays until an administrator cancels it deliberately, with a reason, so the requester is told —
+consistent with the rule that nothing is cancelled silently.
+
 ## Facilities: why this became a table
 
 This design previously stored facilities as a JSON array on `venues` with a GIN index, on a stated
