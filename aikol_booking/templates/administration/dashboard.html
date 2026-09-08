@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Administration{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Administration</h1>
+    <p class="lede">What needs attention today.</p></div></div>
+{% include "administration/_nav.html" with tab='dashboard' %}
+
+<div class="grid grid-4" style="margin-bottom:18px">
+    <div class="stat info"><span class="k">Awaiting a decision</span><span class="v">{{ pending }}</span>
+        <span class="d">each holds its slot meanwhile</span></div>
+    <div class="stat"><span class="k">Still to come</span><span class="v">{{ upcoming }}</span>
+        <span class="d">pending or approved</span></div>
+    <div class="stat accent"><span class="k">Keys out</span><span class="v">{{ keys_out }}</span>
+        <span class="d">{{ keys_overdue }} past their booking</span></div>
+    <div class="stat neutral"><span class="k">Requests this month</span><span class="v">{{ this_month }}</span>
+        <span class="d">submitted since the 1st</span></div>
+</div>
+
+{% if keys_overdue %}
+<div class="notice notice-warn">
+    <strong>{{ keys_overdue }} key{{ keys_overdue|pluralize }} out past the booking's end.</strong>
+    A booking reaching its end time does not return a key &mdash; the two are tracked separately,
+    on purpose. <a href="{% url 'bookings:keys' %}">Chase them</a>.
+</div>
+{% endif %}
+
+{% if unverified %}
+<div class="notice notice-info">
+    {{ unverified }} active account{{ unverified|pluralize }} {{ unverified|pluralize:"has,have" }}
+    not confirmed an email address and cannot book anything yet.
+</div>
+{% endif %}
+
+<div class="grid grid-2" style="align-items:start">
+    <section class="card">
+        <div class="card-head"><h2 class="label" style="margin:0">Latest requests</h2></div>
+        <div class="card-body">
+            <ul class="activity">
+            {% for b in recent %}
+                <li><a href="{% url 'bookings:detail' b.pk %}">{{ b.booking_reference }}</a>
+                    &mdash; {{ b.resource.name }}, {{ b.user.full_name }},
+                    {{ b.start_at|date:"d M Y H:i" }} ({{ b.get_status_display|lower }})</li>
+            {% empty %}
+                <li class="help">Nothing yet.</li>
+            {% endfor %}
+            </ul>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-head"><h2 class="label" style="margin:0">The system</h2></div>
+        <div class="card-body">
+            <dl class="kv">
+                <dt>Active resources</dt><dd>{{ resources }}</dd>
+                <dt>Active accounts</dt><dd>{{ users }}</dd>
+                <dt>Keys awaiting collection</dt><dd>{{ awaiting_collection }}</dd>
+            </dl>
+        </div>
+    </section>
+</div>
+{% endblock %}

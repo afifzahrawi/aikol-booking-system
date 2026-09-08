@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ person.full_name }}{% endblock %}
+{% block content %}
+<h1>{{ person.full_name }}</h1>
+<p class="lede">{{ person.email }} &middot; {{ bookings }} booking{{ bookings|pluralize }} on record</p>
+
+<div class="notice notice-info">
+    <strong>There is no password field here, deliberately.</strong>
+    An administrator who can set another person's password is a liability, and the reset flow
+    already exists. Point them at <em>Forgotten your password?</em> instead.
+</div>
+
+<section class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="field">{{ field.label_tag }}{{ field }}
+                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+                    {{ field.errors }}</div>
+            {% endfor %}
+            <div class="btn-group">
+                <a class="btn" href="{% url 'administration:users' %}">Cancel</a>
+                <button class="btn btn-primary" type="submit">Save</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

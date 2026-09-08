@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Keys{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Key register</h1>
+    <p class="lede">Keys and access cards are held by the Kulliyyah office. Every issue and return
+       is recorded against the booking.</p></div></div>
+{% include "administration/_nav.html" with tab='keys' %}
+
+{% if overdue %}
+<div class="notice notice-warn">
+    <strong>{{ overdue|length }} key{{ overdue|length|pluralize }} out past the booking's end.</strong>
+    A booking becomes <em>completed</em> when its period passes; whether the key came back is a
+    separate fact, deliberately tracked on its own, so an outstanding key is never quietly forgotten.
+</div>
+{% endif %}
+
+<section class="card">
+    <div class="card-head"><h2 class="label" style="margin:0">Out now</h2>
+        <span class="help">{{ outstanding|length }} key{{ outstanding|length|pluralize }}</span></div>
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr>
+            <th scope="col">Reference</th><th scope="col">Resource</th><th scope="col">Booked by</th>
+            <th scope="col">Collected by</th><th scope="col">Issued</th>
+            <th scope="col">Booking ends</th><th scope="col">Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for h in outstanding %}
+            <tr {% if h.booking.end_at < now %}data-status="rejected"{% endif %}>
+                <td class="mono nowrap">{{ h.booking.booking_reference }}</td>
+                <td>{{ h.booking.resource.name }}</td>
+                <td>{{ h.booking.user.full_name }}</td>
+                <td>{{ h.collected_by_name }}<br>
+                    <span class="help">issued by {{ h.issued_by.full_name }}</span></td>
+                <td class="nowrap">{{ h.issued_at|date:"d M Y, H:i" }}</td>
+                <td class="nowrap">{{ h.booking.end_at|date:"d M Y, H:i" }}
+                    {% if h.booking.end_at < now %}<br><span class="badge badge-rejected">Overdue</span>{% endif %}</td>
+                <td><a class="btn btn-sm btn-primary"
+                       href="{% url 'bookings:key_return' h.booking.pk %}">Record return</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7"><div class="empty-state">No key is currently out.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1.25rem">
+    <div class="card-head"><h2 class="label" style="margin:0">Awaiting collection</h2>
+        <span class="help">approved, still to come</span></div>
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr>
+            <th scope="col">Reference</th><th scope="col">Resource</th><th scope="col">Booked by</th>
+            <th scope="col">Starts</th><th scope="col">Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for b in awaiting %}
+            <tr>
+                <td class="mono nowrap">{{ b.booking_reference }}</td>
+                <td>{{ b.resource.name }}</td>
+                <td>{{ b.user.full_name }}</td>
+                <td class="nowrap">{{ b.start_at|date:"d M Y, H:i" }}</td>
+                <td><a class="btn btn-sm" href="{% url 'bookings:key_issue' b.pk %}">Issue key</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5"><div class="empty-state">Nothing waiting.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endblock %}

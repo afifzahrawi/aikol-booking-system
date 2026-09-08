@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import key_views, views
 
 app_name = "bookings"
 
@@ -16,4 +16,8 @@ urlpatterns = [
     path("approvals/", views.approvals, name="approvals"),
     path("approvals/<int:pk>/", views.decide, name="decide"),
     path("approvals/series/<int:pk>/", views.decide_series, name="decide_series"),
+    # Keys are held by the office, so these are administrator-only.
+    path("manage/keys/", key_views.key_register, name="keys"),
+    path("manage/keys/<int:pk>/issue/", key_views.key_issue, name="key_issue"),
+    path("manage/keys/<int:pk>/return/", key_views.key_return, name="key_return"),
 ]

@@ -39,8 +39,12 @@
     <a href="{% url 'accounts:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
     <a href="{% url 'resources:venues' %}" {% if nav == 'venues' %}aria-current="page"{% endif %}>Rooms</a>
     <a href="{% url 'resources:vehicles' %}" {% if nav == 'vehicles' %}aria-current="page"{% endif %}>Vehicles</a>
+    <a href="{% url 'bookings:mine' %}" {% if nav == 'mine' %}aria-current="page"{% endif %}>My bookings</a>
+    {% if user.is_approver %}
+        <a href="{% url 'bookings:approvals' %}" {% if nav == 'approvals' %}aria-current="page"{% endif %}>Approvals</a>
+    {% endif %}
     {% if user.is_administrator %}
-        <a href="{% url 'resources:manage_venues' %}" {% if nav == 'manage' %}aria-current="page"{% endif %}>Resources</a>
+        <a href="{% url 'administration:dashboard' %}" {% if nav == 'manage' %}aria-current="page"{% endif %}>Administration</a>
     {% endif %}
 </nav>
 {% endif %}

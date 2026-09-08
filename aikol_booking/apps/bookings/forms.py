@@ -64,6 +64,24 @@ class BookingForm(forms.Form):
         self.user = user
         self.is_vehicle = resource.resource_type == ResourceType.VEHICLE
 
+        if user.is_administrator:
+            # Decision 14. The booking is attributed to BOTH people: `user` is
+            # who it is for, `created_by` is who made it. Merging them would
+            # lose which of the two to contact and which to hold responsible.
+            from apps.accounts.models import User
+
+            self.fields["on_behalf_of"] = forms.ModelChoiceField(
+                required=False,
+                queryset=User.objects.filter(is_active=True, email_verified=True)
+                .order_by("full_name"),
+                label="Booking for",
+                empty_label="Myself",
+                help_text=(
+                    "Leave as Myself unless you are booking for somebody else. Only "
+                    "verified accounts appear here — an unverified one cannot book."
+                ),
+            )
+
         for name in ("attendees",) if self.is_vehicle else (
             "driver_arrangement", "location_from", "location_to", "passengers", "end_date"
         ):
@@ -106,19 +124,24 @@ class BookingForm(forms.Form):
         for problem in validate_period(self.resource, start_at, end_at):
             self.add_error(None, problem)
 
+        # Eligibility to drive belongs to the person the booking is FOR, not to
+        # the administrator filling the form in. An administrator who may drive
+        # must not confer that on a student by typing on their behalf.
+        subject = cleaned.get("on_behalf_of") or self.user
+
         if self.is_vehicle:
             arrangement = cleaned.get("driver_arrangement")
-            for problem in check_driver_arrangement(self.user, self.resource, arrangement):
+            for problem in check_driver_arrangement(subject, self.resource, arrangement):
                 # The VMU note is guidance, not a refusal — it tells the
                 # requester about the second approval before they are surprised
                 # by it. Only the eligibility and licence problems block.
                 if arrangement == DriverArrangement.VMU_DRIVER:
                     continue
                 self.add_error("driver_arrangement", problem)
-            if arrangement == DriverArrangement.SELF_DRIVE and self.user.licence_expiry:
+            if arrangement == DriverArrangement.SELF_DRIVE and subject.licence_expiry:
                 # The licence must be valid at the END of the trip, not on the
                 # day it is requested.
-                if self.user.licence_expiry < end_at.date():
+                if subject.licence_expiry < end_at.date():
                     self.add_error(
                         "driver_arrangement",
                         "Your licence expires before the trip ends.",

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{% if action == 'issue' %}Issue key{% else %}Record return{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if action == 'issue' %}Issue the key{% else %}Record the key's return{% endif %}</h1>
+
+<section class="card">
+    <div class="card-body">
+        <dl class="kv">
+            <dt>Reference</dt><dd class="mono">{{ booking.booking_reference }}</dd>
+            <dt>Resource</dt><dd>{{ booking.resource.name }}</dd>
+            <dt>Booked by</dt><dd>{{ booking.user.full_name }}</dd>
+            <dt>Period</dt><dd>{{ booking.start_at|date:"D d M Y, H:i" }} to
+                {{ booking.end_at|date:"D d M Y, H:i" }}</dd>
+            {% if handover and handover.issued_at %}
+                <dt>Issued</dt><dd>{{ handover.issued_at|date:"d M Y, H:i" }} by
+                    {{ handover.issued_by.full_name }}, to {{ handover.collected_by_name }}</dd>
+            {% endif %}
+        </dl>
+
+        <p class="help">The person at the counter is often not the person who booked, which is why
+           this is asked for rather than assumed.</p>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="field">{{ field.label_tag }}{{ field }}
+                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+                    {{ field.errors }}</div>
+            {% endfor %}
+            <div class="btn-group">
+                <a class="btn" href="{% url 'bookings:keys' %}">Back</a>
+                <button class="btn btn-primary" type="submit">
+                    {% if action == 'issue' %}Record the issue{% else %}Record the return{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -126,10 +126,13 @@ def booking_create(request, pk: int):
             }
         else:
             extra = {"attendees": data["attendees"]}
+        # Attributed honestly to both: `user` is who it is for, `created_by` is
+        # who submitted it (decision 14).
+        subject = data.get("on_behalf_of") or request.user
         try:
             booking = create_booking(
                 resource=resource,
-                user=request.user,
+                user=subject,
                 created_by=request.user,
                 start_at=data["start_at"],
                 end_at=data["end_at"],
@@ -140,11 +143,26 @@ def booking_create(request, pk: int):
             for problem in exc.messages:
                 form.add_error(None, problem)
         else:
-            flash.success(
-                request,
-                f"Request {booking.booking_reference} submitted. "
-                "You will be emailed once it is decided.",
-            )
+            if subject != request.user:
+                log_action(
+                    actor=request.user,
+                    action="BOOKING_ON_BEHALF",
+                    entity_type="Booking",
+                    entity_id=booking.pk,
+                    description=f"{booking.booking_reference} created for {subject.full_name}.",
+                    request=request,
+                )
+                flash.success(
+                    request,
+                    f"Request {booking.booking_reference} submitted for {subject.full_name}, "
+                    "who has been emailed.",
+                )
+            else:
+                flash.success(
+                    request,
+                    f"Request {booking.booking_reference} submitted. "
+                    "You will be emailed once it is decided.",
+                )
             return redirect("bookings:detail", pk=booking.pk)
 
     return render(

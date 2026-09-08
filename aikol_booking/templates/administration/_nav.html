@@ -1,0 +1,16 @@
+<div class="seg" role="tablist" aria-label="Administration" style="margin-bottom:18px">
+    <a role="tab" href="{% url 'administration:dashboard' %}"
+       {% if tab == 'dashboard' %}aria-selected="true" class="on"{% endif %}>Overview</a>
+    <a role="tab" href="{% url 'bookings:approvals' %}"
+       {% if tab == 'approvals' %}aria-selected="true" class="on"{% endif %}>Approvals</a>
+    <a role="tab" href="{% url 'bookings:keys' %}"
+       {% if tab == 'keys' %}aria-selected="true" class="on"{% endif %}>Keys</a>
+    <a role="tab" href="{% url 'resources:manage_venues' %}"
+       {% if tab == 'resources' %}aria-selected="true" class="on"{% endif %}>Resources</a>
+    <a role="tab" href="{% url 'administration:users' %}"
+       {% if tab == 'users' %}aria-selected="true" class="on"{% endif %}>Users</a>
+    <a role="tab" href="{% url 'administration:settings' %}"
+       {% if tab == 'settings' %}aria-selected="true" class="on"{% endif %}>Settings</a>
+    <a role="tab" href="{% url 'administration:audit' %}"
+       {% if tab == 'audit' %}aria-selected="true" class="on"{% endif %}>Audit log</a>
+</div>

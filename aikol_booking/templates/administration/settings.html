@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>System settings</h1>
+    <p class="lede">Business rules live here, not in the code, so a limit can change without a
+       software release.</p></div></div>
+{% include "administration/_nav.html" with tab='settings' %}
+
+<div class="notice notice-info">
+    The values shipped are AIKOL's confirmed answers, not arbitrary defaults. Each row says which
+    decision it came from. Changing one takes effect immediately and is written to the audit log.
+</div>
+
+<section class="card">
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr><th scope="col">Setting</th><th scope="col">Value</th>
+            <th scope="col">What it controls</th><th scope="col"></th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td><span class="mono">{{ row.key }}</span></td>
+                <td>
+                    <form method="post" class="inline">{% csrf_token %}
+                        <input type="hidden" name="key" value="{{ row.key }}">
+                        <input class="input" name="value" value="{{ row.value }}" style="width:120px">
+                </td>
+                <td>{{ row.description }}</td>
+                <td><button class="btn btn-sm" type="submit">Save</button></form></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endblock %}

@@ -39,11 +39,12 @@ governance and audit · low cost · maintainable.
 
 ## 2. Current status
 
-**Phases 1 to 5b are COMPLETE.**
+**Phases 1 to 6b are COMPLETE.**
 **All 26 section 24 decisions have been answered by AIKOL** (see section 5).
 The Django project exists, the database is built, authentication works, resources are browsable
-and manageable, and **bookings can be submitted, decided and cancelled** — single and recurring.
-Phase 6 (administrative features and key custody) is next.
+and manageable, bookings can be submitted, decided and cancelled — single and recurring — and
+**key custody, user management, settings and the audit log** are all in place.
+Phase 7 (bulk data, reporting and retention) is next.
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -83,6 +84,22 @@ The prototype and the management report have both been brought into line with th
 - **89 tests, all passing**, including the whole mandatory conflict table run twice — once against a
   venue, once against a vehicle — and the multi-day overlap table.
 
+### Built in Phase 6 and 6b
+
+- **Key issue and return, recording four separate people**: who booked, who collected, who issued,
+  and who received it back. The office screen lists keys out, overdue keys and those awaiting
+  collection.
+- **A key outstanding survives the booking reaching `COMPLETED`.** The two facts are tracked
+  separately on purpose — a booking whose period has ended is exactly the case worth chasing.
+- **Booking on behalf of a user** (decision 14), attributed to both: `user` is who it is for,
+  `created_by` who submitted it, and the confirmation goes to the former. Eligibility to *drive* is
+  judged against the person the booking is for, so an administrator cannot confer it on a student by
+  filling the form in for them.
+- Administration: overview, user management with activation, editable system settings, editable
+  header and footer, and a read-only audit log screen.
+- **The user form has no password field**, deliberately. An administrator who can set someone
+  else's password is a liability, and the reset flow already exists.
+
 ### Built in Phase 5 and 5b
 
 - Availability per day, worked out **on the server**; the browser's check is a convenience on top.
@@ -115,13 +132,13 @@ The prototype and the management report have both been brought into line with th
 
 ### Not started
 
-Phases 6–10: administrative features, key custody, reporting, bulk data, deployment.
+Phases 7–10: bulk CSV import and export, reporting, retention with export, deployment.
 
 ### Next step
 
-Phase 6 — administration and key custody. The `KeyHandover` model already exists with its four
-people (who booked, who collected, who issued, who received); Phase 6 is the issue and return
-screens, the outstanding-keys report, and booking on a user's behalf.
+Phase 7 — bulk data, reporting and retention. `docs/technical/bulk-import.md` specifies the CSV
+templates and validation; `data-retention.md` specifies the seven-year rule and the export-not-delete
+disposal. The demand heatmap and the other report visualisations from the prototype belong here.
 
 ---
 
@@ -181,7 +198,7 @@ booking form with driver and licence fields, and a key issue/return screen — d
 | Hosting | **Self-provided VPS, not IIUM ITD** | Confirmed decision |
 | Domain | **Self-provided, not an IIUM subdomain** | Confirmed decision |
 | Version control | **Git** | |
-| Testing | Django test framework | `manage.py test`. 164 tests as at Phase 5 |
+| Testing | Django test framework | `manage.py test`. 190 tests as at Phase 6 |
 | Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
 | PostgreSQL driver | **psycopg 3** | Production only. Installed in development so `check --deploy` can run |
 | Cost | **RM 0 in software.** Hosting and domain are now a real recurring cost | See section 5 |
@@ -544,9 +561,9 @@ advanced analytics · any AI feature.
 | 4 | Resource management (venues and vehicles) | **Complete** |
 | 5 | Booking system and conflict prevention | **Complete** |
 | 5b | Recurring bookings | **Complete** |
-| 6 | Administrative features, approver role, booking on behalf | Not started — **next** |
-| 6b | Key issue and return recording | Not started — added by decision 17 |
-| 7 | Bulk data, reporting and retention | Not started |
+| 6 | Administrative features, approver role, booking on behalf | **Complete** |
+| 6b | Key issue and return recording | **Complete** |
+| 7 | Bulk data, reporting and retention | Not started — **next** |
 | 8 | Testing and security review | Not started |
 | 9 | User acceptance testing | Not started |
 | 10 | Deployment and training | Not started — needs VPS and domain decisions |
