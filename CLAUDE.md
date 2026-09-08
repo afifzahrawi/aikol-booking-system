@@ -39,12 +39,13 @@ governance and audit · low cost · maintainable.
 
 ## 2. Current status
 
-**Phases 1 to 6b are COMPLETE.**
+**Phases 1 to 7 are COMPLETE.**
 **All 26 section 24 decisions have been answered by AIKOL** (see section 5).
 The Django project exists, the database is built, authentication works, resources are browsable
 and manageable, bookings can be submitted, decided and cancelled — single and recurring — and
-**key custody, user management, settings and the audit log** are all in place.
-Phase 7 (bulk data, reporting and retention) is next.
+key custody, user management, settings and the audit log are in place, and
+**bulk CSV import and export, reporting and retention** are built.
+Phase 8 (testing and security review) is next.
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -83,6 +84,18 @@ The prototype and the management report have both been brought into line with th
   `seed_facilities`. All idempotent.
 - **89 tests, all passing**, including the whole mandatory conflict table run twice — once against a
   venue, once against a vehicle — and the multi-day overlap table.
+
+### Built in Phase 7
+
+- **CSV import** with a preview that writes nothing: every failing row is reported with its line
+  number and *every* reason, so a spreadsheet is corrected in one pass.
+- **Streaming CSV export**, with facilities emitted in the same pipe-separated code format the
+  import accepts. No password hash in any export; personal identifiers only in the user export.
+- **The demand heatmap**, spreading each booking across the hours it occupies. Vehicles excluded —
+  an overnight trip has no meaningful hour of day.
+- **Retention**: preview, typed confirmation, export-and-verify, then delete in batches of 1,000.
+  Permanent deletion with no copy is not offered on the screen.
+- A **design audit** against the installed design skills fixed three real defects — see section 10.
 
 ### Built in Phase 6 and 6b
 
@@ -132,13 +145,12 @@ The prototype and the management report have both been brought into line with th
 
 ### Not started
 
-Phases 7–10: bulk CSV import and export, reporting, retention with export, deployment.
+Phases 8–10: security review, user acceptance testing, deployment.
 
 ### Next step
 
-Phase 7 — bulk data, reporting and retention. `docs/technical/bulk-import.md` specifies the CSV
-templates and validation; `data-retention.md` specifies the seven-year rule and the export-not-delete
-disposal. The demand heatmap and the other report visualisations from the prototype belong here.
+Phase 8 — testing and security review. Run the suite against **PostgreSQL**, which is the only way
+the concurrency test means anything, and work through the checklist in `docs/technical/security.md`.
 
 ---
 
@@ -198,7 +210,7 @@ booking form with driver and licence fields, and a key issue/return screen — d
 | Hosting | **Self-provided VPS, not IIUM ITD** | Confirmed decision |
 | Domain | **Self-provided, not an IIUM subdomain** | Confirmed decision |
 | Version control | **Git** | |
-| Testing | Django test framework | `manage.py test`. 190 tests as at Phase 6 |
+| Testing | Django test framework | `manage.py test`. 250 tests as at Phase 7 |
 | Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
 | PostgreSQL driver | **psycopg 3** | Production only. Installed in development so `check --deploy` can run |
 | Cost | **RM 0 in software.** Hosting and domain are now a real recurring cost | See section 5 |
@@ -524,6 +536,14 @@ Full detail: `docs/technical/security.md`.
   photograph and room galleries), the Arabic greeting on the dashboard, and a faint girih crosshatch
   over resource imagery. There is deliberately no other ornament — no crescents, no mosque
   silhouettes, no Arabic-styled Latin type.
+- **Interaction states are part of the design, not decoration.** Every button has a `:active`
+  press state; focus rings use `:focus-visible` so they are shown to keyboard users and not to
+  mouse users; transitions name the property they animate and last 90–140 ms; a
+  `prefers-reduced-motion` block turns all of it off. Motion here is the least that still confirms
+  an action registered — this is an institutional booking system, not a marketing page.
+- **Django renders form controls with no class of their own**, and this stylesheet styles them by
+  class. `config/forms.py` supplies `StyledFormMixin`, which every form uses. Without it the
+  stylesheet loads and does nothing for any control on any page.
 - The **real AIKOL wordmark** (`assets/images/aikol_logo.png`) is now in use, at 200 px in the brand
   bar. It is no longer a placeholder.
 
@@ -563,8 +583,8 @@ advanced analytics · any AI feature.
 | 5b | Recurring bookings | **Complete** |
 | 6 | Administrative features, approver role, booking on behalf | **Complete** |
 | 6b | Key issue and return recording | **Complete** |
-| 7 | Bulk data, reporting and retention | Not started — **next** |
-| 8 | Testing and security review | Not started |
+| 7 | Bulk data, reporting and retention | **Complete** |
+| 8 | Testing and security review | Not started — **next** |
 | 9 | User acceptance testing | Not started |
 | 10 | Deployment and training | Not started — needs VPS and domain decisions |
 

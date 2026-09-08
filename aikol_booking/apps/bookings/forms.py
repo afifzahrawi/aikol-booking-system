@@ -10,6 +10,8 @@ from __future__ import annotations
 import datetime as dt
 
 from django import forms
+
+from config.forms import StyledFormMixin
 from django.utils import timezone
 
 from apps.administration.models import SystemSetting
@@ -24,7 +26,7 @@ WEEKDAYS = [
 ]
 
 
-class BookingForm(forms.Form):
+class BookingForm(StyledFormMixin, forms.Form):
     """One form for both kinds of resource.
 
     The fields differ — a room needs an attendee count, a car needs a
@@ -160,7 +162,7 @@ class BookingForm(forms.Form):
         return cleaned
 
 
-class RecurrenceForm(forms.Form):
+class RecurrenceForm(StyledFormMixin, forms.Form):
     """A weekly series, generated against one semester.
 
     Each weekday keeps its own times: a course may meet Monday morning and
@@ -242,7 +244,7 @@ class RecurrenceForm(forms.Form):
         return cleaned
 
 
-class DecisionForm(forms.Form):
+class DecisionForm(StyledFormMixin, forms.Form):
     """Approve or reject. A rejection must say why; the requester is told."""
 
     reason = forms.CharField(
@@ -252,7 +254,7 @@ class DecisionForm(forms.Form):
     )
 
 
-class CancellationForm(forms.Form):
+class CancellationForm(StyledFormMixin, forms.Form):
     """A reason is mandatory — confirmed follow-up decision."""
 
     reason = forms.CharField(

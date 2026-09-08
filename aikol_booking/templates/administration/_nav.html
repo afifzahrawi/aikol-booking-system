@@ -9,6 +9,10 @@
        {% if tab == 'resources' %}aria-selected="true" class="on"{% endif %}>Resources</a>
     <a role="tab" href="{% url 'administration:users' %}"
        {% if tab == 'users' %}aria-selected="true" class="on"{% endif %}>Users</a>
+    <a role="tab" href="{% url 'reporting:reports' %}"
+       {% if tab == 'reports' %}aria-selected="true" class="on"{% endif %}>Reports</a>
+    <a role="tab" href="{% url 'importexport:data_management' %}"
+       {% if tab == 'data' %}aria-selected="true" class="on"{% endif %}>Data</a>
     <a role="tab" href="{% url 'administration:settings' %}"
        {% if tab == 'settings' %}aria-selected="true" class="on"{% endif %}>Settings</a>
     <a role="tab" href="{% url 'administration:audit' %}"

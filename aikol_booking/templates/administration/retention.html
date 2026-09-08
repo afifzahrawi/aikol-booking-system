@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Retention{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Retention</h1>
+    <p class="lede">Booking records are kept for {{ years }} years, for audit.</p></div></div>
+{% include "administration/_nav.html" with tab='settings' %}
+
+<div class="notice notice-info">
+    <strong>A retention period does not delete anything.</strong>
+    It makes records <em>eligible</em> for a cleanup that an administrator has to review and
+    confirm. Nothing here runs on a schedule, and no management command removes data without a
+    typed confirmation.
+</div>
+
+<section class="card">
+    <div class="card-head"><h2 class="label" style="margin:0">What is eligible today</h2></div>
+    <div class="card-body">
+        <dl class="kv">
+            <dt>Cutoff</dt><dd>anything finishing before {{ preview.cutoff|date:"d F Y" }}</dd>
+            <dt>Booking records</dt><dd>{{ preview.bookings }}</dd>
+            <dt>Key handover records</dt><dd>{{ preview.handovers }}
+                <span class="help">&mdash; removed in the same batch, before the bookings they
+                belong to, because the foreign key is PROTECT</span></dd>
+            {% if preview.earliest %}
+                <dt>Oldest</dt><dd>{{ preview.earliest|date:"d M Y" }}</dd>
+                <dt>Newest eligible</dt><dd>{{ preview.latest|date:"d M Y" }}</dd>
+            {% endif %}
+            <dt>Disposal action</dt><dd>{{ preview.action }}</dd>
+        </dl>
+
+        {% if preview.bookings %}
+        <div class="notice notice-warn">
+            <strong>Take a database backup first, and copy it off this server.</strong>
+            A backup that exists only on the application server disappears with the application
+            server. The export written by this run is the record of last resort: it is verified
+            &mdash; read back and counted &mdash; before anything is deleted.
+        </div>
+
+        <p class="help">Exports are written to <span class="mono">{{ export_dir }}</span>, outside
+           the web root. An export the web server would hand to anyone who guessed the filename is
+           a data breach with extra steps.</p>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="field">
+                <label for="action">Disposal action</label>
+                <select class="select" id="action" name="action">
+                    <option value="EXPORT" {% if preview.action == 'EXPORT' %}selected{% endif %}>
+                        Export to CSV, verify, then remove</option>
+                    <option value="ARCHIVE" {% if preview.action == 'ARCHIVE' %}selected{% endif %}>
+                        Copy to the archive table, then remove</option>
+                </select>
+                <p class="help">Permanent deletion with no copy is restricted and is not offered
+                   on this screen.</p>
+            </div>
+            <div class="field">
+                <label for="confirmation">Type <strong>{{ phrase }}</strong> to confirm</label>
+                <input class="input mono" type="text" id="confirmation" name="confirmation"
+                       autocomplete="off" placeholder="{{ phrase }}">
+                <p class="help">{{ preview.bookings }} booking records and
+                   {{ preview.handovers }} key records would be removed after being
+                   {{ preview.action|lower }}ed.</p>
+            </div>
+            <button class="btn btn-danger" type="submit">Run the cleanup</button>
+        </form>
+        {% else %}
+            <div class="empty-state">Nothing is old enough to be eligible.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

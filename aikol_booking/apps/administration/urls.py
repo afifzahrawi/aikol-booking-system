@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import retention_views, views
 
 app_name = "administration"
 
@@ -11,4 +11,5 @@ urlpatterns = [
     path("manage/settings/", views.settings_list, name="settings"),
     path("manage/site-content/", views.site_content, name="site_content"),
     path("manage/audit/", views.audit_log, name="audit"),
+    path("manage/retention/", retention_views.retention_screen, name="retention"),
 ]

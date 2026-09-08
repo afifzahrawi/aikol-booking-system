@@ -6,6 +6,8 @@ import re
 
 from django import forms
 
+from config.forms import StyledFormMixin
+
 from .models import Facility, ResourceImage, ResourceStatus, Vehicle, Venue
 from .validators import validate_image_upload
 
@@ -24,7 +26,7 @@ class FacilityChoiceMixin:
         self.fields["facilities"].widget = forms.CheckboxSelectMultiple()
 
 
-class VenueForm(FacilityChoiceMixin, forms.ModelForm):
+class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
     applies_to = Facility.AppliesTo.VENUE
 
     class Meta:
@@ -54,7 +56,7 @@ class VenueForm(FacilityChoiceMixin, forms.ModelForm):
         return closes
 
 
-class VehicleForm(FacilityChoiceMixin, forms.ModelForm):
+class VehicleForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
     applies_to = Facility.AppliesTo.VEHICLE
 
     class Meta:
@@ -86,7 +88,7 @@ class VehicleForm(FacilityChoiceMixin, forms.ModelForm):
             self.fields["code"].disabled = True
 
 
-class FacilityForm(forms.ModelForm):
+class FacilityForm(StyledFormMixin, forms.ModelForm):
     """Display order is absent deliberately: it is set by dragging rows, not
     typed. A number field here would let two facilities claim the same position
     and would need the rest of the list renumbered by hand to insert anything."""
@@ -136,7 +138,7 @@ class FacilityForm(forms.ModelForm):
         return facility
 
 
-class ResourceImageForm(forms.ModelForm):
+class ResourceImageForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = ResourceImage
         fields = ("image", "caption")
@@ -147,7 +149,7 @@ class ResourceImageForm(forms.ModelForm):
         return upload
 
 
-class ResourceSearchForm(forms.Form):
+class ResourceSearchForm(StyledFormMixin, forms.Form):
     """Filters for the browse and management lists. Applied in the query."""
 
     q = forms.CharField(required=False, label="Search")

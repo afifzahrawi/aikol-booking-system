@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from django import forms
 
+from config.forms import StyledFormMixin
 
-class IssueKeyForm(forms.Form):
+
+class IssueKeyForm(StyledFormMixin, forms.Form):
     """Who is collecting is asked for, not assumed.
 
     Defaulting this to the person who booked would be a guess dressed up as a
@@ -23,7 +25,7 @@ class IssueKeyForm(forms.Form):
     )
 
 
-class ReturnKeyForm(forms.Form):
+class ReturnKeyForm(StyledFormMixin, forms.Form):
     returned_by_name = forms.CharField(
         max_length=150,
         label="Returned by",

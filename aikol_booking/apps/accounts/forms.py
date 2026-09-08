@@ -7,13 +7,15 @@ convenience for the person filling it in, never the place a rule lives alone.
 from __future__ import annotations
 
 from django import forms
+
+from config.forms import StyledFormMixin
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 from .models import Affiliation, User
 
 
-class RegistrationForm(UserCreationForm):
+class RegistrationForm(StyledFormMixin, UserCreationForm):
     """Self-registration.
 
     Open to the public as well as to IIUM. The matriculation or staff number is
@@ -101,7 +103,7 @@ class RegistrationForm(UserCreationForm):
         return user
 
 
-class EmailAuthenticationForm(AuthenticationForm):
+class EmailAuthenticationForm(StyledFormMixin, AuthenticationForm):
     """Sign in with an email address; there is no username in this system."""
 
     username = forms.EmailField(label="Email address")
@@ -110,7 +112,7 @@ class EmailAuthenticationForm(AuthenticationForm):
         return self.cleaned_data["username"].strip().lower()
 
 
-class DrivingLicenceForm(forms.ModelForm):
+class DrivingLicenceForm(StyledFormMixin, forms.ModelForm):
     """Captured on the first self-drive booking, not at registration — most
     people never need it, and it is personal data we would rather not hold
     without a reason."""

@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from django import forms
 
+from config.forms import StyledFormMixin
+
 from apps.accounts.models import Affiliation, Role, User
 
 from .models import SiteContent, SystemSetting
 
 
-class OnBehalfForm(forms.Form):
+class OnBehalfForm(StyledFormMixin, forms.Form):
     """Decision 14: an administrator may create a booking for somebody else.
 
     The person is searched for, not scrolled to. A Kulliyyah has thousands of
@@ -27,7 +29,7 @@ class OnBehalfForm(forms.Form):
         self.fields["user"].widget.attrs["list"] = "user-options"
 
 
-class UserAdminForm(forms.ModelForm):
+class UserAdminForm(StyledFormMixin, forms.ModelForm):
     """Roles and activation. A password is never set here — an administrator
     who can read or choose someone else's password is a liability, and the
     reset flow already exists."""
@@ -46,13 +48,13 @@ class UserAdminForm(forms.ModelForm):
         }
 
 
-class SystemSettingForm(forms.ModelForm):
+class SystemSettingForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = SystemSetting
         fields = ("value",)
 
 
-class SiteContentForm(forms.ModelForm):
+class SiteContentForm(StyledFormMixin, forms.ModelForm):
     """Header and footer wording — content, not code."""
 
     class Meta:

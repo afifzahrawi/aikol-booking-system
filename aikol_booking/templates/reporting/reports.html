@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Reports</h1>
+        <p class="lede">{{ start|date:"d M Y" }} to {{ today|date:"d M Y" }} &mdash; {{ days }} days.</p></div>
+    <div class="btn-group">
+        <a class="btn" href="?days=30">30 days</a>
+        <a class="btn" href="?days=90">90 days</a>
+        <a class="btn" href="?days=365">A year</a>
+        <a class="btn btn-primary" href="{% url 'importexport:export_bookings' %}">Export bookings</a>
+    </div>
+</div>
+{% include "administration/_nav.html" with tab='reports' %}
+
+<div class="grid grid-4" style="margin-bottom:18px">
+    <div class="stat"><span class="k">Bookings</span><span class="v">{{ headline.total }}</span>
+        <span class="d">{{ headline.approved }} approved &middot; {{ headline.rejected }} rejected
+            &middot; {{ headline.cancelled }} cancelled</span></div>
+    <div class="stat info"><span class="k">Approval rate</span>
+        <span class="v">{% if headline.approval_rate is not None %}{{ headline.approval_rate }}%{% else %}&mdash;{% endif %}</span>
+        <span class="d">of all decided requests</span></div>
+    <div class="stat accent"><span class="k">Room hours booked</span><span class="v">{{ headline.room_hours }}</span>
+        <span class="d">approved and completed</span></div>
+    <div class="stat neutral"><span class="k">Vehicle trip days</span><span class="v">{{ headline.trip_days }}</span>
+        <span class="d">approved and completed</span></div>
+</div>
+
+<section class="card" style="margin-bottom:18px">
+    <div class="card-head">
+        <h2 class="label" style="margin:0">Room demand by hour and day</h2>
+        <span class="help">
+            {% if heat.busiest %}Busiest: {{ heat.busiest.name }}
+                {{ heat.busiest.hour }}:00, {{ heat.busiest.value }} room-hours
+            {% else %}No approved room bookings in the period{% endif %}
+        </span>
+    </div>
+    <div class="card-body">
+        <p class="help" style="margin:0 0 12px">Approved room-hours falling in each hour of the
+           bookable window. A booking is spread across the hours it occupies, so a 09:00&ndash;12:00
+           seminar adds an hour to each of three cells. Vehicles are excluded &mdash; a trip that
+           runs overnight has no meaningful hour of day.</p>
+
+        <div class="heat-wrap">
+        <table class="heat">
+            <thead><tr><td></td>
+                {% for hour in heat.hours %}<th scope="col">{{ hour }}</th>{% endfor %}
+            </tr></thead>
+            <tbody>
+            {% for row in heat.rows %}
+                <tr><th scope="row">{{ row.name }}</th>
+                {% for cell in row.cells %}
+                    <td data-level="{{ cell.level }}"
+                        title="{{ row.name }} {{ cell.hour }}:00 &mdash; {{ cell.value }} room-hours">
+                        <span class="visually-hidden">{{ cell.value }} room-hours</span></td>
+                {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+
+        <div class="heat-foot">
+            <p class="heat-read" style="margin:0">Total {{ heat.total }} room-hours in the period.</p>
+            <div class="heat-scale" aria-hidden="true">
+                <span>None</span>
+                <i style="background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-soft)"></i>
+                <span style="margin-left:4px">Fewer</span>
+                <i style="background:#dbe9e4"></i><i style="background:#a8ccc2"></i>
+                <i style="background:#6ba99c"></i><i style="background:#33806f"></i>
+                <i style="background:var(--brand)"></i>
+                <span>More</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="grid grid-2" style="align-items:start">
+    <section class="card">
+        <div class="card-head"><h2 class="label" style="margin:0">Utilisation by resource</h2></div>
+        <div class="card-body">
+            <p class="help" style="margin:0 0 10px">Share of the 08:00&ndash;22:00 window held.</p>
+            <div class="hbars">
+            {% for row in utilisation %}
+                <div class="hbar"><span>{{ row.resource.name }}</span>
+                    <div class="track"><div class="fill" style="width:{{ row.percent }}%"></div></div>
+                    <span class="val">{{ row.percent }}%</span></div>
+            {% empty %}
+                <div class="empty-state">No active resource.</div>
+            {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:18px">
+        <section class="card">
+            <div class="card-head"><h2 class="label" style="margin:0">Bookings per month</h2></div>
+            <div class="card-body">
+                <div class="bars">
+                {% for row in monthly %}
+                    <div class="bar-col">
+                        <div class="bar" style="height:{{ row.percent }}%"><span>{{ row.count }}</span></div>
+                        <span class="bar-label">{{ row.label }}</span>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-head"><h2 class="label" style="margin:0">Keys</h2></div>
+            <div class="card-body">
+                <dl class="kv">
+                    <dt>Out now</dt><dd>{{ keys.out }}</dd>
+                    <dt>Overdue</dt><dd>{{ keys.overdue }}</dd>
+                    <dt>Completed with no key ever issued</dt><dd>{{ keys.uncollected }}
+                        <span class="help">&mdash; bookings nobody turned up for</span></dd>
+                </dl>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-head"><h2 class="label" style="margin:0">Most frequent requesters</h2></div>
+            <div class="card-body">
+                <table class="data">
+                    <thead><tr><th scope="col">Name</th><th scope="col">Affiliation</th>
+                        <th scope="col">Bookings</th></tr></thead>
+                    <tbody>
+                    {% for row in requesters %}
+                        <tr><td>{{ row.name }}</td><td>{{ row.affiliation|title }}</td>
+                            <td class="num">{{ row.count }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="3"><div class="empty-state">Nothing in this period.</div></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <p class="help" style="margin-top:.75rem">Names and counts only. A utilisation
+                   report has no need of anybody's matriculation or telephone number.</p>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

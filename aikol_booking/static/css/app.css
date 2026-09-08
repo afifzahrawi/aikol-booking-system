@@ -1067,7 +1067,71 @@ tbody.reordering tr[data-status] td:first-child { box-shadow: none; }
     .btn-group > .btn { flex: 1; }
 }
 
-/* ---------- 21. Print ----------------------------------------------------- */
+/* ---------- 21. Interaction -----------------------------------------------
+   Added when the design was audited against Emil Kowalski's design-engineering
+   notes and Apple's fluid-interfaces material. Three defects, all real:
+
+   1. Nothing in the stylesheet had a transition, so every hover state snapped.
+   2. Buttons had no `:active`. A control that does not move when pressed reads
+      as unresponsive even when the request is instantly fast — feedback belongs
+      on the press, not on the response.
+   3. Focus was styled with `:focus`, which fires on mouse click too, so mouse
+      users saw focus rings and keyboard users saw no ring at all on buttons and
+      links. `:focus-visible` shows it to the people who need it.
+
+   The motion here is deliberately small. This is an institutional booking
+   system used by students, lecturers and the Kulliyyah office, not a marketing
+   page: the correct amount of animation is the least that still confirms an
+   action registered. Durations are 90–140ms and every one names the property it
+   animates — never `all`. */
+
+.btn, .btn-link, .draghandle, table.data td a {
+    transition: background-color 120ms ease-out, border-color 120ms ease-out,
+                color 120ms ease-out, transform 90ms ease-out;
+}
+.input, .select, .textarea {
+    transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+/* Pressed, not merely hovered. 0.97 is small enough to read as a press rather
+   than a bounce. */
+.btn:active:not([disabled]):not([aria-disabled="true"]) { transform: scale(.97); }
+.btn-link:active { transform: scale(.98); }
+
+/* One ring, everywhere, for keyboard users only. */
+.btn:focus-visible,
+.btn-link:focus-visible,
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible,
+.seg a:focus-visible,
+.app-nav a:focus-visible,
+table.data a:focus-visible,
+summary:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+}
+/* A gold ring on the green nav bar: a green one on green is invisible. */
+.app-nav a:focus-visible { outline-color: var(--gold); }
+
+/* A disabled control must not pretend it can be pressed. */
+.btn[disabled], .btn[aria-disabled="true"] { transform: none !important; }
+
+/* Some people get motion sickness from movement, and some simply asked not to
+   see it. Honour the request rather than deciding the motion is small enough
+   not to count. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .btn:active:not([disabled]) { transform: none; }
+}
+
+/* ---------- 22. Print ----------------------------------------------------- */
 @media print {
     .app-nav,     body { background: #fff; }
     .app-header { border-bottom: 1px solid #000; }

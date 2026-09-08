@@ -335,3 +335,56 @@ class KeyHandover(models.Model):
             overdue = timezone.now() > self.booking.end_at
             return "Overdue" if overdue else "Issued"
         return "Awaiting collection"
+
+
+class BookingArchive(models.Model):
+    """A denormalised copy of a booking, kept when the archive disposal action
+    is chosen instead of export.
+
+    NO foreign keys, deliberately. The point of an archive row is to outlive the
+    live tables: it holds the email, the name and the resource code as text, so
+    it stays readable after the user is renamed, the resource is deleted, or the
+    booking itself is gone. A foreign key would either block the deletion it
+    exists to permit, or dangle.
+    """
+
+    booking_reference = models.CharField(max_length=20, db_index=True)
+    user_email = models.EmailField()
+    user_name = models.CharField(max_length=150)
+    resource_code = models.CharField(max_length=30)
+    resource_name = models.CharField(max_length=120)
+    resource_type = models.CharField(max_length=10)
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField()
+    status = models.CharField(max_length=10)
+    purpose = models.TextField(blank=True)
+    key_issued_at = models.DateTimeField(null=True, blank=True)
+    key_returned_at = models.DateTimeField(null=True, blank=True)
+    original_created_at = models.DateTimeField()
+    archived_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-start_at",)
+        indexes = [models.Index(fields=["start_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.booking_reference} (archived)"
+
+    @classmethod
+    def from_booking(cls, booking: "Booking") -> "BookingArchive":
+        handover = getattr(booking, "key_handover", None)
+        return cls(
+            booking_reference=booking.booking_reference,
+            user_email=booking.user.email,
+            user_name=booking.user.full_name,
+            resource_code=booking.resource.code,
+            resource_name=booking.resource.name,
+            resource_type=booking.resource.resource_type,
+            start_at=booking.start_at,
+            end_at=booking.end_at,
+            status=booking.status,
+            purpose=booking.purpose,
+            key_issued_at=handover.issued_at if handover else None,
+            key_returned_at=handover.returned_at if handover else None,
+            original_created_at=booking.created_at,
+        )

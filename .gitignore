@@ -25,6 +25,11 @@ Section 24.docx
 # material, not part of the project: the public record should show the
 # Kulliyyah's authorship, not the tooling used to produce it.
 AGENTS.md
+.agents/
+.claude/
+.impeccable/
+.codex/
+skills-lock.json
 
 # Uploaded media (supplied by the Kulliyyah, not source)
 prototype/media/
