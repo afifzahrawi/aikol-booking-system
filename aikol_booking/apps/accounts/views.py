@@ -18,6 +18,7 @@ from apps.notifications.services import queue_email
 
 from .forms import EmailAuthenticationForm, RegistrationForm
 from .models import User
+from .throttle import is_throttled, reset as reset_throttle
 from .tokens import email_verification_token
 
 
@@ -26,7 +27,43 @@ class RegisterView(CreateView):
     template_name = "accounts/register.html"
     success_url = reverse_lazy("accounts:register_done")
 
+    def post(self, request, *args, **kwargs):
+        if is_throttled(request, "register", request.POST.get("email", "")):
+            return render(request, "accounts/throttled.html", status=429)
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
+        """An address that is already registered gets the SAME response as a new
+        one, and an email to the existing account instead of a new record.
+
+        Anything else is an address oracle: submit a list, read the error
+        messages, learn which of your colleagues has an account here.
+        """
+        if form.email_already_registered:
+            existing = User.objects.get(email__iexact=form.cleaned_data["email"])
+            queue_email(
+                to=existing.email,
+                subject="Somebody tried to register your AIKOL Booking address",
+                body=(
+                    f"Assalamualaikum {existing.full_name},\n\n"
+                    "Somebody submitted the registration form using this address. You already "
+                    "have an account, so no new one was created and nothing has changed.\n\n"
+                    "If that was you, simply sign in. If you have forgotten your password, use "
+                    "the 'Forgotten your password?' link on the sign-in page.\n\n"
+                    "If it was not you, you can ignore this message.\n"
+                ),
+                kind="ACCOUNT_DUPLICATE_ATTEMPT",
+            )
+            log_action(
+                actor=None,
+                action="ACCOUNT_REGISTER_DUPLICATE",
+                entity_type="User",
+                entity_id=existing.pk,
+                description="Registration attempted for an address that already has an account.",
+                request=self.request,
+            )
+            return redirect(self.success_url)
+
         # The account, the audit entry and the verification email are one
         # transaction. An account that exists with no way to verify it is worse
         # than no account.
@@ -78,7 +115,14 @@ def register_done(request):
 
 def verify_email(request, uidb64: str, token: str):
     """Follow the emailed link. Idempotent: a second visit says so rather than
-    failing, because people click links twice."""
+    failing, because people click links twice.
+
+    Throttled per IP, because the token is the only thing between a guesser and
+    a verified account, and an unlimited endpoint invites the guess.
+    """
+    if is_throttled(request, "verify"):
+        return render(request, "accounts/throttled.html", status=429)
+
     try:
         user = User.objects.get(pk=force_str(urlsafe_base64_decode(uidb64)))
     except (User.DoesNotExist, ValueError, TypeError, OverflowError):
@@ -105,6 +149,17 @@ class LoginView(auth_views.LoginView):
     form_class = EmailAuthenticationForm
     template_name = "accounts/login.html"
     redirect_authenticated_user = True
+
+    def post(self, request, *args, **kwargs):
+        if is_throttled(request, "login", request.POST.get("username", "")):
+            return render(request, "accounts/throttled.html", status=429)
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        # Somebody who finally remembers their password should not stay locked
+        # out by their own earlier typos.
+        reset_throttle("login", form.cleaned_data.get("username", ""))
+        return super().form_valid(form)
 
 
 @login_required

@@ -11,6 +11,8 @@ urlpatterns = [
     path("series/<int:pk>/cancel/", views.series_cancel, name="series_cancel"),
     path("resource/<int:pk>/availability/", views.availability, name="availability"),
     path("resource/<int:pk>/book/", views.booking_create, name="create"),
+    # Read-only, for the form's live check. Never the decision.
+    path("resource/<int:pk>/slot-check/", views.slot_check, name="slot_check"),
     path("resource/<int:pk>/book/weekly/", views.series_create, name="series_create"),
     # Deciding is the approver's authority, checked in the view.
     path("approvals/", views.approvals, name="approvals"),

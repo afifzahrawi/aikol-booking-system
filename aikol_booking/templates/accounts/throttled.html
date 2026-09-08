@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Too many attempts{% endblock %}
+{% block content %}
+<h1>Too many attempts</h1>
+<p>This form has been submitted too many times. Wait a little and try again.</p>
+<p class="help">The limit applies to the address being tried as well as to the computer trying it,
+   and the message is the same either way &mdash; it does not tell you which limit was reached, or
+   whether the account exists.</p>
+{% endblock %}

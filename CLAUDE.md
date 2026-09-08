@@ -39,13 +39,13 @@ governance and audit · low cost · maintainable.
 
 ## 2. Current status
 
-**Phases 1 to 7 are COMPLETE.**
+**Phases 1 to 8 are COMPLETE.**
 **All 26 section 24 decisions have been answered by AIKOL** (see section 5).
 The Django project exists, the database is built, authentication works, resources are browsable
 and manageable, bookings can be submitted, decided and cancelled — single and recurring — and
 key custody, user management, settings and the audit log are in place, and
-**bulk CSV import and export, reporting and retention** are built.
-Phase 8 (testing and security review) is next.
+bulk CSV import and export, reporting and retention are built, and the
+**security review is done**. Phase 9 (user acceptance testing) is next.
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -84,6 +84,20 @@ The prototype and the management report have both been brought into line with th
   `seed_facilities`. All idempotent.
 - **89 tests, all passing**, including the whole mandatory conflict table run twice — once against a
   venue, once against a vehicle — and the multi-day overlap table.
+
+### Built in Phase 8
+
+- **Rate limiting** on registration, sign-in, verification and password reset — two buckets, per IP
+  and per address. Production counts in the **database** cache, not local memory: a per-process
+  counter would give an attacker one bucket per Gunicorn worker.
+- **Registration no longer enumerates addresses.** A known address gets the same response as a new
+  one and the existing account is emailed instead. This needed `validate_unique` overriding as well
+  as the form message removed — Django's own model check was re-adding the oracle afterwards.
+- A **smoke test over every URL**, and an **authorisation matrix** of every restricted screen
+  against every role.
+- `config/testrunner.py` clears the cache between tests, because the rate limiter counts somewhere
+  Django's per-test rollback does not reach.
+- **291 tests.**
 
 ### Built in Phase 7
 
@@ -145,12 +159,13 @@ The prototype and the management report have both been brought into line with th
 
 ### Not started
 
-Phases 8–10: security review, user acceptance testing, deployment.
+Phases 9 and 10: user acceptance testing, and deployment.
 
 ### Next step
 
-Phase 8 — testing and security review. Run the suite against **PostgreSQL**, which is the only way
-the concurrency test means anything, and work through the checklist in `docs/technical/security.md`.
+**Run the suite against PostgreSQL.** It is the one outstanding item from Phase 8: the concurrency
+test skips on SQLite and proves nothing there, and the two exclusion constraints have never
+executed. Then Phase 9 — user acceptance testing with the Kulliyyah office.
 
 ---
 
@@ -210,7 +225,7 @@ booking form with driver and licence fields, and a key issue/return screen — d
 | Hosting | **Self-provided VPS, not IIUM ITD** | Confirmed decision |
 | Domain | **Self-provided, not an IIUM subdomain** | Confirmed decision |
 | Version control | **Git** | |
-| Testing | Django test framework | `manage.py test`. 250 tests as at Phase 7 |
+| Testing | Django test framework | `manage.py test`. 291 tests as at Phase 8 |
 | Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
 | PostgreSQL driver | **psycopg 3** | Production only. Installed in development so `check --deploy` can run |
 | Cost | **RM 0 in software.** Hosting and domain are now a real recurring cost | See section 5 |
@@ -481,6 +496,16 @@ booking feature complete without them.
 
 ## 9. Security requirements
 
+**Rate limiting** on every public authentication endpoint, in two buckets — per IP and per
+address — so neither one machine trying many accounts nor many machines trying one account runs
+unchecked. Production counts in the database cache rather than local memory, because Gunicorn's
+worker processes would otherwise each hold their own counter and multiply every limit silently.
+
+**Registration does not reveal whether an address is already registered.** It returns the same
+response either way and emails the existing account instead. A matriculation number collision *is*
+reported, because a number cannot be probed for a list of people the way an address can, and a
+silent merge would corrupt the booking record.
+
 Django's built-in authentication with hashed passwords — never a hand-written scheme, never plain
 text. The system provides its own authentication; there is no IIUM SSO and none is planned
 (decision 24), so account security is entirely this system's responsibility.
@@ -584,8 +609,8 @@ advanced analytics · any AI feature.
 | 6 | Administrative features, approver role, booking on behalf | **Complete** |
 | 6b | Key issue and return recording | **Complete** |
 | 7 | Bulk data, reporting and retention | **Complete** |
-| 8 | Testing and security review | Not started — **next** |
-| 9 | User acceptance testing | Not started |
+| 8 | Testing and security review | **Complete** — except the PostgreSQL run |
+| 9 | User acceptance testing | Not started — **next** |
 | 10 | Deployment and training | Not started — needs VPS and domain decisions |
 
 Phases 5b and 6b are numbered separately because they were added after the original plan and carry

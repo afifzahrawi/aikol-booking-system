@@ -27,6 +27,13 @@ class FacilityChoiceMixin:
 
 
 class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
+    layout = [
+        ["code", "name"],
+        ["location", "floor"],
+        ["venue_type", "capacity"],
+        ["opens_at", "closes_at"],
+    ]
+
     applies_to = Facility.AppliesTo.VENUE
 
     class Meta:
@@ -57,6 +64,15 @@ class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
 
 
 class VehicleForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
+    layout = [
+        ["code", "name"],
+        ["registration_number", "vehicle_class"],
+        ["make", "model"],
+        ["year", "seats"],
+        ["transmission", "fuel_type"],
+        ["road_tax_expiry", "status"],
+    ]
+
     applies_to = Facility.AppliesTo.VEHICLE
 
     class Meta:
@@ -92,6 +108,8 @@ class FacilityForm(StyledFormMixin, forms.ModelForm):
     """Display order is absent deliberately: it is set by dragging rows, not
     typed. A number field here would let two facilities claim the same position
     and would need the rest of the list renumbered by hand to insert anything."""
+    layout = [["name", "code"], ["applies_to", "is_active"]]
+
 
     class Meta:
         model = Facility

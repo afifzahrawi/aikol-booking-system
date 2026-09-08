@@ -23,3 +23,13 @@ DATABASES = {
 # writes a row and `manage.py send_queued_email` drains it — so the development
 # path exercises the same code as production.
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Local memory is fine here: development runs one process, so the rate-limit
+# counters are shared by everything that matters. Production must not use it —
+# see the note in production.py.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "aikol-development",
+    }
+}

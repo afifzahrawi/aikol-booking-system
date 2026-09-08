@@ -10,11 +10,7 @@
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             {{ form.non_field_errors }}
-            {% for field in form %}
-                <div class="field">{{ field.label_tag }}{{ field }}
-                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
-                    {{ field.errors }}</div>
-            {% endfor %}
+            {% include "_form_fields.html" %}
             <p class="help">The wordmark is validated like any other upload: JPEG, PNG or WebP, up
                to 5&nbsp;MB, format read from the file's own header. SVG is refused because it can
                carry script.</p>

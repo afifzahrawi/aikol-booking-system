@@ -93,10 +93,21 @@ class RegistrationTests(TestCase):
         self.assertContains(response, "matriculation or staff number")
         self.assertFalse(User.objects.filter(email="nurul@live.iium.edu.my").exists())
 
-    def test_a_duplicate_address_is_refused(self):
+    def test_a_duplicate_address_creates_no_second_account_and_says_nothing(self):
+        """This test used to assert the message "An account already exists".
+
+        That message was an address oracle — anybody could submit a list and
+        learn which colleagues had registered — and the security review removed
+        it. The registration now looks identical either way and the existing
+        account is emailed instead. The behaviour under test is unchanged where
+        it matters: still exactly one account.
+
+        See test_security.EnumerationTests for the full set.
+        """
         self.client.post(self.url, post_data())
         response = self.client.post(self.url, post_data(identification_number="2117002"))
-        self.assertContains(response, "An account already exists")
+        self.assertEqual(response.status_code, 302)
+        self.assertNotContains(response, "already exists", status_code=302)
         self.assertEqual(User.objects.count(), 1)
 
     def test_a_duplicate_identification_number_is_refused(self):

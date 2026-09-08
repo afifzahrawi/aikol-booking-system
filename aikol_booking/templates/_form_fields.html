@@ -1,0 +1,15 @@
+{# Renders a whole form, honouring its `layout` grouping when it has one and
+   falling back to a plain column when it does not. #}
+{% if form.rows %}
+    {% for is_row, fields in form.rows %}
+        {% if is_row %}
+            <div class="field-row">
+                {% for field in fields %}{% include "_field.html" %}{% endfor %}
+            </div>
+        {% else %}
+            {% for field in fields %}{% include "_field.html" %}{% endfor %}
+        {% endif %}
+    {% endfor %}
+{% else %}
+    {% for field in form %}{% include "_field.html" %}{% endfor %}
+{% endif %}

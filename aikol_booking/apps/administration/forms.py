@@ -33,6 +33,13 @@ class UserAdminForm(StyledFormMixin, forms.ModelForm):
     """Roles and activation. A password is never set here — an administrator
     who can read or choose someone else's password is a liability, and the
     reset flow already exists."""
+    layout = [
+        ["full_name", "email"],
+        ["identification_number", "phone"],
+        ["affiliation", "role"],
+        ["is_active", "email_verified"],
+    ]
+
 
     class Meta:
         model = User
@@ -56,6 +63,13 @@ class SystemSettingForm(StyledFormMixin, forms.ModelForm):
 
 class SiteContentForm(StyledFormMixin, forms.ModelForm):
     """Header and footer wording — content, not code."""
+    layout = [
+        ["site_name", "subtitle"],
+        ["organisation", "logo_alt"],
+        ["contact_heading", "office_hours"],
+        ["phone", "email"],
+    ]
+
 
     class Meta:
         model = SiteContent

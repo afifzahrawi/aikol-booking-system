@@ -33,6 +33,13 @@ class BookingForm(StyledFormMixin, forms.Form):
     destination and a driver arrangement — but the period, the purpose and the
     conflict check are identical, so they are written once.
     """
+    layout = [
+        ["start_date", "start_time"],
+        ["end_date", "end_time"],
+        ["location_from", "location_to"],
+        ["attendees", "passengers"],
+    ]
+
 
     start_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
     start_time = forms.TimeField(widget=forms.TimeInput(attrs={"type": "time"}))
@@ -168,6 +175,8 @@ class RecurrenceForm(StyledFormMixin, forms.Form):
     Each weekday keeps its own times: a course may meet Monday morning and
     Thursday afternoon, and forcing one pair of times on both would be wrong.
     """
+    layout = [["starts_on", "repeat_until"]]
+
 
     term = forms.ModelChoiceField(
         queryset=AcademicTerm.objects.all(),

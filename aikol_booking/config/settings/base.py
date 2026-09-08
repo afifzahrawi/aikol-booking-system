@@ -99,6 +99,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Clears the cache between tests. The rate limiter counts in the cache, which
+# Django's per-test rollback does not touch — see config/testrunner.py.
+TEST_RUNNER = "config.testrunner.AikolTestRunner"
+
 # Uploads. Images only, sniffed rather than trusted, renamed on save — see
 # apps/resources/validators.py and docs/technical/security.md.
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024

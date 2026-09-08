@@ -1,5 +1,10 @@
 {% extends "base.html" %}
+{% load static %}{# not inherited from base.html #}
 {% block title %}Reports{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/heatmap.js' %}" defer></script>
+{% endblock %}
 {% block content %}
 <div class="page-head">
     <div><h1>Reports</h1>
@@ -42,7 +47,7 @@
            runs overnight has no meaningful hour of day.</p>
 
         <div class="heat-wrap">
-        <table class="heat">
+        <table class="heat" id="heat">
             <thead><tr><td></td>
                 {% for hour in heat.hours %}<th scope="col">{{ hour }}</th>{% endfor %}
             </tr></thead>
@@ -50,7 +55,8 @@
             {% for row in heat.rows %}
                 <tr><th scope="row">{{ row.name }}</th>
                 {% for cell in row.cells %}
-                    <td data-level="{{ cell.level }}"
+                    <td data-level="{{ cell.level }}" data-hour="{{ cell.hour }}"
+                        data-value="{{ cell.value }}" tabindex="0"
                         title="{{ row.name }} {{ cell.hour }}:00 &mdash; {{ cell.value }} room-hours">
                         <span class="visually-hidden">{{ cell.value }} room-hours</span></td>
                 {% endfor %}
@@ -61,7 +67,8 @@
         </div>
 
         <div class="heat-foot">
-            <p class="heat-read" style="margin:0">Total {{ heat.total }} room-hours in the period.</p>
+            <p class="heat-read" id="heatRead" role="status" aria-live="polite" style="margin:0">
+                Total {{ heat.total }} room-hours in the period. Hover or tab a cell for its value.</p>
             <div class="heat-scale" aria-hidden="true">
                 <span>None</span>
                 <i style="background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-soft)"></i>

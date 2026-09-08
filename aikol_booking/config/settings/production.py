@@ -40,6 +40,17 @@ DATABASES = {
     }
 }
 
+# The DATABASE cache, not local memory. Gunicorn runs several worker
+# processes; a per-process rate-limit counter would give an attacker one bucket
+# per worker, quietly multiplying every limit by the worker count. Create the
+# table once with `manage.py createcachetable`.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "aikol_cache",
+    }
+}
+
 SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True

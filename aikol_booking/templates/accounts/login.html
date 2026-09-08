@@ -5,9 +5,7 @@
 <form method="post" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
-    {% for field in form %}
-        <div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
-    {% endfor %}
+            {% include "_form_fields.html" %}
     <button type="submit" class="btn btn-primary">Sign in</button>
 </form>
 <p><a href="{% url 'accounts:password_reset' %}">Forgotten your password?</a></p>

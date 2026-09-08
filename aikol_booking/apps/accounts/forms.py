@@ -45,10 +45,42 @@ class RegistrationForm(StyledFormMixin, UserCreationForm):
         ]
 
     def clean_email(self) -> str:
-        email = self.cleaned_data["email"].strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("An account already exists for that address.")
-        return email
+        """Normalise only.
+
+        Whether an account already exists is deliberately NOT reported here. A
+        form that says "an account already exists for that address" is an
+        address oracle: anybody can submit a list and learn which of their
+        colleagues has registered. The view handles the collision instead — it
+        shows the same confirmation page either way and emails the existing
+        account to say somebody tried.
+        """
+        return self.cleaned_data["email"].strip().lower()
+
+    def validate_unique(self) -> None:
+        """Skip the model's uniqueness check on `email`, and only on `email`.
+
+        This is the subtle half of not enumerating addresses. Suppressing the
+        message in `clean_email` was not enough: `ModelForm._post_clean` runs
+        `instance.validate_unique()` afterwards and adds "User with this Email
+        address already exists." by itself. The form then fails, the view's
+        `form_valid` never runs, and the oracle is intact — which is exactly
+        what the test caught.
+
+        Nothing is weakened by this. The column is still `unique=True`, so the
+        database refuses a duplicate regardless; the view checks for the
+        collision explicitly and takes the quiet path.
+        """
+        exclude = self._get_validation_exclusions()
+        exclude.add("email")
+        try:
+            self.instance.validate_unique(exclude=exclude)
+        except forms.ValidationError as exc:
+            self._update_errors(exc)
+
+    @property
+    def email_already_registered(self) -> bool:
+        email = (self.cleaned_data or {}).get("email", "")
+        return bool(email) and User.objects.filter(email__iexact=email).exists()
 
     def clean(self):
         cleaned = super().clean()
@@ -84,6 +116,10 @@ class RegistrationForm(StyledFormMixin, UserCreationForm):
                     "Give your matriculation or staff number, or tick the box below.",
                 )
             elif User.objects.filter(identification_number__iexact=number).exists():
+                # This one IS reported. A matriculation number is not a contact
+                # address and cannot be probed for a list of people the way an
+                # email can; and a silent merge of two people onto one number
+                # would corrupt the booking record, which is worse.
                 self.add_error(
                     "identification_number", "That number is already registered."
                 )

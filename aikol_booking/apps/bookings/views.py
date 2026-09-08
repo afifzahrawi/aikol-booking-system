@@ -479,3 +479,46 @@ def decide_series(request, pk: int):
             "occurrences": series.bookings.order_by("start_at"),
         },
     )
+
+
+@login_required
+def slot_check(request, pk: int):
+    """A read-only availability answer for the booking form's live check.
+
+    GET only, changes nothing, and is NOT the decision. The form uses it to warn
+    somebody early; `create_booking` checks the same period again inside a
+    transaction with `select_for_update()`, and the exclusion constraint sits
+    under that. If this endpoint were wrong, or absent, or lied, the booking
+    would still be refused correctly.
+    """
+    from django.http import JsonResponse
+
+    resource = _specific(get_object_or_404(Resource, pk=pk))
+    try:
+        start_date = dt.date.fromisoformat(request.GET.get("start_date", ""))
+        end_date = dt.date.fromisoformat(request.GET.get("end_date", "") or request.GET["start_date"])
+        start_time = dt.time.fromisoformat(request.GET.get("start_time", ""))
+        end_time = dt.time.fromisoformat(request.GET.get("end_time", ""))
+    except (ValueError, KeyError):
+        return JsonResponse({"free": None, "problems": [], "message": ""}, status=400)
+
+    start_at = timezone.make_aware(dt.datetime.combine(start_date, start_time))
+    end_at = timezone.make_aware(dt.datetime.combine(end_date, end_time))
+
+    from .services import validate_period
+
+    problems = validate_period(resource, start_at, end_at)
+    clashes = find_conflicts(resource, start_at, end_at)
+    first = clashes.first()
+    return JsonResponse(
+        {
+            "free": not clashes.exists(),
+            "problems": problems,
+            "message": (
+                f"Already reserved: {timezone.localtime(first.start_at):%d %b %Y, %H:%M}"
+                f"–{timezone.localtime(first.end_at):%H:%M}."
+                if first
+                else ""
+            ),
+        }
+    )

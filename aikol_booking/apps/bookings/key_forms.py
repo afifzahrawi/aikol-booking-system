@@ -14,6 +14,8 @@ class IssueKeyForm(StyledFormMixin, forms.Form):
     record, and the whole reason decision 17 exists is that the two are often
     different people.
     """
+    layout = [["collected_by_name", "collected_by_contact"]]
+
 
     collected_by_name = forms.CharField(
         max_length=150,

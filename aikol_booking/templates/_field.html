@@ -1,0 +1,9 @@
+{# One control. The help text's id matches what `associate_help_text` puts in
+   aria-describedby — change one and you must change the other, which is why
+   they are commented in both places. #}
+<div class="field">
+    {{ field.label_tag }}
+    {{ field }}
+    {% if field.help_text %}<p class="help" id="help_{{ field.html_name }}">{{ field.help_text }}</p>{% endif %}
+    {{ field.errors }}
+</div>

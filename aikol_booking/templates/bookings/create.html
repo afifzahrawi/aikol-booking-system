@@ -1,5 +1,10 @@
 {% extends "base.html" %}
+{% load static %}{# not inherited from base.html #}
 {% block title %}Book {{ resource.name }}{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/availability.js' %}" defer></script>
+{% endblock %}
 {% block content %}
 <div class="page-head">
     <div><h1>Book {{ resource.name }}</h1>
@@ -24,17 +29,14 @@
 
 <section class="card">
     <div class="card-body">
-        <form method="post" novalidate>
+        <form method="post" novalidate id="bookingForm"
+              data-availability="{% url 'bookings:slot_check' resource.pk %}">
             {% csrf_token %}
+            {# Filled in by availability.js. The server checks the same period
+               again under a row lock, so this is a courtesy, not a gate. #}
+            <p class="notice" id="slotStatus" role="status" aria-live="polite" hidden></p>
             {{ form.non_field_errors }}
-            {% for field in form %}
-                <div class="field">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
-                    {{ field.errors }}
-                </div>
-            {% endfor %}
+            {% include "_form_fields.html" %}
             <div class="btn-group">
                 <a class="btn" href="{% url 'resources:detail' resource.pk %}">Cancel</a>
                 <button class="btn btn-primary" type="submit">Submit request</button>

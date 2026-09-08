@@ -1067,6 +1067,28 @@ tbody.reordering tr[data-status] td:first-child { box-shadow: none; }
     .btn-group > .btn { flex: 1; }
 }
 
+/* Django's own validation markup. It had no rules at all, so every error
+   message on every form rendered as a bare bulleted list — the same class of
+   defect as the unstyled controls, and found the same way. */
+.errorlist {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    font-size: 12px;
+    color: var(--rej-fg);
+}
+.errorlist li { padding: 5px 9px; background: var(--rej-bg); border-left: 3px solid var(--rej-fg); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.errorlist li + li { margin-top: 4px; }
+/* A non-field error belongs at the top of the form, not beside a control. */
+.errorlist.nonfield { margin-bottom: 14px; }
+.field:has(.errorlist) .input,
+.field:has(.errorlist) .select,
+.field:has(.errorlist) .textarea { border-color: var(--rej-fg); }
+
+/* The heatmap's hover readout. `title` alone is useless on touch and slow on
+   desktop, so the value is also announced in a live region under the grid. */
+.heat td { cursor: default; }
+
 /* ---------- 21. Interaction -----------------------------------------------
    Added when the design was audited against Emil Kowalski's design-engineering
    notes and Apple's fluid-interfaces material. Three defects, all real:

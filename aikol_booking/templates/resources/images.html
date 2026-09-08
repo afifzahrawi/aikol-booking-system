@@ -25,9 +25,7 @@
     <div class="card-body">
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
-            {% for field in form %}
-                <div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
-            {% endfor %}
+            {% include "_form_fields.html" %}
             <button class="btn btn-primary" type="submit">Upload</button>
         </form>
         <p class="help" style="margin-top:.75rem">
