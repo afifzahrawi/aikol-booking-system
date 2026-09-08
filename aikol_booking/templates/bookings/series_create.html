@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Weekly booking &mdash; {{ resource.name }}{% endblock %}
+{% block content %}
+<h1>Repeat weekly &mdash; {{ resource.name }}</h1>
+<p class="lede">A semester of classes, entered once. Each day keeps its own times: a course may meet
+   Monday morning and Thursday afternoon.</p>
+
+<section class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="field">{{ form.term.label_tag }}{{ form.term }}
+                <p class="help">{{ form.term.help_text }}</p>{{ form.term.errors }}</div>
+
+            <div class="field-row">
+                <div class="field">{{ form.starts_on.label_tag }}{{ form.starts_on }}{{ form.starts_on.errors }}</div>
+                <div class="field">{{ form.repeat_until.label_tag }}{{ form.repeat_until }}{{ form.repeat_until.errors }}</div>
+            </div>
+
+            <p class="label">Repeat on &mdash; each day keeps its own times</p>
+            <div class="dowgrid">
+            {% for row in form.weekday_rows %}
+                <div class="dowrow">
+                    <label class="checkline">{{ row.day }} {{ row.label }}</label>
+                    <span class="field">{{ row.start }}</span>
+                    <span class="sep">&ndash;</span>
+                    <span class="field">{{ row.end }}</span>
+                    {{ row.start.errors }}{{ row.end.errors }}
+                </div>
+            {% endfor %}
+            </div>
+
+            <div class="field">{{ form.purpose.label_tag }}{{ form.purpose }}{{ form.purpose.errors }}</div>
+
+            {% if plan %}
+                <div class="notice {% if plan.clashing %}notice-warn{% else %}notice-info{% endif %}">
+                    <strong>{{ plan.bookable|length }} booking{{ plan.bookable|length|pluralize }}
+                    would be created.</strong>
+                    {% if plan.outside %}{{ plan.outside|length }} date{{ plan.outside|length|pluralize }}
+                        fall outside teaching and are left out &mdash; that is the calendar working as
+                        intended.{% endif %}
+                    {% if plan.clashing %}{{ plan.clashing|length }}
+                        date{{ plan.clashing|length|pluralize }} are already reserved, which is not.
+                    {% endif %}
+                </div>
+
+                {% if plan.clashing %}
+                <table class="data">
+                    <thead><tr><th scope="col">Date</th><th scope="col">Time</th><th scope="col">Why it is left out</th></tr></thead>
+                    <tbody>
+                    {% for occ in plan.clashing %}
+                        <tr><td>{{ occ.date|date:"D d M Y" }}</td>
+                            <td>{{ occ.start_time }}&ndash;{{ occ.end_time }}</td>
+                            <td>Already reserved</td></tr>
+                    {% endfor %}
+                    {% for occ in plan.outside %}
+                        <tr><td>{{ occ.date|date:"D d M Y" }}</td>
+                            <td>{{ occ.start_time }}&ndash;{{ occ.end_time }}</td>
+                            <td>{{ occ.skip_reason }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="field" style="margin-top:1rem">
+                    <label class="checkline">{{ form.accept_partial }} {{ form.accept_partial.label }}</label>
+                    <p class="help">{{ form.accept_partial.help_text }}</p>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            <div class="btn-group">
+                <a class="btn" href="{% url 'resources:detail' resource.pk %}">Cancel</a>
+                <button class="btn btn-primary" type="submit">
+                    {% if plan %}Confirm{% else %}Check these dates{% endif %}</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

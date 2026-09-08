@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ booking.booking_reference }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ booking.resource.name }}</h1>
+        <p class="lede mono">{{ booking.booking_reference }}</p>
+    </div>
+    <div class="btn-group">
+        {% if can_cancel %}
+            <a class="btn btn-danger" href="{% url 'bookings:cancel' booking.pk %}">Cancel booking</a>
+        {% endif %}
+        {% if user.is_approver and booking.status == 'PENDING' %}
+            <a class="btn btn-primary" href="{% url 'bookings:decide' booking.pk %}">Decide</a>
+        {% endif %}
+    </div>
+</div>
+
+<section class="card">
+    <div class="card-body">
+        <dl class="kv">
+            <dt>Status</dt><dd>{{ booking.get_status_display }}</dd>
+            <dt>When</dt><dd>{{ booking.start_at|date:"l, d F Y, H:i" }} to
+                {{ booking.end_at|date:"l, d F Y, H:i" }}</dd>
+            <dt>Purpose</dt><dd>{{ booking.purpose }}</dd>
+            <dt>Requested for</dt><dd>{{ booking.user.full_name }}</dd>
+            {% if booking.created_by_id != booking.user_id %}
+                {# Attributed to both, honestly: decision 14. #}
+                <dt>Requested by</dt><dd>{{ booking.created_by.full_name }}, on their behalf</dd>
+            {% endif %}
+            {% if is_vehicle %}
+                <dt>Driver</dt><dd>{{ booking.get_driver_arrangement_display }}</dd>
+                <dt>From</dt><dd>{{ booking.location_from }}</dd>
+                <dt>To</dt><dd>{{ booking.location_to }}</dd>
+                <dt>Passengers</dt><dd>{{ booking.passengers }}</dd>
+                {% if booking.driver_arrangement == 'VMU' %}
+                    <dt>Management approval</dt>
+                    <dd>{% if booking.management_approved %}Given{% else %}Still required{% endif %}
+                        <span class="help">&mdash; a VMU driver needs Kulliyyah management approval
+                        as well as approval of this booking.</span></dd>
+                {% endif %}
+            {% else %}
+                <dt>Attendees</dt><dd>{{ booking.attendees }}</dd>
+            {% endif %}
+            {% if booking.decision_reason %}
+                <dt>Reason given</dt><dd>{{ booking.decision_reason }}</dd>
+            {% endif %}
+            {% if booking.cancellation_reason %}
+                <dt>Cancellation reason</dt><dd>{{ booking.cancellation_reason }}</dd>
+            {% endif %}
+        </dl>
+
+        {% if booking.series_id %}
+            <p class="help">Part of a weekly series.
+               <a href="{% url 'bookings:series_cancel' booking.series_id %}">Cancel the whole series</a>
+               &mdash; only future occurrences are affected.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

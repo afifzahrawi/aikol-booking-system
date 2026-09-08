@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Decide {{ booking.booking_reference }}{% endblock %}
+{% block content %}
+<h1>{{ booking.booking_reference }}</h1>
+
+<section class="card">
+    <div class="card-body">
+        <dl class="kv">
+            <dt>Resource</dt><dd>{{ booking.resource.name }}</dd>
+            <dt>Requester</dt><dd>{{ booking.user.full_name }}</dd>
+            <dt>When</dt><dd>{{ booking.start_at|date:"l d F Y, H:i" }} to
+                {{ booking.end_at|date:"l d F Y, H:i" }}</dd>
+            <dt>Purpose</dt><dd>{{ booking.purpose }}</dd>
+            {% if booking.driver_arrangement %}
+                <dt>Driver</dt><dd>{{ booking.get_driver_arrangement_display }}</dd>
+            {% endif %}
+        </dl>
+
+        {% if overlapping %}
+            <div class="notice notice-warn">
+                <strong>Something else already covers this period.</strong>
+                Approving this one will be refused if the other is approved first.
+            </div>
+            <ul class="activity">
+            {% for other in overlapping %}
+                <li>{{ other.booking_reference }} &mdash; {{ other.user.full_name }},
+                    {{ other.get_status_display|lower }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+</section>
+
+<section class="card" style="margin-top:1.25rem">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="field">{{ field.label_tag }}{{ field }}
+                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+                    {{ field.errors }}</div>
+            {% endfor %}
+            <div class="btn-group">
+                <a class="btn" href="{% url 'bookings:approvals' %}">Back</a>
+                <button class="btn btn-danger" type="submit" name="action" value="reject">Reject</button>
+                <button class="btn btn-primary" type="submit" name="action" value="approve">Approve</button>
+            </div>
+            <p class="help" style="margin-top:.75rem">The slot is checked again at this moment, not
+               only when the request was made. If it has been taken since, approving is refused
+               rather than allowed to overwrite the other booking.</p>
+        </form>
+    </div>
+</section>
+{% endblock %}

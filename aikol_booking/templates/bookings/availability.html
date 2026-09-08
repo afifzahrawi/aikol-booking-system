@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Availability &mdash; {{ resource.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ resource.name }}</h1>
+        <p class="lede">What is already taken. Worked out on the server &mdash; the browser's own
+           check is a convenience on top of this, never what decides anything.</p>
+    </div>
+    <div class="btn-group">
+        <a class="btn btn-primary" href="{% url 'bookings:create' resource.pk %}">Book this</a>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card-head">
+        <h2 class="label" style="margin:0">{{ weekday }}, {{ day }}</h2>
+        <div class="btn-group">
+            <a class="btn btn-sm" href="?date={{ previous|date:'Y-m-d' }}">Previous day</a>
+            <a class="btn btn-sm" href="?date={{ next|date:'Y-m-d' }}">Next day</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="get" class="toolbar">
+            <div class="field">
+                <label for="date">Show a different date</label>
+                <input class="input" type="date" id="date" name="date" value="{{ day|date:'Y-m-d' }}">
+            </div>
+            <div class="field"><button class="btn" type="submit">Show</button></div>
+        </form>
+
+        {% if taken %}
+            <table class="data">
+                <thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col">Status</th></tr></thead>
+                <tbody>
+                {% for b in taken %}
+                    <tr>
+                        <td>{{ b.start_at|date:"D d M Y, H:i" }}</td>
+                        <td>{{ b.end_at|date:"D d M Y, H:i" }}</td>
+                        <td>{% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>
+                            {% else %}<span class="badge badge-pending">Pending</span>{% endif %}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <p class="help" style="margin-top:.75rem">A pending request holds the slot. Otherwise two
+               people could each be told to wait for the same room.</p>
+        {% else %}
+            <div class="empty-state">Nothing booked on this day.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

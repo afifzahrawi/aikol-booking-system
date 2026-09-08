@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Cancel series{% endblock %}
+{% block content %}
+<h1>Cancel the weekly series</h1>
+<p>{{ series.resource.name }} &mdash; {{ series.purpose }}</p>
+
+<div class="notice notice-warn">
+    <strong>{{ future|length }} future occurrence{{ future|length|pluralize }} would be cancelled.</strong>
+    Occurrences that have already taken place are history and are not touched.
+</div>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        <div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
+    {% endfor %}
+    <div class="btn-group">
+        <a class="btn" href="{% url 'bookings:mine' %}">Keep them</a>
+        <button class="btn btn-danger" type="submit">Cancel future occurrences</button>
+    </div>
+</form>
+{% endblock %}

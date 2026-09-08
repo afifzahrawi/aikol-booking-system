@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Decide series{% endblock %}
+{% block content %}
+<h1>Weekly series &mdash; {{ series.resource.name }}</h1>
+<p class="lede">{{ series.purpose }}</p>
+
+<section class="card">
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr><th scope="col">Reference</th><th scope="col">When</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+        {% for b in occurrences %}
+            <tr>
+                <td class="mono nowrap">{{ b.booking_reference }}</td>
+                <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
+                <td>{{ b.get_status_display }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
+            {% endfor %}
+            <div class="btn-group">
+                <a class="btn" href="{% url 'bookings:approvals' %}">Back</a>
+                <button class="btn btn-primary" type="submit">Approve every occurrence</button>
+            </div>
+            <p class="help" style="margin-top:.75rem">Each occurrence is a real booking and is
+               re-checked separately, because each could have been overtaken on its own. One
+               summary email goes to the requester, not one per week.</p>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -39,11 +39,11 @@ governance and audit · low cost · maintainable.
 
 ## 2. Current status
 
-**Phases 1, 2, 3 and 4 are COMPLETE.**
+**Phases 1 to 5b are COMPLETE.**
 **All 26 section 24 decisions have been answered by AIKOL** (see section 5).
-The Django project exists, the database is built, authentication works, and venues, vehicles and
-facilities are browsable and manageable in the real application.
-Phase 5 (the booking interface) is next.
+The Django project exists, the database is built, authentication works, resources are browsable
+and manageable, and **bookings can be submitted, decided and cancelled** — single and recurring.
+Phase 6 (administrative features and key custody) is next.
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -60,7 +60,7 @@ The prototype and the management report have both been brought into line with th
 | Interactive UI prototype, 19 screens | `prototype/` | Yes — venues, vehicles, keys, facilities, registration |
 | Placeholder images (48 SVG) + generator | `prototype/assets/images/`, `tools/generate_placeholder_images.py` | Yes — 32 venue, 16 vehicle |
 | Developer documentation | `docs/` | Yes |
-| **Django project — models, migrations, auth, resource screens** | `aikol_booking/` | Yes |
+| **Django project — models, auth, resources, bookings** | `aikol_booking/` | Yes |
 | This file | `CLAUDE.md` | Yes |
 
 ### Built in Phase 3
@@ -83,6 +83,21 @@ The prototype and the management report have both been brought into line with th
 - **89 tests, all passing**, including the whole mandatory conflict table run twice — once against a
   venue, once against a vehicle — and the multi-day overlap table.
 
+### Built in Phase 5 and 5b
+
+- Availability per day, worked out **on the server**; the browser's check is a convenience on top.
+- Booking submission for both resource kinds through one form: the fields differ, the period rules
+  and conflict check do not.
+- **Recurring bookings in two passes.** The first shows exactly what would be created and what would
+  be left out, separated into *outside teaching* (the calendar working as intended) and *already
+  reserved* (somebody else being there). Only then may the requester accept a partial series.
+  Expansion is atomic: a failure partway leaves nothing, because half a timetable looks complete.
+- Approval and rejection with a re-check under a row lock; series approval re-checks each occurrence
+  separately and sends **one** summary email.
+- Cancellation with a mandatory reason and the three-day cutoff, which approvers are not bound by.
+- **Every booking email goes through the outbox**, written in the same transaction. A test rolls a
+  booking back and asserts the message dies with it.
+
 ### Built in Phase 4
 
 - **The confirmed stylesheet is ported**, not re-derived: `static/css/app.css` comes from
@@ -100,13 +115,13 @@ The prototype and the management report have both been brought into line with th
 
 ### Not started
 
-Phases 5–10: the booking interface, administration, reporting, bulk data, deployment.
+Phases 6–10: administrative features, key custody, reporting, bulk data, deployment.
 
 ### Next step
 
-Phase 5 — the booking system. `apps/bookings/services.py` already holds the conflict rule, period
-validation and series expansion, all tested; Phase 5 is the forms, views and templates on top of
-them, plus approval, cancellation and the confirmation emails.
+Phase 6 — administration and key custody. The `KeyHandover` model already exists with its four
+people (who booked, who collected, who issued, who received); Phase 6 is the issue and return
+screens, the outstanding-keys report, and booking on a user's behalf.
 
 ---
 
@@ -166,7 +181,7 @@ booking form with driver and licence fields, and a key issue/return screen — d
 | Hosting | **Self-provided VPS, not IIUM ITD** | Confirmed decision |
 | Domain | **Self-provided, not an IIUM subdomain** | Confirmed decision |
 | Version control | **Git** | |
-| Testing | Django test framework | `manage.py test`. 128 tests as at Phase 4 |
+| Testing | Django test framework | `manage.py test`. 164 tests as at Phase 5 |
 | Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
 | PostgreSQL driver | **psycopg 3** | Production only. Installed in development so `check --deploy` can run |
 | Cost | **RM 0 in software.** Hosting and domain are now a real recurring cost | See section 5 |
@@ -527,9 +542,9 @@ advanced analytics · any AI feature.
 | 2 | UI prototype and requirement confirmation | **Complete**; decisions received and folded into the prototype and report |
 | 3 | Database, self-registration and authentication | **Complete** |
 | 4 | Resource management (venues and vehicles) | **Complete** |
-| 5 | Booking system and conflict prevention | Not started — **next** |
-| 5b | Recurring bookings | Not started — added by decision 15 |
-| 6 | Administrative features, approver role, booking on behalf | Not started |
+| 5 | Booking system and conflict prevention | **Complete** |
+| 5b | Recurring bookings | **Complete** |
+| 6 | Administrative features, approver role, booking on behalf | Not started — **next** |
 | 6b | Key issue and return recording | Not started — added by decision 17 |
 | 7 | Bulk data, reporting and retention | Not started |
 | 8 | Testing and security review | Not started |

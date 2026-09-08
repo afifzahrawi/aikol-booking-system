@@ -172,13 +172,18 @@ def create_booking(
     start_at: dt.datetime,
     end_at: dt.datetime,
     purpose: str,
+    notify: bool = True,
     **extra,
 ) -> Booking:
     """Create one booking, re-checking the slot under a row lock.
 
     Raises ValidationError listing every conflict rather than raising on the
     first, so the requester is told the whole story at once.
+
+    `notify=False` is for occurrences of a series, which are reported by one
+    summary message instead of twenty-six identical ones.
     """
+    from apps.notifications import messages
     clashes = list(
         find_conflicts(resource, start_at, end_at, for_update=True).select_related("resource")
     )
@@ -190,7 +195,7 @@ def create_booking(
                 for c in clashes
             ]
         )
-    return Booking.objects.create(
+    booking = Booking.objects.create(
         resource=resource,
         user=user,
         created_by=created_by,
@@ -200,6 +205,11 @@ def create_booking(
         status=BookingStatus.PENDING,  # every resource requires approval (decision 4)
         **extra,
     )
+    if notify:
+        # Written in this transaction, so a rollback takes the message with it.
+        # The system never tells somebody about a booking that does not exist.
+        messages.booking_submitted(booking)
+    return booking
 
 
 def expand_series(
@@ -238,3 +248,258 @@ def expand_series(
 def _parse_time(value: str) -> dt.time:
     hour, minute = value.split(":")
     return dt.time(int(hour), int(minute))
+
+
+# ---------------------------------------------------------------------------
+# Workflow: approval, rejection, cancellation, and recurring series.
+#
+# Each of these queues its email INSIDE the same transaction as the change it
+# reports. If the transaction rolls back the outbox row goes with it, so the
+# system never tells somebody about a booking that does not exist.
+# ---------------------------------------------------------------------------
+
+
+@transaction.atomic
+def approve_booking(booking, *, decided_by, reason: str = ""):
+    """Approve, re-checking the slot first.
+
+    A PENDING booking already holds its slot, so two overlapping pending
+    requests cannot arise through `create_booking`. The re-check is not
+    therefore redundant: it is what catches a row that reached the table by some
+    other path — a bulk CSV import, an administrator amending a booking's times,
+    a shell session, or a future feature nobody has written yet.
+
+    The requirement is that such a request must FAIL here rather than overwrite
+    an approved booking. Approval is the last moment before a resource is
+    promised to somebody, so it is the right place to look again.
+    """
+    from apps.notifications import messages
+
+    locked = Booking.objects.select_for_update().get(pk=booking.pk)
+    if locked.status != BookingStatus.PENDING:
+        raise ValidationError(
+            f"{locked.booking_reference} is already "
+            f"{locked.get_status_display().lower()} and cannot be approved."
+        )
+    clashes = find_conflicts(
+        locked.resource_id,
+        locked.start_at,
+        locked.end_at,
+        exclude_pk=locked.pk,
+        for_update=True,
+    ).filter(status=BookingStatus.APPROVED)
+    if clashes.exists():
+        raise ValidationError(
+            "That period has been approved for another booking since this request was "
+            "made. Reject this one, or ask the requester for another time."
+        )
+
+    locked.status = BookingStatus.APPROVED
+    locked.decided_by = decided_by
+    locked.decided_at = timezone.now()
+    locked.decision_reason = reason
+    locked.save(update_fields=["status", "decided_by", "decided_at", "decision_reason"])
+    # An occurrence of a series is reported in the series summary instead, so a
+    # semester does not produce twenty-six identical messages.
+    if locked.series_id is None:
+        messages.booking_approved(locked)
+    return locked
+
+
+@transaction.atomic
+def reject_booking(booking, *, decided_by, reason: str):
+    from apps.notifications import messages
+
+    if not reason.strip():
+        raise ValidationError("Give a reason. The requester is told what it is.")
+    if booking.status != BookingStatus.PENDING:
+        raise ValidationError(
+            f"{booking.booking_reference} is already {booking.get_status_display().lower()}."
+        )
+    booking.status = BookingStatus.REJECTED
+    booking.decided_by = decided_by
+    booking.decided_at = timezone.now()
+    booking.decision_reason = reason
+    booking.save(update_fields=["status", "decided_by", "decided_at", "decision_reason"])
+    if booking.series_id is None:
+        messages.booking_rejected(booking)
+    return booking
+
+
+@transaction.atomic
+def cancel_booking(booking, *, cancelled_by, reason: str):
+    """Cancel one booking. Sets a status; it never deletes the row.
+
+    The cutoff is checked here rather than only in the view, because a
+    cancellation can also arrive from a management command or the shell.
+    """
+    from apps.notifications import messages
+
+    if not reason.strip():
+        raise ValidationError("A reason is required (confirmed follow-up decision).")
+    if not booking.can_be_cancelled_by(cancelled_by):
+        hours = SystemSetting.get_int("cancellation_cutoff_hours")
+        raise ValidationError(
+            f"This booking can no longer be cancelled. A user must give {hours // 24} "
+            "days' notice; ask the Kulliyyah office."
+        )
+    booking.status = BookingStatus.CANCELLED
+    booking.cancelled_at = timezone.now()
+    booking.cancellation_reason = reason
+    booking.save(update_fields=["status", "cancelled_at", "cancellation_reason"])
+    messages.booking_cancelled(booking)
+    return booking
+
+
+@transaction.atomic
+def cancel_series(series, *, cancelled_by, reason: str) -> int:
+    """Cancel every FUTURE occurrence. Past ones are history and stay put."""
+    from apps.notifications import messages
+
+    if not reason.strip():
+        raise ValidationError("A reason is required.")
+    affected = list(
+        series.bookings.filter(status__in=BLOCKING_STATUSES, start_at__gt=timezone.now())
+    )
+    if not affected:
+        return 0
+    Booking.objects.filter(pk__in=[b.pk for b in affected]).update(
+        status=BookingStatus.CANCELLED,
+        cancelled_at=timezone.now(),
+        cancellation_reason=reason,
+    )
+    messages.series_cancelled(series, affected, reason=reason)
+    return len(affected)
+
+
+def plan_series(*, resource, term, weekday_times: dict, starts_on, repeat_until) -> dict:
+    """Work out what a series WOULD create, without creating anything.
+
+    Returns three separate lists, because they are three different outcomes and
+    the requester has to be able to tell them apart:
+
+      - `bookable` — free teaching dates;
+      - `outside`  — dates the calendar excludes, which is the calendar working
+                     as intended;
+      - `clashing` — dates somebody else already holds, which is not.
+
+    A clash is REPORTED, never silently skipped. Losing week 7 without saying so
+    is how a lecturer discovers in October that their class has no room.
+    """
+    if repeat_until < starts_on:
+        raise ValidationError("The series ends before it starts.")
+
+    occurrences = expand_series(
+        term=term,
+        weekday_times=weekday_times,
+        starts_on=starts_on,
+        repeat_until=repeat_until,
+    )
+    bookable, outside, clashing = [], [], []
+    for occ in occurrences:
+        if occ["skip_reason"]:
+            outside.append(occ)
+            continue
+        start = timezone.make_aware(dt.datetime.combine(occ["date"], occ["start_time"]))
+        end = timezone.make_aware(dt.datetime.combine(occ["date"], occ["end_time"]))
+        occ = dict(occ, start_at=start, end_at=end)
+        (clashing if find_conflicts(resource, start, end).exists() else bookable).append(occ)
+    return {"bookable": bookable, "outside": outside, "clashing": clashing}
+
+
+@transaction.atomic
+def create_series(
+    *,
+    resource,
+    user,
+    created_by,
+    term,
+    weekday_times: dict,
+    starts_on,
+    repeat_until,
+    purpose: str,
+    accept_partial: bool = False,
+):
+    """Create the series and every bookable occurrence, or create nothing.
+
+    Atomic on purpose. A failure partway through must leave NO occurrences
+    rather than half a semester: half a timetable is worse than none, because it
+    looks complete.
+
+    A clash refuses the whole request unless `accept_partial` is set — which the
+    interface only sets after showing the requester exactly which dates would be
+    dropped and asking. Never decide that for them.
+    """
+    from apps.bookings.models import BookingSeries
+    from apps.notifications import messages
+
+    plan = plan_series(
+        resource=resource,
+        term=term,
+        weekday_times=weekday_times,
+        starts_on=starts_on,
+        repeat_until=repeat_until,
+    )
+    if plan["clashing"] and not accept_partial:
+        raise ValidationError(
+            [
+                f"{occ['date']:%a %d %b %Y} {occ['start_time']:%H:%M}–"
+                f"{occ['end_time']:%H:%M} is already reserved."
+                for occ in plan["clashing"]
+            ]
+        )
+    if not plan["bookable"]:
+        raise ValidationError(
+            "No date in that range is both inside teaching and free. Check the start "
+            "date and the repeat-until date against the semester."
+        )
+
+    cap = SystemSetting.get_int("maximum_series_occurrences")
+    if len(plan["bookable"]) > cap:
+        raise ValidationError(f"A single request may not create more than {cap} bookings.")
+
+    series = BookingSeries.objects.create(
+        resource=resource,
+        user=user,
+        term=term,
+        weekday_times=weekday_times,
+        starts_on=starts_on,
+        repeat_until=repeat_until,
+        purpose=purpose,
+    )
+    created = [
+        create_booking(
+            resource=resource,
+            user=user,
+            created_by=created_by,
+            start_at=occ["start_at"],
+            end_at=occ["end_at"],
+            purpose=purpose,
+            series=series,
+            notify=False,
+        )
+        for occ in plan["bookable"]
+    ]
+    # One summary message for the whole series, not one per occurrence.
+    messages.series_submitted(series, created, skipped=plan["clashing"] + plan["outside"])
+    return series, created, plan
+
+
+@transaction.atomic
+def approve_series(series, *, decided_by, reason: str = ""):
+    """Approve every pending occurrence, re-checking each one.
+
+    Each occurrence is re-checked individually because each is a real row that
+    could have been overtaken separately. One summary email goes out afterwards.
+    """
+    from apps.notifications import messages
+
+    approved, refused = [], []
+    for booking in series.bookings.filter(status=BookingStatus.PENDING).order_by("start_at"):
+        try:
+            approved.append(approve_booking(booking, decided_by=decided_by, reason=reason))
+        except ValidationError as exc:
+            refused.append((booking, "; ".join(exc.messages)))
+    if approved:
+        messages.series_decided(series, approved, approved=True, reason=reason)
+    return approved, refused

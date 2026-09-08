@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Book {{ resource.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Book {{ resource.name }}</h1>
+        <p class="lede">Every booking is decided by the Kulliyyah office. You will be emailed
+           when it is.</p></div>
+    <div class="btn-group">
+        <a class="btn" href="{% url 'bookings:availability' resource.pk %}">Check availability</a>
+        {% if not is_vehicle %}
+            <a class="btn" href="{% url 'bookings:series_create' resource.pk %}">Repeat weekly</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if is_vehicle %}
+<div class="notice notice-info">
+    <strong>Anyone may book a car. Who may drive one is a separate question.</strong>
+    Self-drive is for lecturers and staff with a licence on file. A Vehicle Management Unit driver
+    is requested through STADD and needs Kulliyyah management approval as well as approval of this
+    booking &mdash; two approvals, not one.
+</div>
+{% endif %}
+
+<section class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <div class="btn-group">
+                <a class="btn" href="{% url 'resources:detail' resource.pk %}">Cancel</a>
+                <button class="btn btn-primary" type="submit">Submit request</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
