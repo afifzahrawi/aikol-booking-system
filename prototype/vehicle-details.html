@@ -95,7 +95,7 @@
                         <table class="data">
                             <thead>
                                 <tr><th scope="col">Reference</th><th scope="col">Period</th>
-                                    <th scope="col">Destination</th><th scope="col">Mileage</th>
+                                    <th scope="col">Destination</th>
                                     <th scope="col">Status</th></tr>
                             </thead>
                             <tbody id="trips"></tbody>
@@ -159,9 +159,6 @@
         ['Seats', v.seats + ' (driver plus ' + (v.seats - 1) + ' passengers)'],
         ['Transmission', A.esc(v.transmission === 'Auto' ? 'Automatic' : 'Manual')],
         ['Fuel', A.esc(v.fuelType)],
-        ['Current mileage', v.mileage.toLocaleString() + ' km'],
-        ['Road tax', expiryCell(v.roadTaxExpiry)],
-        ['Insurance', expiryCell(v.insuranceExpiry)],
         ['Bookable window', A.fmtTime(v.open) + ' – ' + A.fmtTime(v.close)],
         ['Maximum trip', A.SETTINGS.maxVehicleTripDays + ' days'],
         ['Status', A.badge(v.status === 'Active' ? 'Active' : 'Cancelled').replace('Cancelled', 'Under maintenance')]
@@ -175,18 +172,18 @@
     const mayDrive = A.canBookVehicle(me);   /* eligibility to REQUEST a car; the driver is assigned by the office */
     const hasLicence = !!me.licenceNo;
     const roadTaxOk = v.roadTaxExpiry >= todayISO;
-    const insuranceOk = v.insuranceExpiry >= todayISO;
     const active = v.status === 'Active';
     /* Everyone may book. Whether they may DRIVE is a separate question, and
        it changes the wording below rather than blocking the button. */
-    const canBook = active && roadTaxOk && insuranceOk;
+    const canBook = active && roadTaxOk;
 
     const note = document.getElementById('approvalNote');
     const reasons = [];
     /* Eligibility is no longer a reason a vehicle cannot be requested. */
     if (!active) reasons.push('this vehicle is currently under maintenance');
-    if (!roadTaxOk) reasons.push('its road tax expired on ' + A.fmtDate(v.roadTaxExpiry));
-    if (!insuranceOk) reasons.push('its insurance expired on ' + A.fmtDate(v.insuranceExpiry));
+    /* The legal reason is an office matter; the requester is told only that
+       the vehicle is unavailable. */
+    if (!roadTaxOk) reasons.push('it is currently withdrawn from service');
 
     if (canBook) {
         note.className = 'notice notice-info';
@@ -218,21 +215,17 @@
 
     A.availabilityStrip(document.getElementById('avail'), v, A.iso(A.today), 14);
 
-    /* Recent trips, newest first, with the mileage recorded at key return. */
+    /* Recent trips, newest first. */
     const trips = A.bookings
         .filter(b => b.resourceId === v.id && (b.status === 'Completed' || b.status === 'Approved'))
         .slice(0, 8);
     document.getElementById('trips').innerHTML = trips.length ? trips.map(b => {
         const k = A.keyForBooking(b.id);
-        const mileage = k && k.mileageIn
-            ? (k.mileageOut.toLocaleString() + ' → ' + k.mileageIn.toLocaleString() + ' km')
-            : (k && k.mileageOut ? k.mileageOut.toLocaleString() + ' km out' : '—');
         return '<tr>' +
             '<td><span class="mono">' + A.esc(b.ref) + '</span></td>' +
             '<td>' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) +
                 (b.multiDay ? ' <span class="badge badge-muted">' + A.esc(A.durationLabel(b.startAt, b.endAt)) + '</span>' : '') + '</td>' +
             '<td>' + A.esc(b.destination || '—') + '</td>' +
-            '<td>' + mileage + '</td>' +
             '<td>' + A.badge(b.status) + '</td></tr>';
     }).join('') : '<tr><td colspan="5"><div class="empty-state">No trips recorded for this vehicle.</div></td></tr>';
 })();

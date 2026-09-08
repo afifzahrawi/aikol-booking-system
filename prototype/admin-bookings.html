@@ -331,10 +331,6 @@
                 'The register records who physically took the key, not who booked.</p></div>' +
                 '<div class="field"><label for="collectorNote">Note</label>' +
                 '<input class="input" type="text" id="collectorNote" placeholder="For example: on behalf of the requester"></div>' +
-                (isVehicle
-                    ? '<div class="field"><label for="mOut">Mileage at collection (km)</label>' +
-                      '<input class="input" type="number" id="mOut" value="' + b.resource.mileage + '"></div>'
-                    : '') +
                 '<div id="issueErr" aria-live="polite"></div>' +
                 '<p class="help">Recorded with the time and your name, and written to the audit log as ' +
                 '<span class="mono">KEY_ISSUED</span>.</p>',
@@ -373,11 +369,6 @@
                 '<input class="input" type="text" id="returner" value="' + A.esc(k.collectedByName) + '">' +
                 '<p class="help">Often the same person who collected it, but not always. Record whoever ' +
                 'actually brought it back.</p></div>' +
-                (isVehicle
-                    ? '<div class="field"><label for="mIn">Mileage at return (km)</label>' +
-                      '<input class="input" type="number" id="mIn" value="' + (k.mileageOut + 120) + '">' +
-                      '<p class="help">Updates the vehicle\\u2019s recorded mileage.</p></div>'
-                    : '') +
                 '<div class="field"><label for="retNote">Condition or damage noted</label>' +
                 '<textarea class="textarea" id="retNote" placeholder="Optional"></textarea></div>' +
                 '<div id="retErr" aria-live="polite"></div>' +
@@ -392,7 +383,7 @@
                         return false;
                     }
                     A.toast('The return would be recorded from ' + who + ', received by ' +
-                            A.ADMIN_USER.name + (isVehicle ? ', with the closing mileage.' : '.'));
+                            A.ADMIN_USER.name + '.');
                 } }
             ]
         });
@@ -411,6 +402,16 @@
         const todayIso = A.iso(A.today);
         const maxIso = A.iso(A.addDays(A.today, S.advanceBookingLimitDays));
         let picked = null;                       // the user the booking is for
+
+        /* Which semester the series is generated against. There is more than
+           one calendar, so this is a choice rather than a constant — an
+           administrator filling next semester's timetable in week 12 of this
+           one is the case the whole feature exists for. */
+        const defaultTerm = A.currentTerm();
+        const chosenTerm = () => {
+            const el = document.getElementById('cTerm');
+            return el ? A.termById(el.value) : defaultTerm;
+        };
 
         function timeOpts(sel) {
             let h = '';
@@ -465,19 +466,21 @@
                 '<div class="checkline"><input type="checkbox" id="cRepeat">' +
                 '<label for="cRepeat">Repeat weekly — a class or tutorial across the semester</label></div>' +
                 '<div id="cRepeatOpts" hidden style="padding-left:24px">' +
-                '<div class="notice notice-info" style="margin-bottom:12px">' +
-                '<strong>' + A.esc(A.academicTerm.name) + '</strong>' +
-                'Teaching runs ' + A.esc(A.fmtDate(A.academicTerm.start)) + ' to ' +
-                A.esc(A.fmtDate(A.academicTerm.end)) + '. ' +
-                A.academicTerm.breaks.map(b => A.esc(b.name) + ' ' + A.esc(A.fmtDate(b.start)) +
-                    ' to ' + A.esc(A.fmtDate(b.end))).join('; ') + '. ' +
-                'Dates outside teaching are left out automatically.</div>' +
+                '<div class="field"><label for="cTerm">Semester</label>' +
+                '<select class="select" id="cTerm">' +
+                A.academicTerms.map(t => '<option value="' + t.id + '"' +
+                    (defaultTerm && t.id === defaultTerm.id ? ' selected' : '') + '>' +
+                    A.esc(t.name) + ' — ' + A.esc(A.termPhase(t)) + '</option>').join('') +
+                '</select>' +
+                '<p class="help">Which calendar the series is generated against. Maintained on the ' +
+                '<a href="data-management.html">Data management</a> screen.</p></div>' +
+                '<div class="notice notice-info" id="cTermNote" style="margin-bottom:12px"></div>' +
                 '<div class="field"><span class="label">Repeat on — each day keeps its own times</span>' +
                 '<div id="cDows"></div></div>' +
                 '<div class="field"><label for="cUntil">Repeat until</label>' +
                 '<input class="input" type="date" id="cUntil" min="' + todayIso + '" max="' + maxIso +
-                '" value="' + A.academicTerm.end + '">' +
-                '<p class="help">Defaults to the last day of the semester.</p></div>' +
+                '" value="' + (defaultTerm ? defaultTerm.end : maxIso) + '">' +
+                '<p class="help">Defaults to the last day of the selected semester.</p></div>' +
                 '<div id="cOccs"></div></div></div>' +
 
                 '<div class="field" style="margin-top:14px"><label for="cPurpose">Purpose <span class="req" aria-hidden="true">*</span></label>' +
@@ -637,7 +640,7 @@
         function syncRes() {
             const r = A.resourceById(Number($('cRes').value));
             $('cResHelp').textContent = kind() === 'Vehicle'
-                ? r.registration + ' · road tax to ' + A.fmtDate(r.roadTaxExpiry)
+                ? r.registration + ' · ' + r.seats + ' seats · road tax to ' + A.fmtDate(r.roadTaxExpiry)
                 : r.location + ' · bookable ' + A.fmtTime(r.open) + '–' + A.fmtTime(r.close);
         }
 
@@ -661,7 +664,7 @@
                     const t = dowTime(d.getDay());
                     out.push({ date: iso, dow: d.getDay(),
                                s: iso + 'T' + t.from, e: iso + 'T' + t.to,
-                               skip: A.termExclusion(iso) });
+                               skip: A.termExclusion(iso, chosenTerm()) });
                 }
                 d = A.addDays(d, 1);
             }
@@ -726,7 +729,7 @@
                 out.push('Every teaching date in this series clashes with an existing booking.');
             } else if ($('cRepeat').checked && !live.length) {
                 out.push('No date in that range falls inside the semester. Check the start date and the ' +
-                         'repeat-until date against ' + A.academicTerm.name + '.');
+                         'repeat-until date against ' + (chosenTerm() ? chosenTerm().name : 'the academic calendar') + '.');
             }
             return out;
         }
@@ -803,6 +806,58 @@
             }
             fillResources(); refresh();
         });
+        /* The note restates the chosen calendar in words. Dates are the thing
+           people get wrong, so they are shown rather than left to the picker. */
+        function termNote() {
+            const t = chosenTerm();
+            const note = $('cTermNote');
+            if (!t) {
+                note.innerHTML = '<strong>No academic calendar</strong>' +
+                    'Add a semester on the Data management screen before creating a weekly series.';
+                return;
+            }
+            /* A semester can be in the calendar and still be unbookable: the
+               90-day advance limit (decision 7) is a separate rule, and hitting
+               it looks identical to "before the semester begins" unless the
+               form says which of the two stopped it. */
+            const tooFar = t.start > maxIso;
+            const pastTerm = t.end < todayIso;
+            note.className = 'notice ' + (tooFar || pastTerm ? 'notice-warn' : 'notice-info');
+            note.innerHTML = '<strong>' + A.esc(t.name) + ' · ' + A.esc(A.termPhase(t)) + '</strong>' +
+                'Teaching runs ' + A.esc(A.fmtDate(t.start)) + ' to ' + A.esc(A.fmtDate(t.end)) + '. ' +
+                (t.breaks.length
+                    ? t.breaks.map(b => A.esc(b.name) + ' ' + A.esc(A.fmtDate(b.start)) +
+                        ' to ' + A.esc(A.fmtDate(b.end))).join('; ') + '. '
+                    : 'No breaks. ') +
+                'Dates outside teaching are left out automatically.' +
+                (pastTerm
+                    ? ' <strong>This semester has ended</strong>, so no date in it can be booked.'
+                    : tooFar
+                        ? ' <strong>This semester begins beyond the ' + S.advanceBookingLimitDays +
+                          '-day booking limit</strong> (' + A.esc(A.fmtDate(maxIso)) + ' is the furthest ' +
+                          'date bookable today), so its timetable cannot be entered yet.'
+                        : '');
+        }
+
+        $('cTerm').addEventListener('change', () => {
+            const t = chosenTerm();
+            /* Both ends of the range move with the semester. Carrying only one
+               of them across leaves a range that lies entirely outside the
+               chosen calendar — every occurrence skipped, for a reason the form
+               states but nobody reads as "you also need to move the start
+               date". The first class defaults to the first day of teaching, and
+               a start date already inside the semester is left alone. */
+            if (t) {
+                const first = t.start < todayIso ? todayIso : t.start;
+                if ($('cDate').value < t.start || $('cDate').value > t.end) {
+                    $('cDate').value = first > maxIso ? maxIso : first;
+                }
+                $('cUntil').value = t.end > maxIso ? maxIso : t.end;
+            }
+            termNote();
+            refresh();
+        });
+
         $('cRes').addEventListener('change', () => { syncRes(); refresh(); });
         $('cRepeat').addEventListener('change', () => {
             if ($('cRepeat').checked && !dows().length && $('cDate').value) {
@@ -827,6 +882,7 @@
             .forEach(id => $(id).addEventListener('input', refresh));
 
         fillResources();
+        termNote();
         refresh();
     }
 

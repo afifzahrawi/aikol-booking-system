@@ -99,7 +99,7 @@ Administrators create and maintain this list themselves; it is not fixed in code
 | `code` | varchar(40) | **Unique.** Slug used by CSV import. Generated from the name, then immutable |
 | `name` | varchar(80) | Display label. Editable — renaming "Smart TV" to "Smart Television" must not break existing links |
 | `applies_to` | varchar(10) | `VENUE`, `VEHICLE`, `BOTH`. Controls which options the resource form offers |
-| `display_order` | integer | Ordering on venue pages and filter lists |
+| `display_order` | integer | Ordering on venue pages and filter lists. Set by dragging rows on the Facilities screen, not typed: the server rewrites the whole column as `1..n` in one transaction, so there are never gaps or ties |
 | `status` | varchar(10) | `ACTIVE`, `INACTIVE` |
 | `created_at`, `updated_at` | timestamptz | |
 
@@ -150,8 +150,7 @@ Primary key is also the foreign key to `resources` (Django MTI).
 | `seats` | integer | Validates `passenger_count` |
 | `transmission` | varchar(10) | `AUTO`, `MANUAL` — a requester who cannot drive manual needs to know before booking |
 | `fuel_type` | varchar(20) | |
-| `road_tax_expiry`, `insurance_expiry` | date | A trip ending after either date is refused; both are shown on the admin list |
-| `current_mileage` | integer | Updated from the last key return |
+| `road_tax_expiry` | date | A trip ending after this date is refused. Shown on administrator screens only — the booking screens report the vehicle as unavailable without giving the reason |
 
 ### `resource_images`
 
@@ -169,7 +168,7 @@ The recurrence definition (decision 15). It is a template only — it never rese
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | bigint PK | |
-| `resource_id` | FK → resources | `on_delete=PROTECT` |
+| `resource_id` | FK → resources | `on_delete=PROTECT`. This is what makes a resource with any booking history undeletable. The administration screens offer Delete only on a **deactivated** resource, and the database refuses it for any resource a booking refers to — two gates, deliberately different: the first is about intent, the second about audit |
 | `user_id`, `created_by_id` | FK → users | `on_delete=PROTECT` |
 | `frequency` | varchar(10) | `WEEKLY` in the first release; `DAILY`, `MONTHLY` reserved |
 | `interval` | integer, default 1 | Every N weeks |
@@ -260,7 +259,6 @@ Decision 17: key collection and return are recorded in the system. One row per b
 | `received_by_id` | FK → users, null | The **officer** who took it back |
 | `returned_by_id` | FK → users, null | The **person who brought it back**, who may be someone else again |
 | `returned_by_name` | varchar(150), null | Their name as recorded |
-| `mileage_out`, `mileage_in` | integer, null | **Vehicles only.** `mileage_in` updates `vehicles.current_mileage` |
 | `condition_notes` | text | Damage or fault noted at return |
 | `created_at`, `updated_at` | timestamptz | |
 
@@ -386,11 +384,31 @@ and the keys that changed.
 
 Recurring bookings are generated against a teaching calendar, not against a bare date range.
 
-`academic_terms` — one row per semester: `name`, `start_date`, `end_date`.
-`term_breaks` — child rows: `term_id`, `name`, `start_date`, `end_date`.
+`academic_terms` — one row per semester: `name`, `start_date`, `end_date`. `name` is unique.
+`term_breaks` — child rows: `term_id`, `name`, `start_date`, `end_date`, `on_delete=CASCADE` (a break
+has no meaning apart from its term).
 
 This is a table rather than a `system_settings` value because a break has a start, an end and a name
 of its own — the same test that made facilities a table, applied the same way.
+
+**Several terms exist at once**, and they **must not overlap**. The Kulliyyah plans next semester
+while the current one is still running, so holding a single term would make next semester's timetable
+unenterable until this one ended. Overlap is forbidden because `term_for(date)` — "which semester is
+this date in?" — has to have exactly one answer; a date in two terms would make the recurrence
+generator's behaviour arbitrary. Enforce it with an exclusion constraint on the date range, the same
+mechanism used for bookings, and validate it in the form so the administrator is told which semester
+they collided with:
+
+```sql
+ALTER TABLE academic_terms ADD CONSTRAINT academic_terms_no_overlap
+    EXCLUDE USING gist (daterange(start_date, end_date, '[]') WITH &&);
+```
+
+A term carries **no foreign key from bookings**. A series records the dates it generated, not the
+calendar it was generated from, so deleting a term cancels nothing and loses no history — which is
+why a term may simply be deleted while a resource may not.
+
+Indexes: unique `academic_terms.name`, `(start_date)`, and `(term_id)` on `term_breaks`.
 
 An occurrence outside teaching is **left out**, and an occurrence that clashes with another booking
 is **reported**. They are different outcomes and the interface says which is which: a date outside

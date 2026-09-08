@@ -108,26 +108,78 @@
         return x;
     }
     const termStart = mondayOf(addDays(today, -21));
-    const academicTerm = {
-        name: 'Semester 1, 2026/2027',
-        start: iso(termStart),
-        end: iso(addDays(termStart, 15 * 7 - 3)),          // fifteen teaching weeks
-        breaks: [
-            { name: 'Mid-semester break',
-              start: iso(addDays(termStart, 7 * 7)),
-              end: iso(addDays(termStart, 7 * 7 + 6)) }
-        ]
-    };
 
-    /* Why a given date cannot carry a class. Returns '' when it can. */
-    function termExclusion(isoDate) {
+    /* Several terms, not one. A Kulliyyah plans the next semester while the
+       current one is still running, and a booking made in week 12 for a class
+       that starts after the break belongs to a different calendar from the one
+       today falls in. Holding a single term would have made next semester
+       unbookable until this one ended.
+
+       Terms must not overlap: `termFor` answers "which semester is this date
+       in?", and that question has to have one answer. The calendar editor
+       refuses an overlap rather than letting the ambiguity into the data. */
+    function term(id, name, startDate, weeks, breakAtWeek, breakName) {
+        const s = iso(startDate);
+        const t = { id: id, name: name, start: s, end: iso(addDays(startDate, weeks * 7 - 3)), breaks: [] };
+        if (breakAtWeek) {
+            t.breaks.push({ name: breakName,
+                            start: iso(addDays(startDate, breakAtWeek * 7)),
+                            end: iso(addDays(startDate, breakAtWeek * 7 + 6)) });
+        }
+        return t;
+    }
+
+    const academicTerms = [
+        term(1, 'Semester 2, 2025/2026', addDays(termStart, -34 * 7), 15, 7, 'Mid-semester break'),
+        term(2, 'Semester 1, 2026/2027', termStart, 15, 7, 'Mid-semester break'),
+        term(3, 'Semester 2, 2026/2027', addDays(termStart, 22 * 7), 15, 7, 'Mid-semester break')
+    ];
+
+    const termById = (id) => academicTerms.find(t => t.id === Number(id)) || null;
+
+    /* The term a date falls inside, or null when it falls between semesters. */
+    function termFor(isoDate) {
+        return academicTerms.find(t => isoDate >= t.start && isoDate <= t.end) || null;
+    }
+
+    /* The semester to offer by default: the one running today, otherwise the
+       next one due to begin, otherwise the most recent. Never null while any
+       term exists, because a form with no default selection is a form that
+       silently does nothing. */
+    function currentTerm() {
+        const t = iso(today);
+        return termFor(t)
+            || academicTerms.filter(x => x.start > t).sort((a, b) => a.start < b.start ? -1 : 1)[0]
+            || academicTerms.slice().sort((a, b) => a.start < b.start ? 1 : -1)[0]
+            || null;
+    }
+
+    /* Why a given date cannot carry a class. Returns '' when it can.
+       Pass a term to ask the question of that semester specifically — which is
+       what the recurrence form does, because the administrator has chosen which
+       semester they are filling. With no term, the date is judged against
+       whichever semester contains it. */
+    function termExclusion(isoDate, t) {
         if (!isoDate) return '';
-        if (isoDate < academicTerm.start) return 'before the semester begins';
-        if (isoDate > academicTerm.end) return 'after the semester ends';
-        const br = academicTerm.breaks.find(b => isoDate >= b.start && isoDate <= b.end);
+        if (t) {
+            if (isoDate < t.start) return 'before the semester begins';
+            if (isoDate > t.end) return 'after the semester ends';
+        } else {
+            t = termFor(isoDate);
+            if (!t) return 'outside every academic term';
+        }
+        const br = t.breaks.find(b => isoDate >= b.start && isoDate <= b.end);
         return br ? br.name.toLowerCase() : '';
     }
-    const inTerm = (isoDate) => !termExclusion(isoDate);
+    const inTerm = (isoDate, t) => !termExclusion(isoDate, t);
+
+    /* Where a term sits relative to today — the word the list column shows. */
+    function termPhase(t) {
+        const d = iso(today);
+        if (d < t.start) return 'Upcoming';
+        if (d > t.end) return 'Past';
+        return 'Current';
+    }
 
     /* ---------- Facilities (a table, maintained by administrators) --------- */
     /* Nine seeded values match the data migration described in the schema doc.
@@ -265,8 +317,8 @@
             id: 101, code: 'AIKOL-CAR-01', type: 'Vehicle', name: 'Kulliyyah Car 1',
             registration: 'WXY 1234', vehicleClass: 'Car', make: 'Proton', model: 'Saga', year: 2022,
             seats: 5, transmission: 'Auto', fuelType: 'Petrol RON95',
-            roadTaxExpiry: iso(addDays(today, 210)), insuranceExpiry: iso(addDays(today, 210)),
-            mileage: 48250, status: 'Active', open: '08:00', close: '22:00',
+            roadTaxExpiry: iso(addDays(today, 210)),
+            status: 'Active', open: '08:00', close: '22:00',
             approval: true, image: 'car-saga',
             facilities: ['aircond', 'gps', 'dashcam'],
             description: 'A compact sedan for local official travel within Gombak and the Klang Valley — meetings, courier runs and short official visits.',
@@ -274,15 +326,15 @@
                 'Bookable by any Kulliyyah account; a student’s trip goes out with a Vehicle Management Unit driver.',
                 'The requester is the driver. A valid driving licence must be on file.',
                 'Refuel to the level recorded at collection before returning the vehicle.',
-                'Record mileage at collection and at return.'
+                'Report any damage or fault at the time of return.'
             ]
         },
         {
             id: 102, code: 'AIKOL-CAR-02', type: 'Vehicle', name: 'Kulliyyah Car 2',
             registration: 'WXY 5678', vehicleClass: 'Car', make: 'Perodua', model: 'Bezza', year: 2021,
             seats: 5, transmission: 'Auto', fuelType: 'Petrol RON95',
-            roadTaxExpiry: iso(addDays(today, 96)), insuranceExpiry: iso(addDays(today, 96)),
-            mileage: 71180, status: 'Active', open: '08:00', close: '22:00',
+            roadTaxExpiry: iso(addDays(today, 96)),
+            status: 'Active', open: '08:00', close: '22:00',
             approval: true, image: 'car-bezza',
             facilities: ['aircond', 'gps'],
             description: 'A fuel-efficient sedan for routine local travel and errands on behalf of the Kulliyyah office.',
@@ -296,8 +348,8 @@
             id: 103, code: 'AIKOL-CAR-03', type: 'Vehicle', name: 'Kulliyyah MPV',
             registration: 'WXY 9012', vehicleClass: 'Car', make: 'Toyota', model: 'Innova', year: 2023,
             seats: 7, transmission: 'Auto', fuelType: 'Petrol RON95',
-            roadTaxExpiry: iso(addDays(today, 320)), insuranceExpiry: iso(addDays(today, 320)),
-            mileage: 26400, status: 'Active', open: '08:00', close: '22:00',
+            roadTaxExpiry: iso(addDays(today, 320)),
+            status: 'Active', open: '08:00', close: '22:00',
             approval: true, image: 'car-innova',
             facilities: ['aircond', 'gps', 'dashcam', 'child_seat'],
             description: 'A seven-seat multi-purpose vehicle for outstation travel, conference attendance and group transport of Kulliyyah delegations.',
@@ -312,8 +364,8 @@
             id: 104, code: 'AIKOL-CAR-04', type: 'Vehicle', name: 'Kulliyyah Car 3',
             registration: 'WXY 3456', vehicleClass: 'Car', make: 'Proton', model: 'Exora', year: 2019,
             seats: 7, transmission: 'Manual', fuelType: 'Petrol RON95',
-            roadTaxExpiry: iso(addDays(today, -12)), insuranceExpiry: iso(addDays(today, 40)),
-            mileage: 132900, status: 'Under Maintenance', open: '08:00', close: '22:00',
+            roadTaxExpiry: iso(addDays(today, -12)),
+            status: 'Under Maintenance', open: '08:00', close: '22:00',
             approval: true, image: 'car-exora',
             facilities: ['aircond'],
             description: 'An older seven-seat vehicle held for overflow demand. Manual transmission.',
@@ -658,8 +710,6 @@
                 returnedByName: outstanding ? '' :
                     (returnProxy ? other2.name : (proxy ? other.name : booker.name)),
 
-                mileageOut: b.kind === 'Vehicle' ? b.resource.mileage - 400 + Math.floor(rnd() * 200) : null,
-                mileageIn: (b.kind === 'Vehicle' && !outstanding) ? b.resource.mileage - 100 + Math.floor(rnd() * 90) : null,
                 notes: outstanding ? '' : (rnd() < 0.12 ? 'Minor scuff noted on return.' : '')
             });
         });
@@ -745,13 +795,13 @@
     /* ---------- Audit log (FICTIONAL) ------------------------------------- */
     const auditLog = [
         { when: '2 minutes ago', who: 'Mohd Hafiz bin Rahman', action: 'Booking approved', detail: 'Moot Court Room — reference BK-2026-0031' },
-        { when: '18 minutes ago', who: 'Mohd Hafiz bin Rahman', action: 'Key issued', detail: 'Kulliyyah MPV — mileage out 26,410' },
+        { when: '18 minutes ago', who: 'Mohd Hafiz bin Rahman', action: 'Key issued', detail: 'Kulliyyah MPV — collected by Dr. Ahmad Faiz' },
         { when: '25 minutes ago', who: 'Siti Rohani binti Yusof', action: 'Booking rejected', detail: 'Lecture Room 1 — clashes with timetabled teaching' },
         { when: '1 hour ago', who: 'Siti Rohani binti Yusof', action: 'Resource updated', detail: 'Conference Room set to Under Maintenance' },
         { when: '2 hours ago', who: 'Mohd Hafiz bin Rahman', action: 'Facility created', detail: 'Prayer Space added to the facility list' },
         { when: '3 hours ago', who: 'Mohd Hafiz bin Rahman', action: 'Bulk import performed', detail: '58 user records imported from CSV' },
         { when: 'Yesterday, 4:12 PM', who: 'Siti Rohani binti Yusof', action: 'User deactivated', detail: 'Graduated student account' },
-        { when: 'Yesterday, 2:40 PM', who: 'Mohd Hafiz bin Rahman', action: 'Key returned', detail: 'Kulliyyah Car 1 — mileage in 48,392' },
+        { when: 'Yesterday, 2:40 PM', who: 'Mohd Hafiz bin Rahman', action: 'Key returned', detail: 'Kulliyyah Car 1 — returned by Siti Rohani' },
         { when: 'Yesterday, 9:03 AM', who: 'Mohd Hafiz bin Rahman', action: 'Resource created', detail: 'Kulliyyah MPV added to the vehicle list' }
     ];
 
@@ -1199,7 +1249,7 @@
     global.AIKOL = {
         // data
         SETTINGS, siteContent, buildFooterHtml, contentLines,
-        academicTerm, termExclusion, inTerm,
+        academicTerms, termById, termFor, currentTerm, termPhase, termExclusion, inTerm,
         facilities, resources, venues, vehicles, users, bookings, series,
         keyHandovers, emailOutbox, auditLog, CURRENT_USER, ADMIN_USER,
         // date helpers

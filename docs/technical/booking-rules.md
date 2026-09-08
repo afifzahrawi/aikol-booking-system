@@ -137,7 +137,7 @@ in `CLAUDE.md` section 5.
 | Driver details | `driver_name`, `driver_contact`, `driver_staff_no` — recorded on every vehicle booking, whoever drives. For self-drive they default from the requester's own account |
 | Locations | `origin` and `destination` — where the car leaves from and where it is going. Both required |
 | Licence expiry | Self-drive only: must be later than `end_at` — refuse a trip that outlives the licence. Not checked for a VMU booking, because the VMU driver is not the requester |
-| Road tax and insurance | `vehicle.road_tax_expiry` and `insurance_expiry` must be later than `end_at` |
+| Road tax | `vehicle.road_tax_expiry` must be later than `end_at`. The requester is told only that the vehicle is unavailable; the date itself is an office matter and appears on administrator screens alone |
 | `destination` | Required |
 | `passenger_count` | Required, `≤ vehicle.seats` |
 
@@ -200,8 +200,8 @@ handed over and updated when it comes back.
 
 | Step | Effect |
 | --- | --- |
-| Issue | `issued_at`, `issued_by`. For a vehicle, `mileage_out`. Only for an `APPROVED` booking |
-| Return | `returned_at`, `returned_to`, `condition_notes`. For a vehicle, `mileage_in`, which updates `vehicle.current_mileage` |
+| Issue | `issued_at`, `issued_by`. Only for an `APPROVED` booking |
+| Return | `returned_at`, `returned_to`, `condition_notes` |
 
 Both actions are written to the audit log as `KEY_ISSUED` and `KEY_RETURNED`. A booking whose
 `end_at` has passed with `returned_at IS NULL` is an **outstanding key** and appears on the

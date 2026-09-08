@@ -81,9 +81,7 @@
                                 <th scope="col">Vehicle</th>
                                 <th scope="col">Registration</th>
                                 <th scope="col">Seats</th>
-                                <th scope="col">Mileage</th>
                                 <th scope="col">Road tax</th>
-                                <th scope="col">Insurance</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Actions</th>
                             </tr>
@@ -116,29 +114,35 @@
     const soonISO = A.iso(A.addDays(A.today, 60));
 
     function docState(v) {
-        if (v.roadTaxExpiry < todayISO || v.insuranceExpiry < todayISO) return 'expired';
-        if (v.roadTaxExpiry < soonISO || v.insuranceExpiry < soonISO) return 'soon';
+        if (v.roadTaxExpiry < todayISO) return 'expired';
+        if (v.roadTaxExpiry < soonISO) return 'soon';
         return 'ok';
     }
 
-    /* ---- Summary tiles ---- */
+    /* ---- Summary tiles ----
+       Recomputed rather than set once: the status field and the delete action
+       both change what these count. */
     const monthPrefix = todayISO.slice(0, 7);
-    document.getElementById('sTotal').textContent = A.vehicles.length;
-    document.getElementById('sActive').textContent =
-        A.vehicles.filter(v => v.status === 'Active' && docState(v) !== 'expired').length;
-    const flagged = A.vehicles.filter(v => docState(v) !== 'ok');
-    document.getElementById('sFlag').textContent = flagged.length;
-    document.getElementById('sTrips').textContent =
-        A.bookings.filter(b => b.kind === 'Vehicle' && b.startAt.indexOf(monthPrefix) === 0).length;
 
-    if (flagged.length) {
+    function stats() {
+        document.getElementById('sTotal').textContent = A.vehicles.length;
+        document.getElementById('sActive').textContent =
+            A.vehicles.filter(v => v.status === 'Active' && docState(v) !== 'expired').length;
+        const flagged = A.vehicles.filter(v => docState(v) !== 'ok');
+        document.getElementById('sFlag').textContent = flagged.length;
+        document.getElementById('sTrips').textContent =
+            A.bookings.filter(b => b.kind === 'Vehicle' && b.startAt.indexOf(monthPrefix) === 0).length;
+
         const note = document.getElementById('expiryNote');
-        note.hidden = false;
-        note.innerHTML = '<strong>' + flagged.length + ' vehicle' + (flagged.length === 1 ? '' : 's') +
-            ' need attention:</strong> ' +
-            flagged.map(v => A.esc(v.name) + ' (' +
-                (docState(v) === 'expired' ? 'expired' : 'renewal due') + ')').join(', ') + '.';
+        note.hidden = !flagged.length;
+        if (flagged.length) {
+            note.innerHTML = '<strong>' + flagged.length + ' vehicle' + (flagged.length === 1 ? '' : 's') +
+                ' need attention:</strong> ' +
+                flagged.map(v => A.esc(v.name) + ' (' +
+                    (docState(v) === 'expired' ? 'expired' : 'renewal due') + ')').join(', ') + '.';
+        }
     }
+    stats();
 
     function expiryCell(dateISO) {
         const expired = dateISO < todayISO;
@@ -147,12 +151,12 @@
         return '<span class="badge ' + cls + '">' + A.fmtDate(dateISO) + '</span>';
     }
 
-    A.tableController({
+    const ctl = A.tableController({
         rows: () => A.vehicles,
         tbody: document.getElementById('rows'),
         pager: document.getElementById('pager'),
         info: document.getElementById('info'),
-        cols: 8,
+        cols: 6,
         pageSize: 10,
         controls: [
             { key: 'q', input: document.getElementById('q') },
@@ -168,35 +172,114 @@
             return true;
         },
         render: v => '<tr>' +
-            '<td><strong>' + A.esc(v.name) + '</strong>' +
+            '<td><div style="display:flex;gap:.6rem;align-items:center">' +
+                '<img src="' + A.resourceImg(v) + '" alt="" style="width:56px;border-radius:3px;border:1px solid var(--line)">' +
+                '<span><strong>' + A.esc(v.name) + '</strong>' +
                 '<br><span class="help">' + A.esc(v.make + ' ' + v.model + ' ' + v.year) + ' · ' +
-                '<span class="mono">' + A.esc(v.code) + '</span></span></td>' +
+                '<span class="mono">' + A.esc(v.code) + '</span></span></span></div></td>' +
             '<td><span class="mono">' + A.esc(v.registration) + '</span></td>' +
             '<td>' + v.seats + '<br><span class="help">' + A.esc(v.transmission === 'Auto' ? 'Auto' : 'Manual') + '</span></td>' +
-            '<td>' + v.mileage.toLocaleString() + ' km</td>' +
             '<td>' + expiryCell(v.roadTaxExpiry) + '</td>' +
-            '<td>' + expiryCell(v.insuranceExpiry) + '</td>' +
             '<td>' + (v.status === 'Active'
                 ? '<span class="badge badge-active">Active</span>'
                 : '<span class="badge badge-inactive">Maintenance</span>') + '</td>' +
             '<td><div class="btn-group">' +
-            '<a class="btn btn-sm" href="vehicle-details.html?id=' + v.id + '">View</a>' +
+            '<a class="btn btn-sm" href="vehicle-details.html?id=' + v.id + '">Preview</a>' +
             '<button class="btn btn-sm" type="button" data-edit="' + v.id + '">Edit</button>' +
-            '<button class="btn btn-sm" type="button" data-toggle="' + v.id + '">' +
-                (v.status === 'Active' ? 'Set maintenance' : 'Set active') + '</button>' +
-            '</div></td></tr>'
+            '<button class="btn btn-sm" type="button" data-img="' + v.id + '">Images</button>' +
+            '<button class="btn btn-sm btn-danger" type="button" data-del="' + v.id + '"' +
+            (v.status === 'Active' ? ' aria-disabled="true" disabled title="Set the vehicle to maintenance before it can be deleted"' : '') +
+            '>Delete</button></div></td></tr>'
     });
 
     document.getElementById('rows').addEventListener('click', e => {
         const ed = e.target.closest('button[data-edit]');
-        const tg = e.target.closest('button[data-toggle]');
+        const im = e.target.closest('button[data-img]');
+        const dl = e.target.closest('button[data-del]');
         if (ed) return openEdit(A.vehicleById(Number(ed.dataset.edit)));
-        if (tg) return openToggle(A.vehicleById(Number(tg.dataset.toggle)));
+        if (im) return openImages(A.vehicleById(Number(im.dataset.img)));
+        if (dl) return openDelete(A.vehicleById(Number(dl.dataset.del)));
     });
+    /* Identical to the venue image manager: same gallery, same dropzone, same
+       server-side validation note. Photographs are photographs whichever kind of
+       resource they belong to. */
+    function openImages(v) {
+        A.modal({
+            title: 'Manage images — ' + v.name,
+            body: '<div class="grid" style="grid-template-columns:repeat(2,1fr);gap:.6rem">' +
+                [null, 2, 3, 4].map((x, i) =>
+                    '<figure style="margin:0"><img src="' + A.resourceImg(v, x) + '" alt="Placeholder view ' + (i + 1) + '" ' +
+                    'style="border:1px solid var(--line);border-radius:4px">' +
+                    '<figcaption class="help">View ' + (i + 1) + (i === 0 ? ' — main image' : '') + '</figcaption></figure>').join('') +
+                '</div>' +
+                '<div class="dropzone" style="margin-top:1rem">Drag photographs here, or choose files to upload' +
+                '<div style="margin-top:.6rem"><button class="btn btn-sm" type="button">Choose files</button></div></div>' +
+                '<p class="help" style="margin-top:.75rem">Uploads are validated on the server: permitted formats are JPEG, PNG and WebP, ' +
+                'with a maximum file size of 5&nbsp;MB. Images are resized and compressed before storage.</p>'
+        });
+    }
+
+    /* ---- Delete ------------------------------------------------------------
+       Two gates, and they are different gates.
+
+       The first is a matter of intent: a resource must be deactivated before it
+       can be deleted. Deactivating is reversible and instant, so requiring it
+       first means nobody removes a vehicle from the system in a single click
+       from the list, and the vehicle spends time out of service where its
+       absence would be noticed before the record goes.
+
+       The second is not negotiable. A vehicle that any booking refers to
+       cannot be deleted at all, whatever its status: `bookings.resource` is
+       `on_delete=PROTECT`, and the database refuses. Booking history has to stay
+       complete for the seven-year audit retention, and a history pointing at a
+       vehicle that no longer exists is not complete. Deletion is therefore for
+       one case only — a record created in error that nobody ever booked. */
+    function bookingCount(v) {
+        return A.bookings.filter(b => b.resourceId === v.id).length;
+    }
+
+    function openDelete(v) {
+        const used = bookingCount(v);
+        if (used) {
+            A.modal({
+                title: 'Cannot delete ' + v.name,
+                body: '<div class="notice notice-warn"><strong>' + used + ' booking record' +
+                      (used === 1 ? '' : 's') + '</strong> refer' + (used === 1 ? 's' : '') +
+                      ' to this vehicle, so it cannot be deleted.</div>' +
+                      '<p>Booking history is retained for seven years for audit, and history that points at a vehicle ' +
+                      'the system no longer holds is not history. The database enforces this — the delete is refused ' +
+                      'there, not merely hidden here.</p>' +
+                      '<p class="help" style="margin-bottom:0"><strong>' + A.esc(v.name) + '</strong> stays under ' +
+                      'maintenance: hidden from every booking screen, with its record, its trips and its key ' +
+                      'handovers intact. That is the end state for a car that has left the fleet.</p>',
+                buttons: [{ label: 'Close' }]
+            });
+            return;
+        }
+        A.modal({
+            title: 'Delete ' + v.name,
+            body: '<p>No booking has ever referred to <strong>' + A.esc(v.name) + '</strong>, so the record and its ' +
+                  'photographs can be removed permanently.</p>' +
+                  '<p class="help" style="margin-bottom:0">This is for a vehicle entered in error. A car that has ' +
+                  'been used is left under maintenance instead, and keeps its history.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Delete permanently', cls: 'btn-danger', onClick: function () {
+                    [A.vehicles, A.resources].forEach(function (list) {
+                        const i = list.indexOf(v);
+                        if (i !== -1) list.splice(i, 1);
+                    });
+                    ctl.refresh(); stats();
+                    A.toast('The vehicle and its images would be deleted, and the action written to the audit log.');
+                } }
+            ]
+        });
+    }
+
     document.getElementById('addBtn').addEventListener('click', () => openEdit(null));
     document.getElementById('importBtn').addEventListener('click', () => {
         A.toast('The vehicle CSV template carries code, name, registration, class, make, model, year, seats, ' +
-                'transmission, fuel type, features, road tax and insurance expiry, and current mileage. ' +
+                'transmission, fuel type, features and road tax expiry. ' +
                 'Rows are validated and previewed before anything is written.');
     });
 
@@ -210,7 +293,7 @@
 
     function openEdit(v) {
         const isNew = !v;
-        A.modal({
+        const m = A.modal({
             title: isNew ? 'Add vehicle' : 'Edit ' + v.name,
             body:
                 '<div class="field-row">' +
@@ -237,13 +320,14 @@
 
                 '<div class="field-row">' +
                 '<div class="field"><label for="eTax">Road tax expiry</label>' +
-                '<input class="input" type="date" id="eTax" value="' + (v ? v.roadTaxExpiry : '') + '"></div>' +
-                '<div class="field"><label for="eIns">Insurance expiry</label>' +
-                '<input class="input" type="date" id="eIns" value="' + (v ? v.insuranceExpiry : '') + '"></div></div>' +
+                '<input class="input" type="date" id="eTax" value="' + (v ? v.roadTaxExpiry : '') + '">' +
+                '<p class="help">Kept for the office. An untaxed car is withdrawn from the booking ' +
+                'screens automatically, and requesters are not shown the reason.</p></div>' +
+                '<div class="field"><label for="eStatus">Status</label>' +
+                '<select class="select" id="eStatus">' +
+                ['Active', 'Under Maintenance'].map(o => '<option>' + o + '</option>').join('') +
+                '</select><p class="help" id="eStatusHelp"></p></div></div>' +
 
-                '<div class="field"><label for="eMileage">Current mileage (km)</label>' +
-                '<input class="input" type="number" id="eMileage" value="' + (v ? v.mileage : 0) + '">' +
-                '<p class="help">Updated automatically from the mileage recorded at each key return.</p></div>' +
 
                 '<div class="field"><span class="label" style="display:block;font-weight:600;margin-bottom:.4rem">Features</span>' +
                 '<div class="facility-grid">' + facilityCheckboxes(v) + '</div>' +
@@ -252,44 +336,51 @@
                 '<div class="field"><label for="eDesc">Description</label>' +
                 '<textarea class="textarea" id="eDesc">' + (v ? A.esc(v.description) : '') + '</textarea></div>' +
 
-                '<div class="field"><span class="label" style="display:block;font-weight:600;margin-bottom:.4rem">Photographs</span>' +
-                '<div class="dropzone">Drag photographs here, or choose files. JPEG, PNG or WebP, up to 5 MB each.</div></div>',
+                (isNew
+                    ? '<p class="help">Photographs are added after the vehicle is created, with the ' +
+                      '<strong>Images</strong> action on its row.</p>'
+                    : ''),
             buttons: [
                 { label: 'Cancel' },
                 { label: isNew ? 'Create vehicle' : 'Save changes', cls: 'btn-primary', onClick: () => {
+                    if (v) { v.status = m.root.querySelector('#eStatus').value; ctl.refresh(); stats(); }
                     A.toast(isNew
                         ? 'The vehicle would be created as a resource, so it books through exactly the same rules as a venue.'
                         : 'The changes would be saved and written to the audit log.');
                 } }
             ]
         });
+
+        /* Taking a car off the road does not cancel anything. Whoever does it
+           has to be told what is already booked, at the moment they do it —
+           which is why the count is worked out here rather than left to the
+           audit log to reveal afterwards. */
+        const sel = m.root.querySelector('#eStatus');
+        const help = m.root.querySelector('#eStatusHelp');
+        const future = v ? A.bookings.filter(b =>
+            b.resourceId === v.id && A.BLOCKING.indexOf(b.status) !== -1 && b.startAt > todayISO).length : 0;
+
+        function statusHelp() {
+            if (sel.value === 'Active') {
+                help.textContent = isNew
+                    ? 'The vehicle appears on the vehicle list as soon as it is created.'
+                    : 'The vehicle appears on the vehicle list and may be requested.';
+                help.className = 'help';
+                return;
+            }
+            help.textContent = future
+                ? 'Hidden from the vehicle list. ' + future + ' pending or approved booking' +
+                  (future === 1 ? '' : 's') + ' in the future ' + (future === 1 ? 'is' : 'are') +
+                  ' not cancelled — each must be handled deliberately, with a reason recorded.'
+                : 'Hidden from the vehicle list and not requestable. No future bookings are affected. ' +
+                  'The vehicle and its history are retained; nothing is deleted.';
+        }
+
+        if (v) sel.value = v.status;
+        sel.addEventListener('change', statusHelp);
+        statusHelp();
     }
 
-    function openToggle(v) {
-        const off = v.status === 'Active';
-        const future = A.bookings.filter(b =>
-            b.resourceId === v.id && A.BLOCKING.indexOf(b.status) !== -1 && b.startAt > todayISO).length;
-        A.modal({
-            title: (off ? 'Set to maintenance' : 'Return to service') + ' — ' + v.name,
-            body: off
-                ? '<p><strong>' + A.esc(v.name) + '</strong> would stop appearing on the vehicle list and could ' +
-                  'not be requested.</p>' +
-                  (future
-                    ? '<div class="notice notice-warn">There ' + (future === 1 ? 'is' : 'are') + ' <strong>' + future +
-                      '</strong> pending or approved booking' + (future === 1 ? '' : 's') + ' in the future for this ' +
-                      'vehicle. They are <strong>not</strong> cancelled — each must be handled deliberately, with a ' +
-                      'reason recorded.</div>'
-                    : '<p class="help">No future bookings are affected.</p>') +
-                  '<p class="help">The vehicle and its booking history are retained. Nothing is deleted.</p>'
-                : '<p><strong>' + A.esc(v.name) + '</strong> would return to the vehicle list and become ' +
-                  'requestable, provided its road tax and insurance are current.</p>',
-            buttons: [
-                { label: 'Cancel' },
-                { label: off ? 'Set to maintenance' : 'Set active', cls: off ? 'btn-danger' : 'btn-primary',
-                  onClick: () => A.toast('The vehicle status would be updated and the change written to the audit log.') }
-            ]
-        });
-    }
 })();
 </script>
 </body>

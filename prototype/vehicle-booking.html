@@ -213,8 +213,9 @@
 
     /* ---- Vehicle options ---- */
     const vehSel = document.getElementById('vehicle');
-    const bookable = A.vehicles.filter(v =>
-        v.status === 'Active' && v.roadTaxExpiry >= todayISO && v.insuranceExpiry >= todayISO);
+    /* An untaxed car is not offered. The reason is an office matter, so the
+       list simply does not include it. */
+    const bookable = A.vehicles.filter(v => v.status === 'Active' && v.roadTaxExpiry >= todayISO);
     vehSel.innerHTML = bookable.map(v =>
         '<option value="' + v.id + '">' + A.esc(v.name + ' — ' + v.make + ' ' + v.model +
         ' (' + v.registration + ')') + '</option>').join('');
@@ -272,15 +273,11 @@
                 errors.push('The trip is ' + Math.ceil(days) + ' days. The maximum trip length is ' +
                             S.maxVehicleTripDays + ' days.');
 
-            /* The vehicle must stay road-legal to the END of the trip. The
-               driver's licence is checked when an administrator assigns one —
-               not here, because the driver is not known yet. */
+            /* The car must stay road-legal to the END of the trip. The requester
+               is told the date is unavailable rather than the office reason. */
             if (v.roadTaxExpiry < inDate.value)
-                errors.push('The road tax for this vehicle expires on ' + A.fmtDate(v.roadTaxExpiry) +
-                            ', before the trip ends.');
-            if (v.insuranceExpiry < inDate.value)
-                errors.push('The insurance for this vehicle expires on ' + A.fmtDate(v.insuranceExpiry) +
-                            ', before the trip ends.');
+                errors.push('This vehicle is not available for the whole of that period. ' +
+                            'Choose a shorter trip or another vehicle.');
         }
 
         if (!els.destination.value.trim()) errors.push('A destination is required.');
@@ -300,8 +297,8 @@
 
     function refresh() {
         const v = current();
-        els.vehicleHelp.textContent = v.seats + ' seats · ' + (v.transmission === 'Auto' ? 'Automatic' : 'Manual') +
-            ' · road tax to ' + A.fmtDate(v.roadTaxExpiry) + ' · mileage ' + v.mileage.toLocaleString() + ' km';
+        els.vehicleHelp.textContent = v.seats + ' seats · ' +
+            (v.transmission === 'Auto' ? 'Automatic' : 'Manual') + ' · ' + v.fuelType;
         els.seatHelp.textContent = 'Up to ' + (v.seats - 1) + ' passengers, plus the assigned driver.';
 
         const s = startAt(), e = endAt();

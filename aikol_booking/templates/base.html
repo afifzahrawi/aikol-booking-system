@@ -1,0 +1,51 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ site.site_name }}{% endblock %} &mdash; {{ site.organisation }}</title>
+{# Vendored, never a CDN: this must work on a restricted institutional network. #}
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="app-header">
+    <div class="brand">
+        {% if site.logo %}<img src="{{ site.logo.url }}" alt="{{ site.logo_alt }}" height="40">{% endif %}
+        <div>
+            <strong>{{ site.site_name }}</strong>
+            <span class="subtitle">{{ site.subtitle }}</span>
+        </div>
+    </div>
+    <nav aria-label="Account">
+        {% if user.is_authenticated %}
+            <span>{{ user.full_name }}</span>
+            <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+                <button type="submit" class="btn">Sign out</button>
+            </form>
+        {% else %}
+            <a href="{% url 'accounts:login' %}">Sign in</a>
+            <a href="{% url 'accounts:register' %}">Register</a>
+        {% endif %}
+    </nav>
+</header>
+
+<main id="main" class="main">
+    {% if messages %}
+        <ul class="messages">
+            {% for m in messages %}<li class="notice notice-{{ m.tags }}">{{ m }}</li>{% endfor %}
+        </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="app-footer">
+    <p>{{ site.organisation }}</p>
+    {% if site.address %}<p>{{ site.address|linebreaksbr }}</p>{% endif %}
+    {% if site.phone or site.email %}
+        <p>{{ site.contact_heading }}: {{ site.phone }}{% if site.email %} &middot; {{ site.email }}{% endif %}</p>
+    {% endif %}
+</footer>
+</body>
+</html>

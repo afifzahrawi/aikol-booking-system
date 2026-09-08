@@ -105,48 +105,75 @@
             <section class="card" style="margin-bottom:1.25rem" aria-labelledby="calHead">
                 <div class="card-head">
                     <h2 id="calHead">Academic calendar</h2>
-                    <span class="help" style="margin:0">Recurring bookings are generated inside these dates</span>
+                    <button class="btn btn-sm btn-primary" type="button" id="addTerm">Add semester</button>
                 </div>
                 <div class="card-body">
                     <p class="help" style="margin-top:0">
                         A weekly class does not run before the semester starts, after it ends, or through a
                         break. Setting the dates here is what stops a semester-long booking holding a lecture
                         room across the break, against everyone else, for a class nobody attends.
+                        <strong>More than one semester can be held at a time</strong>, so next semester's
+                        timetable can be entered while this one is still running — but two semesters may not
+                        overlap, because a date has to belong to exactly one of them.
                     </p>
 
-                    <div class="field-row">
-                        <div class="field">
-                            <label for="termName">Semester</label>
-                            <input class="input" type="text" id="termName" maxlength="60">
-                        </div>
-                        <div class="field">
-                            <span class="label">Teaching weeks</span>
-                            <p class="help" id="termWeeks" style="margin-top:6px"></p>
-                        </div>
+                    <div class="table-wrap">
+                        <table class="data">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Semester</th>
+                                    <th scope="col">Teaching</th>
+                                    <th scope="col">Weeks</th>
+                                    <th scope="col">Breaks</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="termRows"></tbody>
+                        </table>
                     </div>
 
-                    <div class="field-row">
-                        <div class="field">
-                            <label for="termStart">First day of teaching</label>
-                            <input class="input" type="date" id="termStart">
+                    <!-- The editor for one semester. Hidden until a row is
+                         chosen, so the list is not competing with a form for
+                         the reader's attention. -->
+                    <div id="termEditor" hidden style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line)">
+                        <h3 class="label" id="termEditHead" style="margin:0 0 14px"></h3>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="termName">Semester</label>
+                                <input class="input" type="text" id="termName" maxlength="60">
+                            </div>
+                            <div class="field">
+                                <span class="label">Teaching weeks</span>
+                                <p class="help" id="termWeeks" style="margin-top:6px"></p>
+                            </div>
                         </div>
-                        <div class="field">
-                            <label for="termEnd">Last day of teaching</label>
-                            <input class="input" type="date" id="termEnd">
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="termStart">First day of teaching</label>
+                                <input class="input" type="date" id="termStart">
+                            </div>
+                            <div class="field">
+                                <label for="termEnd">Last day of teaching</label>
+                                <input class="input" type="date" id="termEnd">
+                            </div>
+                        </div>
+
+                        <div style="display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px">
+                            <span class="label" style="margin:0">Breaks</span>
+                            <button class="btn btn-sm" type="button" id="addBreak">Add a break</button>
+                        </div>
+                        <div id="breaks" style="display:flex;flex-direction:column;gap:10px"></div>
+
+                        <div id="calErr" aria-live="polite" style="margin-top:14px"></div>
+
+                        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+                            <button class="btn" type="button" id="calRevert">Cancel</button>
+                            <button class="btn btn-primary" type="button" id="calSave">Save semester</button>
                         </div>
                     </div>
-
-                    <div style="display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px">
-                        <span class="label" style="margin:0">Breaks</span>
-                        <button class="btn btn-sm" type="button" id="addBreak">Add a break</button>
-                    </div>
-                    <div id="breaks" style="display:flex;flex-direction:column;gap:10px"></div>
-
-                    <div id="calErr" aria-live="polite" style="margin-top:14px"></div>
-                </div>
-                <div class="card-foot" style="display:flex;justify-content:flex-end;gap:10px">
-                    <button class="btn" type="button" id="calRevert">Discard changes</button>
-                    <button class="btn btn-primary" type="button" id="calSave">Save calendar</button>
                 </div>
             </section>
 
@@ -592,13 +619,56 @@
         });
     });
 
-    /* ---- Academic calendar ---------------------------------------------- */
+    /* ---- Academic calendar ----------------------------------------------
+       A list of semesters, each editable one at a time. The one rule the list
+       has to enforce is that terms do not overlap: `termFor(date)` answers
+       "which semester is this?", and a date belonging to two semesters would
+       make that question unanswerable and the recurrence generator arbitrary.
+       So the check lives here, at the point of entry, rather than being
+       discovered later by whoever tries to book across the seam. */
     (function calendar() {
-        const T = A.academicTerm;
-        const original = JSON.parse(JSON.stringify(T));
-        let draft = JSON.parse(JSON.stringify(T));
         const g = id => document.getElementById(id);
+        let editingId = null;      // null when the editor is closed
+        let draft = null;          // the term being edited, or a new one
+        let nextId = A.academicTerms.reduce((n, t) => Math.max(n, t.id), 0) + 1;
 
+        const dayCount = (a, b) =>
+            Math.round((A.toDate(b + 'T00:00') - A.toDate(a + 'T00:00')) / 86400000) + 1;
+
+        function weeksOf(t) {
+            if (!t.start || !t.end || t.end <= t.start) return null;
+            const days = dayCount(t.start, t.end);
+            const off = t.breaks.reduce((n, b) => n + (b.start && b.end && b.end >= b.start
+                ? dayCount(b.start, b.end) : 0), 0);
+            return { weeks: Math.round((days - off) / 7), days: days, off: off };
+        }
+
+        /* ---- The list ---- */
+        function renderList() {
+            const rows = A.academicTerms.slice().sort((a, b) => a.start < b.start ? -1 : 1);
+            g('termRows').innerHTML = rows.length ? rows.map(t => {
+                const w = weeksOf(t);
+                const phase = A.termPhase(t);
+                const badge = phase === 'Current' ? 'badge-active'
+                            : phase === 'Upcoming' ? 'badge-pending' : 'badge-muted';
+                return '<tr data-status="' + (phase === 'Current' ? 'approved' : '') + '">' +
+                    '<td><strong>' + A.esc(t.name) + '</strong></td>' +
+                    '<td class="nowrap">' + A.esc(A.fmtDate(t.start)) + ' – ' + A.esc(A.fmtDate(t.end)) + '</td>' +
+                    '<td class="num">' + (w ? w.weeks : '—') + '</td>' +
+                    '<td>' + (t.breaks.length
+                        ? t.breaks.map(b => A.esc(b.name || 'Unnamed')).join(', ')
+                        : '<span class="help">None</span>') + '</td>' +
+                    '<td><span class="badge ' + badge + '">' + phase + '</span></td>' +
+                    '<td><div class="btn-group">' +
+                    '<button class="btn btn-sm" type="button" data-edit="' + t.id + '">Edit</button>' +
+                    '<button class="btn btn-sm btn-danger" type="button" data-del="' + t.id + '">Delete</button>' +
+                    '</div></td></tr>';
+            }).join('')
+              : '<tr><td colspan="6"><div class="empty-state">No academic calendar. Weekly recurring ' +
+                'bookings cannot be generated until a semester is added.</div></td></tr>';
+        }
+
+        /* ---- The editor ---- */
         function renderBreaks() {
             g('breaks').innerHTML = draft.breaks.length ? draft.breaks.map((b, i) =>
                 '<div style="display:grid;grid-template-columns:1fr 150px 150px auto;gap:8px;align-items:end">' +
@@ -620,12 +690,27 @@
             if (!draft.name.trim()) out.push('Give the semester a name.');
             if (!draft.start || !draft.end) out.push('Set the first and last day of teaching.');
             else if (draft.end <= draft.start) out.push('Teaching must end after it starts.');
+
+            if (draft.start && draft.end && draft.end > draft.start) {
+                A.academicTerms.forEach(t => {
+                    if (t.id === editingId) return;
+                    if (draft.start <= t.end && draft.end >= t.start) {
+                        out.push('These dates overlap ' + t.name + ' (' + A.fmtDate(t.start) + ' to ' +
+                                 A.fmtDate(t.end) + '). A date must belong to one semester only.');
+                    }
+                });
+            }
+            if (A.academicTerms.some(t => t.id !== editingId &&
+                t.name.trim().toLowerCase() === draft.name.trim().toLowerCase() && draft.name.trim())) {
+                out.push('Another semester already has that name.');
+            }
+
             draft.breaks.forEach((b, i) => {
-                const n = b.name.trim() || ('Break ' + (i + 1));
-                if (!b.start || !b.end) out.push(n + ': set both dates.');
-                else if (b.end < b.start) out.push(n + ': ends before it starts.');
+                const nm = b.name.trim() || ('Break ' + (i + 1));
+                if (!b.start || !b.end) out.push(nm + ': set both dates.');
+                else if (b.end < b.start) out.push(nm + ': ends before it starts.');
                 else if (draft.start && draft.end && (b.start < draft.start || b.end > draft.end))
-                    out.push(n + ' falls outside the teaching period, so it would have no effect.');
+                    out.push(nm + ' falls outside the teaching period, so it would have no effect.');
             });
             return out;
         }
@@ -639,24 +724,41 @@
                 : '';
             g('calSave').disabled = errs.length > 0;
 
-            if (draft.start && draft.end && draft.end > draft.start) {
-                const days = Math.round((A.toDate(draft.end + 'T00:00') - A.toDate(draft.start + 'T00:00')) / 86400000) + 1;
-                const off = draft.breaks.reduce((t, b) => t + (b.start && b.end && b.end >= b.start
-                    ? Math.round((A.toDate(b.end + 'T00:00') - A.toDate(b.start + 'T00:00')) / 86400000) + 1 : 0), 0);
-                g('termWeeks').textContent = Math.round((days - off) / 7) + ' teaching weeks · ' +
-                    days + ' days, less ' + off + ' on break';
-            } else {
-                g('termWeeks').textContent = '—';
-            }
+            const w = weeksOf(draft);
+            g('termWeeks').textContent = w
+                ? w.weeks + ' teaching weeks · ' + w.days + ' days, less ' + w.off + ' on break'
+                : '—';
         }
 
-        function load() {
+        function openEditor(t) {
+            editingId = t ? t.id : null;
+            draft = t
+                ? JSON.parse(JSON.stringify(t))
+                : { id: nextId, name: '', start: '', end: '', breaks: [] };
+            g('termEditHead').textContent = t ? 'Editing ' + t.name : 'New semester';
             g('termName').value = draft.name;
             g('termStart').value = draft.start;
             g('termEnd').value = draft.end;
             renderBreaks();
             refresh();
+            g('termEditor').hidden = false;
+            g('termName').focus();
         }
+
+        function closeEditor() {
+            g('termEditor').hidden = true;
+            editingId = null;
+            draft = null;
+        }
+
+        g('termRows').addEventListener('click', e => {
+            const ed = e.target.closest('button[data-edit]');
+            const dl = e.target.closest('button[data-del]');
+            if (ed) return openEditor(A.termById(ed.dataset.edit));
+            if (dl) return confirmDelete(A.termById(dl.dataset.del));
+        });
+
+        g('addTerm').addEventListener('click', () => openEditor(null));
 
         ['termName', 'termStart', 'termEnd'].forEach(id =>
             g(id).addEventListener('input', e => {
@@ -680,15 +782,15 @@
             draft.breaks.push({ name: '', start: draft.start || '', end: draft.start || '' });
             renderBreaks(); refresh();
         });
-        g('calRevert').addEventListener('click', () => {
-            draft = JSON.parse(JSON.stringify(original));
-            load();
-        });
+
+        g('calRevert').addEventListener('click', closeEditor);
+
         g('calSave').addEventListener('click', () => {
             if (problems().length) return;
+            const isNew = editingId === null;
             A.modal({
-                title: 'Save the academic calendar',
-                body: '<p>Recurring bookings created from now on are generated inside these dates.</p>' +
+                title: isNew ? 'Add ' + draft.name : 'Save ' + draft.name,
+                body: '<p>Recurring bookings generated against this semester are confined to these dates.</p>' +
                       '<dl class="kv"><dt>Semester</dt><dd>' + A.esc(draft.name) + '</dd>' +
                       '<dt>Teaching</dt><dd>' + A.esc(A.fmtDate(draft.start)) + ' to ' +
                       A.esc(A.fmtDate(draft.end)) + '</dd>' +
@@ -701,16 +803,51 @@
                       'a break. Cancel those deliberately, with a reason, so the requester is told.</div>',
                 buttons: [
                     { label: 'Back' },
-                    { label: 'Save calendar', cls: 'btn-primary', onClick: () => {
-                        Object.keys(draft).forEach(k => { A.academicTerm[k] = draft[k]; });
-                        A.toast('The calendar would be saved and written to the audit log. Nothing is stored ' +
+                    { label: isNew ? 'Add semester' : 'Save semester', cls: 'btn-primary', onClick: () => {
+                        if (isNew) {
+                            A.academicTerms.push(JSON.parse(JSON.stringify(draft)));
+                            nextId = draft.id + 1;
+                        } else {
+                            const t = A.termById(editingId);
+                            ['name', 'start', 'end', 'breaks'].forEach(k => {
+                                t[k] = JSON.parse(JSON.stringify(draft[k]));
+                            });
+                        }
+                        closeEditor();
+                        renderList();
+                        A.toast('The semester would be saved and written to the audit log. Nothing is stored ' +
                                 'by this prototype.');
                     } }
                 ]
             });
         });
 
-        load();
+        /* Unlike a resource, a term holds no foreign key from bookings — a
+           series records the dates it generated, not the calendar it came from.
+           Deleting one therefore changes nothing already booked, and the
+           dialogue says so rather than implying a cascade that does not exist. */
+        function confirmDelete(t) {
+            A.modal({
+                title: 'Delete ' + t.name,
+                body: '<p>The semester and its breaks would be removed. Weekly series can no longer be ' +
+                      'generated against it.</p>' +
+                      '<p class="help" style="margin-bottom:0"><strong>Bookings already made are not ' +
+                      'affected.</strong> A series records the dates it generated, not the calendar it was ' +
+                      'generated from, so nothing is cancelled and no history is lost.</p>',
+                buttons: [
+                    { label: 'Cancel' },
+                    { label: 'Delete semester', cls: 'btn-danger', onClick: () => {
+                        const i = A.academicTerms.indexOf(t);
+                        if (i !== -1) A.academicTerms.splice(i, 1);
+                        if (editingId === t.id) closeEditor();
+                        renderList();
+                        A.toast('The semester would be deleted and the action written to the audit log.');
+                    } }
+                ]
+            });
+        }
+
+        renderList();
     })();
 
 })();

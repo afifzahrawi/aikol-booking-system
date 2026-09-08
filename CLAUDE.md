@@ -39,9 +39,10 @@ governance and audit · low cost · maintainable.
 
 ## 2. Current status
 
-**Phase 1 (discovery, management review package, UI prototype) is COMPLETE.**
-**All 26 section 24 decisions have been answered by AIKOL** (see section 5). Phase 3 is authorised
-and may begin.
+**Phases 1, 2 and 3 are COMPLETE.**
+**All 26 section 24 decisions have been answered by AIKOL** (see section 5).
+The Django project exists, the database is built, and self-registration and authentication work.
+Phase 4 (resource management screens) is next.
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -58,16 +59,39 @@ The prototype and the management report have both been brought into line with th
 | Interactive UI prototype, 19 screens | `prototype/` | Yes — venues, vehicles, keys, facilities, registration |
 | Placeholder images (48 SVG) + generator | `prototype/assets/images/`, `tools/generate_placeholder_images.py` | Yes — 32 venue, 16 vehicle |
 | Developer documentation | `docs/` | Yes |
+| **Django project — models, first migration, auth** | `aikol_booking/` | Yes |
 | This file | `CLAUDE.md` | Yes |
+
+### Built in Phase 3
+
+- `config/settings/{base,development,production}.py`. Production refuses to start without its
+  secrets; `manage.py check --deploy` is clean.
+- **The custom user model landed in the first migration**, as required — `accounts.User`, email as
+  the login field, `identification_number` unique and nullable, `role` and `affiliation` as separate
+  fields.
+- Every model in section 6, including `resources` with `Venue` and `Vehicle` on top of it,
+  `academic_terms` with `term_breaks`, the `email_outbox`, and the append-only `audit_logs`.
+- `bookings/0002_overlap_constraints.py` — the PostgreSQL exclusion constraints for overlapping
+  bookings and overlapping terms, skipped on SQLite with the reason stated.
+- `bookings/services.py` — the conflict rule, period validation and series expansion. One
+  implementation for venues and vehicles alike.
+- Self-registration with the IIUM-domain rule and the "not from IIUM" path, emailed verification,
+  sign-in, password reset.
+- Four management commands: `send_queued_email`, `complete_bookings`, `seed_settings`,
+  `seed_facilities`. All idempotent.
+- **89 tests, all passing**, including the whole mandatory conflict table run twice — once against a
+  venue, once against a vehicle — and the multi-day overlap table.
 
 ### Not started
 
-Django project, models, migrations, views, templates, tests, deployment — everything in Phases 3–10.
+Phases 4–10: resource management screens, the booking interface, administration, reporting, bulk
+data, deployment.
 
 ### Next step
 
-Phase 3 — database and authentication. The custom user model and the `resources` table must land in
-the **first migration**; both are painful to change afterwards.
+Phase 4 — resource management. Port `prototype/css/styles.css` to `static/`, vendor Bootstrap and
+the two typefaces as local files, and build the venue, vehicle and facility screens against the
+models that now exist.
 
 ---
 
@@ -99,8 +123,10 @@ the **first migration**; both are painful to change afterwards.
     └── generate_placeholder_images.py
 ```
 
-When the Django project is created it goes in `aikol_booking/` at the repository root; the layout
-is specified in `docs/technical/architecture.md`.
+The Django project is in `aikol_booking/` at the repository root, laid out as
+`docs/technical/architecture.md` specifies: `config/settings/` split three ways, `apps/` holding the
+eight modules, plus `templates/`, `static/`, `media/` and `requirements.txt`. The virtual environment
+lives in `.venv/` and is not committed. Migrations **are** committed.
 
 The prototype covers venues only. Vehicle screens — a vehicle list, a vehicle detail page, a trip
 booking form with driver and licence fields, and a key issue/return screen — do not exist yet.
@@ -125,7 +151,9 @@ booking form with driver and licence fields, and a key issue/return screen — d
 | Hosting | **Self-provided VPS, not IIUM ITD** | Confirmed decision |
 | Domain | **Self-provided, not an IIUM subdomain** | Confirmed decision |
 | Version control | **Git** | |
-| Testing | Django test framework | |
+| Testing | Django test framework | `manage.py test`. 89 tests as at Phase 3 |
+| Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
+| PostgreSQL driver | **psycopg 3** | Production only. Installed in development so `check --deploy` can run |
 | Cost | **RM 0 in software.** Hosting and domain are now a real recurring cost | See section 5 |
 
 ### Explicitly rejected (do not add without a documented reason)
@@ -290,11 +318,16 @@ Key decisions:
   that caused it and sent by a cron-driven management command. A booking must never fail because a
   mail server is slow, and a semester-long series must never block a request behind 26 SMTP
   round-trips. This is not a message queue and does not reopen that decision.
+- **The academic calendar is several terms, not one.** `academic_terms` holds a row per semester
+  with `term_breaks` beneath it, and terms **must not overlap** — "which semester is this date in?"
+  has to have exactly one answer, or the recurrence generator's behaviour is arbitrary. Enforce it
+  with a `daterange` exclusion constraint, the same mechanism the booking rule uses. A term carries
+  no foreign key from bookings, so deleting one cancels nothing.
 - `booking_series` holds the recurrence definition; every occurrence is a real `bookings` row
   pointing back at it. Do not compute occurrences on the fly — a booking that does not exist as a row
   cannot participate in the exclusion constraint, and the whole no-double-booking guarantee collapses.
 - `key_handovers` records issue and return per booking (decision 17), with who issued, who received
-  and the timestamps. Vehicles additionally record mileage out and in.
+  and the timestamps.
 - `booking_archive` stores denormalised copies (user email/name, resource code/name) and has no
   foreign keys, so it survives changes to the live tables.
 - `audit_logs` is append-only. Application code never edits or deletes it.
@@ -364,6 +397,12 @@ booking feature complete without them.
 
 - Cancelling a booking sets `status = CANCELLED`. **It never deletes the row.**
 - Deactivating a user or resource sets a status. **It never deletes the row.**
+- A **resource may be deleted, but only through two gates.** It must be deactivated first — a matter of
+  intent, so that nothing leaves the system in one click from a list — and it must have **no booking
+  referring to it**, which `on_delete=PROTECT` enforces in the database rather than in the view.
+  Deletion is therefore for one case: a venue or vehicle entered in error that nobody ever booked.
+  A resource that has been used is deactivated and keeps its history, permanently. Offer the action
+  in the interface, refuse it in the database, and say which of the two gates stopped it.
 - Retention is **7 years** (decision 19). It makes old records *eligible* for cleanup; an
   administrator must review and confirm.
 - **Export is the default disposal action** (decision 20): rows are written to CSV outside the web
@@ -471,8 +510,8 @@ advanced analytics · any AI feature.
 | --- | --- | --- |
 | 1 | Discovery and management review | **Complete** |
 | 2 | UI prototype and requirement confirmation | **Complete**; decisions received and folded into the prototype and report |
-| 3 | Database, self-registration and authentication | Not started — **authorised, next** |
-| 4 | Resource management (venues and vehicles) | Not started |
+| 3 | Database, self-registration and authentication | **Complete** |
+| 4 | Resource management (venues and vehicles) | Not started — **next** |
 | 5 | Booking system and conflict prevention | Not started |
 | 5b | Recurring bookings | Not started — added by decision 15 |
 | 6 | Administrative features, approver role, booking on behalf | Not started |
@@ -503,7 +542,7 @@ series-level approve and cancel.
 | Charts in HTML/CSS, not Chart.js (Phase 1) | The charts needed are bars. Chart.js remains available at no cost if a chart later justifies it. |
 | Facilities normalised into a table | The original rule was "normalise when a facility needs attributes of its own". Letting administrators create facilities means each one needs a stored name, so the condition is met. Following the rule, not overriding it. |
 | Email through a database outbox, still no queue | Solves latency and retry with one table and a cron entry already in the design. Celery would solve the same problem and add a broker to operate. |
-| Deactivate, never delete | Booking history must stay complete for audit and reporting. |
+| Deactivate, never delete *once used* | Booking history must stay complete for audit and reporting. An unused record entered in error is not history, so it may be deleted — after being deactivated first, so the removal is deliberate. |
 | Export as the default disposal | Decision 20. Institutional data leaves the live database only as a verified file. |
 | Business rules in `system_settings` | So that AIKOL can change a limit without a code release; the confirmed values are defaults, not constants. |
 | Own authentication, no SSO | Decision 24. Also removes a dependency on ITD, who have not committed to hosting either. |

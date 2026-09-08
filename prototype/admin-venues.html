@@ -138,13 +138,74 @@
                 '<td>' + (v.approval ? 'Required' : 'Not required') + '</td>' +
                 '<td>' + (active ? '<span class="badge badge-active">Available</span>'
                                  : '<span class="badge badge-inactive">Maintenance</span>') + '</td>' +
-                '<td class="nowrap">' +
-                '<button class="btn-link" type="button" data-edit="' + v.id + '">Edit</button> · ' +
-                '<button class="btn-link" type="button" data-img="' + v.id + '">Images</button> · ' +
-                '<button class="btn-link" type="button" data-toggle="' + v.id + '">' +
-                (active ? 'Deactivate' : 'Activate') + '</button></td></tr>';
+                '<td><div class="btn-group">' +
+                '<a class="btn btn-sm" href="venue-details.html?id=' + v.id + '">Preview</a>' +
+                '<button class="btn btn-sm" type="button" data-edit="' + v.id + '">Edit</button>' +
+                '<button class="btn btn-sm" type="button" data-img="' + v.id + '">Images</button>' +
+                '<button class="btn btn-sm" type="button" data-toggle="' + v.id + '">' +
+                (active ? 'Deactivate' : 'Activate') + '</button>' +
+                '<button class="btn btn-sm btn-danger" type="button" data-del="' + v.id + '"' +
+                (active ? ' aria-disabled="true" disabled title="Deactivate the venue before it can be deleted"' : '') +
+                '>Delete</button></div></td></tr>';
         }
     });
+
+    /* ---- Delete ------------------------------------------------------------
+       Two gates, and they are different gates.
+
+       The first is a matter of intent: a resource must be deactivated before it
+       can be deleted. Deactivating is reversible and instant, so requiring it
+       first means nobody removes a venue from the system in a single click
+       from the list, and the venue spends time out of service where its
+       absence would be noticed before the record goes.
+
+       The second is not negotiable. A venue that any booking refers to
+       cannot be deleted at all, whatever its status: `bookings.resource` is
+       `on_delete=PROTECT`, and the database refuses. Booking history has to stay
+       complete for the seven-year audit retention, and a history pointing at a
+       venue that no longer exists is not complete. Deletion is therefore for
+       one case only — a record created in error that nobody ever booked. */
+    function bookingCount(v) {
+        return A.bookings.filter(b => b.resourceId === v.id).length;
+    }
+
+    function openDelete(v) {
+        const used = bookingCount(v);
+        if (used) {
+            A.modal({
+                title: 'Cannot delete ' + v.name,
+                body: '<div class="notice notice-warn"><strong>' + used + ' booking record' +
+                      (used === 1 ? '' : 's') + '</strong> refer' + (used === 1 ? 's' : '') +
+                      ' to this venue, so it cannot be deleted.</div>' +
+                      '<p>Booking history is retained for seven years for audit, and history that points at a venue ' +
+                      'the system no longer holds is not history. The database enforces this — the delete is refused ' +
+                      'there, not merely hidden here.</p>' +
+                      '<p class="help" style="margin-bottom:0"><strong>' + A.esc(v.name) + '</strong> stays ' +
+                      'deactivated: hidden from every booking screen, with its record and its history intact. ' +
+                      'That is the end state for a venue that is no longer in use.</p>',
+                buttons: [{ label: 'Close' }]
+            });
+            return;
+        }
+        A.modal({
+            title: 'Delete ' + v.name,
+            body: '<p>No booking has ever referred to <strong>' + A.esc(v.name) + '</strong>, so the record and its ' +
+                  'photographs can be removed permanently.</p>' +
+                  '<p class="help" style="margin-bottom:0">This is for a venue entered in error. A venue that has ' +
+                  'been used is deactivated instead, and keeps its history.</p>',
+            buttons: [
+                { label: 'Cancel' },
+                { label: 'Delete permanently', cls: 'btn-danger', onClick: function () {
+                    [A.venues, A.resources].forEach(function (list) {
+                        const i = list.indexOf(v);
+                        if (i !== -1) list.splice(i, 1);
+                    });
+                    ctrl.refresh(); stats();
+                    A.toast('The venue and its images would be deleted, and the action written to the audit log.');
+                } }
+            ]
+        });
+    }
 
     function venueForm(v) {
         const val = (k, d) => v ? A.esc(String(v[k])) : d;
@@ -195,7 +256,7 @@
 
     $('tbody').addEventListener('click', function (e) {
         const d = e.target.dataset || {};
-        const id = Number(d.edit || d.img || d.toggle);
+        const id = Number(d.edit || d.img || d.toggle || d.del);
         if (!id) return;
         const v = A.venueById(id);
 
@@ -225,6 +286,8 @@
                     'with a maximum file size of 5&nbsp;MB. Images are resized and compressed before storage.</p>'
             });
         }
+
+        if (d.del) return openDelete(v);
 
         if (d.toggle) {
             const activating = v.status !== 'Active';

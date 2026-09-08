@@ -1,0 +1,5 @@
+# Every dependency here is justified in CLAUDE.md, section 4. Do not add one
+# without recording the reason there.
+Django>=5.2,<6.0        # LTS. Auth, ORM, migrations, admin, security
+Pillow>=11.0            # required by Django's ImageField for resource photographs
+psycopg[binary]>=3.2    # PostgreSQL driver; production only, see settings/production.py

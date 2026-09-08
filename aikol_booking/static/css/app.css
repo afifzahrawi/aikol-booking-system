@@ -1,0 +1,30 @@
+/* Placeholder stylesheet.
+
+   The confirmed visual design lives in prototype/css/styles.css and is ported
+   here in Phase 4, alongside vendored Bootstrap 5, Bootstrap Icons, and the
+   Amiri and IBM Plex Sans faces as WOFF2. Nothing is loaded from a CDN: the
+   application has to work on a restricted institutional network. */
+
+:root {
+    --page: #f7f4ed;
+    --surface: #fffdf8;
+    --brand: #14675b;
+    --gold: #d99b28;
+    --line: #ded4bd;
+    --ink: #1a2420;
+    --muted: #8a7f66;
+}
+body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.5 "IBM Plex Sans", system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.app-header, .app-footer { padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.app-footer { border-bottom: 0; border-top: 1px solid var(--line); color: var(--muted); }
+.main { max-width: 900px; margin: 0 auto; padding: 24px; }
+.field { margin-bottom: 14px; }
+.help { color: var(--muted); font-size: 12.5px; }
+.notice { padding: 10px 14px; border-left: 3px solid var(--gold); background: #fdf4e3; }
+.skip-link { position: absolute; left: -9999px; }
+.skip-link:focus { left: 8px; top: 8px; background: #fff; padding: 8px; z-index: 10; }

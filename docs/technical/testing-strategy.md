@@ -83,7 +83,7 @@ series touches dozens of slots at once.
 | Self-drive with no licence on file | Refused with a prompt to add it |
 | Self-drive licence expires before the trip ends | Refused |
 | VMU booking with no licence on file | **Accepted** — the requester is not the driver |
-| Road tax or insurance expires before the trip ends | Refused |
+| Road tax expires before the trip ends | Refused, and the reason given to the requester names no date |
 | `passenger_count` exceeds `vehicle.seats` | Refused |
 | Trip longer than `maximum_vehicle_trip_days` | Refused |
 | Venue booking longer than 9 hours | Refused |
@@ -98,7 +98,7 @@ the venue rule to a car would make multi-day trips impossible while every other 
 | --- | --- |
 | Issue a key for an `APPROVED` booking | `KeyHandover` created with `issued_at` and `issued_by` |
 | Issue a key for a `PENDING` booking | Refused |
-| Return a key | `returned_at`, `returned_to` recorded; vehicle `current_mileage` updated from `mileage_in` |
+| Return a key | `returned_at`, `returned_to` recorded |
 | Booking past `end_at` with no return | Appears in the outstanding-keys report |
 | Booking reaches `COMPLETED` with key outstanding | Allowed — the two are tracked separately, and the key stays outstanding |
 | Both actions | Written to the audit log |

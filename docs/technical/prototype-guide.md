@@ -136,7 +136,7 @@ fallbacks (Georgia, Segoe UI) are close enough in metrics that the layout holds 
 | `admin-bookings.html`, `admin-keys.html` | All bookings; key issue and return register |
 | `admin-venues.html`, `admin-vehicles.html`, `admin-facilities.html` | Resource and facility management |
 | `admin-users.html`, `admin-dashboard.html` | Users; administrator overview |
-| `admin-reports.html` | **Reports** — utilisation, approval rate, monthly volume, audit log |
+| `admin-reports.html` | **Reports** — demand heatmap, utilisation, approval rate, monthly volume, audit log |
 | `admin-site-content.html` | **Editable header and footer** — live preview beside the form |
 | `data-management.html` | Bulk import, export, retention and backup |
 | `css/styles.css` | The design system — tokens lifted from the AIKOL design file |
@@ -196,11 +196,16 @@ at the bottom of the file for anything not yet migrated. New screens must not us
 | --- | --- |
 | `booking.html` | Weekly recurrence expands into concrete dates, and **clashing dates are named rather than silently skipped** — the user chooses whether to submit the remainder |
 | `booking.html` | The 9-hour cap is on a single booking, not the day; the form says so when it refuses |
-| `vehicle-booking.html` | Licence, road tax and insurance expiry are all checked against the **end** of the trip, not the day it is requested |
+| `vehicle-booking.html` | Licence and road tax expiry are checked against the **end** of the trip, not the day it is requested. An expired road tax withdraws the vehicle without stating why |
 | `vehicle-booking.html` | Signed in as a student, the page shows the eligibility block before continuing as staff, so the rule is visible rather than hidden |
 | `vehicles.html` | A student sees the fleet and the reason they cannot request it, not a missing menu item |
 | `admin-keys.html` | Outstanding keys sort first; a booking can be `Completed` with its key still out |
-| `admin-facilities.html` | A facility in use can be deactivated but not deleted; renaming never changes the code |
+| `admin-facilities.html` | A facility in use can be deactivated but not deleted; renaming never changes the code. Display order is set by dragging a row's handle, or by focusing it and pressing the arrow keys — the handles switch off while a filter is set, because reordering a subset would produce an order nobody saw |
+| `data-management.html` | The academic calendar holds **several semesters**, listed with Past / Current / Upcoming and edited one at a time. The editor refuses an overlap and names the semester it collided with, because `termFor(date)` must have exactly one answer. Deleting a term states that bookings already made are unaffected — a series records its dates, not its calendar |
+| `admin-bookings.html` | The weekly-recurrence block asks **which semester** to generate against, defaulting to the one running today. Changing it carries both the start date and the repeat-until date across — moving only one leaves a range wholly outside the chosen calendar and every occurrence skipped. A semester beyond the 90-day advance limit says so explicitly, because hitting decision 7's limit otherwise looks identical to "before the semester begins" |
+| `admin-reports.html` | The demand heatmap is a real `<table>`, not a grid of `<div>`s: hour and day headers carry their own meaning, the matrix is navigable by row and column, and the accessible table view is the chart itself rather than a second copy of the data. An empty hour is the page surface, not the palest step on the ramp — "nobody booked this" and "one person booked this" differ in kind |
+| `admin-venues.html`, `admin-vehicles.html` | **Delete is disabled until the resource is deactivated**, and refused outright — naming the record count — if any booking refers to it. The two gates are not the same gate: deactivating first makes the removal deliberate, while `on_delete=PROTECT` makes a used resource permanently undeletable. Deleting is for a record entered in error |
+| `admin-venues.html`, `admin-vehicles.html` | Identical action columns — Preview · Edit · Images — and one place to upload photographs, the Images action. A vehicle's status is a field on its edit form, and choosing *Under Maintenance* states how many future bookings exist without cancelling any of them |
 | `my-bookings.html` | Cancellation refuses an empty reason, and "Why not?" explains the 3-day cutoff instead of just disabling the control |
 
 ## Placeholder images
@@ -216,7 +221,7 @@ python tools/generate_placeholder_images.py
 Slugs avoid trailing digits (`seminar-a`, `car-saga`) because variants are suffixed `-v2`, `-v3`,
 `-v4`; a slug ending in a digit would collide with a variant filename.
 
-Vehicle views are: side profile, registration plate with road-tax and insurance panels, features,
+Vehicle views are: side profile, registration plate, features,
 and seating layout. The car diagram is anchored to the ground line so the wheels sit on it whatever
 roof height the body uses — see `car_body()`.
 

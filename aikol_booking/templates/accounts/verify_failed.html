@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Link not valid{% endblock %}
+{% block content %}
+<h1>That link is no longer valid</h1>
+<p>A confirmation link expires after a few days, and stops working once it has been used.</p>
+<p>If your address is already confirmed, simply <a href="{% url 'accounts:login' %}">sign in</a>.
+   Otherwise ask the Kulliyyah office to send a new link.</p>
+{% endblock %}

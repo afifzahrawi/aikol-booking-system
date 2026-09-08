@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Assalamualaikum, {{ user.full_name }}</h1>
+{% if not user.email_verified %}
+    <p class="notice notice-warn"><strong>Your address is not yet confirmed.</strong>
+       Follow the link in the email you were sent. Until then you cannot make a booking.</p>
+{% endif %}
+<p class="help">Phase 3 is complete: accounts, roles and the database. Browsing, availability and
+   booking arrive with Phases 4 and 5.</p>
+{% endblock %}

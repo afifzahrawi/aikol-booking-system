@@ -110,9 +110,8 @@
 
     function expiryFlag(v) {
         const todayISO = A.iso(A.today);
-        if (v.roadTaxExpiry < todayISO) return 'Road tax expired';
-        if (v.insuranceExpiry < todayISO) return 'Insurance expired';
-        return '';
+        /* Admin-only detail: the requester sees only that it is unavailable. */
+        return v.roadTaxExpiry < todayISO ? 'Under maintenance' : '';
     }
 
     function render() {
@@ -138,7 +137,7 @@
                 '<span class="loc">' + A.esc(v.make + ' ' + v.model + ' ' + v.year) + ' · <span class="mono">' + A.esc(v.registration) + '</span></span>' +
                 '<span class="loc">' + v.seats + ' seats · ' + A.esc(v.transmission === 'Auto' ? 'Automatic' : 'Manual') + ' · ' + A.esc(v.fuelType) + '</span>' +
                 '<div>' + (bookable ? '<span class="badge badge-approved">Available</span>'
-                                    : '<span class="badge badge-cancelled">' + A.esc(flag || 'Under maintenance') + '</span>') +
+                                    : '<span class="badge badge-cancelled">' + 'Under maintenance' + '</span>') +
                 ' <span class="badge badge-muted">Approval required</span></div>' +
                 '<div class="facilities">' +
                 v.facilities.map(f => '<span class="pill">' + A.esc(A.facilityName(f)) + '</span>').join('') +

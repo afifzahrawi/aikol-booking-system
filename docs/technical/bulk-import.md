@@ -59,7 +59,7 @@ code,name,building,floor,venue_type,capacity,facilities,bookable_window_start,bo
 ### Facilities — `aikol-facilities-template.csv`
 
 ```
-code,name,applies_to,display_order,status
+code,name,applies_to,status
 ```
 - `code` required and unique. Lower-case, no spaces — it is referenced by the venue and vehicle
   templates and by saved filter URLs.
@@ -73,14 +73,14 @@ code,name,applies_to,display_order,status
 ### Vehicles — `aikol-vehicles-template.csv`
 
 ```
-code,name,registration_number,vehicle_class,make,model,year,seats,transmission,fuel_type,facilities,road_tax_expiry,insurance_expiry,current_mileage
+code,name,registration_number,vehicle_class,make,model,year,seats,transmission,fuel_type,facilities,road_tax_expiry
 ```
 - `code` required, unique across all resources.
 - `registration_number` required and unique.
 - `vehicle_class` is `Car` in the first release; other values are rejected until the class is
   supported.
 - `seats` a positive whole number; `transmission` one of `Auto`, `Manual`.
-- `road_tax_expiry` and `insurance_expiry` as `YYYY-MM-DD`. **A date already in the past is a
+- `road_tax_expiry` as `YYYY-MM-DD`. **A date already in the past is a
   warning, not an error** — an administrator may well be loading a fleet mid-renewal, and refusing
   the import would be unhelpful. The vehicle simply cannot be booked until the date is updated.
 - `facilities` uses the same pipe-separated codes as the venue template, limited to facilities whose

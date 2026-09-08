@@ -773,7 +773,49 @@ table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
 .activity li { padding: 10px 0; border-top: 1px solid var(--line-soft); font-size: 12.5px; }
 .activity li:first-child { border-top: 0; }
 
-/* ---------- 14. Modal ----------------------------------------------------- */
+/* ---------- 14. Heatmap --------------------------------------------------- */
+/* Room demand by hour and day. A real <table> rather than a grid of divs: the
+   hour and day headers then carry their own meaning, a screen reader can
+   navigate the matrix by row and column, and the table view the chart needs for
+   accessibility is the chart itself rather than a second copy of the data.
+
+   The scale is one hue, light to dark — magnitude, so a sequential ramp. An
+   empty hour is NOT the palest step but the page surface, because "nobody
+   booked this" and "one person booked this" are different in kind, and a ramp
+   that blends them hides the dead parts of the day the chart exists to find. */
+
+.heat-wrap { overflow-x: auto; }
+table.heat { border-collapse: separate; border-spacing: 2px; margin: 0; }
+table.heat th {
+    font-size: 10.5px; font-weight: 600; color: var(--muted);
+    letter-spacing: .02em; padding: 0; white-space: nowrap;
+}
+table.heat thead th { text-align: center; padding-bottom: 3px; font-variant-numeric: tabular-nums; }
+table.heat tbody th { text-align: right; padding-right: 8px; }
+table.heat td {
+    width: 26px; height: 24px; padding: 0;
+    border-radius: 2px; background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line-soft);
+}
+table.heat td[data-level="1"] { background: #dbe9e4; box-shadow: none; }
+table.heat td[data-level="2"] { background: #a8ccc2; box-shadow: none; }
+table.heat td[data-level="3"] { background: #6ba99c; box-shadow: none; }
+table.heat td[data-level="4"] { background: #33806f; box-shadow: none; }
+table.heat td[data-level="5"] { background: var(--brand); box-shadow: none; }
+
+/* A 2px surface ring, not a border, so the highlight never shifts the grid. */
+table.heat td:hover { box-shadow: 0 0 0 2px var(--gold); position: relative; }
+
+.heat-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-top: 12px;
+}
+.heat-scale { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.heat-scale i { width: 20px; height: 12px; border-radius: 2px; display: block; }
+.heat-read { font-size: 12.5px; color: var(--ink-600); min-height: 1.2em; }
+.heat-read strong { color: var(--ink); }
+
+/* ---------- 15. Modal ----------------------------------------------------- */
 .modal-backdrop {
     position: fixed; inset: 0; background: rgba(20, 103, 91, .55);
     display: grid; place-items: center; padding: 30px; z-index: 100;
@@ -796,7 +838,7 @@ table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
     display: flex; justify-content: flex-end; gap: 10px;
 }
 
-/* ---------- 15. Steps ----------------------------------------------------- */
+/* ---------- 16. Steps ----------------------------------------------------- */
 .steps { display: flex; gap: 0; list-style: none; margin: 0 0 20px; padding: 0; }
 .steps li {
     flex: 1; padding: 10px 14px; background: var(--surface);
@@ -811,7 +853,7 @@ table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
 .steps li[aria-current="step"] .n { color: var(--gold-pale); }
 .steps li.done { background: var(--brand-100); color: var(--brand); }
 
-/* ---------- 16. Data management ------------------------------------------- */
+/* ---------- 17. Data management ------------------------------------------- */
 .danger-zone {
     border: 1px solid var(--rej-bd); background: var(--rej-bg);
     border-radius: var(--r); padding: 16px 18px;
@@ -823,7 +865,7 @@ table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
     font-size: 12.5px; color: var(--muted);
 }
 
-/* ---------- 17. Sign in / register ---------------------------------------- */
+/* ---------- 18. Sign in / register ---------------------------------------- */
 /* The photograph is a background layer, so swapping it is one line: change
    --login-photo. Everything else, including the readability of the text, is
    unaffected by which image is used. */
@@ -870,7 +912,38 @@ table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
 .login-card { width: min(400px, 100%); }
 .login-card h2 { font-family: var(--font-serif); font-size: 1.3rem; }
 
-/* ---------- 18. Responsive ------------------------------------------------ */
+/* ---------- 19. Reorderable rows ------------------------------------------ */
+/* Used by the facility list, where display order is a property of the list
+   rather than a number typed into each row. The handle is a real button so the
+   order can be changed from the keyboard as well as by pointer — dragging alone
+   would leave the feature unusable without a mouse. */
+
+table.data th.drag-col,
+table.data td.drag-cell { width: 34px; padding-left: .35rem; padding-right: 0; }
+
+.draghandle {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; padding: 0;
+    border: 1px solid transparent; border-radius: 4px;
+    background: none; color: var(--muted);
+    cursor: grab; line-height: 1;
+}
+.draghandle:hover { background: var(--brand-050); color: var(--brand); border-color: var(--line); }
+.draghandle:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.draghandle:active { cursor: grabbing; }
+.draghandle[disabled] { cursor: default; opacity: .35; }
+.draghandle svg { width: 14px; height: 14px; }
+
+tr.dragging { opacity: .45; }
+tr.drop-above td { box-shadow: inset 0 2px 0 var(--gold); }
+tr.drop-below td { box-shadow: inset 0 -2px 0 var(--gold); }
+
+/* While a row is being moved, the row tint would fight the drop indicator. */
+tbody.reordering tr[data-status] td:first-child { box-shadow: none; }
+
+.reorder-note { display: flex; align-items: center; gap: .5rem; }
+
+/* ---------- 20. Responsive ------------------------------------------------ */
 /* Wide tables and the availability board scroll inside their own container.
    The page itself never scrolls sideways. */
 .table-wrap, .board { -webkit-overflow-scrolling: touch; }
@@ -922,6 +995,7 @@ table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Phone */
 @media (max-width: 640px) {
+    .draghandle { width: 44px; height: 44px; }
     .app-header { flex-wrap: wrap; gap: 10px; padding: 12px 18px; }
     .brand img { width: 148px; }
     .brand-rule, .brand-text { display: none; }
@@ -985,11 +1059,19 @@ table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
     .btn-group > .btn { flex: 1; }
 }
 
-/* ---------- 19. Print ----------------------------------------------------- */
+/* ---------- 21. Print ----------------------------------------------------- */
 @media print {
     .app-nav, .demo-ribbon, .nav-search, .btn, .pagination, .skip-link { display: none !important; }
     body { background: #fff; }
     .app-header { border-bottom: 1px solid #000; }
     .card, .board, .stat { border-color: #999; break-inside: avoid; }
     .app-footer { background: none; color: #000; border-top: 1px solid #999; }
+
+    /* Charts encode their value in the fill. Without this a printed report
+       shows an empty grid, which is worse than no chart at all. */
+    .heat, .heat td, .heat-scale i, .hbar .track, .hbar .fill, .bar-col .bar {
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .heat-wrap { overflow: visible; }
+    .heat-read { display: none; }
 }

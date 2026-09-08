@@ -27,6 +27,31 @@
 
             <div class="grid grid-4" style="margin-bottom: 18px;" id="stats"></div>
 
+            <section class="card" style="margin-bottom: 18px;" aria-labelledby="heatHead">
+                <div class="card-head">
+                    <h2 id="heatHead" class="label" style="margin:0">Room demand by hour and day</h2>
+                    <span class="help" id="heatMax"></span>
+                </div>
+                <div class="card-body">
+                    <p class="help" style="margin: 0 0 12px;">Approved room-hours falling in each hour of the
+                        bookable window. Vehicles are excluded — a trip that runs overnight has no meaningful
+                        hour of day. <span class="tag tag-illustrative">Illustrative data</span></p>
+                    <div class="heat-wrap"><table class="heat" id="heat"></table></div>
+                    <div class="heat-foot">
+                        <p class="heat-read" id="heatRead" role="status" aria-live="polite"></p>
+                        <div class="heat-scale" aria-hidden="true">
+                            <span>None</span>
+                            <i style="background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-soft)"></i>
+                            <span style="margin-left:4px">Fewer</span>
+                            <i style="background:#dbe9e4"></i><i style="background:#a8ccc2"></i>
+                            <i style="background:#6ba99c"></i><i style="background:#33806f"></i>
+                            <i style="background:var(--brand)"></i>
+                            <span>More</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <div class="grid grid-2" style="align-items: start;">
 
                 <section class="card" aria-labelledby="utilHead">
@@ -120,6 +145,92 @@
           d: 'across ' + A.vehicles.length + ' cars' }
     ].map(s => '<div class="stat ' + s.cls + '"><span class="k">' + s.k + '</span>' +
                '<span class="v">' + s.v + '</span><span class="d">' + s.d + '</span></div>').join('');
+
+    /* ---- Room demand heatmap ----
+       Every approved room booking is spread across the hours it actually
+       occupies, so a 09:00–12:00 seminar adds an hour to each of three cells
+       rather than three hours to one. Part hours count as the fraction used —
+       otherwise a 30-minute booking and a 3-hour booking would look the same. */
+    (function heatmap() {
+        const H0 = 8, H1 = 22;                       /* the bookable window */
+        const hours = [];
+        for (let h = H0; h < H1; h++) hours.push(h);
+
+        const cells = A.DAYS.map(() => hours.map(() => 0));
+
+        approved.filter(b => b.kind !== 'Vehicle').forEach(b => {
+            const start = A.toDate(b.startAt), end = A.toDate(b.endAt);
+            const day = start.getDay();
+            const from = start.getHours() + start.getMinutes() / 60;
+            const to = from + A.minutesBetween(b.startAt, b.endAt) / 60;
+            hours.forEach((h, i) => {
+                const overlap = Math.min(to, h + 1) - Math.max(from, h);
+                if (overlap > 0) cells[day][i] += overlap;
+            });
+        });
+
+        const max = Math.max.apply(null, cells.map(r => Math.max.apply(null, r)));
+
+        /* Five steps. An empty hour keeps level 0 — see the note in the
+           stylesheet for why it is not simply the palest step. */
+        function level(v) {
+            if (v <= 0) return 0;
+            if (max <= 0) return 1;
+            return Math.min(5, Math.max(1, Math.ceil(v / max * 5)));
+        }
+
+        const fmt = v => v >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
+        const hourLabel = h => String(h).padStart(2, '0') + ':00';
+
+        let html = '<thead><tr><td></td>' +
+            hours.map(h => '<th scope="col">' + String(h).padStart(2, '0') + '</th>').join('') +
+            '</tr></thead><tbody>';
+
+        A.DAYS.forEach((name, d) => {
+            html += '<tr><th scope="row">' + name.slice(0, 3) + '</th>' +
+                hours.map((h, i) => {
+                    const v = cells[d][i];
+                    const text = v > 0
+                        ? fmt(v) + ' room-hour' + (fmt(v) === 1 ? '' : 's') + ' booked'
+                        : 'nothing booked';
+                    return '<td data-level="' + level(v) + '" data-d="' + d + '" data-h="' + h + '" ' +
+                        'data-v="' + fmt(v) + '" title="' + name + ' ' + hourLabel(h) + ' — ' + text + '">' +
+                        '<span class="visually-hidden">' + text + '</span></td>';
+                }).join('') + '</tr>';
+        });
+        html += '</tbody>';
+
+        const table = document.getElementById('heat');
+        table.innerHTML = html;
+        table.setAttribute('aria-describedby', 'heatMax');
+
+        const busiest = (function () {
+            let best = null;
+            A.DAYS.forEach((name, d) => hours.forEach((h, i) => {
+                if (!best || cells[d][i] > best.v) best = { v: cells[d][i], name: name, h: h };
+            }));
+            return best;
+        })();
+
+        document.getElementById('heatMax').textContent = busiest && busiest.v > 0
+            ? 'Busiest hour: ' + busiest.name + ' ' + hourLabel(busiest.h) +
+              ', ' + fmt(busiest.v) + ' room-hours'
+            : 'No approved room bookings in the period';
+
+        /* Colour is the encoding; the number is on hover rather than printed in
+           every one of the 98 cells. */
+        const read = document.getElementById('heatRead');
+        const rest = 'Hover a cell for its total.';
+        read.textContent = rest;
+        table.addEventListener('mouseover', e => {
+            const td = e.target.closest('td[data-h]');
+            if (!td) return;
+            read.innerHTML = '<strong>' + A.esc(A.DAYS[Number(td.dataset.d)]) + ' ' +
+                hourLabel(Number(td.dataset.h)) + '–' + hourLabel(Number(td.dataset.h) + 1) + '</strong> · ' +
+                (Number(td.dataset.v) > 0 ? td.dataset.v + ' room-hours booked' : 'nothing booked');
+        });
+        table.addEventListener('mouseleave', () => { read.textContent = rest; });
+    })();
 
     /* ---- Utilisation bars ---- */
     function bars(host, pool, gold) {

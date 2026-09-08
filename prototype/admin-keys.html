@@ -152,14 +152,6 @@
         'Never collected': 'badge-inactive'
     };
 
-    function mileageCell(r) {
-        if (r.b.kind !== 'Vehicle' || !r.k) return '';
-        if (r.k.mileageIn) return '<br><span class="help mono">' + r.k.mileageOut.toLocaleString() +
-            ' → ' + r.k.mileageIn.toLocaleString() + ' km</span>';
-        if (r.k.mileageOut) return '<br><span class="help mono">out at ' + r.k.mileageOut.toLocaleString() + ' km</span>';
-        return '';
-    }
-
     const ctl = A.tableController({
         rows: () => all,
         tbody: document.getElementById('rows'),
@@ -195,7 +187,7 @@
                     '<br><span class="help">' + A.esc(r.b.kind) + '</span></td>' +
                 '<td>' + A.esc(u.name) + '<br><span class="help mono">' + A.esc(u.idNo) + '</span></td>' +
                 '<td>' + A.esc(A.fmtPeriod(r.b.startAt, r.b.endAt)) + '</td>' +
-                '<td>' + (r.k ? A.esc(A.fmtStamp(r.k.issuedAt)) : '<span class="help">—</span>') + mileageCell(r) + '</td>' +
+                '<td>' + (r.k ? A.esc(A.fmtStamp(r.k.issuedAt)) : '<span class="help">—</span>') + '</td>' +
                 '<td>' + (r.k && r.k.returnedAt ? A.esc(A.fmtStamp(r.k.returnedAt)) : '<span class="help">—</span>') + '</td>' +
                 '<td><span class="badge ' + stateBadge[r.state] + '">' + A.esc(r.state) + '</span></td>' +
                 '<td>' + action + '</td></tr>';
@@ -257,10 +249,6 @@
                 '<div><dt>Booked period</dt><dd>' + A.esc(A.fmtPeriod(b.startAt, b.endAt)) + '</dd></div>' +
                 '</dl>' +
                 vehicleRecord(b) +
-                (isVehicle
-                    ? '<div class="field" style="margin-top:14px"><label for="mOut">Mileage at collection (km)</label>' +
-                      '<input class="input" type="number" id="mOut" value="' + b.resource.mileage + '"></div>'
-                    : '') +
                 '<div class="field"><label for="issueNote">Condition noted at issue</label>' +
                 '<textarea class="textarea" id="issueNote" placeholder="Optional"></textarea></div>' +
                 '<p class="help">The issue is recorded against this booking and written to the audit log as ' +
@@ -294,11 +282,6 @@
                 '<div><dt>Due back</dt><dd>' + A.esc(A.fmtStamp(b.endAt)) + '</dd></div>' +
                 '</dl>' +
                 vehicleRecord(b) +
-                (isVehicle
-                    ? '<div class="field" style="margin-top:14px"><label for="mIn">Mileage at return (km)</label>' +
-                      '<input class="input" type="number" id="mIn" value="' + (k.mileageOut + 120) + '">' +
-                      '<p class="help">Updates the vehicle\'s recorded mileage.</p></div>'
-                    : '') +
                 '<div class="field"><label for="retNote">Condition or damage noted</label>' +
                 '<textarea class="textarea" id="retNote" placeholder="Optional"></textarea></div>' +
                 '<p class="help">Written to the audit log as <span class="mono">KEY_RETURNED</span>.</p>',
@@ -306,7 +289,7 @@
                 { label: 'Cancel' },
                 { label: 'Confirm return', cls: 'btn-primary', onClick: () => {
                     A.toast('The return would be recorded with the time, the receiving officer' +
-                            (isVehicle ? ' and the closing mileage.' : '.'));
+                            '.');
                 } }
             ]
         });
