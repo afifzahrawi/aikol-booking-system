@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ resource.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ resource.name }}</h1>
+        <p class="lede mono">{{ resource.code }}</p>
+    </div>
+    {% if user.is_administrator %}
+    <div class="btn-group">
+        {% if is_vehicle %}
+            <a class="btn" href="{% url 'resources:vehicle_edit' resource.pk %}">Edit</a>
+        {% else %}
+            <a class="btn" href="{% url 'resources:venue_edit' resource.pk %}">Edit</a>
+        {% endif %}
+        <a class="btn" href="{% url 'resources:images' resource.pk %}">Images</a>
+    </div>
+    {% endif %}
+</div>
+
+{% if resource.images.all %}
+<div class="grid grid-2">
+    {% for photo in resource.images.all %}
+        <figure><img class="framed" src="{{ photo.image.url }}" alt="{{ photo.caption|default:resource.name }}"></figure>
+    {% endfor %}
+</div>
+{% endif %}
+
+<section class="card">
+    <div class="card-body">
+        {% if resource.description %}<p>{{ resource.description }}</p>{% endif %}
+        <dl class="kv">
+            {% if is_vehicle %}
+                <dt>Registration</dt><dd class="mono">{{ resource.registration_number }}</dd>
+                <dt>Vehicle</dt><dd>{{ resource.make }} {{ resource.model }} {{ resource.year }}</dd>
+                <dt>Seats</dt><dd>{{ resource.seats }}</dd>
+                <dt>Transmission</dt><dd>{{ resource.get_transmission_display }}</dd>
+                {% if show_road_tax %}
+                    {# Administrator-facing only. A requester sees the car as
+                       unavailable, never the reason. #}
+                    <dt>Road tax expiry</dt><dd>{{ resource.road_tax_expiry }}</dd>
+                {% endif %}
+            {% else %}
+                <dt>Type</dt><dd>{{ resource.get_venue_type_display }}</dd>
+                <dt>Location</dt><dd>{{ resource.location }}{% if resource.floor %}, {{ resource.floor }}{% endif %}</dd>
+                <dt>Capacity</dt><dd>{{ resource.capacity }}</dd>
+                <dt>Open</dt><dd>{{ resource.opens_at }} to {{ resource.closes_at }}</dd>
+            {% endif %}
+            <dt>Approval</dt><dd>{% if resource.approval_required %}Required{% else %}Not required{% endif %}</dd>
+        </dl>
+
+        {% if resource.facilities.all %}
+        <p class="label">Facilities</p>
+        <ul class="pill-list">
+            {% for f in resource.facilities.all %}<li><span class="pill">{{ f.name }}</span></li>{% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</section>
+
+<p class="help">Availability and booking arrive with Phase 5.</p>
+{% endblock %}

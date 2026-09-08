@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Rooms{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Rooms</h1>
+        <p class="lede">Moot court, seminar, meeting, lecture and discussion rooms.</p></div>
+</div>
+
+<section class="card">
+    {% include "resources/_filters.html" with placeholder="Room name, code or location" show_status=0 %}
+    <div class="grid grid-3">
+        {% for venue in page %}
+            <article class="card resource-card">
+                {% with venue.images.all|first as photo %}
+                    {% if photo %}<img class="framed" src="{{ photo.image.url }}" alt="{{ venue.name }}">{% endif %}
+                {% endwith %}
+                <h2><a href="{% url 'resources:detail' venue.pk %}">{{ venue.name }}</a></h2>
+                <p class="help">{{ venue.get_venue_type_display }} &middot; {{ venue.location }}
+                   &middot; seats {{ venue.capacity }}</p>
+                <ul class="pill-list">
+                    {% for f in venue.facilities.all %}<li><span class="pill">{{ f.name }}</span></li>{% endfor %}
+                </ul>
+            </article>
+        {% empty %}
+            <div class="empty-state">No room matches the current filters.</div>
+        {% endfor %}
+    </div>
+    {% include "resources/_pager.html" %}
+</section>
+{% endblock %}

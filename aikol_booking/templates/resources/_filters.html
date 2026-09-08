@@ -1,0 +1,30 @@
+{# Filters post as GET so a filtered list is a shareable URL, and so the
+   query, not the page, does the filtering. #}
+<form method="get" class="toolbar">
+    <div class="field grow">
+        <label for="q">Search</label>
+        <input class="input" type="search" id="q" name="q" value="{{ q }}" placeholder="{{ placeholder }}">
+    </div>
+    {% if show_status %}
+    <div class="field">
+        <label for="status">Status</label>
+        <select class="select" id="status" name="status">
+            <option value="">All</option>
+            <option value="ACTIVE" {% if status == 'ACTIVE' %}selected{% endif %}>Active</option>
+            <option value="MAINTENANCE" {% if status == 'MAINTENANCE' %}selected{% endif %}>Under maintenance</option>
+        </select>
+    </div>
+    {% endif %}
+    <div class="field">
+        <label for="facility">Facility</label>
+        <select class="select" id="facility" name="facility">
+            <option value="">Any facility</option>
+            {% for f in facilities %}
+                <option value="{{ f.pk }}" {% if facility == f.pk|stringformat:'s' %}selected{% endif %}>{{ f.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <button class="btn" type="submit">Apply</button>
+    </div>
+</form>

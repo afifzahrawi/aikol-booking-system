@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Images &mdash; {{ resource.name }}{% endblock %}
+{% block content %}
+<h1>Images &mdash; {{ resource.name }}</h1>
+
+<div class="grid grid-2">
+    {% for photo in resource.images.all %}
+        <figure class="card">
+            <img class="framed" src="{{ photo.image.url }}" alt="{{ photo.caption|default:resource.name }}">
+            <figcaption class="help">
+                {{ photo.caption|default:"No caption" }}{% if forloop.first %} &mdash; main image{% endif %}
+            </figcaption>
+            <form method="post" action="{% url 'resources:image_delete' resource.pk photo.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-danger" type="submit">Remove</button>
+            </form>
+        </figure>
+    {% empty %}
+        <div class="empty-state">No photographs yet.</div>
+    {% endfor %}
+</div>
+
+<section class="card" style="margin-top:1.25rem">
+    <div class="card-head"><h2 class="label" style="margin:0">Add a photograph</h2></div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
+            {% endfor %}
+            <button class="btn btn-primary" type="submit">Upload</button>
+        </form>
+        <p class="help" style="margin-top:.75rem">
+            Validated on the server: JPEG, PNG and WebP only, up to 5&nbsp;MB. The format is read
+            from the file's own header, not from its name or the browser's Content-Type &mdash; both
+            of those are supplied by whoever is uploading. SVG is refused: it can carry script, and
+            serving one from this origin would be a stored cross-site-scripting hole. Files are
+            renamed on save.
+        </p>
+    </div>
+</section>
+{% endblock %}

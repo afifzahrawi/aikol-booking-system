@@ -1,0 +1,9 @@
+{# Resources is one area; these are its three kinds of thing. #}
+<div class="seg" role="tablist" aria-label="Resource kind" style="margin-bottom:18px">
+    <a role="tab" href="{% url 'resources:manage_venues' %}"
+       {% if tab == 'venues' %}aria-selected="true" class="on"{% endif %}>Venues</a>
+    <a role="tab" href="{% url 'resources:manage_vehicles' %}"
+       {% if tab == 'vehicles' %}aria-selected="true" class="on"{% endif %}>Vehicles</a>
+    <a role="tab" href="{% url 'resources:manage_facilities' %}"
+       {% if tab == 'facilities' %}aria-selected="true" class="on"{% endif %}>Facilities</a>
+</div>

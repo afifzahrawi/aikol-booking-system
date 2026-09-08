@@ -57,6 +57,8 @@ class Facility(models.Model):
     )
 
     class Meta:
+        # display_order alone ties before the first reorder; name breaks it, so
+        # a page boundary is stable.
         ordering = ("display_order", "name")
         verbose_name_plural = "facilities"
 
@@ -127,6 +129,12 @@ class Venue(Resource):
         DISCUSSION = "DISCUSSION", "Discussion room"
         CONFERENCE = "CONFERENCE", "Conference room"
 
+    class Meta:
+        # Meta.ordering is NOT inherited from Resource under multi-table
+        # inheritance. Without this the list views paginate an unordered
+        # queryset, which can repeat or skip rows between pages.
+        ordering = ("name",)
+
     venue_type = models.CharField(max_length=20, choices=VenueType.choices)
     location = models.CharField(max_length=120)
     floor = models.CharField(max_length=30, blank=True)
@@ -149,6 +157,9 @@ class Vehicle(Resource):
     class Transmission(models.TextChoices):
         AUTOMATIC = "AUTO", "Automatic"
         MANUAL = "MANUAL", "Manual"
+
+    class Meta:
+        ordering = ("name",)      # not inherited; see the note on Venue
 
     registration_number = models.CharField(max_length=20, unique=True)
     vehicle_class = models.CharField(max_length=20, default="CAR")

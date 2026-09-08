@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}{# load is not inherited from base.html #}
+{% block title %}Facilities{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Facilities</h1>
+        <p class="lede">Facilities and vehicle features that can be attached to a resource.</p></div>
+    <div class="btn-group"><a class="btn btn-primary" href="{% url 'resources:facility_new' %}">Add facility</a></div>
+</div>
+{% include "resources/_tabs.html" with tab='facilities' %}
+
+<div class="notice notice-info">
+    <strong>This list is maintained here, not in the code.</strong> Adding a facility makes it
+    available on the resource forms immediately, with no software release.
+    <strong>Drag a row by its handle</strong> to set the order facilities appear in &mdash; or focus
+    a handle and press the up and down arrow keys.
+</div>
+
+<section class="card">
+    <form method="get" class="toolbar">
+        <div class="field grow">
+            <label for="q">Search</label>
+            <input class="input" type="search" id="q" name="q" value="{{ q }}" placeholder="Facility name or code">
+        </div>
+        <div class="field">
+            <label for="applies">Applies to</label>
+            <select class="select" id="applies" name="applies">
+                <option value="">All resources</option>
+                <option value="VENUE" {% if applies == 'VENUE' %}selected{% endif %}>Venues</option>
+                <option value="VEHICLE" {% if applies == 'VEHICLE' %}selected{% endif %}>Vehicles</option>
+                <option value="BOTH" {% if applies == 'BOTH' %}selected{% endif %}>Both</option>
+            </select>
+        </div>
+        <div class="field"><button class="btn" type="submit">Apply</button></div>
+    </form>
+
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr>
+            <th scope="col" class="drag-col"><span class="visually-hidden">Reorder</span></th>
+            <th scope="col">Name</th><th scope="col">Code</th><th scope="col">Applies to</th>
+            <th scope="col">In use</th><th scope="col">Origin</th>
+            <th scope="col">Status</th><th scope="col">Actions</th>
+        </tr></thead>
+        <tbody id="rows">
+        {% for f in facilities %}
+            <tr data-id="{{ f.pk }}" {% if not filtered %}draggable="true"{% endif %}>
+                <td class="drag-cell">
+                    <button class="draghandle" type="button" data-handle="{{ f.pk }}"
+                            {% if filtered %}disabled{% endif %}
+                            aria-label="Reorder {{ f.name }}. Use the up and down arrow keys to move it."
+                            title="Drag to reorder, or use the arrow keys">
+                        <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+                            <circle cx="6" cy="3" r="1.4"/><circle cx="10" cy="3" r="1.4"/>
+                            <circle cx="6" cy="8" r="1.4"/><circle cx="10" cy="8" r="1.4"/>
+                            <circle cx="6" cy="13" r="1.4"/><circle cx="10" cy="13" r="1.4"/>
+                        </svg>
+                    </button>
+                </td>
+                <td><strong>{{ f.name }}</strong></td>
+                <td><span class="mono">{{ f.code }}</span></td>
+                <td>{{ f.get_applies_to_display }}</td>
+                <td>{% if f.usage %}{{ f.usage }} resource{{ f.usage|pluralize }}
+                    {% else %}<span class="help">Not used</span>{% endif %}</td>
+                <td>{% if f.is_seeded %}<span class="badge badge-muted">Seeded</span>
+                    {% else %}<span class="badge badge-active">Administrator</span>{% endif %}</td>
+                <td>{% if f.is_active %}<span class="badge badge-active">Active</span>
+                    {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}</td>
+                <td><div class="btn-group">
+                    <a class="btn btn-sm" href="{% url 'resources:facility_edit' f.pk %}">Edit</a>
+                    <form method="post" action="{% url 'resources:facility_delete' f.pk %}" class="inline">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-danger" type="submit"
+                                {% if f.usage %}disabled title="In use by {{ f.usage }} resource(s)"{% endif %}>Delete</button>
+                    </form>
+                </div></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="8"><div class="empty-state">No facility matches the current filters.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    <div class="card-foot">
+        <p class="help reorder-note" id="reorderNote" style="margin:0">
+            {% if filtered %}Clear the search and filters to change the display order.
+            {% else %}Drag a handle, or press the up and down arrow keys, to change the display order.{% endif %}
+        </p>
+    </div>
+</section>
+
+{# Progressive enhancement. Without JavaScript the list still reads and edits;
+   only the drag shortcut is unavailable, and the order can still be changed by
+   the keyboard path below, which posts a normal form. #}
+<form method="post" action="{% url 'resources:facility_reorder' %}" id="reorderForm" hidden>
+    {% csrf_token %}<input type="hidden" name="order" id="orderField">
+</form>
+{% endblock %}
+
+{% block scripts %}
+{% if not filtered %}
+<script src="{% static 'js/reorder.js' %}" defer></script>
+{% endif %}
+{% endblock %}

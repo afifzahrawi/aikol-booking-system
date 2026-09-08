@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Vehicles{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Kulliyyah cars</h1>
+        <p class="lede">Anyone may request a car. Who may <em>drive</em> one is a separate
+           question, answered on the booking form.</p></div>
+</div>
+
+<section class="card">
+    {% include "resources/_filters.html" with placeholder="Make, model or registration" show_status=0 %}
+    <div class="grid grid-3">
+        {% for car in page %}
+            <article class="card resource-card">
+                {% with car.images.all|first as photo %}
+                    {% if photo %}<img class="framed" src="{{ photo.image.url }}" alt="{{ car.name }}">{% endif %}
+                {% endwith %}
+                <h2><a href="{% url 'resources:detail' car.pk %}">{{ car.name }}</a></h2>
+                <p class="help">{{ car.make }} {{ car.model }} {{ car.year }} &middot;
+                   {{ car.seats }} seats &middot; {{ car.get_transmission_display }}</p>
+                <p class="help mono">{{ car.registration_number }}</p>
+            </article>
+        {% empty %}
+            <div class="empty-state">No vehicle matches the current filters.</div>
+        {% endfor %}
+    </div>
+    {% include "resources/_pager.html" %}
+</section>
+{% endblock %}

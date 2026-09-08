@@ -1,0 +1,18 @@
+<div class="card-foot">
+    <span class="help">
+        {% if page.paginator.count %}
+            Showing {{ page.start_index }}&ndash;{{ page.end_index }} of {{ page.paginator.count }}
+        {% else %}No records{% endif %}
+    </span>
+    {% if page.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if page.has_previous %}
+            <a class="btn btn-sm" href="?{{ querystring }}page={{ page.previous_page_number }}">Previous</a>
+        {% endif %}
+        <span class="help">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}
+            <a class="btn btn-sm" href="?{{ querystring }}page={{ page.next_page_number }}">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

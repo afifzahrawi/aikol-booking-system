@@ -39,10 +39,11 @@ governance and audit · low cost · maintainable.
 
 ## 2. Current status
 
-**Phases 1, 2 and 3 are COMPLETE.**
+**Phases 1, 2, 3 and 4 are COMPLETE.**
 **All 26 section 24 decisions have been answered by AIKOL** (see section 5).
-The Django project exists, the database is built, and self-registration and authentication work.
-Phase 4 (resource management screens) is next.
+The Django project exists, the database is built, authentication works, and venues, vehicles and
+facilities are browsable and manageable in the real application.
+Phase 5 (the booking interface) is next.
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -59,7 +60,7 @@ The prototype and the management report have both been brought into line with th
 | Interactive UI prototype, 19 screens | `prototype/` | Yes — venues, vehicles, keys, facilities, registration |
 | Placeholder images (48 SVG) + generator | `prototype/assets/images/`, `tools/generate_placeholder_images.py` | Yes — 32 venue, 16 vehicle |
 | Developer documentation | `docs/` | Yes |
-| **Django project — models, first migration, auth** | `aikol_booking/` | Yes |
+| **Django project — models, migrations, auth, resource screens** | `aikol_booking/` | Yes |
 | This file | `CLAUDE.md` | Yes |
 
 ### Built in Phase 3
@@ -82,16 +83,30 @@ The prototype and the management report have both been brought into line with th
 - **89 tests, all passing**, including the whole mandatory conflict table run twice — once against a
   venue, once against a vehicle — and the multi-day overlap table.
 
+### Built in Phase 4
+
+- **The confirmed stylesheet is ported**, not re-derived: `static/css/app.css` comes from
+  `prototype/css/styles.css` with two changes — the login photograph moves under `static/`, and the
+  prototype's demonstration ribbon is gone.
+- **Amiri and IBM Plex Sans are vendored** as 30 WOFF2 subsets under `static/fonts/` (898 KB),
+  declared in `static/css/fonts.css` with `unicode-range` preserved so a browser rendering Latin
+  text never downloads the Arabic subset. Nothing loads from a CDN.
+- Browsing: room list, vehicle list, resource detail. Filters and search run **in the query**, and
+  pagination links carry the active filters.
+- Management: venue, vehicle and facility screens, with the three-tab resource bar; image upload
+  with server-side format sniffing; the two-gate delete; drag-and-keyboard facility reordering that
+  posts the whole visible order for the server to rewrite as `1..n`.
+- **128 tests, all passing.**
+
 ### Not started
 
-Phases 4–10: resource management screens, the booking interface, administration, reporting, bulk
-data, deployment.
+Phases 5–10: the booking interface, administration, reporting, bulk data, deployment.
 
 ### Next step
 
-Phase 4 — resource management. Port `prototype/css/styles.css` to `static/`, vendor Bootstrap and
-the two typefaces as local files, and build the venue, vehicle and facility screens against the
-models that now exist.
+Phase 5 — the booking system. `apps/bookings/services.py` already holds the conflict rule, period
+validation and series expansion, all tested; Phase 5 is the forms, views and templates on top of
+them, plus approval, cancellation and the confirmation emails.
 
 ---
 
@@ -151,7 +166,7 @@ booking form with driver and licence fields, and a key issue/return screen — d
 | Hosting | **Self-provided VPS, not IIUM ITD** | Confirmed decision |
 | Domain | **Self-provided, not an IIUM subdomain** | Confirmed decision |
 | Version control | **Git** | |
-| Testing | Django test framework | `manage.py test`. 89 tests as at Phase 3 |
+| Testing | Django test framework | `manage.py test`. 128 tests as at Phase 4 |
 | Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
 | PostgreSQL driver | **psycopg 3** | Production only. Installed in development so `check --deploy` can run |
 | Cost | **RM 0 in software.** Hosting and domain are now a real recurring cost | See section 5 |
@@ -511,8 +526,8 @@ advanced analytics · any AI feature.
 | 1 | Discovery and management review | **Complete** |
 | 2 | UI prototype and requirement confirmation | **Complete**; decisions received and folded into the prototype and report |
 | 3 | Database, self-registration and authentication | **Complete** |
-| 4 | Resource management (venues and vehicles) | Not started — **next** |
-| 5 | Booking system and conflict prevention | Not started |
+| 4 | Resource management (venues and vehicles) | **Complete** |
+| 5 | Booking system and conflict prevention | Not started — **next** |
 | 5b | Recurring bookings | Not started — added by decision 15 |
 | 6 | Administrative features, approver role, booking on behalf | Not started |
 | 6b | Key issue and return recording | Not started — added by decision 17 |
