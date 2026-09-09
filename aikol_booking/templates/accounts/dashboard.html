@@ -1,11 +1,183 @@
 {% extends "base.html" %}
+{% load static %}{# not inherited from base.html #}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h1>Assalamualaikum, {{ user.full_name }}</h1>
-{% if not user.email_verified %}
-    <p class="notice notice-warn"><strong>Your address is not yet confirmed.</strong>
-       Follow the link in the email you were sent. Until then you cannot make a booking.</p>
+
+{% comment %} The greeting and search over the Kulliyyah photograph, as the design
+   specifies. The search is a real GET form: it answers on the server, so it
+   works with JavaScript off. {% endcomment %}
+<section class="search-hero" style="margin-bottom: 30px;" aria-labelledby="greeting">
+    <img src="{% static 'images/aikol-building.jpg' %}" alt="">
+
+    <div class="inner">
+        <div class="hero-line">
+            <div class="arabic">السلام عليكم</div>
+            <h1 id="greeting">Assalamualaikum, {{ user.full_name }}</h1>
+            <div class="sub">
+                {% if not user.email_verified %}
+                    Confirm your email address before you can book.
+                {% else %}
+                    {{ today|date:"l, d F Y" }} &middot; rooms are bookable
+                    {{ window_start }}&ndash;{{ window_end }}
+                {% endif %}
+            </div>
+        </div>
+
+        <form class="searchbar" method="get" action="{% url 'accounts:dashboard' %}">
+            <label>
+                <span class="k">Resource</span>
+                <select class="v" name="kind">
+                    <option value="VENUE" {% if kind == 'VENUE' %}selected{% endif %}>Rooms</option>
+                    <option value="VEHICLE" {% if kind == 'VEHICLE' %}selected{% endif %}>Vehicles</option>
+                </select>
+            </label>
+            <label>
+                <span class="k">Date</span>
+                <input class="v" type="date" name="date" value="{{ search_date|date:'Y-m-d' }}">
+            </label>
+            <label>
+                <span class="k">From</span>
+                <select class="v" name="from">
+                    {% for slot in slots %}
+                        <option value="{{ slot }}" {% if slot == from_time %}selected{% endif %}>{{ slot }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span class="k">To</span>
+                <select class="v" name="to">
+                    {% for slot in slots %}
+                        <option value="{{ slot }}" {% if slot == to_time %}selected{% endif %}>{{ slot }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span class="k">Building</span>
+                <select class="v" name="building">
+                    <option value="">Any AIKOL building</option>
+                    {% for place in buildings %}
+                        <option value="{{ place }}" {% if building == place %}selected{% endif %}>{{ place }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="submit">Check availability</button>
+        </form>
+    </div>
+
+    <div class="caption">Pick a time and check &mdash; the answer appears below, and you can book straight from it.</div>
+</section>
+
+{% if searched %}
+<section class="card" style="margin-bottom: 30px;">
+    <div class="card-head">
+        <h2 class="label" style="margin:0">
+            {{ free|length }} free {% if kind == 'VEHICLE' %}vehicle{% else %}room{% endif %}{{ free|length|pluralize }}
+        </h2>
+        <span class="help">{{ search_date|date:"D d M Y" }}, {{ from_time }}&ndash;{{ to_time }}</span>
+    </div>
+    <div class="card-body">
+        {% if problems %}
+            <div class="notice notice-warn">
+                {% for problem in problems %}{{ problem }} {% endfor %}
+            </div>
+        {% endif %}
+        {% if free %}
+            <div class="grid grid-3">
+            {% for resource in free %}
+                <article class="card venue-card">
+                    <h3 style="margin:0 0 .35rem"><a href="{% url 'resources:detail' resource.pk %}">{{ resource.name }}</a></h3>
+                    <p class="help" style="margin:0 0 .6rem">
+                        {% if kind == 'VEHICLE' %}{{ resource.seats }} seats{% else %}{{ resource.location }} &middot; seats {{ resource.capacity }}{% endif %}
+                    </p>
+                    <a class="btn btn-sm btn-primary" href="{% url 'bookings:create' resource.pk %}?start_date={{ search_date|date:'Y-m-d' }}&amp;start_time={{ from_time }}&amp;end_time={{ to_time }}">Book this</a>
+                </article>
+            {% endfor %}
+            </div>
+        {% elif not problems %}
+            <div class="empty-state">
+                Nothing is free for that period. Try another time, or
+                <a href="{% url 'resources:venues' %}">browse everything</a>.
+            </div>
+        {% endif %}
+    </div>
+</section>
 {% endif %}
-<p class="help">Phase 3 is complete: accounts, roles and the database. Browsing, availability and
-   booking arrive with Phases 4 and 5.</p>
+
+{# Your activity. Two columns on the green band, as the design has it. #}
+<div style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr;
+            background: var(--brand); border-radius: var(--r); overflow: hidden;">
+    <div style="padding: 13px 18px; border-right: 1px solid rgba(255,255,255,.14)">
+        <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">Your next booking</div>
+        <div style="margin-top:3px;font-size:13.5px;color:{% if next_booking %}#fff{% else %}rgba(255,255,255,.72){% endif %}">
+            {% if next_booking %}
+                <a href="{% url 'bookings:detail' next_booking.pk %}" style="color:#fff">{{ next_booking.resource.name }}</a>
+                &middot; {{ next_booking.start_at|date:"d M Y, H:i" }}
+            {% else %}Nothing booked yet{% endif %}
+        </div>
+    </div>
+    <div style="padding: 13px 18px">
+        <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">Awaiting approval</div>
+        <div style="margin-top:3px;font-size:13.5px;color:{% if counts.pending %}#fff{% else %}rgba(255,255,255,.72){% endif %}">
+            {% if counts.pending %}
+                <a href="{% url 'bookings:mine' %}?status=PENDING" style="color:#fff">{{ counts.pending }}
+                request{{ counts.pending|pluralize }}</a>{% if first_pending %} &middot; {{ first_pending.resource.name }}{% endif %}
+            {% else %}None{% endif %}
+        </div>
+    </div>
+</div>
+
+{% if upcoming %}
+<section class="card" style="margin-bottom: 30px;">
+    <div class="card-head"><h2 class="label" style="margin:0">Your next bookings</h2></div>
+    <div class="table-wrap">
+        <table class="data">
+            <thead><tr>
+                <th scope="col">Reference</th><th scope="col">Resource</th>
+                <th scope="col">When</th><th scope="col">Status</th><th scope="col"></th>
+            </tr></thead>
+            <tbody>
+            {% for b in upcoming %}
+                <tr>
+                    <td class="mono nowrap">{{ b.booking_reference }}</td>
+                    <td>{{ b.resource.name }}</td>
+                    <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
+                    <td>{% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>
+                        {% else %}<span class="badge badge-pending">Pending</span>{% endif %}</td>
+                    <td class="nowrap"><a class="btn-link" href="{% url 'bookings:detail' b.pk %}">View</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
+    <h2 style="margin: 0;">Browse by room type</h2>
+    <a href="{% url 'resources:venues' %}">All {{ room_total }} rooms and {{ car_total }} cars &rarr;</a>
+</div>
+<div class="grid grid-4">
+    {% for group in categories %}
+        <a class="card venue-card" href="{% url 'resources:venues' %}?type={{ group.value }}"
+           style="text-decoration:none">
+            {% if group.slug %}
+                <img class="framed" src="{% static group.slug %}"
+                     alt="Placeholder drawing of a {{ group.label|lower }}">
+            {% endif %}
+            <div class="card-body">
+                <h3 style="margin:0 0 .3rem">{{ group.label }}</h3>
+                <p class="help" style="margin:0 0 .5rem">
+                    {{ group.count }} room{{ group.count|pluralize }} &middot; up to {{ group.largest }} persons
+                </p>
+                {% if group.available %}
+                    <span class="badge badge-approved">Available</span>
+                {% else %}
+                    <span class="badge badge-inactive">None free</span>
+                {% endif %}
+            </div>
+        </a>
+    {% empty %}
+        <div class="empty-state">No rooms yet.</div>
+    {% endfor %}
+</div>
 {% endblock %}

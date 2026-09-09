@@ -569,6 +569,18 @@ Full detail: `docs/technical/security.md`.
 - **Django renders form controls with no class of their own**, and this stylesheet styles them by
   class. `config/forms.py` supplies `StyledFormMixin`, which every form uses. Without it the
   stylesheet loads and does nothing for any control on any page.
+- **The stylesheet's class names are a CONTRACT, not decoration.** The Django templates must
+  reproduce the structure `prototype/js/prototype.js` builds — `.brand-rule`, `.header-user`,
+  `.avatar`, `.nav-badge`, `.login-hero`, `.search-hero`, `.avail-row`, `.venue-card` and the rest.
+  Writing plainer markup of one's own leaves the design loading and doing nothing: at the worst
+  point only 84 of the 175 classes the prototype uses appeared in these templates, and the result
+  looked nothing like the approved design. Measure it before claiming a screen is ported.
+- **A `{# #}` comment in a Django template is SINGLE-LINE ONLY.** A multi-line one is not a comment
+  at all — it renders verbatim on the page. Use `{% comment %}…{% endcomment %}` for anything longer
+  than a line. Thirteen of these shipped before anyone looked at the site in a browser.
+- **Placeholder artwork comes from `static/images/placeholders/`**, the prototype's own drawings,
+  chosen by `Resource.image_slug`. They are served as static files and never uploaded, so the rule
+  that user-supplied SVG is refused is untouched. A resource with a real photograph ignores them.
 - The **real AIKOL wordmark** (`assets/images/aikol_logo.png`) is now in use, at 200 px in the brand
   bar. It is no longer a placeholder.
 

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" role="img">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#edf0f4"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="none"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#1f4e79" stroke-opacity=".13" stroke-width="3"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="450" fill="url(#wall)"/>
+  <text x="60" y="56" font-family="Georgia, serif" font-size="20" fill="#1f4e79">Seating layout</text>
+  <rect x="272" y="86" width="300" height="286" rx="18" fill="none"
+        stroke="#1f4e79" stroke-opacity=".3" stroke-width="2"/>
+  <text x="60" y="150" font-family="Segoe UI, Arial, sans-serif" font-size="13"
+        fill="#1f4e79" fill-opacity=".65">DRIVER + 4 PASSENGERS</text>
+  <text x="60" y="176" font-family="Segoe UI, Arial, sans-serif" font-size="11"
+        fill="#1f4e79" fill-opacity=".5">The requester drives.</text>
+  <rect x="321" y="120" width="62" height="64" rx="10" fill="#1f4e79" fill-opacity=".16"
+        stroke="#1f4e79" stroke-opacity=".4"/>
+  <rect x="329" y="128" width="46" height="24" rx="6" fill="#1f4e79" fill-opacity=".22"/>
+  <rect x="399" y="120" width="62" height="64" rx="10" fill="#1f4e79" fill-opacity=".16"
+        stroke="#1f4e79" stroke-opacity=".4"/>
+  <rect x="407" y="128" width="46" height="24" rx="6" fill="#1f4e79" fill-opacity=".22"/>
+  <rect x="282" y="208" width="62" height="64" rx="10" fill="#1f4e79" fill-opacity=".16"
+        stroke="#1f4e79" stroke-opacity=".4"/>
+  <rect x="290" y="216" width="46" height="24" rx="6" fill="#1f4e79" fill-opacity=".22"/>
+  <rect x="360" y="208" width="62" height="64" rx="10" fill="#1f4e79" fill-opacity=".16"
+        stroke="#1f4e79" stroke-opacity=".4"/>
+  <rect x="368" y="216" width="46" height="24" rx="6" fill="#1f4e79" fill-opacity=".22"/>
+  <rect x="438" y="208" width="62" height="64" rx="10" fill="#1f4e79" fill-opacity=".16"
+        stroke="#1f4e79" stroke-opacity=".4"/>
+  <rect x="446" y="216" width="46" height="24" rx="6" fill="#1f4e79" fill-opacity=".22"/>  <rect x="0" y="404" width="800" height="46" fill="#1f4e79" fill-opacity=".92"/>
+  <text x="24" y="432" font-family="Georgia, serif" font-size="19" fill="#ffffff">Kulliyyah Car 1</text>
+  <text x="776" y="432" text-anchor="end" font-family="Segoe UI, Arial, sans-serif"
+        font-size="12" fill="#ffffff" fill-opacity=".85" letter-spacing="1.5">PLACEHOLDER IMAGE · AIKOL-CAR-01 · VIEW 4</text>
+</svg>

@@ -1,0 +1,49 @@
+{% load static %}
+{% comment %}
+One resource card, matching the prototype: picture, name, the identifying line,
+status chips, facility chips, then the actions pinned to the foot.
+
+The image is a real photograph when one has been uploaded and the prototype's
+placeholder drawing otherwise. AIKOL supplies the photographs (decision 26);
+until they arrive the card should still look like the card.
+{% endcomment %}
+<article class="card venue-card">
+    {% with resource.images.all|first as photo %}
+        {% if photo %}
+            <img class="framed" src="{{ photo.image.url }}" alt="{{ resource.name }}">
+        {% elif resource.placeholder %}
+            <img class="framed" src="{% static resource.placeholder %}"
+                 alt="Placeholder drawing of {{ resource.name }}">
+        {% endif %}
+    {% endwith %}
+    <div class="card-body">
+        <h3><a href="{% url 'resources:detail' resource.pk %}">{{ resource.name }}</a></h3>
+        <p class="help loc">{{ subtitle }}</p>
+
+        <div style="margin-bottom:.5rem">
+            {% if resource.status == 'ACTIVE' %}
+                <span class="badge badge-approved">Available</span>
+            {% else %}
+                <span class="badge badge-inactive">Under maintenance</span>
+            {% endif %}
+            {% if resource.approval_required %}
+                <span class="badge badge-muted">Approval required</span>
+            {% endif %}
+        </div>
+
+        <div class="facilities">
+            {% for f in resource.facilities.all|slice:":5" %}<span class="pill">{{ f.name }}</span>{% endfor %}
+            {% with total=resource.facilities.all|length %}
+                {% if total > 5 %}<span class="pill">+{{ total|add:"-5" }} more</span>{% endif %}
+            {% endwith %}
+        </div>
+    </div>
+    <div class="card-foot actions">
+        <a class="btn btn-sm" href="{% url 'resources:detail' resource.pk %}">View details</a>
+        {% if resource.status == 'ACTIVE' %}
+            <a class="btn btn-sm btn-primary" href="{% url 'bookings:create' resource.pk %}">Book</a>
+        {% else %}
+            <span class="btn btn-sm" aria-disabled="true">Unavailable</span>
+        {% endif %}
+    </div>
+</article>

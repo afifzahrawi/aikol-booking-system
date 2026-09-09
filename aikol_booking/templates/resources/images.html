@@ -25,6 +25,9 @@
     <div class="card-body">
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
+            <div class="dropzone" style="margin-bottom:1rem">
+                Choose a photograph to upload &mdash; JPEG, PNG or WebP, up to 5&nbsp;MB
+            </div>
             {% include "_form_fields.html" %}
             <button class="btn btn-primary" type="submit">Upload</button>
         </form>

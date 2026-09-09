@@ -111,11 +111,28 @@ class BrowsingTests(Fixtures):
         response = self.client.get(reverse("resources:detail", args=[self.car.pk]))
         self.assertContains(response, "Road tax expiry")
 
-    def test_a_deactivated_venue_is_not_browsable(self):
+    def test_a_deactivated_venue_is_listed_but_marked_and_not_bookable(self):
+        """This test used to assert the room was hidden.
+
+        The prototype lists it and marks it, and that is the better behaviour:
+        a room that vanishes looks deleted, while one marked "under maintenance"
+        answers the question somebody actually has. What must not happen is
+        offering to book it.
+        """
         self.venue.status = ResourceStatus.MAINTENANCE
         self.venue.save(update_fields=["status"])
         self.client.force_login(self.plain)
-        self.assertNotContains(self.client.get(reverse("resources:venues")), "Moot Court")
+        response = self.client.get(reverse("resources:venues"))
+        self.assertContains(response, "Moot Court")
+        self.assertContains(response, "Under maintenance")
+        self.assertNotContains(response, f'href="/resource/{self.venue.pk}/book/"')
+
+    def test_the_availability_filter_hides_them_on_request(self):
+        self.venue.status = ResourceStatus.MAINTENANCE
+        self.venue.save(update_fields=["status"])
+        self.client.force_login(self.plain)
+        response = self.client.get(reverse("resources:venues"), {"status": "ACTIVE"})
+        self.assertNotContains(response, "Moot Court")
 
     def test_search_is_applied_in_the_query(self):
         Venue.objects.create(

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}{% comment %}not inherited from base.html{% endcomment %}
 {% block title %}{{ resource.name }}{% endblock %}
 {% block content %}
 <div class="page-head">
@@ -18,11 +19,32 @@
     {% endif %}
 </div>
 
+{% if not resource.images.all and resource.placeholder %}
+<div class="gallery" style="margin-bottom:1.25rem">
+    <img class="gallery-main framed" src="{% static resource.placeholder %}"
+         alt="Placeholder drawing of {{ resource.name }}">
+    <div class="gallery-thumbs">
+        {% for view in views %}
+            <img class="thumb framed" src="{% static view %}" alt="Placeholder view of {{ resource.name }}">
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 {% if resource.images.all %}
-<div class="grid grid-2">
-    {% for photo in resource.images.all %}
-        <figure><img class="framed" src="{{ photo.image.url }}" alt="{{ photo.caption|default:resource.name }}"></figure>
-    {% endfor %}
+<div class="gallery" style="margin-bottom:1.25rem">
+    {% with resource.images.all|first as main %}
+        <img class="gallery-main framed" src="{{ main.image.url }}"
+             alt="{{ main.caption|default:resource.name }}">
+    {% endwith %}
+    {% if resource.images.all|length > 1 %}
+        <div class="gallery-thumbs">
+            {% for photo in resource.images.all %}
+                <img class="thumb framed" src="{{ photo.image.url }}"
+                     alt="{{ photo.caption|default:resource.name }}">
+            {% endfor %}
+        </div>
+    {% endif %}
 </div>
 {% endif %}
 
@@ -36,8 +58,8 @@
                 <dt>Seats</dt><dd>{{ resource.seats }}</dd>
                 <dt>Transmission</dt><dd>{{ resource.get_transmission_display }}</dd>
                 {% if show_road_tax %}
-                    {# Administrator-facing only. A requester sees the car as
-                       unavailable, never the reason. #}
+                    {% comment %} Administrator-facing only. A requester sees the car as
+                       unavailable, never the reason. {% endcomment %}
                     <dt>Road tax expiry</dt><dd>{{ resource.road_tax_expiry }}</dd>
                 {% endif %}
             {% else %}
@@ -51,12 +73,18 @@
 
         {% if resource.facilities.all %}
         <p class="label">Facilities</p>
-        <ul class="pill-list">
+        <ul class="pill-list facilities">
             {% for f in resource.facilities.all %}<li><span class="pill">{{ f.name }}</span></li>{% endfor %}
         </ul>
         {% endif %}
     </div>
 </section>
 
-<p class="help">Availability and booking arrive with Phase 5.</p>
+<div class="btn-group">
+    <a class="btn" href="{% url 'bookings:availability' resource.pk %}">Check availability</a>
+    <a class="btn btn-primary" href="{% url 'bookings:create' resource.pk %}">Book this</a>
+    {% if not is_vehicle %}
+        <a class="btn" href="{% url 'bookings:series_create' resource.pk %}">Repeat weekly</a>
+    {% endif %}
+</div>
 {% endblock %}

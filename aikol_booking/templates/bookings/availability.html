@@ -1,53 +1,99 @@
 {% extends "base.html" %}
 {% block title %}Availability &mdash; {{ resource.name }}{% endblock %}
 {% block content %}
+
 <div class="page-head">
     <div>
         <h1>{{ resource.name }}</h1>
-        <p class="lede">What is already taken. Worked out on the server &mdash; the browser's own
-           check is a convenience on top of this, never what decides anything.</p>
+        <p class="lede">
+            What is already taken, worked out on the server. The browser's own check is a
+            convenience on top of this &mdash; it is never what decides anything.
+        </p>
     </div>
     <div class="btn-group">
         <a class="btn btn-primary" href="{% url 'bookings:create' resource.pk %}">Book this</a>
     </div>
 </div>
 
-<section class="card">
-    <div class="card-head">
-        <h2 class="label" style="margin:0">{{ weekday }}, {{ day }}</h2>
-        <div class="btn-group">
-            <a class="btn btn-sm" href="?date={{ previous|date:'Y-m-d' }}">Previous day</a>
-            <a class="btn btn-sm" href="?date={{ next|date:'Y-m-d' }}">Next day</a>
-        </div>
-    </div>
+<section class="card" style="margin-bottom:18px">
     <div class="card-body">
-        <form method="get" class="toolbar">
-            <div class="field">
-                <label for="date">Show a different date</label>
+        {% comment %} The weekday is spelled out beside the field: a date alone does not tell
+           you it is a Friday, and that is usually what decides whether a slot is
+           any use. {% endcomment %}
+        <form method="get" class="datepick">
+            <div class="field" style="margin:0">
+                <label for="date">Show from</label>
                 <input class="input" type="date" id="date" name="date" value="{{ day|date:'Y-m-d' }}">
             </div>
-            <div class="field"><button class="btn" type="submit">Show</button></div>
+            <div class="picked">
+                <span class="dow">{{ day|date:"l" }}</span>
+                <span class="full">{{ day|date:"d F Y" }}</span>
+            </div>
+            <div class="field" style="margin:0"><button class="btn" type="submit">Show</button></div>
         </form>
-
-        {% if taken %}
-            <table class="data">
-                <thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col">Status</th></tr></thead>
-                <tbody>
-                {% for b in taken %}
-                    <tr>
-                        <td>{{ b.start_at|date:"D d M Y, H:i" }}</td>
-                        <td>{{ b.end_at|date:"D d M Y, H:i" }}</td>
-                        <td>{% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>
-                            {% else %}<span class="badge badge-pending">Pending</span>{% endif %}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            <p class="help" style="margin-top:.75rem">A pending request holds the slot. Otherwise two
-               people could each be told to wait for the same room.</p>
-        {% else %}
-            <div class="empty-state">Nothing booked on this day.</div>
-        {% endif %}
     </div>
 </section>
+
+<div class="legend" style="margin-bottom:12px">
+    <span><span class="swatch swatch-approved"></span>Approved</span>
+    <span><span class="swatch swatch-pending"></span>Pending &mdash; it still holds the slot</span>
+    <span><span class="swatch swatch-free"></span>Free</span>
+</div>
+
+<section class="board availability">
+    <div class="board-head">
+        <span class="k">Day</span>
+        <div class="board-hours">
+            <span>{{ open_at }}</span><span>{{ close_at }}</span>
+        </div>
+    </div>
+
+    {% for row in rows %}
+        <div class="avail-row">
+            <span>{{ row.date|date:"D d M" }}</span>
+            <div class="avail-bar">
+                {% for block in row.blocks %}
+                    <span class="avail-block{% if block.pending %} pending{% endif %}"
+                          style="left:{{ block.left }}%;width:{{ block.width }}%"
+                          title="{{ block.title }}">{{ block.label }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="avail-scale">
+        <span></span>
+        <div class="ticks"><span>{{ open_at }}</span><span>{{ close_at }}</span></div>
+    </div>
+</section>
+
+<div class="btn-group" style="margin-top:18px">
+    <a class="btn btn-sm" href="?date={{ previous|date:'Y-m-d' }}">&larr; Previous week</a>
+    <a class="btn btn-sm" href="?date={{ next|date:'Y-m-d' }}">Next week &rarr;</a>
+</div>
+
+{% if taken %}
+<section class="card" style="margin-top:1.25rem">
+    <div class="card-head"><h2 class="label" style="margin:0">Bookings in this period</h2></div>
+    <div class="table-wrap">
+        <table class="data">
+            <thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col">Status</th></tr></thead>
+            <tbody>
+            {% for b in taken %}
+                <tr>
+                    <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}</td>
+                    <td class="nowrap">{{ b.end_at|date:"D d M Y, H:i" }}</td>
+                    <td>{% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>
+                        {% else %}<span class="badge badge-pending">Pending</span>{% endif %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-body">
+        <p class="help" style="margin:0">A pending request holds the slot. Otherwise two people
+           could each be told to wait for the same room.</p>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

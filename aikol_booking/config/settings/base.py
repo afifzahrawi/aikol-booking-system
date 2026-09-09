@@ -60,6 +60,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.administration.context_processors.site_content",
+                "apps.administration.context_processors.chrome",
             ],
         },
     },

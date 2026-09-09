@@ -142,6 +142,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Checked in views, never inferred from a hidden menu item.
 
     @property
+    def initials(self) -> str:
+        """Two letters for the avatar. Titles are dropped — "Dr Hafiz Rahman"
+        is HR, not DH."""
+        words = [w for w in self.full_name.split() if w.lower().rstrip(".") not in
+                 ("dr", "prof", "professor", "mr", "mrs", "ms", "assoc")]
+        return "".join(w[0] for w in words[:2]).upper() or "?"
+
+    @property
     def is_administrator(self) -> bool:
         return self.role == Role.ADMINISTRATOR
 

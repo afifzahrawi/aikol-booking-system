@@ -9,17 +9,10 @@
 
 <section class="card">
     {% include "resources/_filters.html" with placeholder="Make, model or registration" show_status=0 %}
-    <div class="grid grid-3">
+    <p class="help" style="margin:.25rem 0 1rem">{{ page.paginator.count }} vehicle{{ page.paginator.count|pluralize }} shown.</p>
+    <div class="grid grid-auto">
         {% for car in page %}
-            <article class="card resource-card">
-                {% with car.images.all|first as photo %}
-                    {% if photo %}<img class="framed" src="{{ photo.image.url }}" alt="{{ car.name }}">{% endif %}
-                {% endwith %}
-                <h2><a href="{% url 'resources:detail' car.pk %}">{{ car.name }}</a></h2>
-                <p class="help">{{ car.make }} {{ car.model }} {{ car.year }} &middot;
-                   {{ car.seats }} seats &middot; {{ car.get_transmission_display }}</p>
-                <p class="help mono">{{ car.registration_number }}</p>
-            </article>
+            {% include "resources/_card.html" with resource=car subtitle=car.card_subtitle %}
         {% empty %}
             <div class="empty-state">No vehicle matches the current filters.</div>
         {% endfor %}

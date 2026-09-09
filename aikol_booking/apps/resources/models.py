@@ -80,6 +80,17 @@ class Resource(models.Model):
     # field is kept because AIKOL may relax the rule; nothing ships with it off.
     approval_required = models.BooleanField(default=True)
     facilities = models.ManyToManyField(Facility, through="ResourceFacility", blank=True)
+
+    # Which placeholder drawing stands in until the Kulliyyah supplies a real
+    # photograph (decision 26). These are the prototype's own illustrations,
+    # served from static/ — they are NOT uploads, so the rule that user-supplied
+    # SVG is refused is untouched. A resource with a real photograph ignores
+    # this entirely.
+    image_slug = models.SlugField(
+        max_length=40,
+        blank=True,
+        help_text="Placeholder drawing used when no photograph has been uploaded.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -101,6 +112,18 @@ class Resource(models.Model):
 
     def get_absolute_url(self) -> str:
         return reverse("resources:detail", args=[self.pk])
+
+    @property
+    def placeholder(self) -> str:
+        """The static path of the stand-in drawing, or '' if there is none."""
+        return f"images/placeholders/{self.image_slug}.svg" if self.image_slug else ""
+
+    def placeholder_variant(self, number: int) -> str:
+        """View 2, 3 or 4 of the same room, for the detail gallery."""
+        if not self.image_slug:
+            return ""
+        suffix = "" if number <= 1 else f"-v{number}"
+        return f"images/placeholders/{self.image_slug}{suffix}.svg"
 
 
 class ResourceFacility(models.Model):
@@ -142,6 +165,10 @@ class Venue(Resource):
     opens_at = models.TimeField(default="08:00")
     closes_at = models.TimeField(default="22:00")
 
+    @property
+    def card_subtitle(self) -> str:
+        return f"{self.get_venue_type_display()} · {self.location} · seats {self.capacity}"
+
     def save(self, *args, **kwargs):
         self.resource_type = ResourceType.VENUE
         super().save(*args, **kwargs)
@@ -176,6 +203,13 @@ class Vehicle(Resource):
     # unavailable, not why — you cannot lawfully drive an untaxed car, but the
     # date itself is the office's business.
     road_tax_expiry = models.DateField()
+
+    @property
+    def card_subtitle(self) -> str:
+        return (
+            f"{self.make} {self.model} {self.year} · {self.seats} seats · "
+            f"{self.get_transmission_display()} · {self.registration_number}"
+        )
 
     def save(self, *args, **kwargs):
         self.resource_type = ResourceType.VEHICLE

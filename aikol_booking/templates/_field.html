@@ -1,9 +1,13 @@
-{# One control. The help text's id matches what `associate_help_text` puts in
+{% comment %} One control. The help text's id matches what `associate_help_text` puts in
    aria-describedby — change one and you must change the other, which is why
-   they are commented in both places. #}
+   they are commented in both places. {% endcomment %}
 <div class="field">
-    {{ field.label_tag }}
-    {{ field }}
+    {{ field.label_tag }}{% if field.field.required %}<span class="req" aria-hidden="true">*</span>{% endif %}
+    {% if field.name == 'facilities' %}
+        <div class="facility-grid">{{ field }}</div>
+    {% else %}
+        {{ field }}
+    {% endif %}
     {% if field.help_text %}<p class="help" id="help_{{ field.html_name }}">{{ field.help_text }}</p>{% endif %}
     {{ field.errors }}
 </div>

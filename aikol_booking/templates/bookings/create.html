@@ -32,8 +32,8 @@
         <form method="post" novalidate id="bookingForm"
               data-availability="{% url 'bookings:slot_check' resource.pk %}">
             {% csrf_token %}
-            {# Filled in by availability.js. The server checks the same period
-               again under a row lock, so this is a courtesy, not a gate. #}
+            {% comment %} Filled in by availability.js. The server checks the same period
+               again under a row lock, so this is a courtesy, not a gate. {% endcomment %}
             <p class="notice" id="slotStatus" role="status" aria-live="polite" hidden></p>
             {{ form.non_field_errors }}
             {% include "_form_fields.html" %}

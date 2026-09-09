@@ -62,6 +62,16 @@ def _filtered(queryset: QuerySet, request, *, search_fields: tuple[str, ...]) ->
     facility = request.GET.get("facility")
     if facility:
         queryset = queryset.filter(facilities__pk=facility)
+
+    kind = request.GET.get("type")
+    if kind:
+        queryset = queryset.filter(venue_type=kind)
+
+    capacity = request.GET.get("capacity")
+    if capacity and capacity.isdigit():
+        field = "capacity" if queryset.model.__name__ == "Venue" else "seats"
+        queryset = queryset.filter(**{f"{field}__gte": int(capacity)})
+
     return queryset.distinct()
 
 
@@ -85,6 +95,8 @@ def _paginated(request, queryset, template: str, extra: dict | None = None):
         "q": request.GET.get("q", ""),
         "status": request.GET.get("status", ""),
         "facility": request.GET.get("facility", ""),
+        "type_filter": request.GET.get("type", ""),
+        "capacity": request.GET.get("capacity", ""),
         "facilities": Facility.objects.filter(is_active=True),
     }
     context.update(extra or {})
@@ -100,13 +112,21 @@ def _bookable_images() -> Prefetch:
 
 @login_required
 def venue_list(request):
+    # Rooms under maintenance are LISTED and marked, not hidden. A room that
+    # vanishes looks deleted; one marked "under maintenance" tells somebody why
+    # they cannot book it, which is the question they actually have.
     venues = _filtered(
-        Venue.objects.filter(status=ResourceStatus.ACTIVE)
-        .prefetch_related(_bookable_images(), "facilities"),
+        Venue.objects.all().prefetch_related(_bookable_images(), "facilities"),
         request,
         search_fields=("name", "code", "location"),
     )
-    return _paginated(request, venues, "resources/venue_list.html")
+    return _paginated(
+        request,
+        venues,
+        "resources/venue_list.html",
+        {"nav": "venues", "types": Venue.VenueType.choices,
+         "capacities": [10, 20, 40, 60, 100]},
+    )
 
 
 @login_required
@@ -116,13 +136,17 @@ def vehicle_list(request):
     from django.utils import timezone
 
     vehicles = _filtered(
-        Vehicle.objects.filter(
-            status=ResourceStatus.ACTIVE, road_tax_expiry__gte=timezone.localdate()
-        ).prefetch_related(_bookable_images(), "facilities"),
+        Vehicle.objects.filter(road_tax_expiry__gte=timezone.localdate())
+        .prefetch_related(_bookable_images(), "facilities"),
         request,
         search_fields=("name", "code", "make", "model", "registration_number"),
     )
-    return _paginated(request, vehicles, "resources/vehicle_list.html")
+    return _paginated(
+        request,
+        vehicles,
+        "resources/vehicle_list.html",
+        {"nav": "vehicles", "types": [], "capacities": [2, 4, 5, 7]},
+    )
 
 
 @login_required
@@ -157,7 +181,7 @@ def manage_venues(request):
         request,
         search_fields=("name", "code", "location"),
     )
-    return _paginated(request, venues, "resources/manage_venues.html")
+    return _paginated(request, venues, "resources/manage_venues.html", {"nav": "resources"})
 
 
 @administrator_required
@@ -167,7 +191,7 @@ def manage_vehicles(request):
         request,
         search_fields=("name", "code", "make", "model", "registration_number"),
     )
-    return _paginated(request, vehicles, "resources/manage_vehicles.html")
+    return _paginated(request, vehicles, "resources/manage_vehicles.html", {"nav": "resources"})
 
 
 def _edit_resource(request, form_class, instance, kind: str, redirect_to: str):

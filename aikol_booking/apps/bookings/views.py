@@ -68,10 +68,16 @@ def _specific(resource: Resource) -> Resource:
 
 @login_required
 def availability(request, pk: int):
-    """What is already taken, for a chosen day.
+    """A week of the resource's occupancy, as a timeline.
 
-    Rendered on the server. The browser's own check is a convenience layered on
-    top of this and is never what decides anything.
+    Rendered on the server, including the geometry: each booking's bar is
+    positioned as a percentage of the bookable window here rather than by
+    script, so the screen is correct with JavaScript switched off and there is
+    only one implementation of "where does this bar go".
+
+    A multi-day trip is CLAMPED to each day's window, so a car that is out from
+    Monday to Wednesday reads as a full bar on all three days rather than one
+    bar overflowing the first.
     """
     resource = _specific(get_object_or_404(Resource, pk=pk))
     try:
@@ -79,25 +85,84 @@ def availability(request, pk: int):
     except ValueError:
         day = timezone.localdate()
 
-    start = timezone.make_aware(dt.datetime.combine(day, dt.time.min))
-    end = start + dt.timedelta(days=1)
-    taken = (
+    from apps.administration.models import SystemSetting
+
+    if resource.resource_type == ResourceType.VENUE:
+        open_at, close_at = resource.opens_at, resource.closes_at
+    else:
+        open_at = dt.time.fromisoformat(SystemSetting.get("bookable_window_start"))
+        close_at = dt.time.fromisoformat(SystemSetting.get("bookable_window_end"))
+
+    open_minutes = open_at.hour * 60 + open_at.minute
+    close_minutes = close_at.hour * 60 + close_at.minute
+    span = max(1, close_minutes - open_minutes)
+
+    DAYS = 7
+    window_start = timezone.make_aware(dt.datetime.combine(day, dt.time.min))
+    window_end = timezone.make_aware(
+        dt.datetime.combine(day + dt.timedelta(days=DAYS), dt.time.min)
+    )
+    taken = list(
         Booking.objects.filter(
-            resource=resource, status__in=BLOCKING_STATUSES, start_at__lt=end, end_at__gt=start
+            resource=resource,
+            status__in=BLOCKING_STATUSES,
+            start_at__lt=window_end,
+            end_at__gt=window_start,
         )
         .select_related("resource")
         .order_by("start_at")
     )
+
+    rows = []
+    for offset in range(DAYS):
+        current = day + dt.timedelta(days=offset)
+        blocks = []
+        for booking in taken:
+            local_start = timezone.localtime(booking.start_at)
+            local_end = timezone.localtime(booking.end_at)
+            if local_start.date() > current or local_end.date() < current:
+                continue
+            # Clamp to this day's window.
+            from_minutes = (
+                open_minutes
+                if local_start.date() < current
+                else max(open_minutes, local_start.hour * 60 + local_start.minute)
+            )
+            to_minutes = (
+                close_minutes
+                if local_end.date() > current
+                else min(close_minutes, local_end.hour * 60 + local_end.minute)
+            )
+            if to_minutes <= from_minutes:
+                continue
+            multi_day = local_start.date() != local_end.date()
+            blocks.append(
+                {
+                    "left": round(max(0, (from_minutes - open_minutes) / span * 100), 2),
+                    "width": round(min(100, (to_minutes - from_minutes) / span * 100), 2),
+                    "pending": booking.status == BookingStatus.PENDING,
+                    "label": "All day" if multi_day else f"{local_start:%H:%M}",
+                    "title": (
+                        f"{local_start:%d %b %H:%M} to {local_end:%d %b %H:%M}"
+                        f" — {booking.get_status_display().lower()}"
+                    ),
+                }
+            )
+        rows.append({"date": current, "blocks": blocks})
+
     return render(
         request,
         "bookings/availability.html",
         {
+            "nav": "venues" if resource.resource_type == ResourceType.VENUE else "vehicles",
             "resource": resource,
             "day": day,
-            "weekday": day.strftime("%A"),
+            "rows": rows,
             "taken": taken,
-            "previous": day - dt.timedelta(days=1),
-            "next": day + dt.timedelta(days=1),
+            "open_at": open_at.strftime("%H:%M"),
+            "close_at": close_at.strftime("%H:%M"),
+            "previous": day - dt.timedelta(days=DAYS),
+            "next": day + dt.timedelta(days=DAYS),
         },
     )
 

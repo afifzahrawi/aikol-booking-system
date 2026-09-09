@@ -164,9 +164,129 @@ class LoginView(auth_views.LoginView):
 
 @login_required
 def dashboard(request):
-    """A placeholder landing page for Phase 3.
+    """The landing page: a greeting, a search that answers in place, and the
+    person's own activity.
 
-    It exists so that authentication has somewhere to succeed to. The real
-    dashboard arrives with the booking screens in Phase 5.
+    The search runs on the SERVER and is a plain GET form, so it works with
+    JavaScript switched off and a filtered result is a shareable URL. It answers
+    "what is free" — it does not book anything; each result links to the booking
+    form, which applies the rules properly.
     """
-    return render(request, "accounts/dashboard.html")
+    import datetime as dt
+
+    from django.utils import timezone
+
+    from apps.administration.models import SystemSetting
+    from apps.bookings.models import BLOCKING_STATUSES, Booking, BookingStatus
+    from apps.bookings.services import find_conflicts, validate_period
+    from apps.resources.models import ResourceStatus, ResourceType, Vehicle, Venue
+
+    window_start = SystemSetting.get("bookable_window_start")
+    window_end = SystemSetting.get("bookable_window_end")
+    slots = []
+    hour, minute = (int(part) for part in window_start.split(":"))
+    end_hour, end_minute = (int(part) for part in window_end.split(":"))
+    while (hour, minute) <= (end_hour, end_minute):
+        slots.append(f"{hour:02d}:{minute:02d}")
+        minute += 30
+        if minute >= 60:
+            minute -= 60
+            hour += 1
+
+    today = timezone.localdate()
+    kind = request.GET.get("kind") if request.GET.get("kind") in ResourceType.values else "VENUE"
+    from_time = request.GET.get("from") or "09:00"
+    to_time = request.GET.get("to") or "11:00"
+    try:
+        search_date = dt.date.fromisoformat(request.GET.get("date", ""))
+    except ValueError:
+        search_date = today
+
+    free, problems, searched = [], [], "date" in request.GET
+    if searched:
+        try:
+            start_at = timezone.make_aware(
+                dt.datetime.combine(search_date, dt.time.fromisoformat(from_time))
+            )
+            end_at = timezone.make_aware(
+                dt.datetime.combine(search_date, dt.time.fromisoformat(to_time))
+            )
+        except ValueError:
+            problems = ["That is not a valid time."]
+        else:
+            if end_at <= start_at:
+                problems = ["The finish time must be after the start time."]
+            else:
+                model = Vehicle if kind == ResourceType.VEHICLE else Venue
+                pool = model.objects.filter(status=ResourceStatus.ACTIVE)
+                if kind == ResourceType.VEHICLE:
+                    pool = pool.filter(road_tax_expiry__gte=today)
+                for resource in pool:
+                    if validate_period(resource, start_at, end_at):
+                        continue
+                    if not find_conflicts(resource, start_at, end_at).exists():
+                        free.append(resource)
+
+    building = request.GET.get("building", "")
+    if searched and building:
+        free = [r for r in free if getattr(r, "location", "") == building]
+
+    mine = Booking.objects.filter(user=request.user)
+
+    categories = []
+    for value, label in Venue.VenueType.choices:
+        rooms = Venue.objects.filter(venue_type=value)
+        if not rooms.exists():
+            continue
+        biggest = max(rooms.values_list("capacity", flat=True))
+        first = rooms.exclude(image_slug="").first()
+        categories.append(
+            {
+                "value": value,
+                "label": label,
+                "count": rooms.count(),
+                "largest": biggest,
+                "available": rooms.filter(status=ResourceStatus.ACTIVE).exists(),
+                "slug": first.placeholder if first else "",
+            }
+        )
+
+    return render(
+        request,
+        "accounts/dashboard.html",
+        {
+            "nav": "dashboard",
+            "today": today,
+            "window_start": window_start,
+            "window_end": window_end,
+            "slots": slots,
+            "kind": kind,
+            "search_date": search_date,
+            "from_time": from_time,
+            "to_time": to_time,
+            "searched": searched,
+            "free": free,
+            "problems": problems,
+            "buildings": sorted(
+                {v for v in Venue.objects.values_list("location", flat=True) if v}
+            ),
+            "building": building,
+            "room_total": Venue.objects.count(),
+            "car_total": Vehicle.objects.count(),
+            "next_booking": mine.filter(
+                status=BookingStatus.APPROVED, start_at__gte=timezone.now()
+            ).select_related("resource").order_by("start_at").first(),
+            "first_pending": mine.filter(status=BookingStatus.PENDING)
+            .select_related("resource").order_by("start_at").first(),
+            "counts": {
+                "pending": mine.filter(status=BookingStatus.PENDING).count(),
+                "upcoming": mine.filter(
+                    status__in=BLOCKING_STATUSES, start_at__gte=timezone.now()
+                ).count(),
+            },
+            "upcoming": mine.filter(
+                status__in=BLOCKING_STATUSES, start_at__gte=timezone.now()
+            ).select_related("resource").order_by("start_at")[:5],
+            "categories": [c for c in categories if c["count"]],
+        },
+    )

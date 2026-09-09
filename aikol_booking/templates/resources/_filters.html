@@ -1,20 +1,32 @@
-{# Filters post as GET so a filtered list is a shareable URL, and so the
-   query, not the page, does the filtering. #}
+{% comment %}
+Filters post as GET, so a filtered list is a shareable URL and the query — not
+the page — does the filtering.
+{% endcomment %}
 <form method="get" class="toolbar">
     <div class="field grow">
         <label for="q">Search</label>
         <input class="input" type="search" id="q" name="q" value="{{ q }}" placeholder="{{ placeholder }}">
     </div>
-    {% if show_status %}
+    {% if types %}
     <div class="field">
-        <label for="status">Status</label>
-        <select class="select" id="status" name="status">
-            <option value="">All</option>
-            <option value="ACTIVE" {% if status == 'ACTIVE' %}selected{% endif %}>Active</option>
-            <option value="MAINTENANCE" {% if status == 'MAINTENANCE' %}selected{% endif %}>Under maintenance</option>
+        <label for="type">{% if show_status %}Kind{% else %}Venue type{% endif %}</label>
+        <select class="select" id="type" name="type">
+            <option value="">All types</option>
+            {% for value, label in types %}
+                <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
         </select>
     </div>
     {% endif %}
+    <div class="field">
+        <label for="capacity">Minimum capacity</label>
+        <select class="select" id="capacity" name="capacity">
+            <option value="">Any capacity</option>
+            {% for size in capacities %}
+                <option value="{{ size }}" {% if capacity == size|stringformat:'s' %}selected{% endif %}>{{ size }}+</option>
+            {% endfor %}
+        </select>
+    </div>
     <div class="field">
         <label for="facility">Facility</label>
         <select class="select" id="facility" name="facility">
@@ -25,6 +37,12 @@
         </select>
     </div>
     <div class="field">
-        <button class="btn" type="submit">Apply</button>
+        <label for="status">Availability</label>
+        <select class="select" id="status" name="status">
+            <option value="">All</option>
+            <option value="ACTIVE" {% if status == 'ACTIVE' %}selected{% endif %}>Available</option>
+            <option value="MAINTENANCE" {% if status == 'MAINTENANCE' %}selected{% endif %}>Under maintenance</option>
+        </select>
     </div>
+    <div class="field"><button class="btn" type="submit">Apply</button></div>
 </form>

@@ -90,9 +90,9 @@
     </div>
 </section>
 
-{# Progressive enhancement. Without JavaScript the list still reads and edits;
+{% comment %} Progressive enhancement. Without JavaScript the list still reads and edits;
    only the drag shortcut is unavailable, and the order can still be changed by
-   the keyboard path below, which posts a normal form. #}
+   the keyboard path below, which posts a normal form. {% endcomment %}
 <form method="post" action="{% url 'resources:facility_reorder' %}" id="reorderForm" hidden>
     {% csrf_token %}<input type="hidden" name="order" id="orderField">
 </form>

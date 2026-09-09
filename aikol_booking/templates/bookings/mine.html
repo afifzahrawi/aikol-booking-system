@@ -77,7 +77,7 @@
                 of {{ page.paginator.count }}{% else %}No records{% endif %}
         </span>
         {% if page.has_other_pages %}
-        <div class="pagination">
+        <div class="pager">
             {% if page.has_previous %}<a class="btn btn-sm" href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}
             <span class="help">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
             {% if page.has_next %}<a class="btn btn-sm" href="?page={{ page.next_page_number }}">Next</a>{% endif %}

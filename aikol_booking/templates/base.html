@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ site.site_name }}{% endblock %} &mdash; {{ site.organisation }}</title>
-{# Both stylesheets are served from this repository. Nothing from a CDN: the
-   application has to work on a restricted institutional network. #}
+{% comment %} Both stylesheets are served from this repository. Nothing from a CDN: the
+   application has to work on a restricted institutional network. {% endcomment %}
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
@@ -13,39 +13,68 @@
 <a class="skip-link" href="#main">Skip to main content</a>
 
 <div class="app">
+
+{% comment %} The header, navigation bar and footer below reproduce the structure the
+   stylesheet was written against — the prototype's `buildChrome()`. The class
+   names are a contract: `.brand-name`, `.brand-rule`, `.header-user`,
+   `.avatar`, `.nav-badge` and the rest are all styled, and inventing different
+   markup here is what made the first version of these templates look nothing
+   like the approved design. {% endcomment %}
 <header class="app-header">
-    <div class="brand">
-        {% if site.logo %}<img src="{{ site.logo.url }}" alt="{{ site.logo_alt }}" height="40">{% endif %}
-        <div class="brand-text">
-            <strong>{{ site.site_name }}</strong>
-            <span class="subtitle">{{ site.subtitle }}</span>
-        </div>
-    </div>
-    <div class="header-right">
-        {% if user.is_authenticated %}
-            <span class="who">{{ user.full_name }}</span>
-            <form method="post" action="{% url 'accounts:logout' %}" class="inline">{% csrf_token %}
-                <button type="submit" class="btn btn-sm">Sign out</button>
-            </form>
+    <a class="brand" href="{% if user.is_administrator %}{% url 'administration:dashboard' %}{% else %}{% url 'accounts:dashboard' %}{% endif %}">
+        {% if site.logo %}
+            <img src="{{ site.logo.url }}" alt="{{ site.logo_alt }}">
         {% else %}
-            <a class="btn btn-sm" href="{% url 'accounts:login' %}">Sign in</a>
-            <a class="btn btn-sm btn-primary" href="{% url 'accounts:register' %}">Register</a>
+            <img src="{% static 'images/aikol_logo.png' %}"
+                 alt="Ahmad Ibrahim Kulliyyah of Laws, International Islamic University Malaysia">
         {% endif %}
-    </div>
+        <span class="brand-rule"></span>
+        <span class="brand-text">
+            <span class="brand-name">{{ site.site_name }}</span>
+            <span class="brand-sub">{{ site.subtitle }}</span>
+        </span>
+    </a>
+    <span class="header-spacer"></span>
+    {% if user.is_authenticated %}
+        {% if user.is_approver %}
+            {% comment %} The two views are the same application, so this is a link and not
+               a mode switch: what somebody may do is decided by their role. {% endcomment %}
+            <a class="link-plain" href="{% if admin_area %}{% url 'accounts:dashboard' %}{% else %}{% url 'administration:dashboard' %}{% endif %}">{% if admin_area %}User view{% else %}Administrator view{% endif %}</a>
+        {% endif %}
+        <div class="header-user">
+            <span class="avatar" aria-hidden="true">{{ user.initials }}</span>
+            <span class="who">
+                <span>{{ user.full_name }}</span>
+                <span class="role">{{ user.get_role_display }}</span>
+            </span>
+        </div>
+        <form method="post" action="{% url 'accounts:logout' %}" class="inline">{% csrf_token %}
+            <button type="submit" class="link-plain" style="background:none;border:0;cursor:pointer">Sign out</button>
+        </form>
+    {% else %}
+        <a class="link-plain" href="{% url 'accounts:login' %}">Sign in</a>
+        <a class="link-plain" href="{% url 'accounts:register' %}">Register</a>
+    {% endif %}
 </header>
 
 {% if user.is_authenticated %}
-<nav class="app-nav" aria-label="Main">
-    <a href="{% url 'accounts:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
-    <a href="{% url 'resources:venues' %}" {% if nav == 'venues' %}aria-current="page"{% endif %}>Rooms</a>
-    <a href="{% url 'resources:vehicles' %}" {% if nav == 'vehicles' %}aria-current="page"{% endif %}>Vehicles</a>
-    <a href="{% url 'bookings:mine' %}" {% if nav == 'mine' %}aria-current="page"{% endif %}>My bookings</a>
-    {% if user.is_approver %}
-        <a href="{% url 'bookings:approvals' %}" {% if nav == 'approvals' %}aria-current="page"{% endif %}>Approvals</a>
+<nav class="app-nav" aria-label="Main navigation">
+    <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+    {% if admin_area %}
+        <a href="{% url 'bookings:approvals' %}" {% if nav == 'approvals' %}aria-current="page"{% endif %}>Approvals{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
+        <a href="{% url 'bookings:keys' %}" {% if nav == 'keys' %}aria-current="page"{% endif %}>Keys</a>
+        <a href="{% url 'resources:manage_venues' %}" {% if nav == 'resources' %}aria-current="page"{% endif %}>Resources</a>
+        <a href="{% url 'administration:users' %}" {% if nav == 'users' %}aria-current="page"{% endif %}>Users</a>
+        <a href="{% url 'reporting:reports' %}" {% if nav == 'reports' %}aria-current="page"{% endif %}>Reports</a>
+        <a href="{% url 'administration:site_content' %}" {% if nav == 'content' %}aria-current="page"{% endif %}>Site content</a>
+    {% else %}
+        <a href="{% url 'accounts:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
+        <a href="{% url 'resources:venues' %}" {% if nav == 'venues' %}aria-current="page"{% endif %}>Rooms</a>
+        <a href="{% url 'resources:vehicles' %}" {% if nav == 'vehicles' %}aria-current="page"{% endif %}>Vehicles</a>
+        <a href="{% url 'bookings:mine' %}" {% if nav == 'mine' %}aria-current="page"{% endif %}>My bookings</a>
     {% endif %}
-    {% if user.is_administrator %}
-        <a href="{% url 'administration:dashboard' %}" {% if nav == 'manage' %}aria-current="page"{% endif %}>Administration</a>
-    {% endif %}
+    <span class="header-spacer"></span>
+    <div class="nav-search"><span class="ring"></span>{% if admin_area %}Search bookings, users or resources{% else %}Search rooms, cars or bookings{% endif %}</div>
 </nav>
 {% endif %}
 
@@ -59,13 +88,24 @@
 </div>
 
 <footer class="app-footer">
-    <p><strong>{{ site.organisation }}</strong></p>
-    {% if site.address %}<p>{{ site.address|linebreaksbr }}</p>{% endif %}
-    {% if site.phone or site.email %}
-        <p>{{ site.contact_heading }}: {{ site.phone }}{% if site.email %} &middot; {{ site.email }}{% endif %}</p>
-    {% endif %}
+    <div>
+        <h4>{{ site.organisation }}</h4>
+        {{ site.address|linebreaksbr }}
+    </div>
+    <div>
+        <div class="foot-label">{{ site.contact_heading }}</div>
+        {{ site.phone }}{% if site.email %}<br>{{ site.email }}{% endif %}{% if site.office_hours %}<br>{{ site.office_hours }}{% endif %}
+    </div>
+    <div>
+        <div class="foot-label">IIUM</div>
+        <a href="https://www.iium.edu.my">iium.edu.my</a><br>
+        <a href="#">AIKOL Kulliyyah site</a><br>
+        <a href="#">Booking rules and policy</a>
+    </div>
 </footer>
 </div>
+
+<script src="{% static 'js/chrome.js' %}" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

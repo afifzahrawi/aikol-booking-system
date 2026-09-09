@@ -5,7 +5,7 @@
         {% else %}No records{% endif %}
     </span>
     {% if page.paginator.num_pages > 1 %}
-    <div class="pagination">
+    <div class="pager">
         {% if page.has_previous %}
             <a class="btn btn-sm" href="?{{ querystring }}page={{ page.previous_page_number }}">Previous</a>
         {% endif %}
