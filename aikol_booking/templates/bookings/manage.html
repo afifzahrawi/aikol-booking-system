@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Bookings{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Booking docket</h1><p class="lede">Every venue and vehicle request, with its next action.</p></div>
+    <a class="btn btn-primary" href="{% url 'bookings:admin_start' %}">Create booking</a>
+</div>
+
+{% include "bookings/_management_tabs.html" with booking_tab=booking_tab %}
+
+<section class="docket-index">
+    <form method="get" class="toolbar docket-toolbar">
+        <input type="hidden" name="kind" value="{{ kind }}">
+        <div class="field grow"><label for="q">Search records</label>
+            <input class="input" id="q" name="q" type="search" value="{{ q }}"
+                   placeholder="Reference, person, email or resource"></div>
+        <div class="field"><label for="status">Status</label>
+            <select class="select" id="status" name="status">
+                <option value="">All statuses</option>
+                <option value="PENDING" {% if status == 'PENDING' %}selected{% endif %}>Pending</option>
+                <option value="APPROVED" {% if status == 'APPROVED' %}selected{% endif %}>Approved</option>
+                <option value="REJECTED" {% if status == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                <option value="CANCELLED" {% if status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                <option value="COMPLETED" {% if status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+            </select></div>
+        <button class="btn" type="submit">Apply filters</button>
+    </form>
+
+    <div class="docket-list" role="list">
+    {% for b in page %}
+        <article class="docket-row" role="listitem" data-status="{{ b.status|lower }}">
+            <div class="docket-identity">
+                <a class="record-reference" href="{% url 'bookings:detail' b.pk %}">{{ b.booking_reference }}</a>
+                <strong>{{ b.resource.name }}</strong>
+                <span>{{ b.user.full_name }}</span>
+            </div>
+            <div class="docket-time">
+                <strong>{{ b.start_at|date:"D d M Y" }}</strong>
+                <span>{{ b.start_at|date:"H:i" }}–{{ b.end_at|date:"D d M Y, H:i" }}</span>
+            </div>
+            <div class="docket-state">
+                <span class="status-stamp status-{{ b.status|lower }}">{{ b.get_status_display }}</span>
+                {% if kind == vehicle_kind and b.status == 'APPROVED' %}
+                    <span class="help">{{ b.get_management_status_display|default:"Management decision not recorded" }}</span>
+                {% endif %}
+            </div>
+            <div class="docket-action">
+                {% if b.status == 'PENDING' %}
+                    <a class="btn btn-sm btn-primary" data-modal-form href="{% url 'bookings:decide' b.pk %}">Decide</a>
+                {% elif kind == vehicle_kind and b.status == 'APPROVED' and b.management_status == 'PENDING' %}
+                    <a class="btn btn-sm btn-primary" data-modal-form href="{% url 'bookings:vehicle_management' b.pk %}">Management decision</a>
+                {% else %}
+                    <a class="btn btn-sm" href="{% url 'bookings:detail' b.pk %}">Open record</a>
+                {% endif %}
+            </div>
+        </article>
+    {% empty %}
+        <div class="empty-state">No booking records match these filters.</div>
+    {% endfor %}
+    </div>
+    <footer class="docket-index-foot">
+        <span>{% if kind == venue_kind %}{{ counts.VENUE }} room bookings{% else %}{{ counts.VEHICLE }} car bookings{% endif %}</span>
+        {% include "_pagination.html" %}
+        <span>{% if page.paginator.count %}Showing {{ page.start_index }}&ndash;{{ page.end_index }} of {{ page.paginator.count }}{% else %}No records{% endif %}</span>
+    </footer>
+</section>
+{% endblock %}

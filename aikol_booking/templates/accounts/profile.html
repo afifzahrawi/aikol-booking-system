@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Edit profile{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Edit profile</h1>
+        <p class="lede">Keep your contact details accurate for booking and key enquiries.</p>
+    </div>
+</div>
+
+<div class="profile-layout">
+    <section class="form-sheet profile-form" aria-labelledby="profile-details-heading">
+        <div class="docket-section-heading">
+            <h2 id="profile-details-heading">Contact details</h2>
+            <p>These details appear on new booking records.</p>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% include "_form_fields.html" %}
+            <div class="form-actions">
+                <a class="btn" href="{% url 'accounts:dashboard' %}">Cancel</a>
+                <button class="btn btn-primary" type="submit">Save profile</button>
+            </div>
+        </form>
+    </section>
+
+    <aside class="profile-account" aria-labelledby="account-record-heading">
+        <p class="record-reference">Account record</p>
+        <h2 id="account-record-heading">{{ user.full_name }}</h2>
+        <dl class="record-facts">
+            <dt>Email status</dt>
+            <dd>{% if user.email_verified %}Verified{% else %}Awaiting verification{% endif %}</dd>
+            <dt>Affiliation</dt>
+            <dd>{{ user.get_affiliation_display }}</dd>
+            <dt>{% if user.affiliation == 'PUBLIC' %}Identification{% else %}Matriculation / staff number{% endif %}</dt>
+            <dd>{{ user.identification_number|default:"Not applicable" }}</dd>
+            <dt>Account role</dt>
+            <dd>{{ user.get_role_display }}</dd>
+        </dl>
+        <p class="help">Affiliation, identification number and account role are governed by the Kulliyyah office.</p>
+        <a href="{% url 'accounts:password_reset' %}">Change password by email</a>
+    </aside>
+</div>
+{% endblock %}

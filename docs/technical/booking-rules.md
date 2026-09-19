@@ -132,11 +132,10 @@ in `CLAUDE.md` section 5.
 | --- | --- |
 | Eligibility to book | **Any active, verified user**, students included |
 | Multi-day | Permitted. Trip length ≤ `maximum_vehicle_trip_days` |
-| Driver arrangement | `SELF` or `VMU`. **`SELF` requires `affiliation in (LECTURER, STAFF)`** and a licence on file. A student may only submit `VMU` — enforce it in the form *and* the view |
-| VMU driver | The Vehicle Management Unit supplies the driver, requested through STADD. Needs Kulliyyah management approval as well as the booking approval, so a VMU booking is not usable until both are recorded |
-| Driver details | `driver_name`, `driver_contact`, `driver_staff_no` — recorded on every vehicle booking, whoever drives. For self-drive they default from the requester's own account |
+| Driver arrangement | `VMU` only. Requesters cannot self-drive a Kulliyyah vehicle; reject any other posted value in the form and service layer |
+| VMU driver | The Vehicle Management Unit supplies the driver, requested through STADD. An administrator assigns the driver after ordinary approval. The trip needs a separately attributed Kulliyyah management decision and is not usable until both decisions are approved |
+| Driver details | `driver_name`, `driver_contact`, `driver_staff_no` — recorded for the assigned VMU driver |
 | Locations | `origin` and `destination` — where the car leaves from and where it is going. Both required |
-| Licence expiry | Self-drive only: must be later than `end_at` — refuse a trip that outlives the licence. Not checked for a VMU booking, because the VMU driver is not the requester |
 | Road tax | `vehicle.road_tax_expiry` must be later than `end_at`. The requester is told only that the vehicle is unavailable; the date itself is an office matter and appears on administrator screens alone |
 | `destination` | Required |
 | `passenger_count` | Required, `≤ vehicle.seats` |

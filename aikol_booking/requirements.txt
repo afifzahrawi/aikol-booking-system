@@ -3,3 +3,8 @@
 Django>=5.2,<6.0        # LTS. Auth, ORM, migrations, admin, security
 Pillow>=11.0            # required by Django's ImageField for resource photographs
 psycopg[binary]>=3.2    # PostgreSQL driver; production only, see settings/production.py
+gunicorn>=23.0          # production WSGI server for the managed cloud container
+whitenoise>=6.9         # serves versioned static assets without a separate Nginx server
+dj-database-url>=2.3    # safely parses the managed PostgreSQL connection URL
+django-storages[s3]>=1.14  # stores uploaded photographs in S3-compatible Cloudflare R2
+cryptography>=45.0       # encrypts administrator-managed SMTP credentials at rest

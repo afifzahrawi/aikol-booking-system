@@ -36,21 +36,21 @@
         <h2 class="label" style="margin:0">Room demand by hour and day</h2>
         <span class="help">
             {% if heat.busiest %}Busiest: {{ heat.busiest.name }}
-                {{ heat.busiest.hour }}:00, {{ heat.busiest.value }} room-hours
+                {{ heat.busiest.hour }}:00, {{ heat.busiest.value }} venue-hours
             {% else %}No approved room bookings in the period{% endif %}
         </span>
     </div>
     <div class="card-body">
         <p class="help" style="margin:0 0 12px">
            <span class="tag tag-illustrative">Illustrative data</span>
-           Approved room-hours falling in each hour of the
+           Approved venue-hours falling in each hour of the
            bookable window. A booking is spread across the hours it occupies, so a 09:00&ndash;12:00
            seminar adds an hour to each of three cells. Vehicles are excluded &mdash; a trip that
            runs overnight has no meaningful hour of day.</p>
 
         <div class="heat-wrap">
         <table class="heat" id="heat">
-            <thead><tr><td></td>
+            <thead><tr><th scope="col">Venue</th>
                 {% for hour in heat.hours %}<th scope="col">{{ hour }}</th>{% endfor %}
             </tr></thead>
             <tbody>
@@ -59,8 +59,8 @@
                 {% for cell in row.cells %}
                     <td data-level="{{ cell.level }}" data-hour="{{ cell.hour }}"
                         data-value="{{ cell.value }}" tabindex="0"
-                        title="{{ row.name }} {{ cell.hour }}:00 &mdash; {{ cell.value }} room-hours">
-                        <span class="visually-hidden">{{ cell.value }} room-hours</span></td>
+                        title="{{ row.name }} {{ cell.hour }}:00 &mdash; {{ cell.value }} venue-hours">
+                        <span class="visually-hidden">{{ cell.value }} venue-hours</span></td>
                 {% endfor %}
                 </tr>
             {% endfor %}
@@ -70,7 +70,7 @@
 
         <div class="heat-foot">
             <p class="heat-read" id="heatRead" role="status" aria-live="polite" style="margin:0">
-                Total {{ heat.total }} room-hours in the period. Hover or tab a cell for its value.</p>
+                Total {{ heat.total }} venue-hours in the period. Hover or tab a cell for its value.</p>
             <div class="heat-scale" aria-hidden="true">
                 <span>None</span>
                 <i style="background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-soft)"></i>

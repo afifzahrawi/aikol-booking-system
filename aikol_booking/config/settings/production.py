@@ -7,6 +7,7 @@ run it with a known key.
 
 import os
 
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F401,F403
@@ -23,21 +24,19 @@ def required(name: str) -> str:
 
 DEBUG = False
 SECRET_KEY = required("DJANGO_SECRET_KEY")
+CREDENTIAL_ENCRYPTION_KEY = required("DJANGO_CREDENTIAL_ENCRYPTION_KEY")
 ALLOWED_HOSTS = [h.strip() for h in required("DJANGO_ALLOWED_HOSTS").split(",") if h.strip()]
-CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS]
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS]
 
 # PostgreSQL is required, not preferred: the overlap exclusion constraint that
 # makes double booking impossible at the database level has no SQLite equivalent.
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": required("DJANGO_DB_NAME"),
-        "USER": required("DJANGO_DB_USER"),
-        "PASSWORD": required("DJANGO_DB_PASSWORD"),
-        "HOST": os.environ.get("DJANGO_DB_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("DJANGO_DB_PORT", "5432"),
-        "CONN_MAX_AGE": 60,
-    }
+    "default": dj_database_url.parse(
+        required("DATABASE_URL"),
+        conn_max_age=60,
+        conn_health_checks=True,
+        ssl_require=True,
+    )
 }
 
 # The DATABASE cache, not local memory. Gunicorn runs several worker
@@ -65,20 +64,54 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
-# The outbox holds the message; cron delivers it. Nothing in a request path
-# talks to SMTP, so a slow mail server cannot fail a booking.
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = required("DJANGO_EMAIL_HOST")
-EMAIL_PORT = int(os.environ.get("DJANGO_EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.environ.get("DJANGO_EMAIL_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("DJANGO_EMAIL_PASSWORD", "")
-EMAIL_USE_TLS = os.environ.get("DJANGO_EMAIL_USE_TLS", "1") == "1"
+# WhiteNoise serves immutable, hashed static assets directly from the web
+# container. User uploads never live on its ephemeral filesystem: they go to
+# Cloudflare R2 through its S3-compatible API.
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa: F405
+STORAGES = {
+    "default": {"BACKEND": "config.storage.CappedR2Storage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    },
+}
+AWS_ACCESS_KEY_ID = required("R2_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = required("R2_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = required("R2_BUCKET_NAME")
+AWS_S3_ENDPOINT_URL = required("R2_ENDPOINT_URL")
+AWS_S3_REGION_NAME = "auto"
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = True
+AWS_QUERYSTRING_EXPIRE = 3600
+AWS_S3_FILE_OVERWRITE = False
+# Keep uploaded images private. Django generates a one-hour signed R2 URL when
+# rendering an image; unlike a public development URL, this does not expose the
+# entire bucket or require another public hostname.
+AWS_S3_CUSTOM_DOMAIN = None
+MEDIA_URL = f"{AWS_S3_ENDPOINT_URL.rstrip('/')}/{AWS_STORAGE_BUCKET_NAME}/"
 
-MEDIA_ROOT = os.environ.get("DJANGO_MEDIA_ROOT", str(BASE_DIR / "media"))  # noqa: F405
+# R2 includes 10 GB-month of Standard storage, but its budget alerts do not stop
+# usage.  Media and backups therefore receive separate ceilings with substantial
+# headroom for delayed metrics and concurrent requests.
+R2_MEDIA_SOFT_LIMIT_BYTES = int(
+    os.environ.get("R2_MEDIA_SOFT_LIMIT_BYTES", 2 * 1024 * 1024 * 1024)
+)
+R2_BACKUP_SOFT_LIMIT_BYTES = int(
+    os.environ.get("R2_BACKUP_SOFT_LIMIT_BYTES", 7 * 1024 * 1024 * 1024)
+)
+R2_BACKUP_MAX_OBJECTS = int(os.environ.get("R2_BACKUP_MAX_OBJECTS", 14))
+
+# The outbox worker builds its SMTP connection from the encrypted profile on
+# the administrator System screen. Requests never talk to SMTP directly.
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 # The full database reset is disabled in production by default (see the data
 # protection rules in CLAUDE.md, section 8).
 ALLOW_FULL_RESET = os.environ.get("DJANGO_ALLOW_FULL_RESET", "0") == "1"
+
+# Only the private Cloud Run maintenance service sets this. The public service
+# returns 404 for maintenance URLs even if somebody discovers their names.
+MAINTENANCE_SERVICE = os.environ.get("DJANGO_MAINTENANCE_SERVICE", "0") == "1"
 
 LOGGING = {
     "version": 1,

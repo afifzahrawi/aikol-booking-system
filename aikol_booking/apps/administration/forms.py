@@ -7,8 +7,9 @@ from django import forms
 from config.forms import StyledFormMixin
 
 from apps.accounts.models import Affiliation, Role, User
+from apps.notifications.models import EmailConfiguration
 
-from .models import SiteContent, SystemSetting
+from .models import Announcement, SiteContent, SystemSetting
 
 
 class OnBehalfForm(StyledFormMixin, forms.Form):
@@ -49,7 +50,7 @@ class UserAdminForm(StyledFormMixin, forms.ModelForm):
         )
         help_texts = {
             "role": "What they may do in the system.",
-            "affiliation": "What they are. Lecturers and staff may drive a Kulliyyah car.",
+            "affiliation": "Their relationship to IIUM. Kulliyyah vehicles always use a VMU driver.",
             "is_active": "Deactivating retires an account. It never deletes it, and history stays.",
             "email_verified": "Tick only to confirm an address by hand when email has failed.",
         }
@@ -61,11 +62,68 @@ class SystemSettingForm(StyledFormMixin, forms.ModelForm):
         fields = ("value",)
 
 
+class EmailConfigurationForm(StyledFormMixin, forms.ModelForm):
+    password = forms.CharField(
+        required=False,
+        strip=False,
+        widget=forms.PasswordInput(render_value=False),
+        help_text="Leave blank to keep the stored password.",
+    )
+    layout = [
+        ["host", "port"],
+        ["username", "password"],
+        ["use_tls", "use_ssl"],
+        ["default_from_email", "timeout_seconds"],
+    ]
+
+    class Meta:
+        model = EmailConfiguration
+        fields = (
+            "host",
+            "port",
+            "username",
+            "password",
+            "use_tls",
+            "use_ssl",
+            "default_from_email",
+            "timeout_seconds",
+            "is_active",
+        )
+        labels = {
+            "host": "SMTP host",
+            "port": "SMTP port",
+            "username": "SMTP username",
+            "default_from_email": "From address",
+            "timeout_seconds": "Connection timeout (seconds)",
+            "is_active": "Enable email delivery",
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("use_tls") and cleaned.get("use_ssl"):
+            raise forms.ValidationError("Choose TLS or SSL, not both.")
+        if cleaned.get("is_active") and not cleaned.get("host"):
+            self.add_error("host", "Enter an SMTP host before enabling email delivery.")
+        return cleaned
+
+    def save(self, commit=True):
+        configuration = super().save(commit=False)
+        password = self.cleaned_data.get("password")
+        if password:
+            configuration.set_password(password)
+        if commit:
+            configuration.save()
+        return configuration
+
+
 class SiteContentForm(StyledFormMixin, forms.ModelForm):
     """Header and footer wording — content, not code."""
     layout = [
         ["site_name", "subtitle"],
         ["organisation", "logo_alt"],
+        ["logo", "iium_logo"],
+        ["login_image", "home_image"],
+        ["login_intro_heading", "login_intro"],
         ["contact_heading", "office_hours"],
         ["phone", "email"],
     ]
@@ -75,16 +133,64 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
         model = SiteContent
         fields = (
             "site_name", "subtitle", "organisation", "logo", "logo_alt",
-            "address", "contact_heading", "phone", "email", "office_hours",
+            "iium_logo", "iium_logo_alt", "login_image", "home_image",
+            "login_intro_heading", "login_intro", "login_points", "address",
+            "contact_heading", "phone", "email", "office_hours",
         )
-        widgets = {"address": forms.Textarea(attrs={"rows": 3})}
+        widgets = {
+            "login_intro": forms.Textarea(attrs={"rows": 4}),
+            "login_points": forms.Textarea(attrs={"rows": 4}),
+            "address": forms.Textarea(attrs={"rows": 3}),
+        }
 
-    def clean_logo(self):
-        logo = self.cleaned_data.get("logo")
+    def _clean_image(self, field_name):
+        image = self.cleaned_data.get(field_name)
         # A changed file is an UploadedFile; an unchanged one is the stored
         # FieldFile and must not be re-validated as though it were an upload.
-        if logo and hasattr(logo, "content_type"):
+        if image and hasattr(image, "content_type"):
             from apps.resources.validators import validate_image_upload
 
-            validate_image_upload(logo)
-        return logo
+            validate_image_upload(image)
+        return image
+
+    def clean_logo(self):
+        return self._clean_image("logo")
+
+    def clean_iium_logo(self):
+        return self._clean_image("iium_logo")
+
+    def clean_login_image(self):
+        return self._clean_image("login_image")
+
+    def clean_home_image(self):
+        return self._clean_image("home_image")
+
+
+class AnnouncementForm(StyledFormMixin, forms.ModelForm):
+    layout = [["tone", "is_active"], ["starts_at", "ends_at"]]
+
+    class Meta:
+        model = Announcement
+        fields = ("title", "message", "tone", "is_active", "starts_at", "ends_at")
+        widgets = {
+            "message": forms.Textarea(attrs={"rows": 5}),
+            "starts_at": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}
+            ),
+            "ends_at": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in ("starts_at", "ends_at"):
+            self.fields[name].input_formats = ("%Y-%m-%dT%H:%M",)
+
+    def clean(self):
+        cleaned = super().clean()
+        starts_at = cleaned.get("starts_at")
+        ends_at = cleaned.get("ends_at")
+        if starts_at and ends_at and ends_at <= starts_at:
+            self.add_error("ends_at", "The end must be after the start.")
+        return cleaned

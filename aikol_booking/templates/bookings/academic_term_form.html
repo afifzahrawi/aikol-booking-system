@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{% if term %}Edit {{ term.name }}{% else %}Add academic calendar{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{% if term %}Edit {{ term.name }}{% else %}Add academic calendar{% endif %}</h1>
+    <p class="lede">A term cannot overlap another term. Every break must sit within its term.</p></div></div>
+
+<form method="post" novalidate class="record-sheet academic-form">{% csrf_token %}
+    {{ form.non_field_errors }}
+    <section class="docket-section"><div class="docket-section-heading"><h2>Teaching period</h2><p>Name and inclusive dates.</p></div>
+        {% include "_form_fields.html" %}</section>
+    <section class="docket-section"><div class="docket-section-heading"><h2>Named breaks</h2><p>Weekly occurrences are not created during these dates.</p></div>
+        {{ breaks.management_form }}{{ breaks.non_form_errors }}
+        <div class="break-formset">
+        {% for break_form in breaks %}
+            <fieldset class="break-row"><legend>Break {{ forloop.counter }}</legend>
+                {{ break_form.id }}{% include "_form_fields.html" with form=break_form %}
+            </fieldset>
+        {% endfor %}
+        </div>
+    </section>
+    <div class="form-actions"><a class="btn" href="{% url 'bookings:academic_terms' %}">Cancel</a>
+        <button class="btn btn-primary" type="submit">Save academic calendar</button></div>
+</form>
+{% endblock %}

@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign in &mdash; {{ site.organisation }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign in | {{ site_content.organisation }}</title>
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+<link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260919-1">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -16,42 +18,41 @@
 <div class="login-page">
 
     <section class="login-hero">
-        <div class="brand">
-            <img src="{% if site.logo %}{{ site.logo.url }}{% else %}{% static 'images/aikol_logo.png' %}{% endif %}"
-                 alt="Ahmad Ibrahim Kulliyyah of Laws, International Islamic University Malaysia"
-                 style="width: 200px">
-            <span class="brand-text">
-                <span class="brand-name">Ahmad Ibrahim Kulliyyah of Laws</span>
-                <span class="brand-sub">International Islamic University Malaysia</span>
+        <img class="login-photo"
+             src="{% if site_content.login_image %}{{ site_content.login_image.url }}{% else %}{% static 'images/aikol-building.jpg' %}{% endif %}"
+             alt="" aria-hidden="true">
+        <div class="login-brand-lockup">
+            <span class="login-iium-crop">
+                <img class="login-iium"
+                     src="{% if site_content.iium_logo %}{{ site_content.iium_logo.url }}{% else %}{% static 'images/iium_logo_uploaded.jpg' %}{% endif %}"
+                     alt="{{ site_content.iium_logo_alt }}" width="1109" height="329">
             </span>
+            <img class="login-aikol"
+                 src="{% if site_content.logo %}{{ site_content.logo.url }}{% else %}{% static 'images/aikol_logo.png' %}{% endif %}"
+                 alt="{% if site_content.logo_alt %}{{ site_content.logo_alt }}{% else %}Ahmad Ibrahim Kulliyyah of Laws{% endif %}"
+                 width="2092" height="512">
         </div>
 
-        <div>
-            <h1>Room and Vehicle Booking System</h1>
-            <p>
-                A single place for AIKOL students, lecturers and staff to check venue availability,
-                submit booking requests for venues and Kulliyyah vehicles, and follow their status.
-            </p>
+        <div class="login-introduction">
+            <p class="login-kicker">AIKOL resource booking</p>
+            <h1>{{ site_content.login_intro_heading }}</h1>
+            <p>{{ site_content.login_intro }}</p>
             <ul>
-                <li>Real-time availability for every Kulliyyah venue and vehicle</li>
-                <li>Booking requests submitted online, without paper forms</li>
-                <li>Automatic prevention of double bookings</li>
-                <li>Complete booking history for reference and audit</li>
+                {% for point in site_content.login_point_list %}<li>{{ point }}</li>{% endfor %}
             </ul>
         </div>
 
         <p class="foot">
-            {{ site.organisation }} &middot; {{ site.phone }}
+            {{ site_content.organisation }}{% if site_content.phone %} · {{ site_content.phone }}{% endif %}
         </p>
     </section>
 
     <section class="login-panel">
-        <main class="card login-card" id="main">
+        <main class="login-card" id="main">
             <div class="card-body">
-                <h2>Sign in</h2>
-                <p class="help" style="margin-bottom:1.25rem">
-                    Use your Kulliyyah account to continue.
-                </p>
+                <p class="login-panel-label">Secure access</p>
+                <h2>Welcome back</h2>
+                <p class="login-panel-copy">Sign in to request a booking or manage the day's work.</p>
 
                 {% if messages %}
                     {% for m in messages %}<p class="notice notice-{{ m.tags }}">{{ m }}</p>{% endfor %}
@@ -79,12 +80,11 @@
                     <button class="btn btn-primary btn-block" type="submit">Sign in</button>
                 </form>
 
-                <p class="help" style="margin-top:1.25rem">
+                <p class="help login-link-row">
                     <a href="{% url 'accounts:password_reset' %}">Forgotten your password?</a>
                 </p>
-                <p class="help" style="margin-top:.5rem">
-                    No account yet? <a href="{% url 'accounts:register' %}">Register</a> with your
-                    IIUM address.
+                <p class="help login-link-row">
+                    No account yet? <a href="{% url 'accounts:register' %}">Register as an IIUM member or public user</a>.
                 </p>
             </div>
         </main>

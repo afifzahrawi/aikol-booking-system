@@ -1,19 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Rooms{% endblock %}
+{% block title %}Venue{% endblock %}
 {% block content %}
 <div class="page-head">
-    <div><h1>Rooms</h1>
-        <p class="lede">Moot court, seminar, meeting, lecture and discussion rooms.</p></div>
+    <div><h1>Venue</h1></div>
 </div>
 
-<section class="card">
-    {% include "resources/_filters.html" with placeholder="Room name, code or location" show_status=0 %}
-    <p class="help" style="margin:.25rem 0 1rem">{{ page.paginator.count }} room{{ page.paginator.count|pluralize }} shown.</p>
-    <div class="grid grid-auto">
+<section class="card resource-index">
+    {% include "resources/_filters.html" with placeholder="Venue name, code or location" show_status=0 %}
+    <div class="grid grid-auto resource-grid">
         {% for venue in page %}
             {% include "resources/_card.html" with resource=venue subtitle=venue.card_subtitle %}
         {% empty %}
-            <div class="empty-state">No room matches the current filters.</div>
+            <div class="empty-state">No venue matches the current filters.</div>
         {% endfor %}
     </div>
     {% include "resources/_pager.html" %}

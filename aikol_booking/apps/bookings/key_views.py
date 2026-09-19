@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from django.contrib import messages as flash
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -12,6 +13,8 @@ from apps.audit.services import log_action
 from .key_forms import IssueKeyForm, ReturnKeyForm
 from .keys import issue_key, keys_awaiting_collection, outstanding_keys, return_key
 from .models import Booking, KeyHandover
+
+PAGE_SIZE = 20
 
 
 def administrator_required(view):
@@ -29,17 +32,28 @@ def administrator_required(view):
 
 @administrator_required
 def key_register(request):
-    """Everything about keys on one screen: out, overdue, and still to collect."""
-    out = list(outstanding_keys())
+    """One paginated key queue at a time, with collection first."""
     now = timezone.now()
-    overdue = [h for h in out if h.booking.end_at < now]
+    out = outstanding_keys()
+    awaiting = keys_awaiting_collection()
+    tab = request.GET.get("tab", "awaiting")
+    if tab not in {"awaiting", "out"}:
+        tab = "awaiting"
+    rows = awaiting if tab == "awaiting" else out
+    page = Paginator(rows, PAGE_SIZE).get_page(request.GET.get("page"))
     return render(
         request,
         "bookings/keys.html",
         {
-            "outstanding": out,
-            "overdue": overdue,
-            "awaiting": keys_awaiting_collection()[:50],
+            "page": page,
+            "tab": tab,
+            "outstanding_count": out.count(),
+            "awaiting_count": awaiting.count(),
+            "overdue_count": out.filter(booking__end_at__lt=now).count(),
+            "querystring": f"tab={tab}&",
+            "page_range": page.paginator.get_elided_page_range(
+                page.number, on_each_side=2, on_ends=1
+            ),
             "now": now,
         },
     )

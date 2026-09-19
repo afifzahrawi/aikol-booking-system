@@ -1,24 +1,24 @@
 {% extends "base.html" %}
-{% load static %}{# not inherited from base.html #}
+{% load static %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 
 {% comment %} The greeting and search over the Kulliyyah photograph, as the design
    specifies. The search is a real GET form: it answers on the server, so it
    works with JavaScript off. {% endcomment %}
-<section class="search-hero" style="margin-bottom: 30px;" aria-labelledby="greeting">
-    <img src="{% static 'images/aikol-building.jpg' %}" alt="">
+<section class="search-hero dashboard-hero" aria-labelledby="greeting">
+    <img src="{% if site_content.home_image %}{{ site_content.home_image.url }}{% else %}{% static 'images/aikol-building.jpg' %}{% endif %}"
+         alt="" aria-hidden="true">
 
     <div class="inner">
         <div class="hero-line">
-            <div class="arabic">السلام عليكم</div>
+            <div class="arabic" lang="ar" dir="rtl">السلام عليكم</div>
             <h1 id="greeting">Assalamualaikum, {{ user.full_name }}</h1>
             <div class="sub">
                 {% if not user.email_verified %}
                     Confirm your email address before you can book.
                 {% else %}
-                    {{ today|date:"l, d F Y" }} &middot; rooms are bookable
-                    {{ window_start }}&ndash;{{ window_end }}
+                    {{ today|date:"l, d F Y" }}. Booking hours: {{ window_start }} to {{ window_end }}
                 {% endif %}
             </div>
         </div>
@@ -26,32 +26,36 @@
         <form class="searchbar" method="get" action="{% url 'accounts:dashboard' %}">
             <label>
                 <span class="k">Resource</span>
-                <select class="v" name="kind">
-                    <option value="VENUE" {% if kind == 'VENUE' %}selected{% endif %}>Rooms</option>
+                <select class="v" id="resourceKind" name="kind">
+                    <option value="VENUE" {% if kind == 'VENUE' %}selected{% endif %}>Venues</option>
                     <option value="VEHICLE" {% if kind == 'VEHICLE' %}selected{% endif %}>Vehicles</option>
                 </select>
             </label>
             <label>
-                <span class="k">Date</span>
+                <span class="k" data-search-label="date">{% if kind == 'VEHICLE' %}Collection date{% else %}Date{% endif %}</span>
                 <input class="v" type="date" name="date" value="{{ search_date|date:'Y-m-d' }}">
             </label>
             <label>
-                <span class="k">From</span>
+                <span class="k" data-search-label="from">{% if kind == 'VEHICLE' %}Collection time{% else %}From{% endif %}</span>
                 <select class="v" name="from">
                     {% for slot in slots %}
                         <option value="{{ slot }}" {% if slot == from_time %}selected{% endif %}>{{ slot }}</option>
                     {% endfor %}
                 </select>
             </label>
+            <label data-vehicle-search-field {% if kind != 'VEHICLE' %}hidden{% endif %}>
+                <span class="k">Return date</span>
+                <input class="v" type="date" name="end_date" value="{{ return_date|date:'Y-m-d' }}">
+            </label>
             <label>
-                <span class="k">To</span>
+                <span class="k" data-search-label="to">{% if kind == 'VEHICLE' %}Return time{% else %}To{% endif %}</span>
                 <select class="v" name="to">
                     {% for slot in slots %}
                         <option value="{{ slot }}" {% if slot == to_time %}selected{% endif %}>{{ slot }}</option>
                     {% endfor %}
                 </select>
             </label>
-            <label>
+            <label data-venue-search-field {% if kind == 'VEHICLE' %}hidden{% endif %}>
                 <span class="k">Building</span>
                 <select class="v" name="building">
                     <option value="">Any AIKOL building</option>
@@ -64,16 +68,41 @@
         </form>
     </div>
 
-    <div class="caption">Pick a time and check &mdash; the answer appears below, and you can book straight from it.</div>
+    <div class="caption">Choose a time to see what is free, then continue directly to the booking form.</div>
 </section>
 
+{% if announcements %}
+<section class="announcement-stack" aria-labelledby="announcements-heading">
+    <div class="section-heading-row">
+        <div>
+            <h2 id="announcements-heading">Announcements</h2>
+            <p>Current notices from the Kulliyyah office.</p>
+        </div>
+    </div>
+    {% for announcement in announcements %}
+        <article class="announcement announcement-{{ announcement.tone|lower }}">
+            <div>
+                <h3>{{ announcement.title }}</h3>
+                <p>{{ announcement.message|linebreaksbr }}</p>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+{% endif %}
+
 {% if searched %}
-<section class="card" style="margin-bottom: 30px;">
+<section class="card dashboard-section">
     <div class="card-head">
         <h2 class="label" style="margin:0">
-            {{ free|length }} free {% if kind == 'VEHICLE' %}vehicle{% else %}room{% endif %}{{ free|length|pluralize }}
+            {{ free|length }} free {% if kind == 'VEHICLE' %}vehicle{% else %}venue{% endif %}{{ free|length|pluralize }}
         </h2>
-        <span class="help">{{ search_date|date:"D d M Y" }}, {{ from_time }}&ndash;{{ to_time }}</span>
+        <span class="help">
+            {% if kind == 'VEHICLE' %}
+                {{ search_date|date:"D d M Y" }}, {{ from_time }} to {{ return_date|date:"D d M Y" }}, {{ to_time }}
+            {% else %}
+                {{ search_date|date:"D d M Y" }}, {{ from_time }} to {{ to_time }}
+            {% endif %}
+        </span>
     </div>
     <div class="card-body">
         {% if problems %}
@@ -89,7 +118,7 @@
                     <p class="help" style="margin:0 0 .6rem">
                         {% if kind == 'VEHICLE' %}{{ resource.seats }} seats{% else %}{{ resource.location }} &middot; seats {{ resource.capacity }}{% endif %}
                     </p>
-                    <a class="btn btn-sm btn-primary" href="{% url 'bookings:create' resource.pk %}?start_date={{ search_date|date:'Y-m-d' }}&amp;start_time={{ from_time }}&amp;end_time={{ to_time }}">Book this</a>
+                    <a class="btn btn-sm btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}?start_date={{ search_date|date:'Y-m-d' }}&amp;start_time={{ from_time }}&amp;end_date={% if kind == 'VEHICLE' %}{{ return_date|date:'Y-m-d' }}{% else %}{{ search_date|date:'Y-m-d' }}{% endif %}&amp;end_time={{ to_time }}">Book this</a>
                 </article>
             {% endfor %}
             </div>
@@ -103,37 +132,36 @@
 </section>
 {% endif %}
 
-{# Your activity. Two columns on the green band, as the design has it. #}
-<div style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr;
-            background: var(--brand); border-radius: var(--r); overflow: hidden;">
-    <div style="padding: 13px 18px; border-right: 1px solid rgba(255,255,255,.14)">
-        <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">Your next booking</div>
-        <div style="margin-top:3px;font-size:13.5px;color:{% if next_booking %}#fff{% else %}rgba(255,255,255,.72){% endif %}">
+<section class="activity-band" aria-label="Your booking summary">
+    <h2 class="activity-band-heading">Your booking summary</h2>
+    <div class="activity-band-item">
+        <div class="activity-band-label">Your next booking</div>
+        <div class="activity-band-value{% if not next_booking %} is-muted{% endif %}">
             {% if next_booking %}
-                <a href="{% url 'bookings:detail' next_booking.pk %}" style="color:#fff">{{ next_booking.resource.name }}</a>
-                &middot; {{ next_booking.start_at|date:"d M Y, H:i" }}
+                <a href="{% url 'bookings:detail' next_booking.pk %}">{{ next_booking.resource.name }}</a>
+                <span>{{ next_booking.start_at|date:"d M Y, H:i" }}</span>
             {% else %}Nothing booked yet{% endif %}
         </div>
     </div>
-    <div style="padding: 13px 18px">
-        <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">Awaiting approval</div>
-        <div style="margin-top:3px;font-size:13.5px;color:{% if counts.pending %}#fff{% else %}rgba(255,255,255,.72){% endif %}">
+    <div class="activity-band-item">
+        <div class="activity-band-label">Awaiting approval</div>
+        <div class="activity-band-value{% if not counts.pending %} is-muted{% endif %}">
             {% if counts.pending %}
-                <a href="{% url 'bookings:mine' %}?status=PENDING" style="color:#fff">{{ counts.pending }}
-                request{{ counts.pending|pluralize }}</a>{% if first_pending %} &middot; {{ first_pending.resource.name }}{% endif %}
+                <a href="{% url 'bookings:mine' %}?status=PENDING">{{ counts.pending }} request{{ counts.pending|pluralize }}</a>
+                {% if first_pending %}<span>{{ first_pending.resource.name }}</span>{% endif %}
             {% else %}None{% endif %}
         </div>
     </div>
-</div>
+</section>
 
 {% if upcoming %}
-<section class="card" style="margin-bottom: 30px;">
+<section class="card dashboard-section">
     <div class="card-head"><h2 class="label" style="margin:0">Your next bookings</h2></div>
     <div class="table-wrap">
         <table class="data">
             <thead><tr>
                 <th scope="col">Reference</th><th scope="col">Resource</th>
-                <th scope="col">When</th><th scope="col">Status</th><th scope="col"></th>
+                <th scope="col">When</th><th scope="col">Status</th><th scope="col">Actions</th>
             </tr></thead>
             <tbody>
             {% for b in upcoming %}
@@ -152,32 +180,5 @@
 </section>
 {% endif %}
 
-<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
-    <h2 style="margin: 0;">Browse by room type</h2>
-    <a href="{% url 'resources:venues' %}">All {{ room_total }} rooms and {{ car_total }} cars &rarr;</a>
-</div>
-<div class="grid grid-4">
-    {% for group in categories %}
-        <a class="card venue-card" href="{% url 'resources:venues' %}?type={{ group.value }}"
-           style="text-decoration:none">
-            {% if group.slug %}
-                <img class="framed" src="{% static group.slug %}"
-                     alt="Placeholder drawing of a {{ group.label|lower }}">
-            {% endif %}
-            <div class="card-body">
-                <h3 style="margin:0 0 .3rem">{{ group.label }}</h3>
-                <p class="help" style="margin:0 0 .5rem">
-                    {{ group.count }} room{{ group.count|pluralize }} &middot; up to {{ group.largest }} persons
-                </p>
-                {% if group.available %}
-                    <span class="badge badge-approved">Available</span>
-                {% else %}
-                    <span class="badge badge-inactive">None free</span>
-                {% endif %}
-            </div>
-        </a>
-    {% empty %}
-        <div class="empty-state">No rooms yet.</div>
-    {% endfor %}
-</div>
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/dashboard.js' %}?v=20260915-1" defer></script>{% endblock %}

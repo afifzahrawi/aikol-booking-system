@@ -115,15 +115,20 @@ class Resource(models.Model):
 
     @property
     def placeholder(self) -> str:
-        """The static path of the stand-in drawing, or '' if there is none."""
-        return f"images/placeholders/{self.image_slug}.svg" if self.image_slug else ""
+        """The static stand-in drawing until an administrator uploads a photograph."""
+        return f"images/placeholders/{self._placeholder_slug()}.svg"
+
+    def _placeholder_slug(self) -> str:
+        # Historical imports may not have set image_slug. Keep those records
+        # illustrated as well; a real uploaded photograph always takes priority.
+        return self.image_slug or (
+            "car-saga" if self.resource_type == ResourceType.VEHICLE else "conference"
+        )
 
     def placeholder_variant(self, number: int) -> str:
         """View 2, 3 or 4 of the same room, for the detail gallery."""
-        if not self.image_slug:
-            return ""
         suffix = "" if number <= 1 else f"-v{number}"
-        return f"images/placeholders/{self.image_slug}{suffix}.svg"
+        return f"images/placeholders/{self._placeholder_slug()}{suffix}.svg"
 
 
 class ResourceFacility(models.Model):
@@ -165,6 +170,18 @@ class Venue(Resource):
     opens_at = models.TimeField(default="08:00")
     closes_at = models.TimeField(default="22:00")
 
+    def _placeholder_slug(self) -> str:
+        if self.image_slug:
+            return self.image_slug
+        return {
+            self.VenueType.MOOT_COURT: "moot-court",
+            self.VenueType.SEMINAR: "seminar-a",
+            self.VenueType.MEETING: "meeting-a",
+            self.VenueType.LECTURE: "lecture",
+            self.VenueType.DISCUSSION: "discussion",
+            self.VenueType.CONFERENCE: "conference",
+        }.get(self.venue_type, "conference")
+
     @property
     def card_subtitle(self) -> str:
         return f"{self.get_venue_type_display()} · {self.location} · seats {self.capacity}"
@@ -203,6 +220,15 @@ class Vehicle(Resource):
     # unavailable, not why — you cannot lawfully drive an untaxed car, but the
     # date itself is the office's business.
     road_tax_expiry = models.DateField()
+
+    def _placeholder_slug(self) -> str:
+        if self.image_slug:
+            return self.image_slug
+        model_name = self.model.lower()
+        for name in ("saga", "bezza", "innova", "exora"):
+            if name in model_name:
+                return f"car-{name}"
+        return "car-saga"
 
     @property
     def card_subtitle(self) -> str:

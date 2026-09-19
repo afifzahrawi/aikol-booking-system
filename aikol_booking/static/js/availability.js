@@ -12,11 +12,14 @@
 
 (function () {
     'use strict';
-    var form = document.getElementById('bookingForm');
-    if (!form) return;
-    var status = document.getElementById('slotStatus');
+
+    function initialise(root) {
+    var form = root.querySelector('#bookingForm');
+    if (!form || form.dataset.availabilityReady === 'true') return;
+    var status = form.querySelector('#slotStatus');
     var endpoint = form.dataset.availability;
     if (!status || !endpoint) return;
+    form.dataset.availabilityReady = 'true';
 
     var fields = ['start_date', 'start_time', 'end_date', 'end_time']
         .map(function (n) { return form.querySelector('[name="' + n + '"]'); })
@@ -79,5 +82,11 @@
             clearTimeout(timer);
             timer = setTimeout(check, 250);
         });
+    });
+    }
+
+    initialise(document);
+    document.addEventListener('aikol:modal-content', function (event) {
+        initialise(event.detail.root);
     });
 })();

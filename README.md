@@ -60,7 +60,8 @@ Confirmed by AIKOL and implemented in the prototype:
   the requester. The Kulliyyah provides no driver of its own. Transport for a student activity is
   arranged through the Vehicle Management Unit via STADD, outside this system.
 - **Key collection and return** recorded against each booking.
-- Booking confirmation email, administrator-managed facilities, editable header and footer content.
+- Booking confirmation email, administrator-managed facilities, editable identity and page
+  photography, editable login introduction, and scheduled home-page announcements.
 - Booking records retained **7 years**, then exported rather than deleted.
 
 ## The rule the design rests on
@@ -79,7 +80,7 @@ browser, on the server, and by a PostgreSQL exclusion constraint.
 ## Planned stack
 
 Python 3.11+ / Django 5.x LTS · Django templates + Bootstrap 5 (vendored, no CDN) ·
-PostgreSQL in production, SQLite in development · Nginx + Gunicorn · Django's own authentication
+PostgreSQL in production, SQLite in development · Docker Compose + Caddy + Gunicorn · Django's own authentication
 (no IIUM single sign-on) · cron for scheduled jobs, no message queue.
 
 ## Notes on this repository

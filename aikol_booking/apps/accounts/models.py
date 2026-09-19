@@ -32,7 +32,7 @@ class Affiliation(models.TextChoices):
     Role grants authority inside the system; affiliation describes the person's
     relationship to the University. They are separate fields because they vary
     independently: a lecturer may be an ordinary user, and an administrator may
-    be a member of staff who never drives.
+    be a member of staff.
     """
 
     STUDENT = "STUDENT", "Student"
@@ -116,12 +116,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     email_verified = models.BooleanField(default=False)
     email_verified_at = models.DateTimeField(null=True, blank=True)
 
-    # Captured on the first self-drive vehicle booking, not at registration —
-    # most people never need them. Personal data: excluded from the audit log's
-    # free text and from exports that do not require them.
-    licence_number = models.CharField("driving licence number", max_length=30, blank=True)
-    licence_expiry = models.DateField(null=True, blank=True)
-
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)  # access to Django's own admin
     date_joined = models.DateTimeField(default=timezone.now)
@@ -162,16 +156,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def can_book(self) -> bool:
         """No booking of any kind until the address is confirmed."""
         return self.is_active and self.email_verified
-
-    @property
-    def may_drive(self) -> bool:
-        """Eligibility to DRIVE, which is not eligibility to book.
-
-        Anyone may request a car. A student may never drive a Kulliyyah car, so
-        a student's booking must request a VMU driver instead. Keeping these two
-        questions apart is the whole point of the property.
-        """
-        return self.affiliation in (Affiliation.LECTURER, Affiliation.STAFF)
 
     @property
     def has_iium_email(self) -> bool:

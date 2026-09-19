@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Create booking{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Create a booking</h1>
+    <p class="lede">Choose the resource first. The next screen searches for the person the booking is for.</p></div></div>
+
+<nav class="workspace-tabs workspace-tabs-prominent" aria-label="Resource type">
+    <a href="?kind=VENUE" {% if kind == 'VENUE' %}aria-current="page"{% endif %}>Venues</a>
+    <a href="?kind=VEHICLE" {% if kind == 'VEHICLE' %}aria-current="page"{% endif %}>Vehicles</a>
+</nav>
+
+<form method="get" class="toolbar docket-toolbar">
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <div class="field grow"><label for="q">Find a resource</label>
+        <input class="input" type="search" id="q" name="q" value="{{ q }}" placeholder="Name or code"></div>
+    <button class="btn" type="submit">Search</button>
+</form>
+
+<div class="resource-choice-list">
+{% for resource in resources %}
+    <article class="resource-choice">
+        <div><span class="record-reference">{{ resource.code }}</span><h2>{{ resource.name }}</h2></div>
+        <div class="btn-group">
+            <a class="btn btn-primary" href="{% url 'bookings:admin_create' resource.pk %}">One booking</a>
+            {% if kind == 'VENUE' %}<a class="btn" href="{% url 'bookings:admin_series_create' resource.pk %}">Repeat weekly</a>{% endif %}
+        </div>
+    </article>
+{% empty %}<div class="empty-state">No active resource matches that search.</div>{% endfor %}
+</div>
+{% endblock %}

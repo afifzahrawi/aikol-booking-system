@@ -121,12 +121,13 @@ institutional backup service stands behind this — the schedule below is the wh
 | Weekly | One dump retained 8 weeks |
 | Before migrations | On demand, automatic in the deploy script |
 | Before bulk deletion | On demand, automatic in the cleanup job |
-| Storage | **Copied off the server** to external storage (decision 21). A dump sitting on the same VPS is not a backup — it dies with the machine |
+| Storage | **Cloudflare R2 backup bucket**, separate from the media bucket (decision 21) |
 | Encryption | Backups leave the server, so encrypt at rest. The passphrase is not stored on the server |
 | Verification | Monthly test restore into a scratch database |
 
-AIKOL still needs to name the external storage destination; that is an open operational item in
-section 5 of `CLAUDE.md` and must be settled before go-live, not after.
+The external destination is the dedicated Cloudflare R2 backup bucket. The container runs
+`manage.py backup_database` before applying any pending migration; the scheduled deployment job
+runs the same command nightly.
 
 ### Restore
 
@@ -134,12 +135,12 @@ The restore procedure must be **written down and tested on a non-production serv
 system carries real bookings**. A backup that has never been restored is not a backup.
 
 ```bash
-# Backup
-pg_dump --format=custom --file=/var/backups/aikol/aikol_$(date +%F).dump aikol_booking
+# Backup and upload to R2 using the configured production secrets
+python manage.py backup_database
 
 # Restore into a clean database
 createdb aikol_restore_test
-pg_restore --dbname=aikol_restore_test /var/backups/aikol/aikol_2026-08-13.dump
+pg_restore --dbname=aikol_restore_test aikol_2026-08-13.dump
 ```
 
 Note for restores: the exclusion constraint and the `btree_gist` extension must exist in the target

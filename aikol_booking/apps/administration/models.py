@@ -77,13 +77,38 @@ class SiteContent(models.Model):
     `load()` is the only way to reach it.
     """
 
-    site_name = models.CharField(max_length=80, default="Room and Vehicle Booking")
+    site_name = models.CharField(max_length=80, default="Venue and Vehicle Booking")
     subtitle = models.CharField(
         max_length=120, default="Ahmad Ibrahim Kulliyyah of Laws · IIUM"
     )
     organisation = models.CharField(max_length=120, default="Ahmad Ibrahim Kulliyyah of Laws")
     logo = models.ImageField(upload_to="site/", blank=True)
     logo_alt = models.CharField(max_length=200, blank=True)
+    iium_logo = models.ImageField(upload_to="site/", blank=True)
+    iium_logo_alt = models.CharField(
+        max_length=200,
+        default="International Islamic University Malaysia",
+    )
+    login_image = models.ImageField(upload_to="site/", blank=True)
+    home_image = models.ImageField(upload_to="site/", blank=True)
+    login_intro_heading = models.CharField(
+        max_length=120,
+        default="Venue and Vehicle Booking System",
+    )
+    login_intro = models.TextField(
+        default=(
+            "Check availability, request an AIKOL venue or Kulliyyah vehicle, "
+            "and follow every decision in one place."
+        )
+    )
+    login_points = models.TextField(
+        default=(
+            "See current availability for venues and vehicles\n"
+            "Submit requests without a paper form\n"
+            "Keep booking decisions and key handovers together"
+        ),
+        help_text="One short point per line.",
+    )
     address = models.TextField(blank=True)
     contact_heading = models.CharField(max_length=60, default="Booking enquiries")
     phone = models.CharField(max_length=30, blank=True)
@@ -101,7 +126,42 @@ class SiteContent(models.Model):
         self.pk = 1
         super().save(*args, **kwargs)
 
+    @property
+    def login_point_list(self) -> list[str]:
+        return [point.strip() for point in self.login_points.splitlines() if point.strip()]
+
     @classmethod
     def load(cls) -> "SiteContent":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class Announcement(models.Model):
+    """A dated notice shown immediately after the booking search.
+
+    Announcements are deactivated rather than deleted so the office can see
+    what was previously communicated and reactivate it when appropriate.
+    """
+
+    class Tone(models.TextChoices):
+        INFORMATION = "INFORMATION", "Information"
+        IMPORTANT = "IMPORTANT", "Important"
+
+    title = models.CharField(max_length=120)
+    message = models.TextField()
+    tone = models.CharField(
+        max_length=20,
+        choices=Tone.choices,
+        default=Tone.INFORMATION,
+    )
+    is_active = models.BooleanField(default=True)
+    starts_at = models.DateTimeField(blank=True, null=True)
+    ends_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-is_active", "-created_at")
+
+    def __str__(self) -> str:
+        return self.title

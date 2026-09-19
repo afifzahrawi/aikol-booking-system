@@ -10,6 +10,7 @@ from .base import BASE_DIR
 
 DEBUG = True
 SECRET_KEY = "django-insecure-development-only-do-not-use-in-production"
+CREDENTIAL_ENCRYPTION_KEY = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver"]
 
 DATABASES = {
@@ -19,9 +20,8 @@ DATABASES = {
     }
 }
 
-# Mail is written to the console. The outbox table is still used — queue_email()
-# writes a row and `manage.py send_queued_email` drains it — so the development
-# path exercises the same code as production.
+# Mail is written to the console until an administrator enables an SMTP profile.
+# The outbox path remains identical to production.
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Local memory is fine here: development runs one process, so the rate-limit

@@ -105,8 +105,8 @@ class PeriodRuleTests(TestCase):
         self.assertTrue(any("not available" in p for p in problems))
 
 
-class DriverEligibilityTests(TestCase):
-    """Who may book is not who may drive. Anyone may request a car."""
+class DriverRouteTests(TestCase):
+    """Anyone may request a car, but every trip uses the VMU/STADD route."""
 
     def setUp(self) -> None:
         self.car = Vehicle.objects.create(
@@ -115,31 +115,15 @@ class DriverEligibilityTests(TestCase):
             road_tax_expiry=timezone.localdate() + dt.timedelta(days=200),
         )
 
-    def test_a_student_may_not_self_drive(self):
+    def test_self_drive_is_not_an_available_route_for_anyone(self):
         student = make_user("student@demo.aikol.test", Affiliation.STUDENT)
-        problems = check_driver_arrangement(student, self.car, DriverArrangement.SELF_DRIVE)
-        self.assertTrue(any("Only lecturers and staff may drive" in p for p in problems))
+        problems = check_driver_arrangement(student, self.car, "SELF")
+        self.assertTrue(any("cannot be self-driven" in p for p in problems))
 
-    def test_a_student_requesting_a_vmu_driver_is_told_about_the_second_approval(self):
+    def test_a_vmu_driver_is_the_valid_route(self):
         student = make_user("student2@demo.aikol.test", Affiliation.STUDENT)
         problems = check_driver_arrangement(student, self.car, DriverArrangement.VMU_DRIVER)
-        self.assertTrue(any("management approval" in p for p in problems))
-        # It is a notice, not a refusal on eligibility grounds.
-        self.assertFalse(any("Only lecturers and staff" in p for p in problems))
-
-    def test_a_lecturer_with_a_licence_may_self_drive(self):
-        lecturer = make_user(
-            "lecturer@demo.aikol.test",
-            Affiliation.LECTURER,
-            licence_number="D1234567",
-            licence_expiry=timezone.localdate() + dt.timedelta(days=400),
-        )
-        self.assertEqual(check_driver_arrangement(lecturer, self.car, DriverArrangement.SELF_DRIVE), [])
-
-    def test_self_drive_without_a_licence_on_file_is_refused(self):
-        staff = make_user("staff@demo.aikol.test", Affiliation.STAFF)
-        problems = check_driver_arrangement(staff, self.car, DriverArrangement.SELF_DRIVE)
-        self.assertTrue(any("licence number and expiry" in p for p in problems))
+        self.assertEqual(problems, [])
 
     def test_a_venue_has_no_driver_question_at_all(self):
         venue = Venue.objects.create(
@@ -147,7 +131,7 @@ class DriverEligibilityTests(TestCase):
             location="Level 1", capacity=12,
         )
         self.assertEqual(check_driver_arrangement(make_user("x@demo.aikol.test", Affiliation.STUDENT),
-                                                  venue, DriverArrangement.SELF_DRIVE), [])
+                                                  venue, "SELF"), [])
 
 
 class AcademicCalendarTests(TestCase):

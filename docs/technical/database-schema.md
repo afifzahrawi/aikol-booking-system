@@ -57,8 +57,6 @@ Custom user model (`accounts.User`), extending `AbstractBaseUser` so `email` is 
 | `role` | varchar(15) | `USER`, `APPROVER`, `ADMINISTRATOR` — what the person may do |
 | `status` | varchar(10) | `ACTIVE`, `INACTIVE`. Deactivation replaces deletion |
 | `email_verified` | bool | False until the registration link is followed. An unverified account cannot book |
-| `driving_licence_number` | varchar(30), null | Required before a vehicle booking, not at registration |
-| `driving_licence_expiry` | date, null | Validated against the trip end date |
 | `is_staff`, `is_superuser` | bool | Django admin access; distinct from `role` |
 | `created_at`, `updated_at` | timestamptz | |
 
@@ -158,7 +156,7 @@ Primary key is also the foreign key to `resources` (Django MTI).
 | --- | --- | --- |
 | `id` | bigint PK | |
 | `resource_id` | FK → resources | `on_delete=CASCADE` |
-| `image_path` | varchar | Relative to `MEDIA_ROOT` |
+| `image_path` | varchar | Storage key in the configured media backend (Cloudflare R2 in production) |
 | `display_order` | integer | 0 = main image |
 | `created_at` | timestamptz | |
 
@@ -200,13 +198,15 @@ The central table. Expected to grow to hundreds of thousands of rows.
 | `origin` | varchar(200), null | **Vehicles only.** Where the car leaves from |
 | `destination` | varchar(200), null | **Vehicles only.** Where the car is going |
 | `passenger_count` | integer, null | **Vehicles only.** Validated against `vehicle.seats` |
-| `driver_arrangement` | varchar(10), null | **Vehicles only.** `SELF` or `VMU`. `SELF` requires `affiliation in (LECTURER, STAFF)` |
+| `driver_arrangement` | varchar(10), null | **Vehicles only.** `VMU`; requesters cannot self-drive Kulliyyah vehicles |
 | `driver_name` | varchar(150), null | **Vehicles only.** Who will actually drive |
 | `driver_contact` | varchar(30), null | **Vehicles only.** Telephone number for the driver |
 | `driver_staff_no` | varchar(20), null | **Vehicles only.** The driver's staff number |
 | `vmu_reference` | varchar(40), null | **Vehicles only.** The STADD request reference, once the Vehicle Management Unit issues one |
-| `management_approved_at` | timestamptz, null | **VMU bookings only.** Kulliyyah management approval to use the car — separate from, and additional to, the booking approval |
-| `management_approved_by_id` | FK → users, null | `on_delete=SET_NULL` |
+| `management_status` | varchar(12) | **Vehicles only.** `PENDING`, `APPROVED`, `REJECTED`; the second Kulliyyah management decision |
+| `management_decided_at` | timestamptz, null | When the second decision was recorded |
+| `management_decided_by_id` | FK → users, null | The administrator who recorded it; `on_delete=PROTECT` |
+| `management_decision_reason` | text | Reason or note attached to the second decision |
 | `status` | varchar(12) | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`, `COMPLETED` |
 | `rejection_reason` | text | Required when status becomes `REJECTED` |
 | `cancellation_reason` | text | **Required** for every cancellation, by anyone (confirmed follow-up decision) |
@@ -228,13 +228,11 @@ served by the `(resource_id, start_at)` index.
 
 #### Two approvals on a VMU booking
 
-A vehicle booking that asks the Vehicle Management Unit for a driver needs **two** decisions: the
+A vehicle booking always asks the Vehicle Management Unit for a driver and needs **two** decisions: the
 ordinary booking approval (`approved_at`) and Kulliyyah management approval to use the car
-(`management_approved_at`). They are recorded separately because they are made by different people
+(`management_status`, `management_decided_at` and `management_decided_by_id`). They are recorded separately because they are made by different people
 for different reasons, and a booking that has one but not the other is a real and visible state —
 approved for the slot, not yet cleared for the car. Do not collapse them into one flag.
-
-Self-drive bookings leave `management_approved_at` null; nothing else in the system reads it.
 
 #### Why the type-specific columns are nullable rather than a second table
 
@@ -354,31 +352,42 @@ answers; they are defaults an administrator may change, not constants.
 | `maximum_series_occurrences` | 60 | Guard against a runaway recurrence |
 | `allowed_email_domains` | `iium.edu.my`, `live.iium.edu.my` | Registration restriction |
 
-#### Site content
+### `site_content`
 
-The header and footer wording is content, not code. It lives in the same table so the Kulliyyah can
-correct an address or a telephone number without a software release — the same argument that put the
-booking limits here.
+The single `site_content` row keeps editable identity and page copy separate from booking-rule
+settings. The Kulliyyah can change photography or contact wording without a release.
 
-| Key | Default | Appears |
+| Field | Type | Purpose |
 | --- | --- | --- |
-| `site_logo` | `aikol_logo.png` | Wordmark in the brand bar. Holds a path under `MEDIA_ROOT`, written by the upload on the site-content screen — never a path typed by hand |
-| `site_name` | Room and Vehicle Booking | Beside the wordmark |
-| `site_subtitle` | Ahmad Ibrahim Kulliyyah of Laws · IIUM | Small capitals under the name |
-| `footer_org` | Ahmad Ibrahim Kulliyyah of Laws | First footer column |
-| `footer_address` | Kulliyyah Office, Level 1… | First footer column, newlines preserved |
-| `footer_contact_head` | Booking enquiries | Second footer column heading |
-| `footer_phone` / `footer_email` / `footer_hours` | 03-6196 4000 · booking-aikol@iium.edu.my · Mon–Fri, 08:30–17:00 | Second footer column |
-| `footer_links_head` | IIUM | Third footer column heading |
-| `footer_links` | JSON array of `{label, url}` | Third footer column |
+| `site_name`, `subtitle`, `organisation` | varchar | Shared header and footer identity |
+| `logo`, `logo_alt` | image path + varchar | AIKOL wordmark and accessible alternative text |
+| `iium_logo`, `iium_logo_alt` | image path + varchar | IIUM wordmark, displayed after AIKOL |
+| `login_image`, `home_image` | image path | Independently editable page photography |
+| `login_intro_heading`, `login_intro` | varchar + text | Editable login introduction |
+| `login_points` | text | One short introductory point per line |
+| `address`, `contact_heading`, `phone`, `email`, `office_hours` | text/varchar | Footer and booking-enquiry details |
+| `updated_at` | timestamptz | Last content change |
 
-`footer_links` is a small ordered list whose entries have no attributes of their own, so it stays a
-JSON value rather than becoming a table — the same rule that governed facilities, applied the other
-way. Give it a table only when a link needs a status, a role restriction or an ordering of its own.
+Image fields hold generated storage keys; an administrator uploads a file and never types a server
+or object-storage path.
 
 Editing these is an **administrator** action, never an approver's: it changes what every visitor
 sees. Each change is written to `audit_logs` as `SITE_CONTENT_UPDATED` with the acting administrator
 and the keys that changed.
+
+### `announcements`
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `title` | varchar(120) | Notice heading |
+| `message` | text | Plain-text notice body; escaped on output |
+| `tone` | enum | `INFORMATION` or `IMPORTANT` |
+| `is_active` | boolean | Deactivates without deleting history |
+| `starts_at`, `ends_at` | timestamptz, null | Optional display schedule |
+| `created_at`, `updated_at` | timestamptz | Administration history |
+
+Current announcements appear immediately below the home-page availability search. A row is current
+only when active and inside its optional start/end interval. Create and edit actions are audited.
 
 ## The academic calendar
 

@@ -891,9 +891,41 @@ table.heat td:hover { box-shadow: 0 0 0 2px var(--gold); position: relative; }
         linear-gradient(180deg, rgba(11, 58, 41, .74) 0%, rgba(11, 58, 41, .88) 100%),
         var(--login-photo) center 55% / cover no-repeat,
         var(--brand);
+    position: relative; isolation: isolate; overflow: hidden;
     color: #fff; padding: 3rem 3.5rem;
     display: flex; flex-direction: column; justify-content: space-between; gap: 2rem;
 }
+.login-photo {
+    position: absolute; inset: 0; z-index: -2;
+    width: 100%; height: 100%; object-fit: cover; object-position: center 55%;
+}
+.login-hero::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(180deg, rgba(11, 58, 41, .74) 0%, rgba(11, 58, 41, .88) 100%);
+}
+.login-brand-lockup {
+    align-self: flex-start;
+    display: flex; align-items: center; gap: .4rem;
+    width: fit-content; max-width: 100%; padding: .9rem 1.1rem;
+    background: #fff; border-radius: 18px;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, .3);
+}
+.login-brand-lockup img {
+    display: block; width: auto; max-width: none; object-fit: contain;
+}
+.login-iium-crop {
+    display: block; flex: none;
+}
+.login-iium { height: 52px; max-width: 100%; }
+.login-aikol { height: 48px; }
+.login-introduction { max-width: 34rem; }
+.login-kicker,
+.login-panel-label {
+    margin: 0 0 .45rem; font-size: .76rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+}
+.login-panel-copy { margin: .35rem 0 1.5rem; color: var(--muted); }
+.login-link-row { margin: 1rem 0 0; }
 .login-hero .brand { flex-direction: column; align-items: flex-start; gap: .9rem; }
 /* The wordmark is supplied on a white ground. Floating it straight onto the
    photograph reads as an untrimmed rectangle, so it is given a deliberate plate. */
@@ -916,7 +948,7 @@ table.heat td:hover { box-shadow: 0 0 0 2px var(--gold); position: relative; }
     direction: rtl; display: inline-block; margin-bottom: 6px;
     text-shadow: 0 1px 10px rgba(6, 32, 23, .55);
 }
-.login-panel { display: grid; place-items: center; padding: 2rem; }
+.login-panel { display: grid; place-items: center; min-width: 0; padding: 2rem; }
 .login-card { width: min(400px, 100%); }
 .login-card h2 { font-family: var(--font-serif); font-size: 1.3rem; }
 
@@ -978,7 +1010,8 @@ tbody.reordering tr[data-status] td:first-child { box-shadow: none; }
     .field-row { grid-template-columns: 1fr; }
     .app-footer { grid-template-columns: 1fr; gap: 20px; }
     .login-page { grid-template-columns: 1fr; }
-    .login-hero { padding: 2.2rem 1.5rem; }
+    .login-hero { min-height: 430px; padding: 2.2rem 1.5rem; }
+    .login-brand-lockup { max-width: 100%; }
     .hbar { grid-template-columns: 110px 1fr 40px; }
     .meta-list { grid-template-columns: 1fr; }
     .page-head { flex-direction: column; align-items: stretch; gap: 14px; }
@@ -999,6 +1032,12 @@ tbody.reordering tr[data-status] td:first-child { box-shadow: none; }
     .app-nav.open a[aria-current="page"] { box-shadow: inset 3px 0 0 var(--gold); }
     .app-nav .nav-toggle { display: block; height: var(--nav-h); }
     .app-nav .header-spacer { display: none; }
+}
+
+@media (max-width: 420px) {
+    .login-brand-lockup { gap: .5rem; padding: .75rem; }
+    .login-iium { height: 44px; }
+    .login-aikol { height: 39px; }
 }
 
 /* Phone */

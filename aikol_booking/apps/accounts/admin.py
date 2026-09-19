@@ -14,7 +14,6 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Person", {"fields": ("full_name", "identification_number", "phone", "affiliation")}),
-        ("Driving licence", {"fields": ("licence_number", "licence_expiry")}),
         ("Authority", {"fields": ("role", "is_active", "is_staff", "is_superuser",
                                   "groups", "user_permissions")}),
         ("Verification", {"fields": ("email_verified", "email_verified_at", "date_joined")}),

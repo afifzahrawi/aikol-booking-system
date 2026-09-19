@@ -5,6 +5,8 @@
     <div><h1>Approvals</h1><p class="lede">Requests awaiting a decision, soonest first.</p></div>
 </div>
 
+{% include "bookings/_management_tabs.html" with booking_tab='awaiting' %}
+
 <section class="card">
     <form method="get" class="toolbar">
         <div class="field grow">
@@ -16,7 +18,7 @@
             <label for="kind">Resource</label>
             <select class="select" id="kind" name="kind">
                 <option value="">All</option>
-                <option value="VENUE" {% if kind == 'VENUE' %}selected{% endif %}>Rooms</option>
+                <option value="VENUE" {% if kind == 'VENUE' %}selected{% endif %}>Venues</option>
                 <option value="VEHICLE" {% if kind == 'VEHICLE' %}selected{% endif %}>Vehicles</option>
             </select>
         </div>
@@ -38,9 +40,9 @@
                 <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
                 <td>{{ b.purpose|truncatechars:50 }}</td>
                 <td><div class="btn-group">
-                    <a class="btn btn-sm btn-primary" href="{% url 'bookings:decide' b.pk %}">Decide</a>
+                    <a class="btn btn-sm btn-primary" data-modal-form href="{% url 'bookings:decide' b.pk %}">Decide</a>
                     {% if b.series_id %}
-                        <a class="btn btn-sm" href="{% url 'bookings:decide_series' b.series_id %}">Whole series</a>
+                        <a class="btn btn-sm" data-modal-form href="{% url 'bookings:decide_series' b.series_id %}">Whole series</a>
                     {% endif %}
                 </div></td>
             </tr>
@@ -56,6 +58,7 @@
             {% if page.paginator.count %}Showing {{ page.start_index }}&ndash;{{ page.end_index }}
                 of {{ page.paginator.count }}{% else %}No records{% endif %}
         </span>
+        {% include "_pagination.html" %}
     </div>
 </section>
 {% endblock %}

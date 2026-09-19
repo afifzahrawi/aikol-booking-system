@@ -202,6 +202,7 @@ class AuthorisationMatrixTests(TestCase):
         "administration:users": "admin",
         "administration:settings": "admin",
         "administration:site_content": "admin",
+        "administration:announcement_new": "admin",
         "administration:audit": "admin",
         "administration:retention": "admin",
         "importexport:data_management": "admin",
@@ -271,6 +272,15 @@ class OwnershipTests(TestCase):
 
 
 class TransportAndHeaderTests(TestCase):
+    def test_browser_security_policy_is_deny_by_default(self):
+        response = self.client.get("/sign-in/")
+        policy = response.headers["Content-Security-Policy"]
+        self.assertIn("default-src 'self'", policy)
+        self.assertIn("object-src 'none'", policy)
+        self.assertIn("frame-ancestors 'none'", policy)
+        self.assertEqual(response.headers["Cross-Origin-Opener-Policy"], "same-origin")
+        self.assertIn("camera=()", response.headers["Permissions-Policy"])
+
     def test_every_form_carries_a_csrf_token(self):
         self.client.force_login(make_user("person@demo.aikol.test"))
         for url in ("/register/", "/sign-in/", "/password-reset/"):
@@ -318,8 +328,7 @@ class TransportAndHeaderTests(TestCase):
 
 
 class PersonalDataTests(TestCase):
-    """Matriculation numbers, telephone numbers and licence numbers are personal
-    data. They belong where the purpose requires them and nowhere else."""
+    """Matriculation numbers and telephone numbers stay out of incidental output."""
 
     def setUp(self) -> None:
         SystemSetting.seed()
@@ -328,8 +337,6 @@ class PersonalDataTests(TestCase):
             "person@demo.aikol.test", affiliation=Affiliation.LECTURER,
         )
         self.person.identification_number = "STAFF-9001"
-        self.person.licence_number = "D1234567"
-        self.person.licence_expiry = timezone.localdate() + dt.timedelta(days=400)
         self.person.save()
 
     def test_the_audit_log_free_text_carries_no_identifiers(self):
@@ -347,11 +354,6 @@ class PersonalDataTests(TestCase):
             with self.subTest(action=entry.action):
                 self.assertNotIn("STAFF-9001", entry.description)
                 self.assertNotIn("012-345 6789", entry.description)
-                self.assertNotIn("D1234567", entry.description)
-
-    def test_no_email_body_carries_a_licence_number(self):
-        for row in EmailOutbox.objects.all():
-            self.assertNotIn("D1234567", row.body)
 
     def test_a_password_hash_never_reaches_a_template(self):
         self.client.force_login(self.admin)

@@ -71,7 +71,7 @@
 
             {% if plan.invalid %}
             <div class="table-wrap">
-            <table class="data">
+            <table class="data" data-client-paginate data-pagination-label="Import errors pagination">
                 <thead><tr><th scope="col">Line</th><th scope="col">Problems</th></tr></thead>
                 <tbody>
                 {% for row in plan.invalid %}

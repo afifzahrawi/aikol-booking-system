@@ -1,0 +1,12 @@
+.git
+.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.DS_Store
+**/db.sqlite3
+aikol_booking/media
+aikol_booking/staticfiles
+management-report
+prototype
+Section 24.docx

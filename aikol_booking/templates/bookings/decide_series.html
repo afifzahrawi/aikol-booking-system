@@ -9,7 +9,7 @@
     <table class="data">
         <thead><tr><th scope="col">Reference</th><th scope="col">When</th><th scope="col">Status</th></tr></thead>
         <tbody>
-        {% for b in occurrences %}
+        {% for b in page %}
             <tr>
                 <td class="mono nowrap">{{ b.booking_reference }}</td>
                 <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
@@ -18,6 +18,10 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
+    <div class="card-foot">
+        <span class="help">Showing {{ page.start_index }}&ndash;{{ page.end_index }} of {{ page.paginator.count }}</span>
+        {% include "_pagination.html" %}
     </div>
     <div class="card-body">
         <form method="post" novalidate>

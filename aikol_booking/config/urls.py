@@ -3,7 +3,10 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from .maintenance import run_maintenance
+
 urlpatterns = [
+    path("internal/maintenance/<str:task>/", run_maintenance, name="maintenance-task"),
     path("admin/", admin.site.urls),
     path("", include("apps.administration.urls")),
     path("", include("apps.importexport.urls")),

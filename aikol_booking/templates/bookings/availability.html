@@ -11,7 +11,7 @@
         </p>
     </div>
     <div class="btn-group">
-        <a class="btn btn-primary" href="{% url 'bookings:create' resource.pk %}">Book this</a>
+        <a class="btn btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Book this</a>
     </div>
 </div>
 
@@ -20,7 +20,7 @@
         {% comment %} The weekday is spelled out beside the field: a date alone does not tell
            you it is a Friday, and that is usually what decides whether a slot is
            any use. {% endcomment %}
-        <form method="get" class="datepick">
+        <form method="get" class="datepick" data-auto-submit>
             <div class="field" style="margin:0">
                 <label for="date">Show from</label>
                 <input class="input" type="date" id="date" name="date" value="{{ day|date:'Y-m-d' }}">
@@ -29,7 +29,7 @@
                 <span class="dow">{{ day|date:"l" }}</span>
                 <span class="full">{{ day|date:"d F Y" }}</span>
             </div>
-            <div class="field" style="margin:0"><button class="btn" type="submit">Show</button></div>
+            <noscript><button class="btn" type="submit">Update chart</button></noscript>
         </form>
     </div>
 </section>
@@ -79,7 +79,7 @@
         <table class="data">
             <thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col">Status</th></tr></thead>
             <tbody>
-            {% for b in taken %}
+            {% for b in bookings_page %}
                 <tr>
                     <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}</td>
                     <td class="nowrap">{{ b.end_at|date:"D d M Y, H:i" }}</td>
@@ -90,6 +90,10 @@
             </tbody>
         </table>
     </div>
+    <div class="card-foot">
+        <span class="help">Showing {{ bookings_page.start_index }}&ndash;{{ bookings_page.end_index }} of {{ bookings_page.paginator.count }}</span>
+        {% include "_pagination.html" with page=bookings_page querystring=booking_querystring page_range=booking_page_range %}
+    </div>
     <div class="card-body">
         <p class="help" style="margin:0">A pending request holds the slot. Otherwise two people
            could each be told to wait for the same room.</p>
@@ -97,3 +101,4 @@
 </section>
 {% endif %}
 {% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/availability-page.js' %}" defer></script>{% endblock %}

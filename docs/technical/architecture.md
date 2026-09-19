@@ -10,26 +10,27 @@ beyond an SMTP server for account and booking email.
 Browser (desktop / tablet / mobile)
         │  HTTPS
         ▼
-Nginx  — TLS termination, static and media files
+Cloud Run managed TLS / WhiteNoise static assets
         │
         ▼
-Gunicorn → Django application
+Google Cloud Run: container → Gunicorn → Django application
         │      accounts · resources · bookings · administration
         │      reporting · importexport · notifications · audit
         ▼
 Django ORM
         ▼
-PostgreSQL (production) / SQLite (development)
+Neon PostgreSQL (hosted) / SQLite (development)
         │
         ▼
-Server file system — resource images, CSV exports, database backups
+Cloudflare R2 — resource images and off-server backup objects
         │
         ▼
 External storage — off-server backup copies (decision 21)
 
-cron ──► manage.py send_queued_email   (every 5 minutes)
-    ├──► manage.py complete_bookings   (daily)
-    └──► manage.py backup_database     (daily, then copy off-server)
+Cloud Scheduler ──► private Cloud Run maintenance service
+                ├──► POST /internal/maintenance/email/     (every 5 minutes)
+                ├──► POST /internal/maintenance/complete/  (daily)
+                └──► POST /internal/maintenance/backup/    (daily)
 
 SMTP ◄── email_outbox table, drained by send_queued_email
 ```
@@ -79,7 +80,7 @@ aikol_booking/
 | `administration` | Admin dashboards, system settings, retention and reset screens |
 | `reporting` | Aggregations for dashboards, CSV export generation, outstanding-keys report |
 | `importexport` | CSV parsing, row validation, preview, bulk insert |
-| `notifications` | `EmailOutbox` model, message templates, a single `queue_email()` helper, and the `send_queued_email` command |
+| `notifications` | `EmailOutbox` and encrypted `EmailConfiguration`, message templates, a single `queue_email()` helper, and the `send_queued_email` command |
 | `audit` | `AuditLog` model and a single `log_action()` helper used by all other apps |
 
 Rule: apps may import models and helpers from `accounts`, `resources`, `notifications` and `audit`.
@@ -136,14 +137,19 @@ checks, filter behaviour and confirmation dialogues.
 
 ## Configuration
 
-Environment-specific values (`SECRET_KEY`, database credentials, `ALLOWED_HOSTS`, media root, SMTP
-credentials) come from environment variables, never from committed files.
+Environment-specific values (`SECRET_KEY`, the credential-encryption key, database credentials,
+`ALLOWED_HOSTS` and media storage credentials) come from environment variables, never from
+committed files. SMTP connection details are edited on the administrator System screen; its password
+is encrypted with the environment-held key before being stored.
 `config/settings/production.py` sets `DEBUG = False`, secure cookie flags, HSTS and
 `SECURE_SSL_REDIRECT`.
 
 ## Scheduled work
 
-No message queue. Three cron entries calling management commands:
+No message queue. Three Cloud Scheduler entries invoke allow-listed endpoints on a private,
+request-billed Cloud Run maintenance service. Cloud Run IAM authenticates the scheduler identity;
+the public service keeps the same URLs disabled and returns 404. The endpoints call these management
+commands:
 
 | Command | Frequency | Purpose |
 | --- | --- | --- |
@@ -156,14 +162,19 @@ protection rules require an administrator to review and confirm.
 
 ## Deployment
 
-One Linux VPS is sufficient. Hosting and the domain are self-provided rather than supplied by IIUM
-ITD (decisions 22 and 23), which has two consequences worth stating plainly:
+The selected managed target is Google Cloud Run with request-based billing, a private maintenance
+service, a migration-only Cloud Run Job and
+Cloud Scheduler, with Neon PostgreSQL and Cloudflare R2 object storage. Django owns the email outbox and sender; an
+administrator supplies the SMTP endpoint. It does not rely on a developer's computer. See
+`managed-cloud-deployment.md` for setup, operations and free-tier limitations.
 
-- **There is a recurring cost.** The software is free; the server and domain are not.
-- **Operations are this project's responsibility** — operating-system patching, firewall rules, TLS
-  certificate renewal, and verifying that backups actually restore. No institutional IT department
-  is doing these in the background.
+Hosting and the domain are self-provided rather than supplied by IIUM ITD (decisions 22 and 23),
+which has two consequences worth stating plainly:
 
-Nginx serves `/static/` and `/media/` directly and proxies everything else to Gunicorn. Database
-backups run from cron and are copied off the server. See `data-retention.md` for the backup schedule
-and `security.md` for the hardening checklist.
+- **Zero-fee is not an uptime guarantee.** Free resources can be capacity-limited or reclaimed.
+- **Operations are this project's responsibility.** OS patches, Docker updates, secret rotation,
+  provider accounts, scheduled jobs and verifying that backups restore remain with the project.
+
+WhiteNoise serves versioned `/static/` assets, R2 serves `/media/`, and Cloud Run routes HTTPS to
+Gunicorn. Database backups are copied to a separate R2 bucket. See `data-retention.md` for the
+backup schedule and `security.md` for the hardening checklist.

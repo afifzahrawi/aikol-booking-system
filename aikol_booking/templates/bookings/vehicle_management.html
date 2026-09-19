@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Management decision {{ booking.booking_reference }}{% endblock %}
+{% block content %}
+<div class="record-head">
+    <div><p class="record-reference">{{ booking.booking_reference }}</p><h1>Management decision</h1>
+        <p class="lede">Second decision for {{ booking.resource.name }}.</p></div>
+    <span class="status-stamp status-pending">{{ booking.get_management_status_display }}</span>
+</div>
+
+<div class="record-layout">
+    <section class="record-sheet">
+        <dl class="record-facts">
+            <dt>Requester</dt><dd>{{ booking.user.full_name }}</dd>
+            <dt>Trip</dt><dd>{{ booking.location_from }} to {{ booking.location_to }}</dd>
+            <dt>When</dt><dd>{{ booking.start_at|date:"D d M Y, H:i" }} to {{ booking.end_at|date:"D d M Y, H:i" }}</dd>
+            <dt>Purpose</dt><dd>{{ booking.purpose }}</dd>
+            <dt>First decision</dt><dd>Approved by {{ booking.decided_by.full_name }} on {{ booking.decided_at|date:"d M Y, H:i" }}</dd>
+        </dl>
+    </section>
+    <section class="record-sheet record-action-sheet">
+        <h2>Assign and decide</h2>
+        <p>Approving confirms the VMU driver and makes the vehicle eligible for key collection.</p>
+        <form method="post" novalidate>{% csrf_token %}
+            {{ form.non_field_errors }}{% include "_form_fields.html" %}
+            <div class="form-actions">
+                <a class="btn" href="{% url 'bookings:manage' %}?kind=VEHICLE">Back</a>
+                <button class="btn btn-danger" type="submit" name="action" value="reject">Do not approve</button>
+                <button class="btn btn-primary" type="submit" name="action" value="approve">Approve and assign driver</button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

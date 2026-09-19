@@ -176,7 +176,7 @@ class KeyViewTests(KeyFixtures):
             collected_by_name="Aiman",
         )
         self.client.force_login(self.admin)
-        response = self.client.get(reverse("bookings:keys"))
+        response = self.client.get(reverse("bookings:keys"), {"tab": "out"})
         self.assertContains(response, "Overdue")
 
 
@@ -223,33 +223,29 @@ class OnBehalfTests(KeyFixtures):
         self.assertEqual(booking.user, self.plain)
         self.assertEqual(booking.created_by, self.plain)
 
-    def test_eligibility_to_drive_belongs_to_the_person_it_is_for(self):
-        """An administrator who may drive must not confer that on a student by
-        typing the form on their behalf."""
+    def test_a_vehicle_booking_on_behalf_still_requires_the_vmu_route(self):
         car = Vehicle.objects.create(
             code="CAR-1", name="Kulliyyah Car", registration_number="WAA 1111",
             make="Perodua", model="Bezza", year=2023, seats=5,
             road_tax_expiry=timezone.localdate() + dt.timedelta(days=200),
         )
         student = make_user("student@demo.aikol.test", affiliation=Affiliation.STUDENT)
-        self.admin.affiliation = Affiliation.STAFF
-        self.admin.licence_number = "D1234567"
-        self.admin.licence_expiry = timezone.localdate() + dt.timedelta(days=400)
-        self.admin.save()
-
         self.client.force_login(self.admin)
         response = self.client.post(
             reverse("bookings:create", args=[car.pk]),
             {
                 "start_date": (self.day + dt.timedelta(days=3)).isoformat(),
                 "start_time": "08:00", "end_time": "17:00",
-                "purpose": "Fieldwork", "driver_arrangement": "SELF",
+                "purpose": "Fieldwork", "driver_arrangement": "VMU",
                 "location_from": "AIKOL", "location_to": "Putrajaya", "passengers": "3",
                 "on_behalf_of": str(student.pk),
             },
         )
-        self.assertContains(response, "Only lecturers and staff may drive")
-        self.assertFalse(Booking.objects.filter(resource=car).exists())
+        self.assertEqual(response.status_code, 302)
+        booking = Booking.objects.get(resource=car)
+        self.assertEqual(booking.user, student)
+        self.assertEqual(booking.driver_arrangement, "VMU")
+        self.assertEqual(booking.management_status, "PENDING")
 
 
 class AdministrationScreenTests(KeyFixtures):

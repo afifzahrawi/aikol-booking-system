@@ -1,21 +1,106 @@
 {% extends "base.html" %}
 {% block title %}Site content{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Header and footer</h1>
-    <p class="lede">Wording and contact details are content, not code.</p></div></div>
-{% include "administration/_nav.html" with tab='settings' %}
+<div class="page-head">
+    <div>
+        <h1>Site content</h1>
+        <p class="lede">Manage the public identity, page photography and office notices.</p>
+    </div>
+</div>
+{% include "administration/_nav.html" with tab='content' %}
 
-<section class="card">
-    <div class="card-body">
-        <form method="post" enctype="multipart/form-data" novalidate>
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-            {% include "_form_fields.html" %}
-            <p class="help">The wordmark is validated like any other upload: JPEG, PNG or WebP, up
-               to 5&nbsp;MB, format read from the file's own header. SVG is refused because it can
-               carry script.</p>
-            <button class="btn btn-primary" type="submit">Save</button>
-        </form>
+<form method="post" enctype="multipart/form-data" novalidate class="content-editor">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <section class="settings-section">
+        <div class="settings-intro">
+            <h2>Identity</h2>
+            <p>IIUM appears first, followed by AIKOL. Uploading a replacement changes it everywhere.</p>
+        </div>
+        <div class="settings-fields">
+            <div class="field-row">
+                {% include "_field.html" with field=form.site_name %}
+                {% include "_field.html" with field=form.subtitle %}
+            </div>
+            {% include "_field.html" with field=form.organisation %}
+            <div class="field-row">
+                {% include "_field.html" with field=form.logo %}
+                {% include "_field.html" with field=form.iium_logo %}
+            </div>
+            <div class="field-row">
+                {% include "_field.html" with field=form.logo_alt %}
+                {% include "_field.html" with field=form.iium_logo_alt %}
+            </div>
+        </div>
+    </section>
+
+    <section class="settings-section">
+        <div class="settings-intro">
+            <h2>Page photography</h2>
+            <p>The login and home images are independent. A contrast scrim keeps text readable.</p>
+        </div>
+        <div class="settings-fields">
+            <div class="field-row">
+                {% include "_field.html" with field=form.login_image %}
+                {% include "_field.html" with field=form.home_image %}
+            </div>
+            {% include "_field.html" with field=form.login_intro_heading %}
+            {% include "_field.html" with field=form.login_intro %}
+            {% include "_field.html" with field=form.login_points %}
+        </div>
+    </section>
+
+    <section class="settings-section">
+        <div class="settings-intro">
+            <h2>Contact and footer</h2>
+            <p>Keep these details short enough to remain readable on a phone.</p>
+        </div>
+        <div class="settings-fields">
+            <div class="field-row">
+                {% include "_field.html" with field=form.contact_heading %}
+                {% include "_field.html" with field=form.office_hours %}
+            </div>
+            <div class="field-row">
+                {% include "_field.html" with field=form.phone %}
+                {% include "_field.html" with field=form.email %}
+            </div>
+            {% include "_field.html" with field=form.address %}
+        </div>
+    </section>
+
+    <div class="sticky-savebar">
+        <p>JPEG, PNG and WebP only, up to 5 MB per image.</p>
+        <button class="btn btn-primary" type="submit">Save site content</button>
+    </div>
+</form>
+
+<section class="card content-announcements" aria-labelledby="manage-announcements">
+    <div class="section-heading-row">
+        <div>
+            <h2 id="manage-announcements">Announcements</h2>
+            <p>Active notices appear directly below the booking search on the user home page.</p>
+        </div>
+        <a class="btn btn-primary" data-modal-form href="{% url 'administration:announcement_new' %}">New announcement</a>
+    </div>
+    <div class="announcement-admin-list">
+        {% for item in announcements %}
+            <article class="announcement-admin-row{% if not item.is_active %} is-inactive{% endif %}">
+                <div>
+                    <span class="badge {% if item.tone == 'IMPORTANT' %}badge-pending{% else %}badge-info{% endif %}">{{ item.get_tone_display }}</span>
+                    {% if not item.is_active %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+                    <h3>{{ item.title }}</h3>
+                    <p>{{ item.message|truncatechars:180 }}</p>
+                    <p class="help">
+                        {% if item.starts_at %}From {{ item.starts_at|date:"d M Y, H:i" }}{% else %}Starts immediately{% endif %}
+                        {% if item.ends_at %}. Ends {{ item.ends_at|date:"d M Y, H:i" }}{% endif %}
+                    </p>
+                </div>
+                <a class="btn btn-sm" data-modal-form href="{% url 'administration:announcement_edit' item.pk %}">Edit</a>
+            </article>
+        {% empty %}
+            <div class="empty-state">No announcements yet. Create one when the office has a notice for bookers.</div>
+        {% endfor %}
     </div>
 </section>
 {% endblock %}

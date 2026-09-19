@@ -2,15 +2,18 @@
 {% block title %}Vehicles{% endblock %}
 {% block content %}
 <div class="page-head">
-    <div><h1>Kulliyyah cars</h1>
-        <p class="lede">Anyone may request a car. Who may <em>drive</em> one is a separate
-           question, answered on the booking form.</p></div>
+    <div><h1>Kulliyyah Vehicles</h1></div>
 </div>
 
-<section class="card">
+<aside class="notice notice-info vehicle-policy" aria-label="Vehicle booking information">
+    <strong>Driver arrangement is included.</strong>
+    Anyone may request a vehicle. After approval, the Kulliyyah will arrange a driver through
+    VMU/STADD and assign the driver to the booking.
+</aside>
+
+<section class="card resource-index">
     {% include "resources/_filters.html" with placeholder="Make, model or registration" show_status=0 %}
-    <p class="help" style="margin:.25rem 0 1rem">{{ page.paginator.count }} vehicle{{ page.paginator.count|pluralize }} shown.</p>
-    <div class="grid grid-auto">
+    <div class="grid grid-auto resource-grid">
         {% for car in page %}
             {% include "resources/_card.html" with resource=car subtitle=car.card_subtitle %}
         {% empty %}

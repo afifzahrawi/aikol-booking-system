@@ -12,7 +12,8 @@
                 {{ booking.end_at|date:"l d F Y, H:i" }}</dd>
             <dt>Purpose</dt><dd>{{ booking.purpose }}</dd>
             {% if booking.driver_arrangement %}
-                <dt>Driver</dt><dd>{{ booking.get_driver_arrangement_display }}</dd>
+                <dt>Driver route</dt><dd>{{ booking.get_driver_arrangement_display }}</dd>
+                <dt>Next step if approved</dt><dd>Kulliyyah management decision and VMU driver assignment by an administrator.</dd>
             {% endif %}
         </dl>
 

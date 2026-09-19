@@ -1,0 +1,10 @@
+<nav class="workspace-tabs workspace-tabs-prominent" aria-label="Booking resource type">
+    {% if user.is_administrator %}
+        <a href="{% url 'bookings:manage' %}?kind={{ venue_kind }}"
+           {% if booking_tab == 'venues' %}aria-current="page"{% endif %}>Venues</a>
+        <a href="{% url 'bookings:manage' %}?kind={{ vehicle_kind }}"
+           {% if booking_tab == 'vehicles' %}aria-current="page"{% endif %}>Vehicles</a>
+    {% endif %}
+    <a href="{% url 'bookings:approvals' %}"
+       {% if booking_tab == 'awaiting' %}aria-current="page"{% endif %}>Awaiting decision</a>
+</nav>

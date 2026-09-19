@@ -5,7 +5,7 @@
 <div class="page-head">
     <div><h1>Facilities</h1>
         <p class="lede">Facilities and vehicle features that can be attached to a resource.</p></div>
-    <div class="btn-group"><a class="btn btn-primary" href="{% url 'resources:facility_new' %}">Add facility</a></div>
+    <div class="btn-group"><a class="btn btn-primary" data-modal-form href="{% url 'resources:facility_new' %}">Add facility</a></div>
 </div>
 {% include "resources/_tabs.html" with tab='facilities' %}
 
@@ -37,17 +37,17 @@
     <div class="table-wrap">
     <table class="data">
         <thead><tr>
-            <th scope="col" class="drag-col"><span class="visually-hidden">Reorder</span></th>
+            <th scope="col" class="drag-col">Order</th>
             <th scope="col">Name</th><th scope="col">Code</th><th scope="col">Applies to</th>
             <th scope="col">In use</th><th scope="col">Origin</th>
             <th scope="col">Status</th><th scope="col">Actions</th>
         </tr></thead>
         <tbody id="rows">
-        {% for f in facilities %}
-            <tr data-id="{{ f.pk }}" {% if not filtered %}draggable="true"{% endif %}>
+        {% for f in page %}
+            <tr data-id="{{ f.pk }}" {% if can_reorder %}draggable="true"{% endif %}>
                 <td class="drag-cell">
                     <button class="draghandle" type="button" data-handle="{{ f.pk }}"
-                            {% if filtered %}disabled{% endif %}
+                            {% if not can_reorder %}disabled{% endif %}
                             aria-label="Reorder {{ f.name }}. Use the up and down arrow keys to move it."
                             title="Drag to reorder, or use the arrow keys">
                         <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
@@ -67,7 +67,7 @@
                 <td>{% if f.is_active %}<span class="badge badge-active">Active</span>
                     {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}</td>
                 <td><div class="btn-group">
-                    <a class="btn btn-sm" href="{% url 'resources:facility_edit' f.pk %}">Edit</a>
+                    <a class="btn btn-sm" data-modal-form href="{% url 'resources:facility_edit' f.pk %}">Edit</a>
                     <form method="post" action="{% url 'resources:facility_delete' f.pk %}" class="inline">
                         {% csrf_token %}
                         <button class="btn btn-sm btn-danger" type="submit"
@@ -85,8 +85,10 @@
     <div class="card-foot">
         <p class="help reorder-note" id="reorderNote" style="margin:0">
             {% if filtered %}Clear the search and filters to change the display order.
+            {% elif not can_reorder %}Filter the list to 20 or fewer facilities before changing the display order.
             {% else %}Drag a handle, or press the up and down arrow keys, to change the display order.{% endif %}
         </p>
+        {% include "_pagination.html" %}
     </div>
 </section>
 
@@ -99,7 +101,7 @@
 {% endblock %}
 
 {% block scripts %}
-{% if not filtered %}
+{% if can_reorder %}
 <script src="{% static 'js/reorder.js' %}" defer></script>
 {% endif %}
 {% endblock %}

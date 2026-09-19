@@ -1,19 +1,14 @@
 {% extends "base.html" %}
-{% block title %}My bookings{% endblock %}
+{% block title %}My Bookings{% endblock %}
 {% block content %}
 <div class="page-head">
-    <div><h1>My bookings</h1><p class="lede">Everything you have requested, decided or not.</p></div>
+    <div><h1>My Bookings</h1><p class="lede">Everything you have requested, decided or not.</p></div>
 </div>
 
-<div class="grid grid-4" style="margin-bottom:18px">
-    <div class="stat"><span class="k">Bookings</span><span class="v">{{ counts.total }}</span>
-        <span class="d">all time</span></div>
-    <div class="stat info"><span class="k">Awaiting a decision</span><span class="v">{{ counts.pending }}</span>
-        <span class="d">held for you meanwhile</span></div>
-    <div class="stat accent"><span class="k">Approved</span><span class="v">{{ counts.approved }}</span>
-        <span class="d">all time</span></div>
-    <div class="stat neutral"><span class="k">Still to come</span><span class="v">{{ counts.upcoming }}</span>
-        <span class="d">pending or approved</span></div>
+<div class="grid grid-3 booking-stats">
+    <div class="stat"><span class="k">All Bookings</span><span class="v">{{ counts.total }}</span></div>
+    <div class="stat info"><span class="k">Pending</span><span class="v">{{ counts.pending }}</span></div>
+    <div class="stat accent"><span class="k">Approved</span><span class="v">{{ counts.approved }}</span></div>
 </div>
 
 <section class="card">
@@ -73,16 +68,10 @@
 
     <div class="card-foot">
         <span class="help">
-            {% if page.paginator.count %}Showing {{ page.start_index }}&ndash;{{ page.end_index }}
-                of {{ page.paginator.count }}{% else %}No records{% endif %}
+            {% if page.paginator.count %}Showing {{ page.object_list|length }} on this page out of
+                {{ page.paginator.count }} total{% else %}No records{% endif %}
         </span>
-        {% if page.has_other_pages %}
-        <div class="pager">
-            {% if page.has_previous %}<a class="btn btn-sm" href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}
-            <span class="help">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
-            {% if page.has_next %}<a class="btn btn-sm" href="?page={{ page.next_page_number }}">Next</a>{% endif %}
-        </div>
-        {% endif %}
+        {% include "_pagination.html" %}
     </div>
 </section>
 {% endblock %}

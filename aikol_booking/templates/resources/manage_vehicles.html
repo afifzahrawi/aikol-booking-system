@@ -2,8 +2,8 @@
 {% block title %}Manage vehicles{% endblock %}
 {% block content %}
 <div class="page-head">
-    <div><h1>Vehicles</h1><p class="lede">Kulliyyah cars. Status is a field on the edit form.</p></div>
-    <div class="btn-group"><a class="btn btn-primary" href="{% url 'resources:vehicle_new' %}">Add vehicle</a></div>
+    <div><h1>Vehicles</h1><p class="lede">Kulliyyah vehicles. Status is a field on the edit form.</p></div>
+    <div class="btn-group"><a class="btn btn-primary" data-modal-form href="{% url 'resources:vehicle_new' %}">Add vehicle</a></div>
 </div>
 {% include "resources/_tabs.html" with tab='vehicles' %}
 
@@ -14,7 +14,7 @@
         <thead><tr>
             <th scope="col">Vehicle</th><th scope="col">Registration</th><th scope="col">Seats</th>
             <th scope="col">Road tax</th><th scope="col">Bookings</th>
-            <th scope="col">Status</th><th scope="col">Actions</th>
+            <th class="status-column" scope="col">Status</th><th class="actions-column" scope="col">Actions</th>
         </tr></thead>
         <tbody>
         {% for car in page %}
@@ -26,14 +26,19 @@
                 <td class="num">{{ car.seats }}</td>
                 <td class="nowrap">{{ car.road_tax_expiry }}</td>
                 <td class="num">{{ car.booking_count }}</td>
-                <td>{% if car.status == 'ACTIVE' %}<span class="badge badge-active">Active</span>
+                <td class="status-column">{% if car.status == 'ACTIVE' %}<span class="badge badge-active">Active</span>
                     {% else %}<span class="badge badge-inactive">Maintenance</span>{% endif %}</td>
-                <td><div class="btn-group">
-                    <a class="btn btn-sm" href="{% url 'resources:detail' car.pk %}">Preview</a>
-                    <a class="btn btn-sm" href="{% url 'resources:vehicle_edit' car.pk %}">Edit</a>
-                    <a class="btn btn-sm" href="{% url 'resources:images' car.pk %}">Images</a>
-                    <a class="btn btn-sm btn-danger" href="{% url 'resources:delete' car.pk %}">Delete</a>
-                </div></td>
+                <td class="actions-column"><details class="action-menu">
+                    <summary aria-label="Actions for {{ car.name }}" title="Actions">
+                        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>
+                    </summary>
+                    <div class="action-menu-list">
+                        <a href="{% url 'resources:detail' car.pk %}">Preview</a>
+                        <a data-modal-form href="{% url 'resources:vehicle_edit' car.pk %}">Edit</a>
+                        <a data-modal-form href="{% url 'resources:images' car.pk %}">Images</a>
+                        <a class="danger" data-modal-form href="{% url 'resources:delete' car.pk %}">Delete</a>
+                    </div>
+                </details></td>
             </tr>
         {% empty %}
             <tr><td colspan="7"><div class="empty-state">No vehicle matches the current filters.</div></td></tr>

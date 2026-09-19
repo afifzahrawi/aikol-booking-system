@@ -20,30 +20,19 @@ until they arrive the card should still look like the card.
         <h3><a href="{% url 'resources:detail' resource.pk %}">{{ resource.name }}</a></h3>
         <p class="help loc">{{ subtitle }}</p>
 
-        <div style="margin-bottom:.5rem">
-            {% if resource.status == 'ACTIVE' %}
-                <span class="badge badge-approved">Available</span>
-            {% else %}
-                <span class="badge badge-inactive">Under maintenance</span>
-            {% endif %}
-            {% if resource.approval_required %}
-                <span class="badge badge-muted">Approval required</span>
-            {% endif %}
-        </div>
-
-        <div class="facilities">
+        {% if resource.resource_type != 'VEHICLE' %}<div class="facilities">
             {% for f in resource.facilities.all|slice:":5" %}<span class="pill">{{ f.name }}</span>{% endfor %}
             {% with total=resource.facilities.all|length %}
                 {% if total > 5 %}<span class="pill">+{{ total|add:"-5" }} more</span>{% endif %}
             {% endwith %}
-        </div>
+        </div>{% endif %}
     </div>
     <div class="card-foot actions">
         <a class="btn btn-sm" href="{% url 'resources:detail' resource.pk %}">View details</a>
         {% if resource.status == 'ACTIVE' %}
-            <a class="btn btn-sm btn-primary" href="{% url 'bookings:create' resource.pk %}">Book</a>
+            <a class="btn btn-sm btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Book</a>
         {% else %}
-            <span class="btn btn-sm" aria-disabled="true">Unavailable</span>
+            <span class="btn btn-sm" aria-disabled="true">Under maintenance</span>
         {% endif %}
     </div>
 </article>

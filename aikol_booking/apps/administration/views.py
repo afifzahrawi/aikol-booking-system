@@ -8,6 +8,7 @@ from django.contrib import messages as flash
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -17,10 +18,29 @@ from apps.bookings.keys import keys_awaiting_collection, outstanding_keys
 from apps.bookings.models import BLOCKING_STATUSES, Booking, BookingStatus
 from apps.resources.models import Resource, ResourceStatus
 
-from .forms import SiteContentForm, SystemSettingForm, UserAdminForm
-from .models import SiteContent, SystemSetting
+from .forms import (
+    AnnouncementForm,
+    EmailConfigurationForm,
+    SiteContentForm,
+    SystemSettingForm,
+    UserAdminForm,
+)
+from .models import Announcement, SiteContent, SystemSetting
+from apps.notifications.models import EmailConfiguration, EmailOutbox, EmailStatus
 
 PAGE_SIZE = 20
+
+
+def _pagination_context(request, page) -> dict:
+    params = request.GET.copy()
+    params.pop("page", None)
+    querystring = params.urlencode()
+    return {
+        "querystring": f"{querystring}&" if querystring else "",
+        "page_range": page.paginator.get_elided_page_range(
+            page.number, on_each_side=2, on_ends=1
+        ),
+    }
 
 
 def administrator_required(view):
@@ -84,10 +104,12 @@ def user_list(request):
     page = Paginator(users.order_by("full_name", "pk"), PAGE_SIZE).get_page(
         request.GET.get("page")
     )
+    context = {"page": page, "q": term, "role": role or "", "state": state or ""}
+    context.update(_pagination_context(request, page))
     return render(
         request,
         "administration/users.html",
-        {"page": page, "q": term, "role": role or "", "state": state or ""},
+        context,
     )
 
 
@@ -96,8 +118,15 @@ def user_edit(request, pk: int):
     person = get_object_or_404(User, pk=pk)
     form = UserAdminForm(request.POST or None, instance=person)
     if request.method == "POST" and form.is_valid():
-        was_active = User.objects.get(pk=pk).is_active
-        form.save()
+        original = User.objects.only("is_active", "email_verified").get(pk=pk)
+        was_active = original.is_active
+        was_verified = original.email_verified
+        person = form.save(commit=False)
+        if person.email_verified and not was_verified:
+            person.email_verified_at = timezone.now()
+        elif not person.email_verified:
+            person.email_verified_at = None
+        person.save()
         if was_active and not person.is_active:
             action, note = "USER_DEACTIVATED", "deactivated"
         elif not was_active and person.is_active:
@@ -114,6 +143,8 @@ def user_edit(request, pk: int):
             request=request,
         )
         flash.success(request, f"{person.full_name} saved.")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return HttpResponse(status=204)
         return redirect("administration:users")
     return render(
         request,
@@ -128,7 +159,41 @@ def settings_list(request):
     without a software release."""
     SystemSetting.seed()
     rows = SystemSetting.objects.all()
+    email_configuration = EmailConfiguration.load()
+    queued_email_count = EmailOutbox.objects.filter(
+        status__in=(EmailStatus.PENDING, EmailStatus.FAILED), attempts__lt=5
+    ).count()
+    email_form = EmailConfigurationForm(instance=email_configuration, prefix="email")
     if request.method == "POST":
+        if request.POST.get("form_kind") == "email":
+            email_form = EmailConfigurationForm(
+                request.POST,
+                instance=email_configuration,
+                prefix="email",
+            )
+            if email_form.is_valid():
+                email_form.save()
+                log_action(
+                    actor=request.user,
+                    action="EMAIL_CONFIGURATION_CHANGED",
+                    entity_type="EmailConfiguration",
+                    entity_id=1,
+                    description="Email delivery configuration changed; secrets omitted.",
+                    request=request,
+                )
+                flash.success(request, "Email delivery settings saved.")
+                return redirect("administration:settings")
+            flash.error(request, "Email delivery settings were not accepted.")
+            return render(
+                request,
+                "administration/settings.html",
+                {
+                    "rows": rows,
+                    "email_form": email_form,
+                    "email_configuration": email_configuration,
+                    "queued_email_count": queued_email_count,
+                },
+            )
         key = request.POST.get("key")
         setting = get_object_or_404(SystemSetting, key=key)
         form = SystemSettingForm(request.POST, instance=setting)
@@ -146,7 +211,16 @@ def settings_list(request):
             flash.success(request, f"{setting.key} set to {setting.value}.")
             return redirect("administration:settings")
         flash.error(request, "That value was not accepted.")
-    return render(request, "administration/settings.html", {"rows": rows})
+    return render(
+        request,
+        "administration/settings.html",
+        {
+            "rows": rows,
+            "email_form": email_form,
+            "email_configuration": email_configuration,
+            "queued_email_count": queued_email_count,
+        },
+    )
 
 
 @administrator_required
@@ -165,7 +239,56 @@ def site_content(request):
         )
         flash.success(request, "Site content saved.")
         return redirect("administration:site_content")
-    return render(request, "administration/site_content.html", {"form": form})
+    return render(
+        request,
+        "administration/site_content.html",
+        {"form": form, "announcements": Announcement.objects.all()},
+    )
+
+
+@administrator_required
+def announcement_new(request):
+    form = AnnouncementForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        announcement = form.save()
+        log_action(
+            actor=request.user,
+            action="ANNOUNCEMENT_CREATED",
+            entity_type="Announcement",
+            entity_id=announcement.pk,
+            description=f"Announcement created: {announcement.title}.",
+            request=request,
+        )
+        flash.success(request, "Announcement published.")
+        return redirect("administration:site_content")
+    return render(
+        request,
+        "administration/announcement_form.html",
+        {"form": form, "announcement": None},
+    )
+
+
+@administrator_required
+def announcement_edit(request, pk: int):
+    announcement = get_object_or_404(Announcement, pk=pk)
+    form = AnnouncementForm(request.POST or None, instance=announcement)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        log_action(
+            actor=request.user,
+            action="ANNOUNCEMENT_UPDATED",
+            entity_type="Announcement",
+            entity_id=announcement.pk,
+            description=f"Announcement updated: {announcement.title}.",
+            request=request,
+        )
+        flash.success(request, "Announcement saved.")
+        return redirect("administration:site_content")
+    return render(
+        request,
+        "administration/announcement_form.html",
+        {"form": form, "announcement": announcement},
+    )
 
 
 @administrator_required
@@ -190,8 +313,15 @@ def audit_log(request):
     actions = (
         AuditLog.objects.values_list("action", flat=True).distinct().order_by("action")
     )
+    context = {
+        "page": page,
+        "q": term,
+        "action": action or "",
+        "actions": actions,
+    }
+    context.update(_pagination_context(request, page))
     return render(
         request,
         "administration/audit.html",
-        {"page": page, "q": term, "action": action or "", "actions": actions},
+        context,
     )

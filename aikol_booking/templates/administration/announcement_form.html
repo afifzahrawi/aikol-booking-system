@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{% if announcement %}Edit announcement{% else %}New announcement{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <p class="breadcrumb"><a href="{% url 'administration:site_content' %}">Site content</a> <span>/</span> Announcement</p>
+        <h1>{% if announcement %}Edit announcement{% else %}New announcement{% endif %}</h1>
+        <p class="lede">Notices appear below the booking search while active and within their schedule.</p>
+    </div>
+</div>
+{% include "administration/_nav.html" with tab='content' %}
+
+<section class="form-sheet">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% include "_form_fields.html" %}
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Save announcement</button>
+            <a class="btn" href="{% url 'administration:site_content' %}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

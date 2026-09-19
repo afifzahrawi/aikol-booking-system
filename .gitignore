@@ -4,9 +4,9 @@ package-lock.json
 package.json
 
 # Temporary patch and check scripts
-_*.py
-_*.js
-_*.txt
+/_*.py
+/_*.js
+/_*.txt
 prototype/_*.py
 prototype/_*.js
 
@@ -28,8 +28,11 @@ AGENTS.md
 .agents/
 .claude/
 .impeccable/
+.tastemaker/
+.hallmark/
 .codex/
 skills-lock.json
+docs/codex-history.md
 
 # Uploaded media (supplied by the Kulliyyah, not source)
 prototype/media/

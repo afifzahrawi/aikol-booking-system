@@ -19,7 +19,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import Affiliation, Role, User
-from apps.administration.models import SiteContent, SystemSetting
+from apps.administration.models import Announcement, SiteContent, SystemSetting
 from apps.bookings.models import (
     AcademicTerm,
     Booking,
@@ -57,10 +57,10 @@ VENUES = [
 ]
 
 CARS = [
-    ("AIKOL-CAR-01", "Kulliyyah Car 1", "WXY 1234", "Proton", "Saga", 2022, 5, "AUTO", "car-saga"),
-    ("AIKOL-CAR-02", "Kulliyyah Car 2", "WXY 5678", "Perodua", "Bezza", 2023, 5, "AUTO", "car-bezza"),
+    ("AIKOL-CAR-01", "Kulliyyah Vehicle 1", "WXY 1234", "Proton", "Saga", 2022, 5, "AUTO", "car-saga"),
+    ("AIKOL-CAR-02", "Kulliyyah Vehicle 2", "WXY 5678", "Perodua", "Bezza", 2023, 5, "AUTO", "car-bezza"),
     ("AIKOL-CAR-03", "Kulliyyah Van", "WXY 9012", "Toyota", "Innova", 2021, 7, "AUTO", "car-innova"),
-    ("AIKOL-CAR-04", "Kulliyyah Car 4", "WXY 3456", "Proton", "Exora", 2020, 7, "MANUAL", "car-exora"),
+    ("AIKOL-CAR-04", "Kulliyyah Vehicle 4", "WXY 3456", "Proton", "Exora", 2020, 7, "MANUAL", "car-exora"),
 ]
 
 PURPOSES = [
@@ -117,6 +117,18 @@ class Command(BaseCommand):
         content.office_hours = "Mon–Fri, 08:30–17:00"
         content.save()
 
+        Announcement.objects.get_or_create(
+            title="Demonstration announcement",
+            defaults={
+                "message": (
+                    "This is where the Kulliyyah office can publish a booking notice. "
+                    "Administrators can edit, schedule or deactivate it under Site content."
+                ),
+                "tone": Announcement.Tone.INFORMATION,
+                "is_active": True,
+            },
+        )
+
         # -- People ------------------------------------------------------
         people = {}
         for name, email, role, affiliation, number in PEOPLE:
@@ -133,9 +145,6 @@ class Command(BaseCommand):
                 if role == Role.ADMINISTRATOR:
                     person.is_staff = True
                     person.is_superuser = True
-                if affiliation in (Affiliation.LECTURER, Affiliation.STAFF):
-                    person.licence_number = f"D{number[-6:]}"
-                    person.licence_expiry = timezone.localdate() + dt.timedelta(days=500)
                 person.save()
             people[email] = person
 
@@ -198,7 +207,7 @@ class Command(BaseCommand):
                     "model": model, "year": year, "seats": seats, "image_slug": slug,
                     "transmission": transmission, "fuel_type": "Petrol",
                     "road_tax_expiry": timezone.localdate() + dt.timedelta(days=rng.randint(40, 300)),
-                    "description": "Kulliyyah car. Demonstration record.",
+                    "description": "Kulliyyah vehicle. Demonstration record.",
                 },
             )
             if created:
@@ -277,26 +286,23 @@ class Command(BaseCommand):
                 )
                 made += 1
 
-        # A few vehicle trips, including one multi-day and one VMU request.
-        drivers = [p for p in requesters if p.may_drive]
-        students = [p for p in requesters if not p.may_drive]
+        # A few vehicle trips. Every one follows the VMU/STADD driver route.
         for index, (origin, destination, purpose) in enumerate(TRIPS):
             car = cars[index % len(cars)]
             start_day = today + dt.timedelta(days=6 + index * 4)
             start = timezone.make_aware(dt.datetime.combine(start_day, dt.time(8, 0)))
             end = start + dt.timedelta(days=index, hours=9)
-            self_drive = index < 2
+            person = requesters[index % len(requesters)]
             Booking.objects.create(
                 resource=car,
-                user=(drivers if self_drive else students)[index % 2],
-                created_by=(drivers if self_drive else students)[index % 2],
+                user=person,
+                created_by=person,
                 start_at=start, end_at=end, purpose=purpose,
-                driver_arrangement=(
-                    DriverArrangement.SELF_DRIVE if self_drive else DriverArrangement.VMU_DRIVER
-                ),
+                driver_arrangement=DriverArrangement.VMU_DRIVER,
                 location_from=origin, location_to=destination,
                 passengers=rng.randint(2, car.seats),
                 status=BookingStatus.APPROVED if index else BookingStatus.PENDING,
+                management_status="PENDING",
             )
             made += 1
 

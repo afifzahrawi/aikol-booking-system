@@ -10,11 +10,11 @@
     {% if user.is_administrator %}
     <div class="btn-group">
         {% if is_vehicle %}
-            <a class="btn" href="{% url 'resources:vehicle_edit' resource.pk %}">Edit</a>
+            <a class="btn" data-modal-form href="{% url 'resources:vehicle_edit' resource.pk %}">Edit</a>
         {% else %}
-            <a class="btn" href="{% url 'resources:venue_edit' resource.pk %}">Edit</a>
+            <a class="btn" data-modal-form href="{% url 'resources:venue_edit' resource.pk %}">Edit</a>
         {% endif %}
-        <a class="btn" href="{% url 'resources:images' resource.pk %}">Images</a>
+        <a class="btn" data-modal-form href="{% url 'resources:images' resource.pk %}">Images</a>
     </div>
     {% endif %}
 </div>
@@ -50,7 +50,6 @@
 
 <section class="card">
     <div class="card-body">
-        {% if resource.description %}<p>{{ resource.description }}</p>{% endif %}
         <dl class="kv">
             {% if is_vehicle %}
                 <dt>Registration</dt><dd class="mono">{{ resource.registration_number }}</dd>
@@ -71,8 +70,8 @@
             <dt>Approval</dt><dd>{% if resource.approval_required %}Required{% else %}Not required{% endif %}</dd>
         </dl>
 
-        {% if resource.facilities.all %}
-        <p class="label">Facilities</p>
+        {% if not is_vehicle and resource.facilities.all %}
+        <p class="label detail-facilities-heading">Facilities</p>
         <ul class="pill-list facilities">
             {% for f in resource.facilities.all %}<li><span class="pill">{{ f.name }}</span></li>{% endfor %}
         </ul>
@@ -80,9 +79,9 @@
     </div>
 </section>
 
-<div class="btn-group">
+<div class="btn-group detail-actions">
     <a class="btn" href="{% url 'bookings:availability' resource.pk %}">Check availability</a>
-    <a class="btn btn-primary" href="{% url 'bookings:create' resource.pk %}">Book this</a>
+    <a class="btn btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Book this</a>
     {% if not is_vehicle %}
         <a class="btn" href="{% url 'bookings:series_create' resource.pk %}">Repeat weekly</a>
     {% endif %}

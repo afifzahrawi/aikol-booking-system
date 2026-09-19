@@ -2,43 +2,52 @@
 {% load static %}{# not inherited from base.html #}
 {% block title %}Book {{ resource.name }}{% endblock %}
 
-{% block scripts %}
-<script src="{% static 'js/availability.js' %}" defer></script>
-{% endblock %}
 {% block content %}
 <div class="page-head">
-    <div><h1>Book {{ resource.name }}</h1>
+    <div><p class="record-reference">{{ resource.code }}</p><h1>Book {{ resource.name }}</h1>
         <p class="lede">Every booking is decided by the Kulliyyah office. You will be emailed
            when it is.</p></div>
     <div class="btn-group">
         <a class="btn" href="{% url 'bookings:availability' resource.pk %}">Check availability</a>
         {% if not is_vehicle %}
-            <a class="btn" href="{% url 'bookings:series_create' resource.pk %}">Repeat weekly</a>
+            <a class="btn" href="{% if office_mode %}{% url 'bookings:admin_series_create' resource.pk %}{% else %}{% url 'bookings:series_create' resource.pk %}{% endif %}">Repeat weekly</a>
         {% endif %}
     </div>
 </div>
 
 {% if is_vehicle %}
 <div class="notice notice-info">
-    <strong>Anyone may book a car. Who may drive one is a separate question.</strong>
-    Self-drive is for lecturers and staff with a licence on file. A Vehicle Management Unit driver
-    is requested through STADD and needs Kulliyyah management approval as well as approval of this
-    booking &mdash; two approvals, not one.
+    <strong>Kulliyyah vehicles cannot be self-driven.</strong>
+    A Vehicle Management Unit driver is requested through STADD and assigned by the Kulliyyah
+    office. The trip requires the ordinary booking approval and a separate Kulliyyah management
+    decision.
 </div>
 {% endif %}
 
-<section class="card">
+<section class="card booking-form-card">
     <div class="card-body">
-        <form method="post" novalidate id="bookingForm"
+        <form method="post" novalidate id="bookingForm" class="booking-form"
               data-availability="{% url 'bookings:slot_check' resource.pk %}">
             {% csrf_token %}
             {% comment %} Filled in by availability.js. The server checks the same period
                again under a row lock, so this is a courtesy, not a gate. {% endcomment %}
             <p class="notice" id="slotStatus" role="status" aria-live="polite" hidden></p>
-            {{ form.non_field_errors }}
+            {% if form.errors %}
+            <div class="notice notice-error form-error-summary" role="alert" tabindex="-1">
+                <strong>Request not submitted.</strong> Correct the following and try again:
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                        <li>{% if field != '__all__' %}{{ field|title }}: {% endif %}{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% include "bookings/_user_combobox.html" %}
             {% include "_form_fields.html" %}
             <div class="btn-group">
-                <a class="btn" href="{% url 'resources:detail' resource.pk %}">Cancel</a>
+                <a class="btn" href="{% if office_mode %}{% url 'bookings:manage' %}{% else %}{% url 'resources:detail' resource.pk %}{% endif %}">Cancel</a>
                 <button class="btn btn-primary" type="submit">Submit request</button>
             </div>
         </form>

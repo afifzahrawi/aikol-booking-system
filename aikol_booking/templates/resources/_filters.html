@@ -27,7 +27,7 @@ the page — does the filtering.
             {% endfor %}
         </select>
     </div>
-    <div class="field">
+    {% if not hide_facility %}<div class="field">
         <label for="facility">Facility</label>
         <select class="select" id="facility" name="facility">
             <option value="">Any facility</option>
@@ -35,7 +35,7 @@ the page — does the filtering.
                 <option value="{{ f.pk }}" {% if facility == f.pk|stringformat:'s' %}selected{% endif %}>{{ f.name }}</option>
             {% endfor %}
         </select>
-    </div>
+    </div>{% endif %}
     <div class="field">
         <label for="status">Availability</label>
         <select class="select" id="status" name="status">

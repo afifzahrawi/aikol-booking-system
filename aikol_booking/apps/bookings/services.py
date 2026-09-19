@@ -24,7 +24,13 @@ from django.utils import timezone
 from apps.administration.models import SystemSetting
 from apps.resources.models import Resource, ResourceType, Vehicle
 
-from .models import BLOCKING_STATUSES, Booking, BookingStatus
+from .models import (
+    BLOCKING_STATUSES,
+    Booking,
+    BookingStatus,
+    DriverArrangement,
+    ManagementDecision,
+)
 
 
 def find_conflicts(
@@ -97,7 +103,7 @@ def validate_period(
         # A room is occupied inside a single day. Its whole booking must sit in
         # the bookable window, and the nine-hour cap applies.
         if local_start.date() != local_end.date():
-            problems.append("A room booking must start and finish on the same day.")
+            problems.append("A venue booking must start and finish on the same day.")
         if local_start.time() < window_start or local_end.time() > window_end:
             problems.append(
                 f"Rooms are bookable between {window_start:%H:%M} and {window_end:%H:%M}."
@@ -136,31 +142,15 @@ def validate_period(
 
 
 def check_driver_arrangement(user, resource: Resource, arrangement: str) -> list[str]:
-    """Who may book is not who may drive.
-
-    Anyone may request a car. A student may never drive a Kulliyyah car, so a
-    student's booking must request a VMU driver. A self-drive booking needs a
-    licence on file that is still valid at the END of the trip.
-    """
-    from .models import DriverArrangement
-
+    """Every Kulliyyah vehicle request must use the VMU/STADD route."""
     if not isinstance(resource, Vehicle) and resource.resource_type != ResourceType.VEHICLE:
         return []
-    problems: list[str] = []
-    if arrangement == DriverArrangement.SELF_DRIVE:
-        if not user.may_drive:
-            problems.append(
-                "Only lecturers and staff may drive a Kulliyyah car. "
-                "Request a driver from the Vehicle Management Unit instead."
-            )
-        if not user.licence_number or not user.licence_expiry:
-            problems.append("A driving licence number and expiry date are required to self-drive.")
-    elif arrangement == DriverArrangement.VMU_DRIVER:
-        problems.append(
-            "A Vehicle Management Unit driver is requested through STADD and needs Kulliyyah "
-            "management approval to use a Kulliyyah car — a second approval on top of this booking."
-        )
-    return problems
+    if arrangement != DriverArrangement.VMU_DRIVER:
+        return [
+            "Kulliyyah vehicles cannot be self-driven. Request a driver from the Vehicle "
+            "Management Unit through STADD."
+        ]
+    return []
 
 
 @transaction.atomic
@@ -195,6 +185,13 @@ def create_booking(
                 for c in clashes
             ]
         )
+    if resource.resource_type == ResourceType.VEHICLE:
+        arrangement = extra.get("driver_arrangement")
+        problems = check_driver_arrangement(user, resource, arrangement)
+        if problems:
+            raise ValidationError(problems)
+        extra["management_status"] = ManagementDecision.PENDING
+
     booking = Booking.objects.create(
         resource=resource,
         user=user,
@@ -210,6 +207,72 @@ def create_booking(
         # The system never tells somebody about a booking that does not exist.
         messages.booking_submitted(booking)
     return booking
+
+
+@transaction.atomic
+def decide_vehicle_management(
+    booking: Booking,
+    *,
+    decided_by,
+    approve: bool,
+    driver_name: str = "",
+    driver_contact: str = "",
+    reason: str = "",
+) -> Booking:
+    """Record the second vehicle decision and, when approved, its VMU driver."""
+    from apps.notifications import messages
+
+    locked = Booking.objects.select_for_update().select_related("resource", "user").get(
+        pk=booking.pk
+    )
+    if locked.resource.resource_type != ResourceType.VEHICLE:
+        raise ValidationError("Management approval applies only to vehicle bookings.")
+    if locked.driver_arrangement != DriverArrangement.VMU_DRIVER:
+        raise ValidationError("This booking does not use the VMU driver route.")
+    if locked.status != BookingStatus.APPROVED:
+        raise ValidationError("Approve the booking request before recording management's decision.")
+    if locked.management_status != ManagementDecision.PENDING:
+        raise ValidationError(
+            f"Management has already marked this trip {locked.get_management_status_display().lower()}."
+        )
+
+    now = timezone.now()
+    locked.management_decided_by = decided_by
+    locked.management_decided_at = now
+    locked.management_decision_reason = reason.strip()
+    if approve:
+        if not driver_name.strip() or not driver_contact.strip():
+            raise ValidationError("Assign the VMU driver's name and contact number.")
+        locked.driver_name = driver_name.strip()
+        locked.driver_contact = driver_contact.strip()
+        locked.management_status = ManagementDecision.APPROVED
+        locked.save(
+            update_fields=[
+                "driver_name",
+                "driver_contact",
+                "management_status",
+                "management_decided_by",
+                "management_decided_at",
+                "management_decision_reason",
+            ]
+        )
+        messages.vehicle_management_decided(locked, approved=True)
+    else:
+        if len(reason.strip()) < 5:
+            raise ValidationError("Give a usable reason for not approving the trip.")
+        locked.management_status = ManagementDecision.REJECTED
+        locked.status = BookingStatus.REJECTED
+        locked.save(
+            update_fields=[
+                "management_status",
+                "management_decided_by",
+                "management_decided_at",
+                "management_decision_reason",
+                "status",
+            ]
+        )
+        messages.vehicle_management_decided(locked, approved=False)
+    return locked
 
 
 def expand_series(

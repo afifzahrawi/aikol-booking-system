@@ -12,6 +12,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Prefetch, Q, QuerySet
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from apps.audit.services import log_action
@@ -28,7 +29,7 @@ from .models import (
 )
 from .services import DeletionRefused, delete_resource, reorder_facilities
 
-PAGE_SIZE = 12
+PAGE_SIZE = 20
 
 
 def administrator_required(view):
@@ -47,7 +48,13 @@ def administrator_required(view):
     return wrapper
 
 
-def _filtered(queryset: QuerySet, request, *, search_fields: tuple[str, ...]) -> QuerySet:
+def _filtered(
+    queryset: QuerySet,
+    request,
+    *,
+    search_fields: tuple[str, ...],
+    allow_facility: bool = True,
+) -> QuerySet:
     """Filter and search IN THE QUERY. A list view never loads a whole table to
     render one page of it."""
     term = (request.GET.get("q") or "").strip()
@@ -60,7 +67,7 @@ def _filtered(queryset: QuerySet, request, *, search_fields: tuple[str, ...]) ->
     if status in ResourceStatus.values:
         queryset = queryset.filter(status=status)
     facility = request.GET.get("facility")
-    if facility:
+    if allow_facility and facility:
         queryset = queryset.filter(facilities__pk=facility)
 
     kind = request.GET.get("type")
@@ -92,6 +99,9 @@ def _paginated(request, queryset, template: str, extra: dict | None = None):
     context = {
         "page": page,
         "querystring": f"{querystring}&" if querystring else "",
+        "page_range": page.paginator.get_elided_page_range(
+            page.number, on_each_side=2, on_ends=1
+        ),
         "q": request.GET.get("q", ""),
         "status": request.GET.get("status", ""),
         "facility": request.GET.get("facility", ""),
@@ -137,15 +147,21 @@ def vehicle_list(request):
 
     vehicles = _filtered(
         Vehicle.objects.filter(road_tax_expiry__gte=timezone.localdate())
-        .prefetch_related(_bookable_images(), "facilities"),
+        .prefetch_related(_bookable_images()),
         request,
         search_fields=("name", "code", "make", "model", "registration_number"),
+        allow_facility=False,
     )
     return _paginated(
         request,
         vehicles,
         "resources/vehicle_list.html",
-        {"nav": "vehicles", "types": [], "capacities": [2, 4, 5, 7]},
+        {
+            "nav": "vehicles",
+            "types": [],
+            "capacities": [2, 4, 5, 7],
+            "hide_facility": True,
+        },
     )
 
 
@@ -165,6 +181,14 @@ def resource_detail(request, pk: int):
         {
             "resource": specific,
             "is_vehicle": resource.resource_type == ResourceType.VEHICLE,
+            "shell_nav": (
+                "vehicles" if resource.resource_type == ResourceType.VEHICLE else "venues"
+            ),
+            "back_fallback_url": reverse(
+                "resources:vehicles"
+                if resource.resource_type == ResourceType.VEHICLE
+                else "resources:venues"
+            ),
             # The expiry date itself is administrator-facing only.
             "show_road_tax": request.user.is_administrator,
         },
@@ -190,8 +214,14 @@ def manage_vehicles(request):
         Vehicle.objects.annotate(booking_count=Count("bookings")),
         request,
         search_fields=("name", "code", "make", "model", "registration_number"),
+        allow_facility=False,
     )
-    return _paginated(request, vehicles, "resources/manage_vehicles.html", {"nav": "resources"})
+    return _paginated(
+        request,
+        vehicles,
+        "resources/manage_vehicles.html",
+        {"nav": "resources", "hide_facility": True},
+    )
 
 
 def _edit_resource(request, form_class, instance, kind: str, redirect_to: str):
@@ -324,16 +354,27 @@ def manage_facilities(request):
         facilities = facilities.filter(Q(name__icontains=term) | Q(code__icontains=term))
     if applies:
         facilities = facilities.filter(applies_to=applies)
+    from django.core.paginator import Paginator
+
+    page = Paginator(facilities, PAGE_SIZE).get_page(request.GET.get("page"))
+    params = request.GET.copy()
+    params.pop("page", None)
+    querystring = params.urlencode()
     return render(
         request,
         "resources/manage_facilities.html",
         {
-            "facilities": facilities,
+            "page": page,
+            "querystring": f"{querystring}&" if querystring else "",
+            "page_range": page.paginator.get_elided_page_range(
+                page.number, on_each_side=2, on_ends=1
+            ),
             "q": term,
             "applies": applies or "",
             # Reordering a filtered subset would produce an order nobody saw, so
             # the handles switch off and the page says why.
             "filtered": filtered,
+            "can_reorder": not filtered and page.paginator.num_pages == 1,
         },
     )
 

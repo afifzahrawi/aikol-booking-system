@@ -148,12 +148,26 @@ class EmailAuthenticationForm(StyledFormMixin, AuthenticationForm):
         return self.cleaned_data["username"].strip().lower()
 
 
-class DrivingLicenceForm(StyledFormMixin, forms.ModelForm):
-    """Captured on the first self-drive booking, not at registration — most
-    people never need it, and it is personal data we would rather not hold
-    without a reason."""
+class ProfileForm(StyledFormMixin, forms.ModelForm):
+    """The details a person may safely maintain for themselves.
+
+    Email changes start a fresh verification flow. Affiliation, role and
+    identification numbers remain administrative records so a routine profile
+    edit cannot change account authority or the identity attached to bookings.
+    """
 
     class Meta:
         model = User
-        fields = ("licence_number", "licence_expiry")
-        widgets = {"licence_expiry": forms.DateInput(attrs={"type": "date"})}
+        fields = ("full_name", "email", "phone")
+        labels = {"phone": "Telephone number"}
+        help_texts = {
+            "full_name": "Use the name that should appear on booking records.",
+            "email": (
+                "Changing this address sends a new verification link. Booking is paused "
+                "until the new address is confirmed."
+            ),
+            "phone": "The Kulliyyah office may use this for booking or key enquiries.",
+        }
+
+    def clean_email(self) -> str:
+        return self.cleaned_data["email"].strip().lower()

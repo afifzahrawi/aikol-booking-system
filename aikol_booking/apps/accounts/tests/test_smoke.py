@@ -74,6 +74,7 @@ class SmokeTests(TestCase):
     def pages(self) -> list[str]:
         return [
             reverse("accounts:dashboard"),
+            reverse("accounts:profile"),
             reverse("resources:venues"),
             reverse("resources:vehicles"),
             reverse("resources:detail", args=[self.venue.pk]),
@@ -126,6 +127,10 @@ class SmokeTests(TestCase):
                 html = self.client.get(url).content.decode()
                 if "app.css" not in html:
                     self.fail(f"{url} does not link the stylesheet")
+                if "redesign.css" not in html:
+                    self.fail(f"{url} does not link the redesign stylesheet")
+                if "{#" in html or "#}" in html:
+                    self.fail(f"{url} leaks a Django template comment")
 
     def test_a_pending_decision_page_renders(self):
         pending = Booking.objects.create(
@@ -164,6 +169,35 @@ class SmokeTests(TestCase):
     def test_sign_in_sends_an_authenticated_visitor_onward(self):
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(reverse("accounts:login")).status_code, 302)
+
+    def test_vehicle_search_uses_collection_and_return_dates(self):
+        self.client.force_login(self.admin)
+        collection = timezone.localdate() + dt.timedelta(days=1)
+        returned = collection + dt.timedelta(days=1)
+        response = self.client.get(
+            reverse("accounts:dashboard"),
+            {
+                "kind": "VEHICLE",
+                "date": collection.isoformat(),
+                "end_date": returned.isoformat(),
+                "from": "09:00",
+                "to": "11:00",
+            },
+        )
+        self.assertContains(response, "Collection date")
+        self.assertContains(response, "Return date")
+        self.assertContains(response, self.car.name)
+        self.assertContains(response, f"end_date={returned.isoformat()}")
+
+    def test_home_omits_browse_cards_and_booking_links_open_in_the_modal(self):
+        self.client.force_login(self.admin)
+        dashboard = self.client.get(reverse("accounts:dashboard")).content.decode()
+        self.assertNotIn(">Browse<", dashboard)
+        self.assertNotIn("featured_venues", dashboard)
+
+        vehicles = self.client.get(reverse("resources:vehicles")).content.decode()
+        self.assertIn('data-modal-form data-modal-size="wide"', vehicles)
+        self.assertIn(reverse("bookings:create", args=[self.car.pk]), vehicles)
 
     def test_a_signed_out_visitor_is_never_shown_a_server_error(self):
         """Anonymous access should redirect or refuse, never crash."""

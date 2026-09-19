@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Overridden in both environments: development supplies a fixed development key,
 # production refuses to start without one from the environment.
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+CREDENTIAL_ENCRYPTION_KEY = os.environ.get("DJANGO_CREDENTIAL_ENCRYPTION_KEY", "")
 
 DEBUG = False
 ALLOWED_HOSTS: list[str] = []
@@ -38,6 +39,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "config.middleware.SecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -107,6 +109,12 @@ TEST_RUNNER = "config.testrunner.AikolTestRunner"
 # Uploads. Images only, sniffed rather than trusted, renamed on save — see
 # apps/resources/validators.py and docs/technical/security.md.
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+
+# Conservative provider-independent defaults. Production may lower these with
+# environment variables, but must never rely on delayed billing alerts alone.
+R2_MEDIA_SOFT_LIMIT_BYTES = 2 * 1024 * 1024 * 1024
+R2_BACKUP_SOFT_LIMIT_BYTES = 7 * 1024 * 1024 * 1024
+R2_BACKUP_MAX_OBJECTS = 14
 PERMITTED_IMAGE_FORMATS = ("JPEG", "PNG", "WEBP")
 
 # Self-registration is open to the public, but an IIUM address is what proves an

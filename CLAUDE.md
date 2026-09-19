@@ -97,7 +97,7 @@ The prototype and the management report have both been brought into line with th
   against every role.
 - `config/testrunner.py` clears the cache between tests, because the rate limiter counts somewhere
   Django's per-test rollback does not reach.
-- **291 tests.**
+- **318 tests** (one expected skip), including deployment email-configuration coverage.
 
 ### Built in Phase 7
 
@@ -123,7 +123,8 @@ The prototype and the management report have both been brought into line with th
   judged against the person the booking is for, so an administrator cannot confer it on a student by
   filling the form in for them.
 - Administration: overview, user management with activation, editable system settings, editable
-  header and footer, and a read-only audit log screen.
+  header/footer/login content, separate login and home photography, scheduled announcements, and a
+  read-only audit log screen.
 - **The user form has no password field**, deliberately. An administrator who can set someone
   else's password is a liability, and the reset flow already exists.
 
@@ -218,17 +219,18 @@ booking form with driver and licence fields, and a key issue/return screen — d
 | Database (dev) | **SQLite** | Zero setup |
 | Database (prod) | **PostgreSQL 15+** | Required — the overlap exclusion constraint needs it |
 | Authentication | **Django's own auth. No IIUM SSO** | Confirmed decision, not a placeholder — see section 5 |
-| Email | **SMTP, sent from a database outbox by cron** | Account email *and* booking confirmations. See section 6 |
+| Email | **Administrator-configured SMTP, sent from a database outbox by cron** | Password encrypted at rest; account and booking confirmations |
 | Scheduled jobs | **cron calling `manage.py`** | `COMPLETED` transition, retention scans. No Celery |
 | Charts (app) | Plain HTML/CSS; **Chart.js** only if a chart genuinely needs it | Vendored if adopted |
-| Web server | **Nginx + Gunicorn** | |
-| Hosting | **Self-provided VPS, not IIUM ITD** | Confirmed decision |
-| Domain | **Self-provided, not an IIUM subdomain** | Confirmed decision |
+| Web server | **Caddy + Gunicorn + WhiteNoise in Docker Compose** | Caddy manages HTTPS certificates |
+| Hosting | **Oracle Always Free VM; Neon PostgreSQL; Cloudflare R2** | Zero-fee target; no uptime SLA and free limits apply |
+| Domain | **Self-provided free hostname, not an IIUM subdomain** | Confirmed decision |
 | Version control | **Git** | |
-| Testing | Django test framework | `manage.py test`. 291 tests as at Phase 8 |
+| Testing | Django test framework | `manage.py test`. 318 tests, one expected skip |
 | Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
 | PostgreSQL driver | **psycopg 3** | Production only. Installed in development so `check --deploy` can run |
-| Cost | **RM 0 in software.** Hosting and domain are now a real recurring cost | See section 5 |
+| Credential encryption | **cryptography / Fernet** | Protects the SMTP password stored from the administrator screen |
+| Cost | **RM 0 within provider free allowances** | No-fee operation has no uptime SLA |
 
 ### Explicitly rejected (do not add without a documented reason)
 
@@ -315,9 +317,9 @@ these decisions are the authority for them.
 | Topic | Decision |
 | --- | --- |
 | Vehicle scope | **Cars only** in the first release. The model must not make other vehicle classes hard to add |
-| Who may book a vehicle | **Anyone may book, students included.** Eligibility to *book* and eligibility to *drive* are different things — see the next row |
+| Who may book a vehicle | **Anyone may book, students included.** Requesters do not drive Kulliyyah vehicles; every trip uses the VMU/STADD route |
 | Trip length | **Multi-day trips are allowed.** A vehicle may be collected one day and returned another; a system setting caps the maximum trip length |
-| Driver | Two arrangements. **Self-drive** — lecturers and staff only, with a licence number and expiry on file. **VMU driver** — a driver supplied by the Vehicle Management Unit. **A student may never drive a Kulliyyah car**, so a student's booking must request a VMU driver |
+| Driver | **No self-drive.** A driver is supplied by the Vehicle Management Unit and assigned by an administrator after the ordinary booking decision |
 | VMU driver route | Requested from the Vehicle Management Unit through **STADD**, and needs **Kulliyyah management approval** to use a Kulliyyah car — a second approval on top of the booking approval. The booking form states this so the requester is not surprised |
 | Vehicle key record | Held by the system administrator personally. Per vehicle booking record: **date out and date in, driver name, contact number, staff number, location from and location to, purpose** |
 | Vehicle approval | Every vehicle booking requires approval, as with venues |
@@ -349,10 +351,11 @@ these decisions are the authority for them.
 
 ### Still open
 
-Nothing blocks Phase 3. Two operational items need answers before Phase 10 (deployment):
+The deployment code is ready. Two operational items require the authorised AIKOL account owner:
 
-1. Which VPS provider and specification, and who pays.
-2. Which domain name, and where external backup storage lives.
+1. Create the Oracle Cloud, Neon, Cloudflare and free-hostname accounts and supply credentials.
+2. Choose the final public hostname. The no-fee plan has no uptime SLA and may be reclaimed or
+   constrained by provider free-tier limits.
 
 **Never present a decision as established AIKOL process unless it appears above** — in code
 comments, in the report, or in conversation with the user.
@@ -364,7 +367,8 @@ comments, in the report, or in conversation with the user.
 Full detail in `docs/technical/database-schema.md`. Summary:
 
 `users` · `resources` · `venues` · `vehicles` · `resource_images` · `bookings` ·
-`booking_series` · `key_handovers` · `booking_archive` · `audit_logs` · `system_settings`
+`booking_series` · `key_handovers` · `booking_archive` · `audit_logs` · `system_settings` ·
+`site_content` · `announcements`
 
 Key decisions:
 
@@ -391,7 +395,9 @@ Key decisions:
 - **Email leaves through an `email_outbox` table**, written in the same transaction as the action
   that caused it and sent by a cron-driven management command. A booking must never fail because a
   mail server is slow, and a semester-long series must never block a request behind 26 SMTP
-  round-trips. This is not a message queue and does not reopen that decision.
+  round-trips. This is not a message queue and does not reopen that decision. The singleton
+  `email_configuration` row holds administrator-editable SMTP settings; its password is encrypted
+  with an environment-held Fernet key and never appears in the form or audit log.
 - **The academic calendar is several terms, not one.** `academic_terms` holds a row per semester
   with `term_breaks` beneath it, and terms **must not overlap** — "which semester is this date in?"
   has to have exactly one answer, or the recurrence generator's behaviour is arbitrary. Enforce it
@@ -406,6 +412,9 @@ Key decisions:
   foreign keys, so it survives changes to the live tables.
 - `audit_logs` is append-only. Application code never edits or deletes it.
 - Business rules live in `system_settings`, not in the code.
+- Public identity and introductory copy live in the single `site_content` row. The AIKOL and IIUM
+  logos, login image and home image are independent uploads. `announcements` stores active/scheduled
+  notices and keeps deactivated rows rather than deleting them.
 
 ### Confirmed setting values
 
@@ -557,10 +566,10 @@ Full detail: `docs/technical/security.md`.
 - Palette: green `#14675b` with gold `#d99b28` on warm paper `#f7f4ed`; panels `#fffdf8`; rules
   `#ded4bd`. Type: **Amiri** for headings and resource names, **IBM Plex Sans** for everything else.
   Radii 3–5 px; status pills at 10 px.
-- The identity is carried by the **pointed-arch frame** (`--arch`, applied to the building
-  photograph and room galleries), the Arabic greeting on the dashboard, and a faint girih crosshatch
-  over resource imagery. There is deliberately no other ornament — no crescents, no mosque
-  silhouettes, no Arabic-styled Latin type.
+- The identity is carried by paired wordmarks (**AIKOL first, IIUM second**), the Arabic greeting,
+  Amiri headings, warm paper, green ink and restrained gold rules. Photography uses rectangular
+  frames. There is deliberately no other ornament: no crescents, mosque silhouettes or
+  Arabic-styled Latin type.
 - **Interaction states are part of the design, not decoration.** Every button has a `:active`
   press state; focus rings use `:focus-visible` so they are shown to keyboard users and not to
   mouse users; transitions name the property they animate and last 90–140 ms; a
@@ -569,20 +578,18 @@ Full detail: `docs/technical/security.md`.
 - **Django renders form controls with no class of their own**, and this stylesheet styles them by
   class. `config/forms.py` supplies `StyledFormMixin`, which every form uses. Without it the
   stylesheet loads and does nothing for any control on any page.
-- **The stylesheet's class names are a CONTRACT, not decoration.** The Django templates must
-  reproduce the structure `prototype/js/prototype.js` builds — `.brand-rule`, `.header-user`,
-  `.avatar`, `.nav-badge`, `.login-hero`, `.search-hero`, `.avail-row`, `.venue-card` and the rest.
-  Writing plainer markup of one's own leaves the design loading and doing nothing: at the worst
-  point only 84 of the 175 classes the prototype uses appeared in these templates, and the result
-  looked nothing like the approved design. Measure it before claiming a screen is ported.
+- `design.md` is the current visual source of truth. `static/css/app.css` retains the prototype's
+  component foundation; `static/css/tokens.css` and `static/css/redesign.css` apply the locked
+  multi-page system. New screens use those tokens and established component classes rather than
+  adding page-local colours, fonts or shape rules.
 - **A `{# #}` comment in a Django template is SINGLE-LINE ONLY.** A multi-line one is not a comment
   at all — it renders verbatim on the page. Use `{% comment %}…{% endcomment %}` for anything longer
   than a line. Thirteen of these shipped before anyone looked at the site in a browser.
 - **Placeholder artwork comes from `static/images/placeholders/`**, the prototype's own drawings,
   chosen by `Resource.image_slug`. They are served as static files and never uploaded, so the rule
   that user-supplied SVG is refused is untouched. A resource with a real photograph ignores them.
-- The **real AIKOL wordmark** (`assets/images/aikol_logo.png`) is now in use, at 200 px in the brand
-  bar. It is no longer a placeholder.
+- The real AIKOL wordmark and the supplied IIUM wordmark are used together. Administrators may
+  replace either through Site content; static copies remain as safe defaults.
 
 ---
 
@@ -591,10 +598,10 @@ Full detail: `docs/technical/security.md`.
 **In:** self-registration with IIUM email verification · authentication and password reset ·
 three roles (user, approver, administrator) · user management with activation/deactivation ·
 venue management with images · **vehicle (car) management with images** ·
-**administrator-managed facility list** · **editable header and footer content** ·
+**administrator-managed facility list** · **editable identity, page photography, login copy and announcements** ·
 **booking confirmation email** · resource browsing,
 filtering and details · availability display · booking submission for venues and vehicles ·
-**multi-day vehicle bookings** · **self-drive or VMU-driver arrangement with the second, management approval** · **recurring bookings** · conflict prevention with tests ·
+**multi-day vehicle bookings** · **VMU-driver workflow with a separate management decision** · **recurring bookings** · conflict prevention with tests ·
 approval and rejection with reasons · **booking on behalf of a user** · cancellation with a
 mandatory reason and a 3-day cutoff · **key issue and return recording** · booking history with
 search, filter and pagination · dashboard and basic reporting · CSV import and export · audit log ·
@@ -623,7 +630,7 @@ advanced analytics · any AI feature.
 | 7 | Bulk data, reporting and retention | **Complete** |
 | 8 | Testing and security review | **Complete** — except the PostgreSQL run |
 | 9 | User acceptance testing | Not started — **next** |
-| 10 | Deployment and training | Not started — needs VPS and domain decisions |
+| 10 | Deployment and training | Started — managed-cloud pilot prepared; needs provider accounts, scheduler and domain |
 
 Phases 5b and 6b are numbered separately because they were added after the original plan and carry
 schedule cost that the original estimate did not include. Recurring bookings in particular are not a

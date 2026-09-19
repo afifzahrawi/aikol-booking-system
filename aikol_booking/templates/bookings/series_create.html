@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Weekly booking &mdash; {{ resource.name }}{% endblock %}
 {% block content %}
+<p class="record-reference">{{ resource.code }}</p>
 <h1>Repeat weekly &mdash; {{ resource.name }}</h1>
 <p class="lede">A semester of classes, entered once. Each day keeps its own times: a course may meet
    Monday morning and Thursday afternoon.</p>
@@ -10,6 +12,7 @@
         <form method="post" novalidate>
             {% csrf_token %}
             {{ form.non_field_errors }}
+            {% include "bookings/_user_combobox.html" %}
 
             <div class="field">{{ form.term.label_tag }}{{ form.term }}
                 <p class="help">{{ form.term.help_text }}</p>{{ form.term.errors }}</div>
@@ -47,7 +50,7 @@
                 </div>
 
                 {% if plan.clashing %}
-                <table class="data">
+                <table class="data" data-client-paginate data-pagination-label="Series conflicts pagination">
                     <thead><tr><th scope="col">Date</th><th scope="col">Time</th><th scope="col">Why it is left out</th></tr></thead>
                     <tbody>
                     {% for occ in plan.clashing %}
@@ -70,7 +73,7 @@
             {% endif %}
 
             <div class="btn-group">
-                <a class="btn" href="{% url 'resources:detail' resource.pk %}">Cancel</a>
+                <a class="btn" href="{% if office_mode %}{% url 'bookings:manage' %}{% else %}{% url 'resources:detail' resource.pk %}{% endif %}">Cancel</a>
                 <button class="btn btn-primary" type="submit">
                     {% if plan %}Confirm{% else %}Check these dates{% endif %}</button>
             </div>

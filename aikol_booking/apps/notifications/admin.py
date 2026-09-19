@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import EmailOutbox
+from .models import EmailConfiguration, EmailOutbox
+
+
+@admin.register(EmailConfiguration)
+class EmailConfigurationAdmin(admin.ModelAdmin):
+    list_display = ("host", "port", "username", "is_active", "updated_at")
+    readonly_fields = ("encrypted_password",)
 
 
 @admin.register(EmailOutbox)

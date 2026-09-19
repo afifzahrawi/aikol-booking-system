@@ -59,11 +59,11 @@ class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
         opens = self.cleaned_data.get("opens_at")
         closes = self.cleaned_data.get("closes_at")
         if opens and closes and closes <= opens:
-            raise forms.ValidationError("A room must close after it opens.")
+            raise forms.ValidationError("A venue must close after it opens.")
         return closes
 
 
-class VehicleForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
+class VehicleForm(StyledFormMixin, forms.ModelForm):
     layout = [
         ["code", "name"],
         ["registration_number", "vehicle_class"],
@@ -73,14 +73,12 @@ class VehicleForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
         ["road_tax_expiry", "status"],
     ]
 
-    applies_to = Facility.AppliesTo.VEHICLE
-
     class Meta:
         model = Vehicle
         fields = (
             "code", "name", "registration_number", "make", "model", "year",
             "seats", "transmission", "fuel_type", "road_tax_expiry",
-            "description", "facilities", "status",
+            "description", "status",
         )
         widgets = {
             "road_tax_expiry": forms.DateInput(attrs={"type": "date"}),
@@ -88,18 +86,17 @@ class VehicleForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
         }
         help_texts = {
             "road_tax_expiry": (
-                "Kept for the office. An untaxed car is withdrawn from the booking screens "
+                "Kept for the office. An untaxed vehicle is withdrawn from the booking screens "
                 "automatically, and requesters are not shown the reason."
             ),
             "status": (
-                "Setting a car to maintenance hides it from the booking screens. Bookings "
+                "Setting a vehicle to maintenance hides it from the booking screens. Bookings "
                 "already made are not cancelled — handle each deliberately, with a reason."
             ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.limit_facilities()
         if self.instance.pk:
             self.fields["code"].disabled = True
 

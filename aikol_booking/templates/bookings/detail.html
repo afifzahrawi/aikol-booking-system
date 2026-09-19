@@ -1,22 +1,25 @@
 {% extends "base.html" %}
 {% block title %}{{ booking.booking_reference }}{% endblock %}
 {% block content %}
-<div class="page-head">
+<div class="record-head">
     <div>
+        <p class="record-reference">{{ booking.booking_reference }}</p>
         <h1>{{ booking.resource.name }}</h1>
-        <p class="lede mono">{{ booking.booking_reference }}</p>
     </div>
     <div class="btn-group">
         {% if can_cancel %}
-            <a class="btn btn-danger" href="{% url 'bookings:cancel' booking.pk %}">Cancel booking</a>
+            <a class="btn btn-danger" data-modal-form href="{% url 'bookings:cancel' booking.pk %}">Cancel booking</a>
         {% endif %}
         {% if user.is_approver and booking.status == 'PENDING' %}
-            <a class="btn btn-primary" href="{% url 'bookings:decide' booking.pk %}">Decide</a>
+            <a class="btn btn-primary" data-modal-form href="{% url 'bookings:decide' booking.pk %}">Decide</a>
+        {% endif %}
+        {% if user.is_administrator and is_vehicle and booking.status == 'APPROVED' and booking.management_status == 'PENDING' %}
+            <a class="btn btn-primary" data-modal-form href="{% url 'bookings:vehicle_management' booking.pk %}">Management decision</a>
         {% endif %}
     </div>
 </div>
 
-<section class="card">
+<section class="record-sheet">
     <div class="card-body">
         <dl class="kv">
             <dt>Status</dt><dd>{{ booking.get_status_display }}</dd>
@@ -29,16 +32,15 @@
                 <dt>Requested by</dt><dd>{{ booking.created_by.full_name }}, on their behalf</dd>
             {% endif %}
             {% if is_vehicle %}
-                <dt>Driver</dt><dd>{{ booking.get_driver_arrangement_display }}</dd>
+                <dt>Driver route</dt><dd>{{ booking.get_driver_arrangement_display }}</dd>
                 <dt>From</dt><dd>{{ booking.location_from }}</dd>
                 <dt>To</dt><dd>{{ booking.location_to }}</dd>
                 <dt>Passengers</dt><dd>{{ booking.passengers }}</dd>
-                {% if booking.driver_arrangement == 'VMU' %}
-                    <dt>Management approval</dt>
-                    <dd>{% if booking.management_approved %}Given{% else %}Still required{% endif %}
-                        <span class="help">&mdash; a VMU driver needs Kulliyyah management approval
-                        as well as approval of this booking.</span></dd>
-                {% endif %}
+                <dt>Management decision</dt><dd>{{ booking.get_management_status_display }}</dd>
+                {% if booking.driver_name %}<dt>Assigned VMU driver</dt><dd>{{ booking.driver_name }} · {{ booking.driver_contact }}</dd>{% endif %}
+                {% if booking.management_decided_by %}<dt>Management decision recorded by</dt>
+                    <dd>{{ booking.management_decided_by.full_name }} on {{ booking.management_decided_at|date:"d M Y, H:i" }}</dd>{% endif %}
+                {% if booking.management_decision_reason %}<dt>Management reason</dt><dd>{{ booking.management_decision_reason }}</dd>{% endif %}
             {% else %}
                 <dt>Attendees</dt><dd>{{ booking.attendees }}</dd>
             {% endif %}
@@ -52,7 +54,7 @@
 
         {% if booking.series_id %}
             <p class="help">Part of a weekly series.
-               <a href="{% url 'bookings:series_cancel' booking.series_id %}">Cancel the whole series</a>
+               <a data-modal-form href="{% url 'bookings:series_cancel' booking.series_id %}">Cancel the whole series</a>
                &mdash; only future occurrences are affected.</p>
         {% endif %}
     </div>

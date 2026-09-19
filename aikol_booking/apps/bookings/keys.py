@@ -19,7 +19,9 @@ from django.db import transaction
 from django.db.models import Q, QuerySet
 from django.utils import timezone
 
-from .models import Booking, BookingStatus, KeyHandover
+from apps.resources.models import ResourceType
+
+from .models import Booking, BookingStatus, KeyHandover, ManagementDecision
 
 
 @transaction.atomic
@@ -39,6 +41,11 @@ def issue_key(
         raise ValidationError(
             f"{booking.booking_reference} is {booking.get_status_display().lower()}. "
             "A key is issued only for an approved booking."
+        )
+    if not booking.is_fully_approved:
+        raise ValidationError(
+            "The vehicle still needs Kulliyyah management approval and an assigned VMU driver "
+            "before its key can be issued."
         )
     if not collected_by_name.strip():
         raise ValidationError(
@@ -112,6 +119,10 @@ def keys_awaiting_collection() -> QuerySet[Booking]:
     """Approved bookings, still to come, whose key has not been picked up."""
     return (
         Booking.objects.filter(status=BookingStatus.APPROVED, end_at__gte=timezone.now())
+        .filter(
+            Q(resource__resource_type=ResourceType.VENUE)
+            | Q(management_status=ManagementDecision.APPROVED)
+        )
         .filter(Q(key_handover__isnull=True) | Q(key_handover__issued_at__isnull=True))
         .select_related("resource", "user")
         .order_by("start_at")

@@ -2,84 +2,108 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}{{ site.site_name }}{% endblock %} &mdash; {{ site.organisation }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}{{ site_content.site_name }}{% endblock %} | {{ site_content.organisation }}</title>
 {% comment %} Both stylesheets are served from this repository. Nothing from a CDN: the
    application has to work on a restricted institutional network. {% endcomment %}
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+<link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260919-1">
 </head>
-<body>
+<body class="{% if user.is_authenticated %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
 <a class="skip-link" href="#main">Skip to main content</a>
 
-<div class="app">
+<div class="app docket-shell">
 
 {% comment %} The header, navigation bar and footer below reproduce the structure the
-   stylesheet was written against — the prototype's `buildChrome()`. The class
+   stylesheet was written against. The class
    names are a contract: `.brand-name`, `.brand-rule`, `.header-user`,
    `.avatar`, `.nav-badge` and the rest are all styled, and inventing different
    markup here is what made the first version of these templates look nothing
    like the approved design. {% endcomment %}
-<header class="app-header">
+<header class="app-header docket-masthead">
     <a class="brand" href="{% if user.is_administrator %}{% url 'administration:dashboard' %}{% else %}{% url 'accounts:dashboard' %}{% endif %}">
-        {% if site.logo %}
-            <img src="{{ site.logo.url }}" alt="{{ site.logo_alt }}">
-        {% else %}
-            <img src="{% static 'images/aikol_logo.png' %}"
-                 alt="Ahmad Ibrahim Kulliyyah of Laws, International Islamic University Malaysia">
-        {% endif %}
-        <span class="brand-rule"></span>
+        <span class="brand-marks">
+            <img class="brand-iium"
+                 src="{% if site_content.iium_logo %}{{ site_content.iium_logo.url }}{% else %}{% static 'images/iium_logo_uploaded.jpg' %}{% endif %}"
+                 alt="{{ site_content.iium_logo_alt }}" width="1109" height="329">
+            <img class="brand-aikol"
+                 src="{% if site_content.logo %}{{ site_content.logo.url }}{% else %}{% static 'images/aikol_logo.png' %}{% endif %}"
+                 alt="{% if site_content.logo_alt %}{{ site_content.logo_alt }}{% else %}Ahmad Ibrahim Kulliyyah of Laws{% endif %}"
+                 width="2092" height="512">
+        </span>
         <span class="brand-text">
-            <span class="brand-name">{{ site.site_name }}</span>
-            <span class="brand-sub">{{ site.subtitle }}</span>
+            <span class="brand-name">{{ site_content.site_name }}</span>
+            <span class="brand-sub">{{ site_content.subtitle }}</span>
         </span>
     </a>
     <span class="header-spacer"></span>
+    <div class="header-actions">
     {% if user.is_authenticated %}
         {% if user.is_approver %}
             {% comment %} The two views are the same application, so this is a link and not
                a mode switch: what somebody may do is decided by their role. {% endcomment %}
             <a class="link-plain" href="{% if admin_area %}{% url 'accounts:dashboard' %}{% else %}{% url 'administration:dashboard' %}{% endif %}">{% if admin_area %}User view{% else %}Administrator view{% endif %}</a>
         {% endif %}
-        <div class="header-user">
-            <span class="avatar" aria-hidden="true">{{ user.initials }}</span>
-            <span class="who">
-                <span>{{ user.full_name }}</span>
-                <span class="role">{{ user.get_role_display }}</span>
-            </span>
-        </div>
-        <form method="post" action="{% url 'accounts:logout' %}" class="inline">{% csrf_token %}
-            <button type="submit" class="link-plain" style="background:none;border:0;cursor:pointer">Sign out</button>
-        </form>
     {% else %}
         <a class="link-plain" href="{% url 'accounts:login' %}">Sign in</a>
         <a class="link-plain" href="{% url 'accounts:register' %}">Register</a>
     {% endif %}
+    </div>
 </header>
 
 {% if user.is_authenticated %}
 <nav class="app-nav" aria-label="Main navigation">
-    <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
-    {% if admin_area %}
-        <a href="{% url 'bookings:approvals' %}" {% if nav == 'approvals' %}aria-current="page"{% endif %}>Approvals{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
-        <a href="{% url 'bookings:keys' %}" {% if nav == 'keys' %}aria-current="page"{% endif %}>Keys</a>
-        <a href="{% url 'resources:manage_venues' %}" {% if nav == 'resources' %}aria-current="page"{% endif %}>Resources</a>
-        <a href="{% url 'administration:users' %}" {% if nav == 'users' %}aria-current="page"{% endif %}>Users</a>
-        <a href="{% url 'reporting:reports' %}" {% if nav == 'reports' %}aria-current="page"{% endif %}>Reports</a>
-        <a href="{% url 'administration:site_content' %}" {% if nav == 'content' %}aria-current="page"{% endif %}>Site content</a>
+    <button class="nav-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true">
+        <svg aria-hidden="true" viewBox="0 0 20 20" focusable="false">
+            <path d="m12.5 5-5 5 5 5"></path>
+        </svg>
+        <span class="visually-hidden nav-toggle-label">Collapse</span>
+    </button>
+    {% if admin_area and user.is_administrator %}
+        <a href="{% url 'administration:dashboard' %}" {% if shell_nav == 'dashboard' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"></path></svg><span class="nav-link-label">Overview</span></a>
+        <a href="{% url 'bookings:manage' %}" {% if shell_nav == 'bookings' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path><path d="m8 14 2 2 5-5"></path></svg><span class="nav-link-label">Bookings</span>{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
+        <a href="{% url 'bookings:keys' %}" {% if shell_nav == 'keys' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"></circle><path d="M12 12h8M17 12v3M20 12v2"></path></svg><span class="nav-link-label">Keys</span></a>
+        <a href="{% url 'resources:manage_venues' %}" {% if shell_nav == 'resources' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M8 20v-6h8v6M3 20h18"></path></svg><span class="nav-link-label">Resources</span></a>
+        <a href="{% url 'administration:users' %}" {% if shell_nav == 'users' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 11a3 3 0 0 0 0-6M18 14a5 5 0 0 1 3 4v2"></path></svg><span class="nav-link-label">People</span></a>
+        <a href="{% url 'reporting:reports' %}" {% if shell_nav == 'reports' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg><span class="nav-link-label">Insights</span></a>
+        <a href="{% url 'administration:settings' %}" {% if shell_nav == 'system' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L14.5 3h-5l-.4 3.1a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L5.1 11a7 7 0 0 0 0 2L3 14.5l2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 3.1h5l.4-3.1a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2.1-1.5a7 7 0 0 0 .1-1Z"></path></svg><span class="nav-link-label">System</span></a>
+    {% elif admin_area %}
+        <a href="{% url 'bookings:approvals' %}" {% if shell_nav == 'approvals' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4"></path></svg><span class="nav-link-label">Queue</span>{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
+        <a href="{% url 'reporting:reports' %}" {% if shell_nav == 'reports' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6M4 4v4.6h4.6M12 8v5l3 2"></path></svg><span class="nav-link-label">History</span></a>
     {% else %}
-        <a href="{% url 'accounts:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
-        <a href="{% url 'resources:venues' %}" {% if nav == 'venues' %}aria-current="page"{% endif %}>Rooms</a>
-        <a href="{% url 'resources:vehicles' %}" {% if nav == 'vehicles' %}aria-current="page"{% endif %}>Vehicles</a>
-        <a href="{% url 'bookings:mine' %}" {% if nav == 'mine' %}aria-current="page"{% endif %}>My bookings</a>
+        <a href="{% url 'accounts:dashboard' %}" {% if shell_nav == 'dashboard' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9 20v-6h6v6"></path></svg><span class="nav-link-label">Home</span></a>
+        <a href="{% url 'bookings:mine' %}" {% if shell_nav == 'mine' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path><path d="m8 14 2 2 5-5"></path></svg><span class="nav-link-label">My Bookings</span></a>
+        <a href="{% url 'resources:venues' %}" {% if shell_nav == 'venues' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M8 20v-6h8v6M3 20h18"></path></svg><span class="nav-link-label">Venue</span></a>
+        <a href="{% url 'resources:vehicles' %}" {% if shell_nav == 'vehicles' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 16-1-4 2-5h12l2 5-1 4M6 16h12M7 16v3M17 16v3"></path><circle cx="7" cy="13" r="1"></circle><circle cx="17" cy="13" r="1"></circle></svg><span class="nav-link-label">Vehicles</span></a>
     {% endif %}
-    <span class="header-spacer"></span>
-    <div class="nav-search"><span class="ring"></span>{% if admin_area %}Search bookings, users or resources{% else %}Search rooms, cars or bookings{% endif %}</div>
+    <details class="nav-profile">
+        <summary title="Account menu">
+            <span class="nav-profile-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20v-1.5a7 7 0 0 1 14 0V20"></path></svg>
+            </span>
+            <span class="nav-profile-name"><strong>{{ user.full_name }}</strong><small>{{ user.get_role_display }}</small></span>
+            <svg class="nav-profile-chevron" aria-hidden="true" viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"></path></svg>
+        </summary>
+        <div class="nav-profile-menu" aria-label="Account actions">
+            <a href="{% url 'accounts:profile' %}">Edit Profile</a>
+            <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+                <button type="submit">Sign Out</button>
+            </form>
+        </div>
+    </details>
 </nav>
 {% endif %}
 
-<div class="app-body">
+<div class="app-body docket-workspace">
 <main id="main" class="main">
+    {% if show_back_navigation %}
+        <a class="back-navigation" href="{{ back_fallback_url }}" data-history-back>
+            <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m12.5 4.5-5.5 5.5 5.5 5.5"></path></svg>
+            Back
+        </a>
+    {% endif %}
     {% if messages %}
         {% for m in messages %}<p class="notice notice-{{ m.tags }}">{{ m }}</p>{% endfor %}
     {% endif %}
@@ -88,24 +112,40 @@
 </div>
 
 <footer class="app-footer">
-    <div>
-        <h4>{{ site.organisation }}</h4>
-        {{ site.address|linebreaksbr }}
+    <div class="footer-identity">
+        <h4>{{ site_content.organisation }}</h4>
+        <p>{{ site_content.address|linebreaksbr }}</p>
     </div>
     <div>
-        <div class="foot-label">{{ site.contact_heading }}</div>
-        {{ site.phone }}{% if site.email %}<br>{{ site.email }}{% endif %}{% if site.office_hours %}<br>{{ site.office_hours }}{% endif %}
+        <div class="foot-label">{{ site_content.contact_heading }}</div>
+        {% if site_content.phone %}<a href="tel:{{ site_content.phone }}">{{ site_content.phone }}</a>{% endif %}
+        {% if site_content.email %}<br><a href="mailto:{{ site_content.email }}">{{ site_content.email }}</a>{% endif %}
+        {% if site_content.office_hours %}<br>{{ site_content.office_hours }}{% endif %}
     </div>
     <div>
-        <div class="foot-label">IIUM</div>
-        <a href="https://www.iium.edu.my">iium.edu.my</a><br>
-        <a href="#">AIKOL Kulliyyah site</a><br>
-        <a href="#">Booking rules and policy</a>
+        <div class="foot-label">Institution</div>
+        <a href="https://www.iium.edu.my">International Islamic University Malaysia</a>
     </div>
 </footer>
+
+<dialog class="action-dialog" id="actionDialog" aria-labelledby="actionDialogTitle">
+    <div class="action-dialog-frame">
+        <div class="action-dialog-head">
+            <h2 id="actionDialogTitle">Action</h2>
+            <button type="button" class="action-dialog-close" data-dialog-close aria-label="Close popup">
+                <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"></path></svg>
+            </button>
+        </div>
+        <div class="action-dialog-body" data-dialog-body></div>
+    </div>
+</dialog>
 </div>
 
-<script src="{% static 'js/chrome.js' %}" defer></script>
+<script src="{% static 'js/chrome.js' %}?v=20260916-2" defer></script>
+<script src="{% static 'js/modal-forms.js' %}?v=20260919-2" defer></script>
+<script src="{% static 'js/availability.js' %}?v=20260916-2" defer></script>
+<script src="{% static 'js/user-combobox.js' %}?v=20260916-2" defer></script>
+<script src="{% static 'js/table-pagination.js' %}?v=20260916-1" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

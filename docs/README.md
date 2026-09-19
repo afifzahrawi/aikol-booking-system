@@ -12,6 +12,7 @@ intended to be read in a browser and printed to PDF.
 | [technical/database-schema.md](technical/database-schema.md) | Tables, the shared `resources` design, facilities, the email outbox, indexing strategy, migration notes |
 | [technical/booking-rules.md](technical/booking-rules.md) | The overlap rule, status lifecycle, venue and vehicle rules, recurrence, cancellation, key handover, confirmation email, concurrency handling |
 | [technical/data-retention.md](technical/data-retention.md) | Retention policy, export and archiving, batched deletion, backup and restore |
+| [technical/managed-cloud-deployment.md](technical/managed-cloud-deployment.md) | Cloud Run, Neon and R2 deployment, scheduled jobs, cost controls and go-live checks |
 | [technical/security.md](technical/security.md) | Authentication, self-registration, the three roles, personal data, upload handling, destructive-operation safeguards, server operations |
 | [technical/testing-strategy.md](technical/testing-strategy.md) | What must be tested, the required conflict, recurrence, vehicle, key, email and facility tests, performance checks |
 | [technical/bulk-import.md](technical/bulk-import.md) | CSV formats, validation rules, transaction behaviour |
@@ -30,7 +31,7 @@ line with the answers. Section 24 of the report now records AIKOL's responses, a
 covers vehicles, key custody, facilities and self-registration across nineteen screens.
 
 The authoritative summary of project direction, decisions and current status is
-[`CLAUDE.md`](../CLAUDE.md) in the repository root. Section 5 of that file lists every confirmed
+[`AGENTS.md`](../AGENTS.md) in the repository root. Section 5 of that file lists every confirmed
 decision and is the thing to read before writing any code. Update it whenever architecture,
 requirements, schema or major features change.
 

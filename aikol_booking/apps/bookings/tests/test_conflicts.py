@@ -15,7 +15,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.accounts.models import Affiliation, User
-from apps.bookings.models import Booking, BookingStatus
+from apps.bookings.models import Booking, BookingStatus, DriverArrangement
 from apps.bookings.services import create_booking, find_conflicts
 from apps.resources.models import Vehicle, Venue
 
@@ -127,6 +127,11 @@ class ConflictRuleMixin:
         self.assertEqual(Booking.objects.filter(resource=self.resource).count(), 1)
 
     def test_create_booking_accepts_an_adjacent_slot(self):
+        vehicle_fields = (
+            {"driver_arrangement": DriverArrangement.VMU_DRIVER}
+            if isinstance(self.resource, Vehicle)
+            else {}
+        )
         booking = create_booking(
             resource=self.resource,
             user=self.user,
@@ -134,6 +139,7 @@ class ConflictRuleMixin:
             start_at=at(self.day, "12:00"),
             end_at=at(self.day, "14:00"),
             purpose="Adjacent",
+            **vehicle_fields,
         )
         self.assertEqual(booking.status, BookingStatus.PENDING)
         self.assertTrue(booking.booking_reference.startswith("BK-"))

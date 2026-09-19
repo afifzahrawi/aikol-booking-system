@@ -9,6 +9,7 @@ urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     path("sign-in/", views.LoginView.as_view(), name="login"),
     path("sign-out/", auth_views.LogoutView.as_view(), name="logout"),
+    path("profile/", views.profile_edit, name="profile"),
     path("register/", views.RegisterView.as_view(), name="register"),
     path("register/check-your-email/", views.register_done, name="register_done"),
     path("verify/<uidb64>/<token>/", views.verify_email, name="verify"),

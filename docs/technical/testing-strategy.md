@@ -75,14 +75,10 @@ series touches dozens of slots at once.
 
 | Case | Expected |
 | --- | --- |
-| Student requests a vehicle with a VMU driver | **Accepted** — students may book, they may not drive |
-| Student submits `driver_arrangement = SELF` | Refused by the view, not only by the form |
-| Lecturer requests a vehicle, self-drive | Accepted |
+| Any active, verified user requests a vehicle with a VMU driver | **Accepted** — requesters do not drive Kulliyyah vehicles |
+| Any user submits an unsupported driver arrangement | Refused by the form and service layer |
 | VMU booking | Records that Kulliyyah management approval is also required; not usable until both approvals exist |
 | Administrator books a vehicle on a student's behalf | Accepted; `user_id` is the student, `created_by_id` the administrator |
-| Self-drive with no licence on file | Refused with a prompt to add it |
-| Self-drive licence expires before the trip ends | Refused |
-| VMU booking with no licence on file | **Accepted** — the requester is not the driver |
 | Road tax expires before the trip ends | Refused, and the reason given to the requester names no date |
 | `passenger_count` exceeds `vehicle.seats` | Refused |
 | Trip longer than `maximum_vehicle_trip_days` | Refused |

@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes, force_str
@@ -16,7 +17,7 @@ from django.views.generic import CreateView
 from apps.audit.services import log_action
 from apps.notifications.services import queue_email
 
-from .forms import EmailAuthenticationForm, RegistrationForm
+from .forms import EmailAuthenticationForm, ProfileForm, RegistrationForm
 from .models import User
 from .throttle import is_throttled, reset as reset_throttle
 from .tokens import email_verification_token
@@ -98,7 +99,7 @@ def _queue_verification(request, user: User) -> None:
         subject="Confirm your AIKOL Booking account",
         body=(
             f"Assalamualaikum {user.full_name},\n\n"
-            "An account has been created for you on the AIKOL Room and Vehicle Booking "
+            "An account has been created for you on the AIKOL Venue and Vehicle Booking "
             "System. Confirm this address to activate it:\n\n"
             f"{link}\n\n"
             f"The link is valid for {days} days. Until it is used, the account cannot "
@@ -163,6 +164,51 @@ class LoginView(auth_views.LoginView):
 
 
 @login_required
+def profile_edit(request):
+    """Let a person maintain contact details without changing governed records.
+
+    Email changes require fresh verification. Affiliation, role and
+    matriculation/staff number are maintained by the Kulliyyah office.
+    """
+    form = ProfileForm(request.POST or None, instance=request.user)
+    if request.method == "POST" and form.is_valid():
+        changed = list(form.changed_data)
+        email_changed = "email" in changed
+        with transaction.atomic():
+            person = form.save(commit=False)
+            if email_changed:
+                person.email_verified = False
+                person.email_verified_at = None
+            person.save()
+            if email_changed:
+                _queue_verification(request, person)
+            if changed:
+                log_action(
+                    actor=person,
+                    action="PROFILE_UPDATED",
+                    entity_type="User",
+                    entity_id=person.pk,
+                    # Contact details are personal data and never belong in the
+                    # audit log's free-text description.
+                    description="Own profile updated: " + ", ".join(changed) + ".",
+                    request=request,
+                )
+        if email_changed:
+            messages.success(
+                request,
+                "Profile updated. Confirm the link sent to your new email address "
+                "before making another booking.",
+            )
+        elif changed:
+            messages.success(request, "Your profile has been updated.")
+        else:
+            messages.info(request, "Your profile is already up to date.")
+        return redirect("accounts:profile")
+
+    return render(request, "accounts/profile.html", {"form": form})
+
+
+@login_required
 def dashboard(request):
     """The landing page: a greeting, a search that answers in place, and the
     person's own activity.
@@ -176,7 +222,7 @@ def dashboard(request):
 
     from django.utils import timezone
 
-    from apps.administration.models import SystemSetting
+    from apps.administration.models import Announcement, SystemSetting
     from apps.bookings.models import BLOCKING_STATUSES, Booking, BookingStatus
     from apps.bookings.services import find_conflicts, validate_period
     from apps.resources.models import ResourceStatus, ResourceType, Vehicle, Venue
@@ -201,6 +247,10 @@ def dashboard(request):
         search_date = dt.date.fromisoformat(request.GET.get("date", ""))
     except ValueError:
         search_date = today
+    try:
+        return_date = dt.date.fromisoformat(request.GET.get("end_date", ""))
+    except ValueError:
+        return_date = search_date
 
     free, problems, searched = [], [], "date" in request.GET
     if searched:
@@ -209,7 +259,10 @@ def dashboard(request):
                 dt.datetime.combine(search_date, dt.time.fromisoformat(from_time))
             )
             end_at = timezone.make_aware(
-                dt.datetime.combine(search_date, dt.time.fromisoformat(to_time))
+                dt.datetime.combine(
+                    return_date if kind == ResourceType.VEHICLE else search_date,
+                    dt.time.fromisoformat(to_time),
+                )
             )
         except ValueError:
             problems = ["That is not a valid time."]
@@ -228,28 +281,10 @@ def dashboard(request):
                         free.append(resource)
 
     building = request.GET.get("building", "")
-    if searched and building:
+    if searched and building and kind == ResourceType.VENUE:
         free = [r for r in free if getattr(r, "location", "") == building]
 
     mine = Booking.objects.filter(user=request.user)
-
-    categories = []
-    for value, label in Venue.VenueType.choices:
-        rooms = Venue.objects.filter(venue_type=value)
-        if not rooms.exists():
-            continue
-        biggest = max(rooms.values_list("capacity", flat=True))
-        first = rooms.exclude(image_slug="").first()
-        categories.append(
-            {
-                "value": value,
-                "label": label,
-                "count": rooms.count(),
-                "largest": biggest,
-                "available": rooms.filter(status=ResourceStatus.ACTIVE).exists(),
-                "slug": first.placeholder if first else "",
-            }
-        )
 
     return render(
         request,
@@ -262,6 +297,7 @@ def dashboard(request):
             "slots": slots,
             "kind": kind,
             "search_date": search_date,
+            "return_date": return_date,
             "from_time": from_time,
             "to_time": to_time,
             "searched": searched,
@@ -271,8 +307,6 @@ def dashboard(request):
                 {v for v in Venue.objects.values_list("location", flat=True) if v}
             ),
             "building": building,
-            "room_total": Venue.objects.count(),
-            "car_total": Vehicle.objects.count(),
             "next_booking": mine.filter(
                 status=BookingStatus.APPROVED, start_at__gte=timezone.now()
             ).select_related("resource").order_by("start_at").first(),
@@ -287,6 +321,9 @@ def dashboard(request):
             "upcoming": mine.filter(
                 status__in=BLOCKING_STATUSES, start_at__gte=timezone.now()
             ).select_related("resource").order_by("start_at")[:5],
-            "categories": [c for c in categories if c["count"]],
+            "announcements": Announcement.objects.filter(is_active=True)
+            .filter(Q(starts_at__isnull=True) | Q(starts_at__lte=timezone.now()))
+            .filter(Q(ends_at__isnull=True) | Q(ends_at__gte=timezone.now()))
+            .order_by("-tone", "-created_at"),
         },
     )

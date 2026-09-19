@@ -6,6 +6,59 @@
        software release.</p></div></div>
 {% include "administration/_nav.html" with tab='settings' %}
 
+{% if not email_configuration.is_ready %}
+<div class="notice notice-warn" role="status">
+    <strong>Email delivery is off.</strong> Registration and booking messages are queued but cannot
+    be sent until the SMTP host, from address and Enable email delivery are saved below.
+    {% if queued_email_count %}{{ queued_email_count }} message{{ queued_email_count|pluralize }} await delivery.{% endif %}
+</div>
+{% elif queued_email_count %}
+<div class="notice notice-info" role="status">
+    {{ queued_email_count }} message{{ queued_email_count|pluralize }} await the next scheduled
+    delivery run. Check the mail worker if they remain queued.
+</div>
+{% endif %}
+
+<form method="post" novalidate class="content-editor">
+    {% csrf_token %}
+    <input type="hidden" name="form_kind" value="email">
+    {{ email_form.non_field_errors }}
+    <section class="settings-section" aria-labelledby="email-delivery-heading">
+        <div class="settings-intro">
+            <h2 id="email-delivery-heading">Email delivery</h2>
+            <p>Django sends queued account and booking messages through the SMTP server entered here.</p>
+            <p>Ask the administrator of your sending mailbox for its SMTP host, port, sign-in
+               method and permitted From address. This form supports SMTP username and password;
+               it does not support OAuth-only mailboxes. Do not paste credentials into a support chat.</p>
+            <p class="help">Enabling delivery will also send messages already waiting in the outbox
+               on the next scheduled run. Review the queued count above first.</p>
+            <p class="help">
+                {% if email_configuration.has_password %}A password is stored securely. Leave the password field blank to keep it.{% else %}No SMTP password is stored yet.{% endif %}
+            </p>
+        </div>
+        <div class="settings-fields">
+            <div class="field-row">
+                {% include "_field.html" with field=email_form.host %}
+                {% include "_field.html" with field=email_form.port %}
+            </div>
+            <div class="field-row">
+                {% include "_field.html" with field=email_form.username %}
+                {% include "_field.html" with field=email_form.password %}
+            </div>
+            <div class="field-row">
+                {% include "_field.html" with field=email_form.use_tls %}
+                {% include "_field.html" with field=email_form.use_ssl %}
+            </div>
+            <div class="field-row">
+                {% include "_field.html" with field=email_form.default_from_email %}
+                {% include "_field.html" with field=email_form.timeout_seconds %}
+            </div>
+            {% include "_field.html" with field=email_form.is_active %}
+            <button class="btn btn-primary" type="submit">Save email settings</button>
+        </div>
+    </section>
+</form>
+
 <div class="notice notice-info">
     The values shipped are AIKOL's confirmed answers, not arbitrary defaults. Each row says which
     decision it came from. Changing one takes effect immediately and is written to the audit log.
@@ -13,9 +66,9 @@
 
 <section class="card">
     <div class="table-wrap">
-    <table class="data">
+    <table class="data" data-client-paginate data-pagination-label="Settings pagination">
         <thead><tr><th scope="col">Setting</th><th scope="col">Value</th>
-            <th scope="col">What it controls</th><th scope="col"></th></tr></thead>
+            <th scope="col">What it controls</th><th scope="col">Actions</th></tr></thead>
         <tbody>
         {% for row in rows %}
             <tr>

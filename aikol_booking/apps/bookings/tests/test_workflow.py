@@ -416,6 +416,46 @@ class SeriesTests(Fixtures):
 
 
 class BookingViewTests(Fixtures):
+    def test_empty_post_names_missing_booking_fields(self):
+        self.client.force_login(self.requester)
+        response = self.client.post(reverse("bookings:create", args=[self.room.pk]), {})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Request not submitted")
+        self.assertContains(response, "This field is required")
+        self.assertEqual(Booking.objects.count(), 0)
+
+    def test_search_slot_is_prefilled_on_the_booking_form(self):
+        self.client.force_login(self.requester)
+        response = self.client.get(
+            reverse("bookings:create", args=[self.room.pk]),
+            {
+                "start_date": self.day.isoformat(),
+                "start_time": "09:00",
+                "end_time": "11:00",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form"]["start_date"].value(), self.day.isoformat())
+        self.assertEqual(response.context["form"]["start_time"].value(), "09:00")
+        self.assertEqual(response.context["form"]["end_time"].value(), "11:00")
+
+    def test_invalid_submission_explains_the_recovery_above_the_form(self):
+        self.client.force_login(self.requester)
+        response = self.client.post(
+            reverse("bookings:create", args=[self.room.pk]),
+            {
+                "start_date": self.day.isoformat(),
+                "start_time": "09:00",
+                "end_time": "11:00",
+                "purpose": "Staff meeting",
+                "attendees": "500",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Request not submitted")
+        self.assertContains(response, "seats 30")
+        self.assertEqual(Booking.objects.count(), 0)
+
     def test_an_unverified_account_cannot_reach_the_booking_form(self):
         unverified = make_user("new@demo.aikol.test")
         unverified.email_verified = False

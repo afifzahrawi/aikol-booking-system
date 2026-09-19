@@ -1,0 +1,20 @@
+{% if form.on_behalf_of %}
+<section class="docket-section booking-for" data-user-combobox
+         data-source="{% url 'bookings:user_search' %}">
+    <div class="docket-section-heading">
+        <h2>Requester</h2>
+        <p>Leave this blank to book for yourself.</p>
+    </div>
+    <div class="field">
+        <label for="bookingForSearch">Booking for</label>
+        <p class="help" id="bookingForHelp">Search by name, email, matriculation or staff number.</p>
+        <input class="input" type="search" id="bookingForSearch"
+               value="{{ form.booking_for_label }}" autocomplete="off"
+               role="combobox" aria-autocomplete="list" aria-expanded="false"
+               aria-controls="bookingForResults" aria-describedby="bookingForHelp">
+        <div class="combobox-results" id="bookingForResults" role="listbox" hidden></div>
+        <button class="btn btn-sm combobox-clear" type="button" hidden>Book for myself</button>
+        {{ form.on_behalf_of.errors }}
+    </div>
+</section>
+{% endif %}

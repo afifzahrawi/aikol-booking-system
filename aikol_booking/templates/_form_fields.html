@@ -7,7 +7,9 @@
                 {% for field in fields %}{% include "_field.html" %}{% endfor %}
             </div>
         {% else %}
-            {% for field in fields %}{% include "_field.html" %}{% endfor %}
+            {% for field in fields %}
+                {% if field.is_hidden %}{{ field }}{% else %}{% include "_field.html" %}{% endif %}
+            {% endfor %}
         {% endif %}
     {% endfor %}
 {% else %}

@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 
 from django import forms
+from django.forms import BaseInlineFormSet, inlineformset_factory
 
 from config.forms import StyledFormMixin
 from django.utils import timezone
@@ -17,8 +18,8 @@ from django.utils import timezone
 from apps.administration.models import SystemSetting
 from apps.resources.models import ResourceType
 
-from .models import AcademicTerm, DriverArrangement
-from .services import check_driver_arrangement, validate_period
+from .models import AcademicTerm, DriverArrangement, TermBreak
+from .services import validate_period
 
 WEEKDAYS = [
     (0, "Monday"), (1, "Tuesday"), (2, "Wednesday"), (3, "Thursday"),
@@ -26,7 +27,41 @@ WEEKDAYS = [
 ]
 
 
-class BookingForm(StyledFormMixin, forms.Form):
+class OnBehalfMixin:
+    """A hidden identifier paired with the server-backed user combobox.
+
+    A normal ModelChoiceField would render every account into one enormous
+    select. The visible combobox searches the database; this hidden field still
+    gives Django authoritative validation of the chosen user id.
+    """
+
+    def add_on_behalf_field(self, user) -> None:
+        if not user.is_administrator:
+            return
+        from apps.accounts.models import User
+
+        self.fields["on_behalf_of"] = forms.ModelChoiceField(
+            required=False,
+            queryset=User.objects.filter(is_active=True, email_verified=True),
+            widget=forms.HiddenInput,
+            label="Booking for",
+        )
+
+    @property
+    def booking_for_label(self) -> str:
+        if "on_behalf_of" not in self.fields:
+            return ""
+        raw = self["on_behalf_of"].value()
+        if not raw:
+            return ""
+        person = self.fields["on_behalf_of"].queryset.filter(pk=raw).first()
+        if not person:
+            return ""
+        identifier = person.identification_number or "Public account"
+        return f"{person.full_name} — {person.email} · {identifier}"
+
+
+class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
     """One form for both kinds of resource.
 
     The fields differ — a room needs an attendee count, a car needs a
@@ -41,21 +76,28 @@ class BookingForm(StyledFormMixin, forms.Form):
     ]
 
 
-    start_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
-    start_time = forms.TimeField(widget=forms.TimeInput(attrs={"type": "time"}))
+    start_date = forms.DateField(
+        label="Start Date", widget=forms.DateInput(attrs={"type": "date"})
+    )
+    start_time = forms.TimeField(
+        label="Start Time", widget=forms.TimeInput(attrs={"type": "time"})
+    )
     end_date = forms.DateField(
         required=False,
+        label="End Date",
         widget=forms.DateInput(attrs={"type": "date"}),
         help_text="Vehicles only. Leave blank for a same-day trip.",
     )
-    end_time = forms.TimeField(widget=forms.TimeInput(attrs={"type": "time"}))
+    end_time = forms.TimeField(
+        label="End Time", widget=forms.TimeInput(attrs={"type": "time"})
+    )
     purpose = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 3}),
         help_text="Visible to the requester and on the record.",
     )
 
     # Venue only
-    attendees = forms.IntegerField(required=False, min_value=1)
+    attendees = forms.IntegerField(required=False, min_value=1, label="Number of Attendees")
 
     # Vehicle only
     driver_arrangement = forms.ChoiceField(
@@ -63,9 +105,9 @@ class BookingForm(StyledFormMixin, forms.Form):
         choices=DriverArrangement.choices,
         widget=forms.RadioSelect,
     )
-    location_from = forms.CharField(required=False, max_length=150)
-    location_to = forms.CharField(required=False, max_length=150)
-    passengers = forms.IntegerField(required=False, min_value=1)
+    location_from = forms.CharField(required=False, max_length=150, label="Location From")
+    location_to = forms.CharField(required=False, max_length=150, label="Location To")
+    passengers = forms.IntegerField(required=False, min_value=1, label="Number of Passengers")
 
     def __init__(self, *args, resource, user, **kwargs):
         super().__init__(*args, **kwargs)
@@ -73,23 +115,7 @@ class BookingForm(StyledFormMixin, forms.Form):
         self.user = user
         self.is_vehicle = resource.resource_type == ResourceType.VEHICLE
 
-        if user.is_administrator:
-            # Decision 14. The booking is attributed to BOTH people: `user` is
-            # who it is for, `created_by` is who made it. Merging them would
-            # lose which of the two to contact and which to hold responsible.
-            from apps.accounts.models import User
-
-            self.fields["on_behalf_of"] = forms.ModelChoiceField(
-                required=False,
-                queryset=User.objects.filter(is_active=True, email_verified=True)
-                .order_by("full_name"),
-                label="Booking for",
-                empty_label="Myself",
-                help_text=(
-                    "Leave as Myself unless you are booking for somebody else. Only "
-                    "verified accounts appear here — an unverified one cannot book."
-                ),
-            )
+        self.add_on_behalf_field(user)
 
         for name in ("attendees",) if self.is_vehicle else (
             "driver_arrangement", "location_from", "location_to", "passengers", "end_date"
@@ -101,20 +127,14 @@ class BookingForm(StyledFormMixin, forms.Form):
             self.fields["location_from"].required = True
             self.fields["location_to"].required = True
             self.fields["passengers"].required = True
-            if not user.may_drive:
-                # A student may never drive a Kulliyyah car. Removing the choice
-                # is a courtesy; the view refuses it regardless.
-                self.fields["driver_arrangement"].choices = [
-                    (DriverArrangement.VMU_DRIVER, DriverArrangement.VMU_DRIVER.label)
-                ]
-                self.fields["driver_arrangement"].help_text = (
-                    "Students may book a car but may not drive one, so a Vehicle Management "
-                    "Unit driver is requested through STADD. That needs Kulliyyah management "
-                    "approval as well as approval of this booking."
-                )
+            self.fields["driver_arrangement"].choices = [
+                (DriverArrangement.VMU_DRIVER, DriverArrangement.VMU_DRIVER.label)
+            ]
+            self.fields["driver_arrangement"].widget = forms.HiddenInput()
+            self.fields["driver_arrangement"].initial = DriverArrangement.VMU_DRIVER
         else:
             self.fields["attendees"].required = True
-            self.fields["attendees"].help_text = f"The room seats {resource.capacity}."
+            self.fields["attendees"].help_text = f"The venue seats {resource.capacity}."
 
     def clean(self):
         cleaned = super().clean()
@@ -133,28 +153,13 @@ class BookingForm(StyledFormMixin, forms.Form):
         for problem in validate_period(self.resource, start_at, end_at):
             self.add_error(None, problem)
 
-        # Eligibility to drive belongs to the person the booking is FOR, not to
-        # the administrator filling the form in. An administrator who may drive
-        # must not confer that on a student by typing on their behalf.
-        subject = cleaned.get("on_behalf_of") or self.user
-
         if self.is_vehicle:
             arrangement = cleaned.get("driver_arrangement")
-            for problem in check_driver_arrangement(subject, self.resource, arrangement):
-                # The VMU note is guidance, not a refusal — it tells the
-                # requester about the second approval before they are surprised
-                # by it. Only the eligibility and licence problems block.
-                if arrangement == DriverArrangement.VMU_DRIVER:
-                    continue
-                self.add_error("driver_arrangement", problem)
-            if arrangement == DriverArrangement.SELF_DRIVE and subject.licence_expiry:
-                # The licence must be valid at the END of the trip, not on the
-                # day it is requested.
-                if subject.licence_expiry < end_at.date():
-                    self.add_error(
-                        "driver_arrangement",
-                        "Your licence expires before the trip ends.",
-                    )
+            if arrangement != DriverArrangement.VMU_DRIVER:
+                self.add_error(
+                    "driver_arrangement",
+                    "Kulliyyah vehicles must use a driver supplied by the Vehicle Management Unit.",
+                )
             passengers = cleaned.get("passengers")
             if passengers and passengers > self.resource.seats:
                 self.add_error(
@@ -169,7 +174,7 @@ class BookingForm(StyledFormMixin, forms.Form):
         return cleaned
 
 
-class RecurrenceForm(StyledFormMixin, forms.Form):
+class RecurrenceForm(OnBehalfMixin, StyledFormMixin, forms.Form):
     """A weekly series, generated against one semester.
 
     Each weekday keeps its own times: a course may meet Monday morning and
@@ -194,8 +199,10 @@ class RecurrenceForm(StyledFormMixin, forms.Form):
         ),
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if user is not None:
+            self.add_on_behalf_field(user)
         self.fields["term"].initial = AcademicTerm.current()
         for index, label in WEEKDAYS:
             self.fields[f"day_{index}"] = forms.BooleanField(required=False, label=label)
@@ -261,6 +268,108 @@ class DecisionForm(StyledFormMixin, forms.Form):
         widget=forms.Textarea(attrs={"rows": 2}),
         help_text="Required when rejecting. Sent to the requester.",
     )
+
+
+class VehicleManagementDecisionForm(StyledFormMixin, forms.Form):
+    """Assign the VMU driver and record the separately attributed decision."""
+
+    layout = [["driver_name", "driver_contact"]]
+
+    driver_name = forms.CharField(
+        required=False,
+        max_length=150,
+        help_text="Required when management approves the trip.",
+    )
+    driver_contact = forms.CharField(
+        required=False,
+        max_length=20,
+        help_text="Required when management approves the trip.",
+    )
+    reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        help_text="Required when management does not approve the trip.",
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        action = self.data.get("action")
+        if action == "approve":
+            if not (cleaned.get("driver_name") or "").strip():
+                self.add_error("driver_name", "Assign the VMU driver before approving.")
+            if not (cleaned.get("driver_contact") or "").strip():
+                self.add_error("driver_contact", "Give the driver's contact number.")
+        elif action == "reject":
+            if len((cleaned.get("reason") or "").strip()) < 5:
+                self.add_error("reason", "Give a usable reason for not approving the trip.")
+        else:
+            self.add_error(None, "Choose approve or do not approve.")
+        return cleaned
+
+
+class AcademicTermForm(StyledFormMixin, forms.ModelForm):
+    layout = [["start_date", "end_date"]]
+
+    class Meta:
+        model = AcademicTerm
+        fields = ("name", "start_date", "end_date")
+        widgets = {
+            "start_date": forms.DateInput(attrs={"type": "date"}),
+            "end_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class TermBreakForm(StyledFormMixin, forms.ModelForm):
+    layout = [["start_date", "end_date"]]
+
+    class Meta:
+        model = TermBreak
+        fields = ("name", "start_date", "end_date")
+        widgets = {
+            "start_date": forms.DateInput(attrs={"type": "date"}),
+            "end_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class BaseTermBreakFormSet(BaseInlineFormSet):
+    """Validate break rows together, including rows not saved yet.
+
+    ``TermBreak.clean()`` catches collisions with rows already in the database.
+    A formset can also contain two new rows, so it must check its own cleaned
+    forms before either row is written.
+    """
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        periods: list[tuple[dt.date, dt.date, str]] = []
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data") or form.cleaned_data.get("DELETE"):
+                continue
+            start = form.cleaned_data.get("start_date")
+            end = form.cleaned_data.get("end_date")
+            if not start or not end:
+                continue
+            name = form.cleaned_data.get("name") or "another break"
+            for other_start, other_end, other_name in periods:
+                if start <= other_end and end >= other_start:
+                    raise forms.ValidationError(
+                        f"{name} overlaps {other_name}. Break dates in one calendar "
+                        "must not overlap."
+                    )
+            periods.append((start, end, name))
+
+
+TermBreakFormSet = inlineformset_factory(
+    AcademicTerm,
+    TermBreak,
+    form=TermBreakForm,
+    formset=BaseTermBreakFormSet,
+    extra=1,
+    can_delete=True,
+)
 
 
 class CancellationForm(StyledFormMixin, forms.Form):

@@ -58,17 +58,49 @@ def booking_submitted(booking) -> None:
 
 
 def booking_approved(booking) -> None:
+    vehicle_wait = booking.resource.resource_type == "VEHICLE"
     queue_email(
         to=booking.user.email,
         subject=f"Booking approved — {booking.booking_reference}",
         body=(
             _greeting(booking)
-            + "Your booking has been approved.\n\n"
+            + (
+                "The booking request has passed its first approval. Kulliyyah management must "
+                "still approve the vehicle use and the office must assign the VMU driver.\n\n"
+                if vehicle_wait
+                else "Your booking has been approved.\n\n"
+            )
             + _details(booking)
-            + "\nCollect the key from the Kulliyyah office. If you can no longer use "
-            "the booking, cancel it so that somebody else can.\n"
+            + (
+                "\nYou will receive another email when the management decision is recorded.\n"
+                if vehicle_wait
+                else "\nCollect the key from the Kulliyyah office. If you can no longer use "
+                "the booking, cancel it so that somebody else can.\n"
+            )
         ),
         kind="BOOKING_APPROVED",
+    )
+
+
+def vehicle_management_decided(booking, *, approved: bool) -> None:
+    if approved:
+        subject = f"Vehicle use approved — {booking.booking_reference}"
+        outcome = (
+            "Kulliyyah management has approved the vehicle use and the VMU driver has been "
+            "assigned. Your vehicle booking is now fully approved."
+        )
+        tail = f"\nAssigned driver: {booking.driver_name}\n"
+        kind = "VEHICLE_MANAGEMENT_APPROVED"
+    else:
+        subject = f"Vehicle use not approved — {booking.booking_reference}"
+        outcome = "Kulliyyah management did not approve the vehicle use. The booking is released."
+        tail = f"\nReason given: {booking.management_decision_reason}\n"
+        kind = "VEHICLE_MANAGEMENT_REJECTED"
+    queue_email(
+        to=booking.user.email,
+        subject=subject,
+        body=_greeting(booking) + outcome + "\n\n" + _details(booking) + tail,
+        kind=kind,
     )
 
 

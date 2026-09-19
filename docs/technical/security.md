@@ -8,9 +8,45 @@ Two confirmed decisions raise the stakes above the original design:
 
 - **There is no IIUM single sign-on** (decision 24). This system is the only thing standing between
   a stranger and an AIKOL account. Authentication is not delegated to anyone.
-- **Hosting is self-provided, not IIUM ITD** (decisions 22 and 23). Operating-system patching,
+- **Hosting is self-provided, not IIUM ITD** (decisions 22 and 23). The managed providers patch
+  the host operating systems and terminate TLS; provider access, secrets, scheduled jobs,
   firewall configuration, TLS renewal and backup verification belong to this project. No
-  institutional IT department is doing them in the background.
+institutional IT department is doing them in the background.
+
+## Security acceptance standard
+
+Production acceptance uses the stable OWASP Top 10 as the minimum threat catalogue and OWASP ASVS
+Level 1 as the verification baseline. A newer release candidate is informative until OWASP marks it
+final. Passing this section does not mean “unhackable”; it means each relevant risk has a designed,
+tested control and an accountable operational owner.
+
+| OWASP risk area | Required control in this system |
+| --- | --- |
+| Broken access control | Deny by default, three-role matrix tests, object ownership checks, separate least-privilege cloud service account |
+| Cryptographic failures | HTTPS/HSTS, managed TLS, encrypted SMTP credential, provider secret store, no secrets in source or logs |
+| Injection | Django ORM and parameter binding only; no interpolated SQL; forms validate types and bounds; CSP limits browser execution |
+| Insecure design | Server and database conflict enforcement, bounded recurrence/imports, approval state machine and threat review before new flows |
+| Security misconfiguration | `check --deploy`, DEBUG off, explicit hosts, secure cookies, CSP, Permissions Policy, maximum two instances and reviewed IAM |
+| Vulnerable components | Pinned major versions, automated dependency review, quarterly image rebuild and urgent security-patch process |
+| Authentication failures | Django password hashing, uniform account responses, verification tokens, rate limits, administrator MFA requirement |
+| Integrity failures | Immutable image builds, controlled deploy identity, migration backup, no untrusted deserialisation or remote code loading |
+| Logging and monitoring failures | Append-only audit log, Cloud Audit Logs, failed-login monitoring, scheduler/job failure alerts and no personal data in logs |
+| SSRF | No user-controlled outbound URL fetches; SMTP/R2/database destinations are administrator or environment configuration only |
+
+Before go-live, record an ASVS checklist review and run automated tests, `check --deploy`, dependency
+audit and an authenticated/unauthenticated dynamic scan against the staging hostname.
+
+## Phishing resistance
+
+- Require MFA for every Google Cloud, Neon, Cloudflare, source-control and production administrator
+  account. Prefer passkeys or hardware security keys over SMS.
+- Application administrators must use individually assigned accounts; shared administrator
+  credentials are prohibited. Administrator MFA is a go-live requirement.
+- Configure SPF, DKIM and DMARC for the sending domain. Booking email never asks for a password,
+  payment, OTP or reply containing personal data. Verification and reset links use only the canonical
+  HTTPS hostname and expire.
+- Train administrators to open the service from a saved bookmark and verify the hostname before
+  entering credentials. Provider recovery codes are stored offline by the authorised owner.
 
 ## Authentication
 
@@ -54,11 +90,10 @@ Three roles, and an affiliation that is **not** a role:
   management, resource management, **facility management**, system settings, retention or the
   database reset. This is decision 5's entire purpose: delegation of approval without delegation of
   administration.
-- **Vehicle booking is open to everyone; self-drive is not.** Any active user may request a car,
-  but `driver_arrangement = SELF` requires `affiliation in (LECTURER, STAFF)` and a licence on
-  file. A student posting `SELF` directly must be refused by the **view**, not merely by a hidden
-  radio button — this is the one vehicle rule with a real safety and insurance consequence behind
-  it, so it is checked server-side on every submission and again at approval.
+- **Vehicle booking is open to everyone, but self-drive is not available.** Every car request uses
+  `driver_arrangement = VMU`; any other posted value is refused in both form and service code. An
+  administrator assigns the VMU driver only after ordinary approval, then records the separately
+  attributed Kulliyyah management decision.
 - Ownership is checked on the object: a user may view or cancel a booking only if
   `booking.user_id == request.user.id`. Never trust an ID in the URL. Note that a booking created on
   someone's behalf has a different `created_by` — ownership follows `user_id`, not `created_by_id`.
@@ -102,8 +137,8 @@ than of signup alone.
 
 ## Editable site content
 
-The header and footer wording is administrator-editable (`system_settings`), which makes it
-user-supplied text rendered on **every page of the system**, signed-in or not. Two rules follow:
+The header, footer, login introduction and announcements are administrator-editable. This is
+user-supplied text rendered across public and signed-in screens. Two rules follow:
 
 - **Escape on output, always.** These values are rendered through the template's autoescaping like
   any other user text. A field containing `<script>` must appear as those characters, never execute.
@@ -112,8 +147,8 @@ user-supplied text rendered on **every page of the system**, signed-in or not. T
 - **Administrator only.** Approvers and standard users get 403. An approver who could rewrite the
   footer could quietly change the office telephone number the whole Kulliyyah dials.
 
-Treat the footer link addresses as untrusted too: render them as ordinary links, never as a
-redirect target the application follows.
+Announcements accept plain text only. Optional start and end times control visibility; deactivation
+removes a notice from the home page without deleting its administration record.
 
 ## Web attack surface
 
@@ -128,6 +163,8 @@ redirect target the application follows.
 | Open redirect | Redirect targets validated against a known set |
 | Enumeration | Sign-in, registration and password reset return the same message whether or not the account exists |
 | Automated signup | Rate limiting on the public registration form |
+| Browser injection | Deny-by-default Content Security Policy; no inline scripts; object and frame embedding disabled |
+| Unneeded browser capabilities | Camera, microphone, location, payment and USB disabled by Permissions Policy |
 
 ## Input validation
 
@@ -142,15 +179,15 @@ All validation is server-side. Browser validation is a convenience and is assume
 
 ## File uploads
 
-Resource images (venues and vehicles) and the site wordmark, which an administrator uploads on the
-site-content screen.
+Resource images (venues and vehicles), both institutional wordmarks, and the login and home-page
+photographs, which an administrator uploads on the site-content screen.
 
 - Permitted formats: JPEG, PNG, WebP.
 - Maximum size 5 MB, enforced server-side.
 - Content sniffed (via Pillow) rather than trusting the extension or the declared content type.
 - Files renamed on save; the original filename is never used as a path.
-- Stored under `MEDIA_ROOT`, outside the code directory, and served by Nginx as static content —
-  never executed.
+- Stored in the dedicated Cloudflare R2 bucket, outside the application container, and served from
+  its configured media domain; never executed.
 - Images resized and recompressed on upload to bound storage growth.
 - **SVG is not accepted**, for the wordmark least of all. An SVG is a document that can carry script,
   and the wordmark renders on every page of the system, signed in or not. PNG, JPEG and WebP only.
@@ -175,14 +212,18 @@ activated or deactivated; user created, modified, activated, deactivated or acce
 import; data cleanup; database reset. Records actor, action, entity type, entity id, description and
 timestamp. Application code never edits or deletes audit rows.
 
-## Server operations
+## Cloud operations
 
-Self-hosted, so these are ours:
+Managed infrastructure removes host patching and SSH, but these remain ours:
 
-- Unattended security upgrades enabled; kernel and Django security releases applied promptly.
-- Firewall closed by default; only 80, 443 and an SSH port reachable. SSH by key, root login off.
-- TLS via Let's Encrypt with automated renewal, and a monitored expiry date.
-- Database not exposed to the network; PostgreSQL bound to localhost.
+- Cloud Run accepts HTTPS only; minimum instances stay zero and maximum instances stay one for the
+  initial measured rollout.
+- A dedicated runtime service account receives only Secret Manager access to the six named secrets.
+- Scheduled maintenance is a separate private Cloud Run service. Only its dedicated scheduler
+  identity has `run.invoker`; the public service returns 404 for the internal maintenance paths.
+- Google, Neon and Cloudflare owner accounts use phishing-resistant MFA and no shared credentials.
+- Database and R2 credentials are scoped, rotated after staff changes and never exposed to browsers.
+- Cloud Audit Logs, job failures, billing alerts and unusual authentication failures are reviewed.
 - Backups copied off-server, encrypted, and **test-restored monthly** (`data-retention.md`).
 - Application logs retained and reviewed; failed sign-in bursts are worth noticing.
 

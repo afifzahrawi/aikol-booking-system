@@ -38,14 +38,17 @@ BLOCKING_STATUSES = (BookingStatus.PENDING, BookingStatus.APPROVED)
 
 
 class DriverArrangement(models.TextChoices):
-    """Who drives, which is not the same question as who books.
+    """The Kulliyyah does not permit a requester to self-drive its cars."""
 
-    Anyone may request a car. A student may never drive a Kulliyyah car, so a
-    student's booking must request a VMU driver.
-    """
-
-    SELF_DRIVE = "SELF", "Self-drive"
     VMU_DRIVER = "VMU", "Driver supplied by the Vehicle Management Unit"
+
+
+class ManagementDecision(models.TextChoices):
+    """The second decision required for every VMU vehicle request."""
+
+    PENDING = "PENDING", "Awaiting management approval"
+    APPROVED = "APPROVED", "Management approved"
+    REJECTED = "REJECTED", "Management did not approve"
 
 
 class AcademicTerm(models.Model):
@@ -127,6 +130,27 @@ class TermBreak(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def clean(self) -> None:
+        errors = {}
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            errors["end_date"] = "The break must end on or after it starts."
+        if self.term_id and self.start_date and self.end_date:
+            if self.start_date < self.term.start_date or self.end_date > self.term.end_date:
+                errors["start_date"] = "A break must sit inside its academic term."
+            clash = (
+                TermBreak.objects.exclude(pk=self.pk)
+                .filter(
+                    term_id=self.term_id,
+                    start_date__lte=self.end_date,
+                    end_date__gte=self.start_date,
+                )
+                .first()
+            )
+            if clash:
+                errors["start_date"] = f"These dates overlap {clash.name}."
+        if errors:
+            raise ValidationError(errors)
+
 
 class BookingSeries(models.Model):
     """The recurrence definition.
@@ -201,11 +225,24 @@ class Booking(models.Model):
     location_from = models.CharField(max_length=150, blank=True)
     location_to = models.CharField(max_length=150, blank=True)
     passengers = models.PositiveIntegerField(null=True, blank=True)
-    # A VMU booking carries TWO approvals: the ordinary booking approval by the
-    # Kulliyyah office, and Kulliyyah management approval to use the car with a
-    # VMU driver. The system records both; it does not merge them.
-    management_approved = models.BooleanField(default=False)
-    management_approved_at = models.DateTimeField(null=True, blank=True)
+    # A VMU booking carries TWO decisions: the ordinary booking approval and a
+    # separately attributed management decision. The second record has its own
+    # actor, time and reason so it is not reduced to an unexplained checkbox.
+    management_status = models.CharField(
+        max_length=10,
+        choices=ManagementDecision.choices,
+        blank=True,
+        default="",
+    )
+    management_decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="vehicle_management_decisions",
+    )
+    management_decided_at = models.DateTimeField(null=True, blank=True)
+    management_decision_reason = models.TextField(blank=True)
 
     decided_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -255,6 +292,16 @@ class Booking(models.Model):
     @property
     def is_multi_day(self) -> bool:
         return timezone.localtime(self.start_at).date() != timezone.localtime(self.end_at).date()
+
+    @property
+    def is_vehicle(self) -> bool:
+        return self.resource.resource_type == "VEHICLE"
+
+    @property
+    def is_fully_approved(self) -> bool:
+        if self.status != BookingStatus.APPROVED:
+            return False
+        return not self.is_vehicle or self.management_status == ManagementDecision.APPROVED
 
     def can_be_cancelled_by(self, user) -> bool:
         """Decision 12: a user cancels their OWN booking freely, up to three

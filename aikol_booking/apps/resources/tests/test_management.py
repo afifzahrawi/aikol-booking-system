@@ -54,6 +54,13 @@ class Fixtures(TestCase):
             road_tax_expiry=timezone.localdate() + dt.timedelta(days=200),
         )
 
+    def test_missing_upload_uses_local_resource_placeholder(self):
+        self.assertEqual(self.venue.placeholder, "images/placeholders/moot-court.svg")
+        self.assertEqual(self.car.placeholder, "images/placeholders/car-bezza.svg")
+        self.assertEqual(
+            self.venue.placeholder_variant(2), "images/placeholders/moot-court-v2.svg"
+        )
+
 
 class AuthorisationTests(Fixtures):
     """Checked in the view and answered with 403 — not by hiding a link."""
@@ -111,6 +118,23 @@ class BrowsingTests(Fixtures):
         response = self.client.get(reverse("resources:detail", args=[self.car.pk]))
         self.assertContains(response, "Road tax expiry")
 
+    def test_vehicle_pages_do_not_show_facilities_and_keep_vehicle_navigation(self):
+        facility = Facility.objects.create(
+            code="gps", name="GPS navigation", applies_to=Facility.AppliesTo.VEHICLE
+        )
+        self.car.facilities.add(facility)
+        self.client.force_login(self.plain)
+
+        listing = self.client.get(reverse("resources:vehicles"))
+        self.assertNotContains(listing, 'name="facility"')
+        self.assertNotContains(listing, "GPS navigation")
+
+        detail = self.client.get(reverse("resources:detail", args=[self.car.pk]))
+        self.assertNotContains(detail, "Facilities")
+        self.assertNotContains(detail, "GPS navigation")
+        self.assertContains(detail, 'href="/cars/" aria-current="page"')
+        self.assertEqual(detail.context["back_fallback_url"], reverse("resources:vehicles"))
+
     def test_a_deactivated_venue_is_listed_but_marked_and_not_bookable(self):
         """This test used to assert the room was hidden.
 
@@ -159,7 +183,7 @@ class BrowsingTests(Fixtures):
                 self.assertEqual(unordered, [], f"{name} paginates an unordered queryset")
 
     def test_pagination_links_keep_the_active_filters(self):
-        for i in range(20):
+        for i in range(21):
             Venue.objects.create(
                 code=f"VEN-P{i}", name=f"Tutorial Room {i}",
                 venue_type=Venue.VenueType.DISCUSSION, location="Level 3", capacity=10,
@@ -377,7 +401,7 @@ class FacilityTests(Fixtures):
         self.client.post(reverse("resources:facility_delete", args=[self.facilities[0].pk]))
         self.assertFalse(Facility.objects.filter(pk=self.facilities[0].pk).exists())
 
-    def test_the_form_offers_only_active_facilities_that_apply(self):
+    def test_the_venue_form_offers_active_facilities_and_the_vehicle_form_has_none(self):
         from apps.resources.forms import VehicleForm, VenueForm
 
         Facility.objects.create(code="gps", name="GPS", applies_to=Facility.AppliesTo.VEHICLE)
@@ -385,11 +409,9 @@ class FacilityTests(Fixtures):
         Facility.objects.create(code="old", name="Retired", is_active=False)
 
         venue_codes = set(VenueForm().fields["facilities"].queryset.values_list("code", flat=True))
-        car_codes = set(VehicleForm().fields["facilities"].queryset.values_list("code", flat=True))
+        self.assertNotIn("facilities", VehicleForm().fields)
         self.assertIn("wifi", venue_codes)
-        self.assertIn("wifi", car_codes)
         self.assertNotIn("gps", venue_codes)
-        self.assertIn("gps", car_codes)
         self.assertNotIn("old", venue_codes, "a deactivated facility is hidden from the forms")
 
 

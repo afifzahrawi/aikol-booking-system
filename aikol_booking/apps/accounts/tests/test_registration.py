@@ -173,13 +173,8 @@ class AuthorityTests(TestCase):
         self.assertTrue(user.is_approver)
         self.assertFalse(user.is_administrator)
 
-    def test_a_lecturer_may_drive_and_a_student_may_not(self):
-        self.assertTrue(self.make(email="l@demo.aikol.test", affiliation=Affiliation.LECTURER).may_drive)
-        self.assertFalse(self.make(email="s@demo.aikol.test", affiliation=Affiliation.STUDENT).may_drive)
-
     def test_a_lecturer_can_still_be_an_ordinary_user(self):
         user = self.make(affiliation=Affiliation.LECTURER, role=Role.USER)
-        self.assertTrue(user.may_drive)
         self.assertFalse(user.is_approver)
 
     def test_a_deactivated_account_cannot_book(self):
