@@ -103,7 +103,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         unique=True,
         null=True,
         blank=True,
-        help_text="Collected for documentation and reporting (decision 18). Not a login credential.",
+        help_text="Used on booking records and reports. It is not your login.",
     )
     phone = models.CharField(max_length=20, validators=[phone_validator])
 

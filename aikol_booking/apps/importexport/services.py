@@ -268,13 +268,13 @@ def _validate_user(result: RowResult, seen: dict) -> None:
 
     number = data.get("identification_number", "")
     if not number:
-        result.errors.append("identification_number is required (decision 18).")
+        result.errors.append("identification_number is required.")
     elif User.objects.filter(identification_number__iexact=number).exists():
         result.errors.append(f"'{number}' is already registered.")
     _unique_in_file(result, seen, "number", number, "Matriculation or staff number")
 
     if not data.get("phone"):
-        result.errors.append("phone is required (decision 18).")
+        result.errors.append("phone is required.")
 
     affiliation = data.get("affiliation", "").strip().lower()
     if affiliation not in AFFILIATIONS or AFFILIATIONS[affiliation] == Affiliation.PUBLIC:
