@@ -96,7 +96,10 @@ $maintenanceEnvironment = "$environment,DJANGO_MAINTENANCE_SERVICE=1"
 Invoke-Step "Deploying the maintenance service" { gcloud run deploy $MaintenanceService --image $image --region $Region --platform managed --no-allow-unauthenticated --service-account $runtimeAccount --cpu 1 --memory 512Mi --concurrency 1 --min 0 --max 1 --timeout 600 --execution-environment gen2 --no-cpu-boost --set-env-vars $maintenanceEnvironment --set-secrets $secretMap }
 $maintenanceUrl = (gcloud run services describe $MaintenanceService --region $Region --format "value(status.url)" 2>&1 | Where-Object { $_ -is [string] } | Select-Object -Last 1)
 $maintenanceHost = ([Uri]$maintenanceUrl).Host
-Invoke-Step "Pinning the maintenance hostnames" { gcloud run services update $MaintenanceService --region $Region --update-env-vars "^^^^@^^^^DJANGO_ALLOWED_HOSTS=$publicHost,$maintenanceHost" | Out-Null }
+# "^@^" tells gcloud to split on "@" instead of ",", so the two hostnames stay
+# one value. From PowerShell the carets reach gcloud as written; do not escape
+# them for cmd.exe.
+Invoke-Step "Pinning the maintenance hostnames" { gcloud run services update $MaintenanceService --region $Region --update-env-vars "^@^DJANGO_ALLOWED_HOSTS=$publicHost,$maintenanceHost" | Out-Null }
 Invoke-Step "Allowing the scheduler to invoke maintenance" { gcloud run services add-iam-policy-binding $MaintenanceService --region $Region --member "serviceAccount:$schedulerAccount" --role roles/run.invoker | Out-Null }
 
 if (-not $existingUrl) {
