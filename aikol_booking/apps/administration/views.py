@@ -11,6 +11,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from apps.accounts.models import Role, User
 from apps.audit.services import log_action
@@ -149,8 +150,44 @@ def user_edit(request, pk: int):
     return render(
         request,
         "administration/user_edit.html",
-        {"person": person, "form": form, "bookings": person.bookings.count()},
+        {
+            "person": person,
+            "form": form,
+            "bookings": person.bookings.count(),
+            "totp_device": getattr(person, "totp_device", None),
+        },
     )
+
+
+@administrator_required
+@require_POST
+def user_mfa_reset(request, pk: int):
+    """For a person whose phone and recovery codes are both gone.
+
+    Deleting the device is what invalidates their verified sessions — the
+    middleware checks the device id, not a flag. An administrator may not reset
+    their own: that is what recovery codes are for, and a self-reset would turn
+    a stolen session into a stolen account.
+    """
+    person = get_object_or_404(User, pk=pk)
+    if person.pk == request.user.pk:
+        raise PermissionDenied("Use a recovery code, or ask another administrator.")
+    device = getattr(person, "totp_device", None)
+    if device is not None:
+        device.delete()
+        person.recovery_codes.all().delete()
+        log_action(
+            actor=request.user,
+            action="USER_MFA_RESET",
+            entity_type="User",
+            entity_id=person.pk,
+            description=f"Authenticator reset for {person.full_name}; they must enrol again.",
+            request=request,
+        )
+        flash.success(request, f"{person.full_name} will set up a new authenticator at their next sign-in.")
+    else:
+        flash.info(request, f"{person.full_name} has no authenticator to reset.")
+    return redirect("administration:user_edit", pk=pk)
 
 
 @administrator_required

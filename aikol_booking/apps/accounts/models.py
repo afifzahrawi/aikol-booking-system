@@ -168,3 +168,94 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.email_verified = True
         self.email_verified_at = timezone.now()
         self.save(update_fields=["email_verified", "email_verified_at"])
+
+    @property
+    def requires_second_factor(self) -> bool:
+        """Approvers and administrators decide who gets a room and who is
+        deactivated. A password alone is not enough for that (security.md)."""
+        return self.is_approver
+
+    @property
+    def second_factor_enrolled(self) -> bool:
+        device = getattr(self, "totp_device", None)
+        return device is not None and device.confirmed_at is not None
+
+
+class TotpDevice(models.Model):
+    """One authenticator per person. The secret is encrypted with the same key
+    that protects the SMTP password, and is decrypted only to check a code."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="totp_device")
+    encrypted_secret = models.TextField(editable=False)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    #: The last time step accepted, so a code cannot be replayed within its
+    #: thirty seconds. See `mfa.verify`.
+    last_used_step = models.BigIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "totp_devices"
+
+    def __str__(self) -> str:
+        return f"Authenticator for {self.user.email}"
+
+    @property
+    def confirmed(self) -> bool:
+        return self.confirmed_at is not None
+
+    def set_secret(self, secret: str) -> None:
+        from config.crypto import credential_cipher
+
+        self.encrypted_secret = credential_cipher().encrypt(secret.encode("ascii")).decode("ascii")
+
+    @property
+    def secret(self) -> str:
+        from config.crypto import credential_cipher
+
+        return credential_cipher().decrypt(self.encrypted_secret.encode("ascii")).decode("ascii")
+
+
+class RecoveryCode(models.Model):
+    """Single-use codes for a lost or replaced phone. Stored hashed, like a
+    password, because that is what each one is."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recovery_codes")
+    code_hash = models.CharField(max_length=128, editable=False)
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "recovery_codes"
+        indexes = [models.Index(fields=["user", "used_at"])]
+
+    @classmethod
+    def issue(cls, user: User) -> list[str]:
+        """Replace every code the person has with a fresh set, and return the
+        plain codes — the only time they exist unhashed."""
+        from django.contrib.auth.hashers import make_password
+
+        from . import mfa
+
+        codes = mfa.generate_recovery_codes()
+        cls.objects.filter(user=user).delete()
+        cls.objects.bulk_create(
+            cls(user=user, code_hash=make_password(mfa.normalise_recovery_code(code)))
+            for code in codes
+        )
+        return codes
+
+    @classmethod
+    def redeem(cls, user: User, code: str) -> bool:
+        from django.contrib.auth.hashers import check_password
+
+        from . import mfa
+
+        plain = mfa.normalise_recovery_code(code)
+        if len(plain) != 10:
+            return False
+        for candidate in cls.objects.filter(user=user, used_at__isnull=True):
+            if check_password(plain, candidate.code_hash):
+                candidate.used_at = timezone.now()
+                candidate.save(update_fields=["used_at"])
+                return True
+        return False

@@ -136,3 +136,12 @@
     window.addEventListener('resize', function () { closeActionMenus(); });
     window.addEventListener('scroll', function () { closeActionMenus(); }, true);
 })();
+
+/* A print button. Inline handlers are refused by the Content-Security-Policy,
+   so the one page that offers printing marks its button with data-print. */
+(function () {
+    'use strict';
+    document.querySelectorAll('[data-print]').forEach(function (button) {
+        button.addEventListener('click', function () { window.print(); });
+    });
+})();

@@ -10,6 +10,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.generic import CreateView
@@ -17,7 +18,7 @@ from django.views.generic import CreateView
 from apps.audit.services import log_action
 from apps.notifications.services import queue_email
 
-from .forms import EmailAuthenticationForm, ProfileForm, RegistrationForm
+from .forms import EmailAuthenticationForm, ProfileForm, RegistrationForm, SecondFactorForm
 from .models import User
 from .throttle import is_throttled, reset as reset_throttle
 from .tokens import email_verification_token
@@ -327,3 +328,121 @@ def dashboard(request):
             .order_by("-tone", "-created_at"),
         },
     )
+
+
+# --- Second factor -----------------------------------------------------------
+#
+# Both views are reachable while MfaRequiredMiddleware is holding the person at
+# the door; everything else is not. `next` is honoured only when it is a local
+# path, as Django's own login view does.
+
+
+def _safe_next(request) -> str:
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    candidate = request.POST.get("next") or request.GET.get("next") or ""
+    if candidate and url_has_allowed_host_and_scheme(candidate, allowed_hosts={request.get_host()}):
+        return candidate
+    return reverse("accounts:dashboard")
+
+
+@login_required
+def mfa_enrol(request):
+    """Show a fresh secret, prove the app has it, then hand over recovery codes."""
+    from config.middleware import MfaRequiredMiddleware
+
+    from . import mfa
+    from .models import RecoveryCode, TotpDevice
+
+    device = getattr(request.user, "totp_device", None)
+    if device is not None and device.confirmed:
+        return redirect("accounts:mfa_verify")
+    if device is None:
+        device = TotpDevice(user=request.user)
+        device.set_secret(mfa.generate_secret())
+        device.save()
+
+    form = SecondFactorForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        if is_throttled(request, "mfa", request.user.email):
+            return render(request, "accounts/throttled.html", status=429)
+        step = mfa.verify(device.secret, form.cleaned_data["code"], after_step=device.last_used_step)
+        if step is None:
+            form.add_error("code", "That code did not match. Check the app and try again.")
+        else:
+            with transaction.atomic():
+                device.confirmed_at = timezone.now()
+                device.last_used_step = step
+                device.save(update_fields=["confirmed_at", "last_used_step"])
+                codes = RecoveryCode.issue(request.user)
+                log_action(
+                    actor=request.user, action="MFA_ENROLLED", entity_type="User",
+                    entity_id=request.user.pk,
+                    description=f"{request.user.full_name} enrolled an authenticator app.",
+                    request=request,
+                )
+            reset_throttle("mfa", request.user.email)
+            MfaRequiredMiddleware.mark_verified(request, device)
+            return render(request, "accounts/mfa_codes.html", {
+                "codes": codes, "next": _safe_next(request), "mfa_gate": True,
+            })
+
+    secret = device.secret
+    uri = mfa.provisioning_uri(secret, request.user.email, settings.MFA_ISSUER)
+    return render(request, "accounts/mfa_enrol.html", {
+        "form": form,
+        "qr_svg": mfa.qr_svg(uri),
+        "manual_key": mfa.grouped(secret),
+        "issuer": settings.MFA_ISSUER,
+        "next": _safe_next(request),
+        "mfa_gate": True,
+    })
+
+
+@login_required
+def mfa_verify(request):
+    """The second step of signing in, every session."""
+    from config.middleware import MfaRequiredMiddleware
+
+    from . import mfa
+    from .models import RecoveryCode
+
+    device = getattr(request.user, "totp_device", None)
+    if device is None or not device.confirmed:
+        return redirect("accounts:mfa_enrol")
+    if MfaRequiredMiddleware.verified(request):
+        return redirect(_safe_next(request))
+
+    form = SecondFactorForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        if is_throttled(request, "mfa", request.user.email):
+            return render(request, "accounts/throttled.html", status=429)
+        code = form.cleaned_data["code"]
+        step = mfa.verify(device.secret, code, after_step=device.last_used_step)
+        if step is not None:
+            device.last_used_step = step
+            device.save(update_fields=["last_used_step"])
+        elif RecoveryCode.redeem(request.user, code):
+            remaining = RecoveryCode.objects.filter(user=request.user, used_at__isnull=True).count()
+            log_action(
+                actor=request.user, action="MFA_RECOVERY_CODE_USED", entity_type="User",
+                entity_id=request.user.pk,
+                description=f"{request.user.full_name} signed in with a recovery code; "
+                            f"{remaining} left.",
+                request=request,
+            )
+            messages.warning(
+                request,
+                f"You signed in with a recovery code. {remaining} remain. If your phone is gone, "
+                "ask the Kulliyyah office to reset your authenticator so you can enrol a new one.",
+            )
+        else:
+            form.add_error("code", "That code did not match.")
+            return render(request, "accounts/mfa_verify.html", {"form": form, "next": _safe_next(request), "mfa_gate": True})
+        reset_throttle("mfa", request.user.email)
+        MfaRequiredMiddleware.mark_verified(request, device)
+        return redirect(_safe_next(request))
+
+    return render(request, "accounts/mfa_verify.html", {
+        "form": form, "next": _safe_next(request), "mfa_gate": True,
+    })

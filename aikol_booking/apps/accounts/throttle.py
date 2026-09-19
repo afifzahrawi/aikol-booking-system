@@ -45,6 +45,10 @@ LIMITS = {
     "login": Limit(attempts=10, window=15 * 60),
     "password_reset": Limit(attempts=5, window=60 * 60),
     "verify": Limit(attempts=20, window=60 * 60),
+    # A six-digit code with a one-step window is three guesses in a million per
+    # try. Ten tries a quarter-hour keeps that hopeless without punishing a
+    # person who mistypes once or twice.
+    "mfa": Limit(attempts=10, window=15 * 60),
 }
 
 

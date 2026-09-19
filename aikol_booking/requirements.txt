@@ -7,4 +7,5 @@ gunicorn>=23.0          # production WSGI server for the managed cloud container
 whitenoise>=6.9         # serves versioned static assets without a separate Nginx server
 dj-database-url>=2.3    # safely parses the managed PostgreSQL connection URL
 django-storages[s3]>=1.14  # stores uploaded photographs in S3-compatible Cloudflare R2
-cryptography>=45.0       # encrypts administrator-managed SMTP credentials at rest
+cryptography>=45.0       # encrypts administrator-managed SMTP credentials and TOTP secrets at rest
+qrcode>=8.0             # the authenticator enrolment QR, rendered as inline SVG; TOTP itself is stdlib

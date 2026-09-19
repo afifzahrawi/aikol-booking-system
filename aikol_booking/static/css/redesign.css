@@ -637,6 +637,32 @@ img, video, iframe { max-width: 100%; }
 .profile-account .help { max-width: 48ch; }
 .venue-card:hover { transform: none; border-color: var(--docket-rule-dark); }
 
+/* The second-factor pages. Two sheets side by side while there is room: the
+   code to scan, then the code to type. */
+.mfa-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 1.25rem;
+    max-width: 64rem;
+}
+.mfa-sheet { padding: 1.5rem; max-width: 64rem; }
+.mfa-qr { margin: 0 0 1rem; padding: 0.75rem; width: min(100%, 15rem); background: #fff;
+    border: 1px solid var(--docket-rule); border-radius: var(--radius-card); }
+.mfa-qr svg { display: block; width: 100%; height: auto; }
+.mfa-manual summary { cursor: pointer; font-weight: 600; }
+.mfa-key code, .mfa-codes code { font-family: var(--font-mono); font-size: 1rem; letter-spacing: 0.06em; }
+.mfa-codes { columns: 2; column-gap: 2rem; margin: 1rem 0 0; padding-left: 1.5rem; }
+.mfa-codes li { break-inside: avoid; padding: 0.2rem 0; }
+.mfa-signout { margin-top: 1.25rem; }
+@media (max-width: 47.99rem) {
+    .mfa-layout { grid-template-columns: minmax(0, 1fr); }
+    .mfa-codes { columns: 1; }
+}
+@media print {
+    .mfa-signout, .form-actions { display: none; }
+}
+
 .back-navigation {
     display: inline-flex;
     align-items: center;

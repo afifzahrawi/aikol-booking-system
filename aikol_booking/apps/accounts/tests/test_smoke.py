@@ -75,6 +75,7 @@ class SmokeTests(TestCase):
         return [
             reverse("accounts:dashboard"),
             reverse("accounts:profile"),
+            reverse("accounts:mfa_enrol"),
             reverse("resources:venues"),
             reverse("resources:vehicles"),
             reverse("resources:detail", args=[self.venue.pk]),

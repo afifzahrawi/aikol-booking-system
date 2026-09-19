@@ -23,4 +23,30 @@
         </form>
     </div>
 </section>
+
+<section class="card" aria-labelledby="mfa-status-heading">
+    <div class="card-body">
+        <h2 id="mfa-status-heading">Authenticator</h2>
+        {% if totp_device and totp_device.confirmed %}
+            <p>Enrolled on {{ totp_device.confirmed_at|date:"j F Y" }}.</p>
+            {% if person.pk != user.pk %}
+                <p class="help">Reset this only when the person has lost both their phone and their
+                   recovery codes. Their signed-in sessions end and they set up a new authenticator
+                   at their next sign-in. The reset is written to the audit log.</p>
+                <form method="post" action="{% url 'administration:user_mfa_reset' person.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-danger" type="submit">Reset authenticator</button>
+                </form>
+            {% else %}
+                <p class="help">You cannot reset your own authenticator here. Use a recovery code, or
+                   ask another administrator.</p>
+            {% endif %}
+        {% elif person.requires_second_factor %}
+            <p>Not yet enrolled. {{ person.full_name }} will be asked to set one up at their next
+               sign-in.</p>
+        {% else %}
+            <p class="help">Only approvers and administrators use an authenticator.</p>
+        {% endif %}
+    </div>
+</section>
 {% endblock %}

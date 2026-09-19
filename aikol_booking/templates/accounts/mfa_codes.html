@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Your recovery codes{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Your recovery codes</h1>
+        <p class="lede">Your authenticator is set up. These ten codes are the way back in if the phone
+           is lost or replaced.</p>
+    </div>
+</div>
+
+<section class="form-sheet mfa-sheet" aria-labelledby="mfa-codes-heading">
+    <div class="notice notice-warn">
+        <strong>This is the only time these codes are shown.</strong>
+        Print them or write them down and keep them somewhere that is not your phone. Each one
+        works once. Without your phone and without a code, the Kulliyyah office must reset your
+        authenticator before you can sign in.
+    </div>
+    <h2 id="mfa-codes-heading" class="visually-hidden">Recovery codes</h2>
+    <ol class="mfa-codes">
+        {% for code in codes %}<li><code>{{ code }}</code></li>{% endfor %}
+    </ol>
+    <div class="form-actions">
+        <button class="btn" type="button" data-print>Print</button>
+        <a class="btn btn-primary" href="{{ next }}">I have saved them — continue</a>
+    </div>
+</section>
+{% endblock %}

@@ -53,3 +53,11 @@ class AikolTestRunner(DiscoverRunner):
         super().setup_test_environment(**kwargs)
         for cls in (SimpleTestCase, TransactionTestCase):
             _wrap(cls)
+        # Several hundred tests sign an administrator in with `force_login` and
+        # then test the screen they came for. With the second factor enforced
+        # every one of them would be redirected to enrolment instead. It is
+        # switched off here, once, and `test_mfa.py` switches it back on with
+        # `override_settings` to test the enforcement itself.
+        from django.conf import settings
+
+        settings.MFA_ENFORCED = False

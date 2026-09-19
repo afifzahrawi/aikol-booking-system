@@ -64,7 +64,11 @@ left the production outbox**.
   the user model and the vehicle form. Anything that asks for a licence is a defect.
 - Users edit their own profile; resource terminology is *Venue* and *Vehicle* throughout.
 - A scripted **action matrix** (`tools/test_action_matrix.py`, `docs/technical/action-test-matrix.md`)
-  drives every named route as every role. **341 tests.**
+  drives every named route as every role.
+- **A second factor for approvers and administrators.** An authenticator app (TOTP), enforced by
+  middleware so no screen can forget: enrolment is forced at first sign-in, a code is required every
+  session, ten single-use recovery codes are issued once, and an administrator can reset a
+  colleague's device (never their own). `docs/technical/security.md` has the design. **373 tests.**
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -194,8 +198,7 @@ Phase 9, user acceptance testing. Training, under Phase 10.
 
 **Get email leaving the outbox.** The Kulliyyah office enters SMTP credentials under System →
 Settings; until then no verification, reset or booking email is delivered, and acceptance testing
-cannot start because a new user cannot finish registering. After that: administrator MFA, then
-Phase 9 with the office.
+cannot start because a new user cannot finish registering. Then Phase 9 with the office.
 
 ---
 
@@ -268,12 +271,13 @@ prototype.
 | Hosting | **Google Cloud Run (max 1 instance, scale to zero); Neon PostgreSQL; Cloudflare R2 (private buckets, signed URLs); Secret Manager** | Live. Oracle's free VM was tried and rejected by Oracle's own screening. Google requires an active billing account; the free allowance is not a hard cap, so instance count and spend alerts are the controls |
 | Domain | **The generated `*.run.app` hostname**, for now | A `.my` domain was researched and deliberately not bought pending a decision on institutional ownership |
 | Version control | **Git** | |
-| Testing | Django test framework | `manage.py test`. 341 tests. The PostgreSQL run uses `config.settings.postgres` |
+| Testing | Django test framework | `manage.py test`. 373 tests. The PostgreSQL run uses `config.settings.postgres` |
 | Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
 | PostgreSQL driver | **psycopg 3** | Production, and the PostgreSQL test run. Installed in development so `check --deploy` can run |
 | Object storage | **django-storages[s3]** | R2 is S3-compatible; media and backups in separate buckets with application-enforced soft limits |
 | Connection URL | **dj-database-url** | Parses `DATABASE_URL` instead of hand-splitting it |
 | Credential encryption | **cryptography / Fernet** | Protects the SMTP password stored from the administrator screen, and the one-time administrator password handoff |
+| Second factor | **TOTP on the standard library** (`apps/accounts/mfa.py`) + **qrcode** for the enrolment QR | RFC 6238 is thirty lines and is tested against the RFC's vectors; `qrcode` is pure Python and renders inline SVG. No authentication library |
 | Cost | **RM 0 within provider free allowances**, unproven | Spend-cap budget set. No claim of staying free is made until a monitored pilot provides evidence |
 
 ### Explicitly rejected (do not add without a documented reason)
@@ -404,8 +408,9 @@ the first blocks user acceptance testing outright:
 2. **Decide on a domain.** Production answers only at the generated `*.run.app` address. A `.my`
    registration is a recurring fee and raises the question of institutional versus personal
    ownership; neither has been decided.
-3. **Administrator MFA.** Flagged as a go-live requirement during the security hardening and not
-   built. Until it exists, administrator accounts are protected by password and rate limiting alone.
+3. **Authenticator enrolment by every approver and administrator** at their next sign-in. The
+   system forces it; the office should expect the step and keep the recovery codes it prints
+   somewhere that is not the phone.
 
 The free-tier cost analysis is an estimate: it needs real booking volume and a load test before
 "RM 0" can be stated as fact.
@@ -421,7 +426,7 @@ Full detail in `docs/technical/database-schema.md`. Summary:
 
 `users` · `resources` · `venues` · `vehicles` · `resource_images` · `bookings` ·
 `booking_series` · `key_handovers` · `booking_archive` · `audit_logs` · `system_settings` ·
-`site_content` · `announcements`
+`site_content` · `announcements` · `totp_devices` · `recovery_codes`
 
 Key decisions:
 
@@ -569,6 +574,12 @@ response either way and emails the existing account instead. A matriculation num
 reported, because a number cannot be probed for a list of people the way an address can, and a
 silent merge would corrupt the booking record.
 
+**Approvers and administrators present a second factor** — a code from an authenticator app —
+at every sign-in, enforced by `MfaRequiredMiddleware` for every request rather than by a decorator a
+screen could omit. Enrolment is forced the first time; recovery codes are single-use and hashed; an
+administrator may reset a colleague's authenticator but never their own; `manage.py reset_mfa` exists
+for the last administrator. Ordinary users are not asked: their authority is over their own bookings.
+
 Django's built-in authentication with hashed passwords — never a hand-written scheme, never plain
 text. The system provides its own authentication; there is no IIUM SSO and none is planned
 (decision 24), so account security is entirely this system's responsibility.
@@ -684,7 +695,7 @@ advanced analytics · any AI feature.
 | 7 | Bulk data, reporting and retention | **Complete** |
 | 8 | Testing and security review | **Complete** — except the PostgreSQL run |
 | 9 | User acceptance testing | Not started — **next**, once SMTP is configured |
-| 10 | Deployment and training | **Deployed** to Cloud Run with scheduler, backups and spend alerts. Outstanding: SMTP credentials, domain decision, administrator MFA, training |
+| 10 | Deployment and training | **Deployed** to Cloud Run with scheduler, backups and spend alerts. Outstanding: SMTP credentials, domain decision, training |
 
 Phases 5b and 6b are numbered separately because they were added after the original plan and carry
 schedule cost that the original estimate did not include. Recurring bookings in particular are not a
@@ -714,6 +725,8 @@ series-level approve and cancel.
 | Email in the MVP after all | Self-registration cannot verify an IIUM affiliation without it, and one administrator cannot create accounts by hand for a whole Kulliyyah. |
 | Three roles now | Decision 5 requires an approver who is not a full administrator. Adding it now is cheaper than retrofitting permission checks. |
 | No message queue for imports or recurrence | Not justified until measurement shows the work is too slow in a request. Expanding a semester of weekly bookings is a few hundred rows. |
+| TOTP before passkeys for the second factor | Works on any phone the office already has, needs no script in the browser, and has a recovery path a person can hold in their hand. Passkeys are stronger and can be added on top; nothing in the TOTP design has to be undone for them. |
+| The second factor is a middleware, not a decorator | The role decorators are repeated in seven modules. A screen that forgot one would also forget the second factor; a middleware has nothing to forget, and covers Django's own admin. |
 
 ---
 

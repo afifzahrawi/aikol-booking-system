@@ -9,9 +9,9 @@
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260919-1">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-1">
 </head>
-<body class="{% if user.is_authenticated %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
+<body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
 <a class="skip-link" href="#main">Skip to main content</a>
 
 <div class="app docket-shell">
@@ -40,12 +40,14 @@
     </a>
     <span class="header-spacer"></span>
     <div class="header-actions">
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and not mfa_gate %}
         {% if user.is_approver %}
             {% comment %} The two views are the same application, so this is a link and not
                a mode switch: what somebody may do is decided by their role. {% endcomment %}
             <a class="link-plain" href="{% if admin_area %}{% url 'accounts:dashboard' %}{% else %}{% url 'administration:dashboard' %}{% endif %}">{% if admin_area %}User view{% else %}Administrator view{% endif %}</a>
         {% endif %}
+    {% elif mfa_gate %}
+        <span class="link-plain">{{ user.email }}</span>
     {% else %}
         <a class="link-plain" href="{% url 'accounts:login' %}">Sign in</a>
         <a class="link-plain" href="{% url 'accounts:register' %}">Register</a>
@@ -53,7 +55,7 @@
     </div>
 </header>
 
-{% if user.is_authenticated %}
+{% if user.is_authenticated and not mfa_gate %}
 <nav class="app-nav" aria-label="Main navigation">
     <button class="nav-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true">
         <svg aria-hidden="true" viewBox="0 0 20 20" focusable="false">
@@ -98,7 +100,7 @@
 
 <div class="app-body docket-workspace">
 <main id="main" class="main">
-    {% if show_back_navigation %}
+    {% if show_back_navigation and not mfa_gate %}
         <a class="back-navigation" href="{{ back_fallback_url }}" data-history-back>
             <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m12.5 4.5-5.5 5.5 5.5 5.5"></path></svg>
             Back
@@ -141,7 +143,7 @@
 </dialog>
 </div>
 
-<script src="{% static 'js/chrome.js' %}?v=20260916-2" defer></script>
+<script src="{% static 'js/chrome.js' %}?v=20260920-1" defer></script>
 <script src="{% static 'js/modal-forms.js' %}?v=20260919-2" defer></script>
 <script src="{% static 'js/availability.js' %}?v=20260916-2" defer></script>
 <script src="{% static 'js/user-combobox.js' %}?v=20260916-2" defer></script>

@@ -36,7 +36,7 @@ ACTION_ROUTES = {
     "accounts": {
         "dashboard", "login", "logout", "profile", "register", "register_done",
         "verify", "password_reset", "password_reset_done", "password_reset_confirm",
-        "password_reset_complete",
+        "password_reset_complete", "mfa_enrol", "mfa_verify",
     },
     "resources": {
         "venues", "vehicles", "detail", "manage_venues", "venue_new", "venue_edit",
@@ -52,7 +52,7 @@ ACTION_ROUTES = {
         "academic_term_edit", "keys", "key_issue", "key_return",
     },
     "administration": {
-        "dashboard", "users", "user_edit", "settings", "site_content",
+        "dashboard", "users", "user_edit", "user_mfa_reset", "settings", "site_content",
         "announcement_new", "announcement_edit", "audit", "retention",
     },
     "importexport": {

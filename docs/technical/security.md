@@ -1,8 +1,7 @@
 # Security
 
 Proportionate institutional security. The system holds names, email addresses, matriculation and
-staff numbers, telephone numbers, driving licence details and a record of who used which room or car
-and when. That warrants care, not the controls appropriate to a financial system.
+staff numbers, telephone numbers and a record of who used which room or car and when. That warrants care, not the controls appropriate to a financial system.
 
 Two confirmed decisions raise the stakes above the original design:
 
@@ -28,7 +27,7 @@ tested control and an accountable operational owner.
 | Insecure design | Server and database conflict enforcement, bounded recurrence/imports, approval state machine and threat review before new flows |
 | Security misconfiguration | `check --deploy`, DEBUG off, explicit hosts, secure cookies, CSP, Permissions Policy, maximum two instances and reviewed IAM |
 | Vulnerable components | Pinned major versions, automated dependency review, quarterly image rebuild and urgent security-patch process |
-| Authentication failures | Django password hashing, uniform account responses, verification tokens, rate limits, administrator MFA requirement |
+| Authentication failures | Django password hashing, uniform account responses, verification tokens, rate limits, mandatory TOTP second factor for approvers and administrators |
 | Integrity failures | Immutable image builds, controlled deploy identity, migration backup, no untrusted deserialisation or remote code loading |
 | Logging and monitoring failures | Append-only audit log, Cloud Audit Logs, failed-login monitoring, scheduler/job failure alerts and no personal data in logs |
 | SSRF | No user-controlled outbound URL fetches; SMTP/R2/database destinations are administrator or environment configuration only |
@@ -41,7 +40,8 @@ audit and an authenticated/unauthenticated dynamic scan against the staging host
 - Require MFA for every Google Cloud, Neon, Cloudflare, source-control and production administrator
   account. Prefer passkeys or hardware security keys over SMS.
 - Application administrators must use individually assigned accounts; shared administrator
-  credentials are prohibited. Administrator MFA is a go-live requirement.
+  credentials are prohibited. Administrator MFA is a go-live requirement, and is built — see
+  *Second factor for approvers and administrators* below.
 - Configure SPF, DKIM and DMARC for the sending domain. Booking email never asks for a password,
   payment, OTP or reply containing personal data. Verification and reset links use only the canonical
   HTTPS hostname and expire.
@@ -57,6 +57,29 @@ audit and an authenticated/unauthenticated dynamic scan against the staging host
   password on a user's behalf.
 - Session cookies: `HttpOnly`, `Secure`, `SameSite=Lax`, with a defined expiry.
 - Deactivated accounts (`status = INACTIVE`) cannot sign in, checked on every request.
+
+### Second factor for approvers and administrators
+
+Anybody who can approve a booking or deactivate an account signs in with a password **and** a
+six-digit code from an authenticator app (TOTP, RFC 6238). Ordinary users do not; their authority
+is over their own bookings only.
+
+| Aspect | How it is done |
+| --- | --- |
+| Enforcement | `config.middleware.MfaRequiredMiddleware`, not a decorator. Every request from an approver or administrator is checked, Django's own admin included, so no screen can forget. A session records the *device* it verified with; deleting the device ends those sessions |
+| Enrolment | Forced at first sign-in: a QR code (inline SVG, so the secret never travels in an image URL) and the key in plain text for typing by hand. The device is confirmed only when the app produces a matching code |
+| Algorithm | Implemented on the standard library in `apps/accounts/mfa.py` — thirty lines, tested against the RFC's own vectors. No authentication library to review |
+| Secret at rest | Encrypted with the same environment-held Fernet key as the SMTP password (`config/crypto.py`); decrypted only to check a code |
+| Replay | The last accepted time step is stored per device; a code, once used, is refused for its remaining seconds |
+| Window | One step either side of now (±30 s), for clocks a little out |
+| Recovery | Ten single-use codes issued at enrolment, shown once, stored hashed with Django's password hasher, entered in the same box as a TOTP code. Each use is written to the audit log with the count remaining |
+| Lock-out | An administrator resets a colleague's authenticator from the user screen (audited; not their own — a stolen session must not become a stolen account). For the last administrator, `manage.py reset_mfa --email` runs as a Cloud Run job like `bootstrap_admin` |
+| Rate limit | Ten attempts per quarter-hour, per IP and per account, through the same limiter as sign-in |
+| Tests | `apps/accounts/tests/test_mfa.py`. Enforcement is switched off for the rest of the suite by the test runner and back on there |
+
+Passkeys were considered and deferred: they are the stronger, phishing-resistant option, but they
+need a WebAuthn library and client-side script, depend on what the office's PCs support, and make
+recovery harder. Nothing above prevents adding them as a second method later.
 
 ## Self-registration
 

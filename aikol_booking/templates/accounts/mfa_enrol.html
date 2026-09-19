@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Set up your authenticator{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Set up your authenticator</h1>
+        <p class="lede">Your account can approve bookings and manage people, so signing in takes a
+           password and a code from your phone.</p>
+    </div>
+</div>
+
+<div class="mfa-layout">
+    <section class="form-sheet mfa-sheet" aria-labelledby="mfa-scan-heading">
+        <div class="docket-section-heading">
+            <h2 id="mfa-scan-heading">1. Scan this code</h2>
+            <p>Open Google Authenticator, Microsoft Authenticator, Aegis or any app that supports
+               time-based codes, choose <em>Add account</em>, and point the camera here.</p>
+        </div>
+        <figure class="mfa-qr" aria-label="QR code for {{ issuer }}">{{ qr_svg|safe }}</figure>
+        <details class="mfa-manual">
+            <summary>Camera not working? Enter the key by hand</summary>
+            <p>Account: <strong>{{ user.email }}</strong> · Issuer: <strong>{{ issuer }}</strong></p>
+            <p class="mfa-key"><code>{{ manual_key }}</code></p>
+            <p class="help">Time-based, six digits, every 30 seconds. Keep this key as private as a
+               password: anybody who has it can produce your codes.</p>
+        </details>
+    </section>
+
+    <section class="form-sheet mfa-sheet" aria-labelledby="mfa-confirm-heading">
+        <div class="docket-section-heading">
+            <h2 id="mfa-confirm-heading">2. Enter the code the app shows</h2>
+            <p>This proves the app and the server agree before anything depends on it.</p>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% include "_form_fields.html" %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Confirm and continue</button>
+            </div>
+        </form>
+        <form method="post" action="{% url 'accounts:logout' %}" class="mfa-signout">
+            {% csrf_token %}
+            <button class="btn btn-link" type="submit">Sign out instead</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

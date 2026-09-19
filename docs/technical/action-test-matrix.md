@@ -6,7 +6,7 @@ Run from the repository root:
 .\.venv\Scripts\python.exe tools\test_action_matrix.py
 ```
 
-The script refuses production settings, inventories all 69 named application routes, and runs the
+The script refuses production settings, inventories all 72 named application routes, and runs the
 complete Django regression suite in a disposable SQLite test database. It does **not** seed or
 alter production. The route inventory detects newly added screens/actions that have not been
 classified; it does not by itself prove that every input combination works. The tests supply
@@ -15,6 +15,7 @@ the behaviour checks below.
 | Area | Actions and refusal paths exercised | Automated test modules |
 | --- | --- | --- |
 | Accounts | Register as IIUM/public user; reject duplicates and invalid identifiers; verify email and reject replay/tampering; sign in, throttle, reset password, edit profile, sign out, enforce role and ownership | `apps.accounts.tests` |
+| Second factor | Enrol an authenticator (QR, manual key, confirm code, recovery codes shown once and stored hashed); verify each session; refuse wrong, replayed and other people's codes; throttle; keep sign-out reachable; hold approvers, administrators and Django's admin at the door and leave ordinary users alone; administrator reset ends the person's sessions and is refused for oneself; command-line reset for the last administrator | `apps.accounts.tests.test_mfa` |
 | Resource browsing | List, filter, paginate and inspect venues/cars; check status and placeholder images | `apps.resources.tests`, `apps.accounts.tests.test_smoke` |
 | Resource administration | Create/edit/deactivate/delete through the history gates; manage facilities, order and images; reject bad uploads and unauthorized access | `apps.resources.tests` |
 | Booking | Prefill a selected slot; submit room and car requests; reject missing/invalid fields, conflicts, rule violations and unverified accounts; view, search, paginate and cancel own requests | `apps.bookings.tests`, `apps.accounts.tests.test_design` |

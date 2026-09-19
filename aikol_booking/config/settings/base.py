@@ -46,6 +46,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "config.middleware.MfaRequiredMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -124,6 +125,18 @@ IIUM_EMAIL_DOMAINS = ("iium.edu.my", "live.iium.edu.my")
 
 # How long a verification or password-reset link stays usable.
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3  # three days
+
+# Approvers and administrators must enrol an authenticator app and present a
+# code every session. Enforced by MfaRequiredMiddleware. The test runner turns
+# this off so the several hundred tests that sign an administrator in with
+# `force_login` keep testing what they are about; the MFA tests turn it back on.
+MFA_ENFORCED = True
+MFA_ISSUER = "AIKOL Booking"
+
+# The stylesheet's class is `.notice-warn`; Django's tag is "warning".
+from django.contrib.messages import constants as _messages  # noqa: E402
+
+MESSAGE_TAGS = {_messages.WARNING: "warn"}
 
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DJANGO_DEFAULT_FROM_EMAIL", "AIKOL Booking <booking-aikol@iium.edu.my>"

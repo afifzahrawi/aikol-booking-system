@@ -13,33 +13,19 @@ message queue and does not reopen that decision.
 
 from __future__ import annotations
 
-from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.utils import timezone
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import InvalidToken
+
+from config.crypto import credential_cipher as _credential_cipher
 
 
 class EmailStatus(models.TextChoices):
     PENDING = "PENDING", "Pending"
     SENT = "SENT", "Sent"
     FAILED = "FAILED", "Failed"
-
-
-def _credential_cipher() -> Fernet:
-    """Return the application cipher used for administrator-managed secrets."""
-    key = getattr(settings, "CREDENTIAL_ENCRYPTION_KEY", "")
-    if not key:
-        raise ImproperlyConfigured(
-            "DJANGO_CREDENTIAL_ENCRYPTION_KEY is required for stored email credentials."
-        )
-    try:
-        return Fernet(key.encode("ascii"))
-    except (TypeError, ValueError) as exc:
-        raise ImproperlyConfigured(
-            "DJANGO_CREDENTIAL_ENCRYPTION_KEY must be a valid Fernet key."
-        ) from exc
 
 
 class EmailConfiguration(models.Model):

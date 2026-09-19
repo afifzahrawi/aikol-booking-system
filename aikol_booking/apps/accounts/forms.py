@@ -171,3 +171,20 @@ class ProfileForm(StyledFormMixin, forms.ModelForm):
 
     def clean_email(self) -> str:
         return self.cleaned_data["email"].strip().lower()
+
+
+class SecondFactorForm(StyledFormMixin, forms.Form):
+    """One field for the six digits from the app — or, on the sign-in step, a
+    recovery code. One field because a person with their phone in one hand
+    should not have to choose a mode first."""
+
+    code = forms.CharField(
+        label="Verification code",
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            "autocomplete": "one-time-code", "inputmode": "numeric", "autofocus": True,
+        }),
+    )
+
+    def clean_code(self) -> str:
+        return self.cleaned_data["code"].strip()

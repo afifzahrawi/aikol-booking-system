@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Enter your code{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Enter your code</h1>
+        <p class="lede">Open your authenticator app and type the six digits it shows for
+           {{ user.email }}.</p>
+    </div>
+</div>
+
+<section class="form-sheet mfa-sheet" aria-labelledby="mfa-verify-heading">
+    <h2 id="mfa-verify-heading" class="visually-hidden">Verification</h2>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% include "_form_fields.html" %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Continue</button>
+        </div>
+    </form>
+    <p class="help">Lost the phone? Enter one of your recovery codes instead, in the same box.
+       If those are gone too, the Kulliyyah office can reset your authenticator.</p>
+    <form method="post" action="{% url 'accounts:logout' %}" class="mfa-signout">
+        {% csrf_token %}
+        <button class="btn btn-link" type="submit">Sign out instead</button>
+    </form>
+</section>
+{% endblock %}

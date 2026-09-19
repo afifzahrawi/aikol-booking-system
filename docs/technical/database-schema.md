@@ -389,6 +389,32 @@ and the keys that changed.
 Current announcements appear immediately below the home-page availability search. A row is current
 only when active and inside its optional start/end interval. Create and edit actions are audited.
 
+### `totp_devices`
+
+One authenticator per person; only approvers and administrators have one.
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `user_id` | FK → users, unique | Cascade: a deleted account takes its device with it |
+| `encrypted_secret` | text | The TOTP secret, Fernet-encrypted with the credential key. Never stored plain |
+| `confirmed_at` | timestamptz, null | Set when the app first produces a matching code. An unconfirmed row is an enrolment in progress |
+| `last_used_step` | bigint | The last 30-second step accepted, so a code cannot be replayed |
+| `created_at` | timestamptz | |
+
+A verified session stores the device id. Deleting the row — an administrator's reset — is what ends
+those sessions and sends the person back to enrolment.
+
+### `recovery_codes`
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `user_id` | FK → users | Ten rows issued per enrolment; reissue replaces them all |
+| `code_hash` | varchar(128) | Django password hash of the normalised code. The plain code exists only on the page that showed it |
+| `used_at` | timestamptz, null | Set on redemption. A used code is kept, not deleted, so the audit trail and the "n remaining" count agree |
+| `created_at` | timestamptz | |
+
+Index `(user_id, used_at)`: redemption scans a person's unused codes and nothing else.
+
 ## The academic calendar
 
 Recurring bookings are generated against a teaching calendar, not against a bare date range.
