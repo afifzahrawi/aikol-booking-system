@@ -171,8 +171,23 @@ Not a formal load test — a sanity check that the design holds at scale.
 ## A note on SQLite
 
 The exclusion constraint exists only in PostgreSQL, so a test suite run against SQLite passes with
-the last line of defence missing. **Run the conflict and concurrency tests against PostgreSQL in
-CI**, or they are not testing what they claim to test.
+the last line of defence missing: `test_concurrency.py` skips itself there rather than pass for the
+wrong reason. **Run the suite against PostgreSQL before any release**, or the conflict tests are not
+testing what they claim to test.
+
+`config/settings/postgres.py` exists for exactly this. It is the development settings with the
+database taken from `DATABASE_URL`, so any disposable PostgreSQL 15+ will do — a local instance, a
+container, or a throwaway Neon branch. Never the production branch: Django creates and drops a
+`test_` database on the same server.
+
+```
+DJANGO_SETTINGS_MODULE=config.settings.postgres \
+DATABASE_URL=postgresql://postgres@127.0.0.1:5499/postgres \
+python manage.py test
+```
+
+On PostgreSQL the run reports no skips. If it reports one, the concurrency test did not run, and the
+row locking and the exclusion constraint remain unverified.
 
 ## Accessibility and browser checks
 

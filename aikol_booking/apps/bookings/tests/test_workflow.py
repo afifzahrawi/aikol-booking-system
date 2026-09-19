@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as dt
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import IntegrityError, connection, transaction
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -163,15 +163,23 @@ class ApprovalTests(Fixtures):
 
     def test_a_slot_taken_after_submission_cannot_be_approved_over(self):
         """The overlapping row is created directly, because that is the only way
-        one can arise: a bulk import, an administrator amending times, or a
+        one could arise: a bulk import, an administrator amending times, or a
         shell session — any path that does not go through `create_booking`.
-        Approval is the last moment before the resource is promised to somebody,
-        so it looks again."""
-        Booking.objects.create(
+
+        On PostgreSQL even those paths are closed: the exclusion constraint
+        refuses the row, and the test proves that instead. On SQLite the row
+        goes in, and approval — the last moment before the resource is promised
+        to somebody — has to look again."""
+        rival = dict(
             resource=self.room, user=self.admin, created_by=self.admin,
             start_at=at(self.day, "11:00"), end_at=at(self.day, "13:00"),
             purpose="Arrived by another path", status=BookingStatus.APPROVED,
         )
+        if connection.vendor == "postgresql":
+            with self.assertRaises(IntegrityError), transaction.atomic():
+                Booking.objects.create(**rival)
+            return
+        Booking.objects.create(**rival)
 
         with self.assertRaises(ValidationError) as ctx:
             approve_booking(self.booking, decided_by=self.approver)
@@ -369,14 +377,22 @@ class SeriesTests(Fixtures):
         )
 
     def test_an_occurrence_overtaken_since_submission_is_reported_not_forced(self):
+        """A pending occurrence already holds its slot. On PostgreSQL nothing can
+        take it — the exclusion constraint refuses the rival row. On SQLite a
+        rival written by some other path goes in, and series approval must
+        report that occurrence rather than approve over it."""
         series, created, _ = self.weekly()
         overtaken = created[2]
-        # Somebody else's request for the same slot gets approved first.
-        rival = Booking.objects.create(
+        rival = dict(
             resource=self.room, user=self.admin, created_by=self.admin,
             start_at=overtaken.start_at, end_at=overtaken.end_at,
             purpose="Rival", status=BookingStatus.APPROVED,
         )
+        if connection.vendor == "postgresql":
+            with self.assertRaises(IntegrityError), transaction.atomic():
+                Booking.objects.create(**rival)
+            return
+        Booking.objects.create(**rival)
         approved, refused = approve_series(series, decided_by=self.approver)
         self.assertEqual(len(approved), 4)
         self.assertEqual(len(refused), 1)

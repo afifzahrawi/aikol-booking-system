@@ -39,13 +39,32 @@ governance and audit · low cost · maintainable.
 
 ## 2. Current status
 
-**Phases 1 to 8 are COMPLETE.**
+**Phases 1 to 8 are COMPLETE, and the system is LIVE on Google Cloud Run.**
 **All 26 section 24 decisions have been answered by AIKOL** (see section 5).
 The Django project exists, the database is built, authentication works, resources are browsable
 and manageable, bookings can be submitted, decided and cancelled — single and recurring — and
 key custody, user management, settings and the audit log are in place, and
 bulk CSV import and export, reporting and retention are built, and the
-**security review is done**. Phase 9 (user acceptance testing) is next.
+**security review is done**. Production runs at the generated `*.run.app` hostname on Cloud Run
+with Neon PostgreSQL and Cloudflare R2 — see `docs/technical/managed-cloud-deployment.md`.
+Phase 9 (user acceptance testing) has not started; three operational items block it (section 5,
+*Still open*), the first being that **no SMTP credentials have been entered, so no email has ever
+left the production outbox**.
+
+### Since the security review
+
+- **Deployed.** A single immutable image (`Dockerfile`), a public Cloud Run service capped at one
+  instance, a private IAM-authenticated maintenance service driven by Cloud Scheduler for the outbox,
+  the `COMPLETED` transition and backups, and a migration-only Cloud Run Job. Every secret is read
+  from Secret Manager; `deploy/cloud-run/deploy.ps1` refuses to run until all six exist. A
+  `SecurityPolicyMiddleware` sets a deny-by-default Content-Security-Policy and a Permissions-Policy.
+- **Redesigned.** The interface was audited end to end (`docs/ux-audit.md`) and brought onto the
+  locked multi-page system in `design.md`, carried by `static/css/tokens.css` and `redesign.css`.
+- **Self-drive is gone entirely.** Requesters never drive a Kulliyyah car, so the licence fields left
+  the user model and the vehicle form. Anything that asks for a licence is a defect.
+- Users edit their own profile; resource terminology is *Venue* and *Vehicle* throughout.
+- A scripted **action matrix** (`tools/test_action_matrix.py`, `docs/technical/action-test-matrix.md`)
+  drives every named route as every role. **341 tests.**
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -158,15 +177,25 @@ The prototype and the management report have both been brought into line with th
   posts the whole visible order for the server to rewrite as `1..n`.
 - **128 tests, all passing.**
 
+### Verified against PostgreSQL
+
+The suite has now run against PostgreSQL 18 through `config.settings.postgres`: **341 tests, no
+skips.** The concurrency test ran for the first time and passed — two simultaneous submissions for
+one slot produce exactly one booking — and the exclusion constraint refused every overlapping row a
+test tried to insert around the service layer. Two workflow tests had been relying on SQLite
+letting that illegal row in; they now assert the constraint on PostgreSQL and the approval re-check
+on SQLite. The SQLite run still reports one skip, the concurrency test, as intended.
+
 ### Not started
 
-Phases 9 and 10: user acceptance testing, and deployment.
+Phase 9, user acceptance testing. Training, under Phase 10.
 
 ### Next step
 
-**Run the suite against PostgreSQL.** It is the one outstanding item from Phase 8: the concurrency
-test skips on SQLite and proves nothing there, and the two exclusion constraints have never
-executed. Then Phase 9 — user acceptance testing with the Kulliyyah office.
+**Get email leaving the outbox.** The Kulliyyah office enters SMTP credentials under System →
+Settings; until then no verification, reset or booking email is delivered, and acceptance testing
+cannot start because a new user cannot finish registering. After that: administrator MFA, then
+Phase 9 with the office.
 
 ---
 
@@ -190,21 +219,34 @@ executed. Then Phase 9 — user acceptance testing with the Kulliyyah office.
 │   ├── css/styles.css
 │   ├── js/prototype.js         # sample data + shared behaviour, global `AIKOL`
 │   └── assets/images/
+├── design.md                   # the locked visual system — current source of truth for the UI
+├── PRODUCT.md                  # product summary consumed by the design tooling
+├── Dockerfile                  # the production image; collectstatic runs under settings/build.py
+├── cloudbuild.yaml             # repository-triggered image builds
+├── compose.production.yml      # the earlier self-hosted path (Caddy + Gunicorn); superseded by Cloud Run
+├── deploy/
+│   ├── Caddyfile               # self-hosted path only
+│   └── cloud-run/              # deploy.ps1, bootstrap-admin.ps1, reveal-admin-password.ps1
 ├── docs/
 │   ├── README.md
-│   └── technical/              # architecture, schema, booking rules, retention,
-│                               # security, testing, bulk import, prototype guide
+│   ├── ux-audit.md             # the end-to-end interface audit that drove the redesign
+│   └── technical/              # architecture, schema, booking rules, retention, security,
+│                               # testing, bulk import, prototype guide, managed-cloud
+│                               # deployment, SMTP setup, action test matrix
 └── tools/
-    └── generate_placeholder_images.py
+    ├── generate_placeholder_images.py
+    └── test_action_matrix.py   # drives every named route as every role
 ```
 
 The Django project is in `aikol_booking/` at the repository root, laid out as
-`docs/technical/architecture.md` specifies: `config/settings/` split three ways, `apps/` holding the
-eight modules, plus `templates/`, `static/`, `media/` and `requirements.txt`. The virtual environment
+`docs/technical/architecture.md` specifies: `config/settings/` split four ways (`base`,
+`development`, `production`, and `build` for image builds that must need no secret; `postgres`
+layers a `DATABASE_URL` over development for the PostgreSQL test run), `apps/` holding the eight
+modules, plus `templates/`, `static/`, `media/` and `requirements.txt`. The virtual environment
 lives in `.venv/` and is not committed. Migrations **are** committed.
 
-The prototype covers venues only. Vehicle screens — a vehicle list, a vehicle detail page, a trip
-booking form with driver and licence fields, and a key issue/return screen — do not exist yet.
+The prototype covers venues only; the vehicle screens exist in the Django application, not in the
+prototype.
 
 ---
 
@@ -219,18 +261,20 @@ booking form with driver and licence fields, and a key issue/return screen — d
 | Database (dev) | **SQLite** | Zero setup |
 | Database (prod) | **PostgreSQL 15+** | Required — the overlap exclusion constraint needs it |
 | Authentication | **Django's own auth. No IIUM SSO** | Confirmed decision, not a placeholder — see section 5 |
-| Email | **Administrator-configured SMTP, sent from a database outbox by cron** | Password encrypted at rest; account and booking confirmations |
-| Scheduled jobs | **cron calling `manage.py`** | `COMPLETED` transition, retention scans. No Celery |
+| Email | **Administrator-configured SMTP, sent from a database outbox on a schedule** | Password encrypted at rest; account and booking confirmations. **Not yet configured in production** |
+| Scheduled jobs | **Cloud Scheduler calling a private, IAM-authenticated maintenance service** (`config/maintenance.py`) | Outbox drain, `COMPLETED` transition, backups. A request-billed service, not a Cloud Run Job — Jobs bill a one-minute minimum per run. No Celery |
 | Charts (app) | Plain HTML/CSS; **Chart.js** only if a chart genuinely needs it | Vendored if adopted |
-| Web server | **Caddy + Gunicorn + WhiteNoise in Docker Compose** | Caddy manages HTTPS certificates |
-| Hosting | **Oracle Always Free VM; Neon PostgreSQL; Cloudflare R2** | Zero-fee target; no uptime SLA and free limits apply |
-| Domain | **Self-provided free hostname, not an IIUM subdomain** | Confirmed decision |
+| Web server | **Gunicorn + WhiteNoise in one container** | TLS is terminated by Cloud Run; the Caddy/Compose files remain for a self-hosted fallback |
+| Hosting | **Google Cloud Run (max 1 instance, scale to zero); Neon PostgreSQL; Cloudflare R2 (private buckets, signed URLs); Secret Manager** | Live. Oracle's free VM was tried and rejected by Oracle's own screening. Google requires an active billing account; the free allowance is not a hard cap, so instance count and spend alerts are the controls |
+| Domain | **The generated `*.run.app` hostname**, for now | A `.my` domain was researched and deliberately not bought pending a decision on institutional ownership |
 | Version control | **Git** | |
-| Testing | Django test framework | `manage.py test`. 318 tests, one expected skip |
+| Testing | Django test framework | `manage.py test`. 341 tests. The PostgreSQL run uses `config.settings.postgres` |
 | Image handling | **Pillow** | Required by Django's `ImageField`. Not optional — resource photographs are a confirmed requirement |
-| PostgreSQL driver | **psycopg 3** | Production only. Installed in development so `check --deploy` can run |
-| Credential encryption | **cryptography / Fernet** | Protects the SMTP password stored from the administrator screen |
-| Cost | **RM 0 within provider free allowances** | No-fee operation has no uptime SLA |
+| PostgreSQL driver | **psycopg 3** | Production, and the PostgreSQL test run. Installed in development so `check --deploy` can run |
+| Object storage | **django-storages[s3]** | R2 is S3-compatible; media and backups in separate buckets with application-enforced soft limits |
+| Connection URL | **dj-database-url** | Parses `DATABASE_URL` instead of hand-splitting it |
+| Credential encryption | **cryptography / Fernet** | Protects the SMTP password stored from the administrator screen, and the one-time administrator password handoff |
+| Cost | **RM 0 within provider free allowances**, unproven | Spend-cap budget set. No claim of staying free is made until a monitored pilot provides evidence |
 
 ### Explicitly rejected (do not add without a documented reason)
 
@@ -351,11 +395,20 @@ these decisions are the authority for them.
 
 ### Still open
 
-The deployment code is ready. Two operational items require the authorised AIKOL account owner:
+The system is deployed. Three items require the Kulliyyah office or the AIKOL account owner, and
+the first blocks user acceptance testing outright:
 
-1. Create the Oracle Cloud, Neon, Cloudflare and free-hostname accounts and supply credentials.
-2. Choose the final public hostname. The no-fee plan has no uptime SLA and may be reclaimed or
-   constrained by provider free-tier limits.
+1. **Enter SMTP credentials** under System → Settings (`docs/technical/smtp-setup.md`). Until then
+   verification, password-reset and booking emails accumulate in the outbox and nobody receives
+   them, so a self-registered user cannot complete registration.
+2. **Decide on a domain.** Production answers only at the generated `*.run.app` address. A `.my`
+   registration is a recurring fee and raises the question of institutional versus personal
+   ownership; neither has been decided.
+3. **Administrator MFA.** Flagged as a go-live requirement during the security hardening and not
+   built. Until it exists, administrator accounts are protected by password and rate limiting alone.
+
+The free-tier cost analysis is an estimate: it needs real booking volume and a load test before
+"RM 0" can be stated as fact.
 
 **Never present a decision as established AIKOL process unless it appears above** — in code
 comments, in the report, or in conversation with the user.
@@ -373,8 +426,9 @@ Full detail in `docs/technical/database-schema.md`. Summary:
 Key decisions:
 
 - **Custom user model** (`accounts.User`) with `email` as the login field, plus
-  `identification_number` (matriculation or staff number, unique), `phone`, and the driving licence
-  fields. Set this up in the very first migration — it cannot be changed later without pain.
+  `identification_number` (matriculation or staff number, unique) and `phone`. It was set up in the
+  very first migration, as it had to be. The driving licence fields it once carried were removed
+  with self-drive: nobody who books a car drives it.
 - **One `resources` table, extended by `venues` and `vehicles`.** A venue and a car differ in their
   attributes but are identical in what matters: a thing reserved for a period, requiring approval,
   with keys handed over, that must never be double-booked. `bookings.resource` points at
@@ -498,8 +552,8 @@ booking feature complete without them.
 - The full database reset is for development and migration only: highest administrator level,
   disabled by default in production settings, requires typing `DELETE ALL DATA`, requires a backup,
   written to the audit log.
-- Driving licence numbers and telephone numbers are personal data. They appear in exports only where
-  the export's purpose requires them, and never in the audit log's free-text description.
+- Telephone numbers and matriculation or staff numbers are personal data. They appear in exports
+  only where the export's purpose requires them, and never in the audit log's free-text description.
 
 ---
 
@@ -525,9 +579,9 @@ book anything, and a matriculation or staff number is required and unique. Rate-
 and password-reset requests — a public registration form on a public domain will be probed.
 
 Role-based authorisation checked in every view (403, not a hidden menu item), across three roles:
-standard user, **Approver** (decides bookings only), and Administrator. Vehicle booking is further
-restricted to lecturers and staff; enforce it in the form and the view, not only by hiding the link.
-Ownership checked on the object, never inferred from the URL. CSRF on every form. Template
+standard user, **Approver** (decides bookings only), and Administrator. Vehicle booking is open to
+every verified user, students included (section 5) — an earlier version of this sentence said
+otherwise and was wrong. Ownership checked on the object, never inferred from the URL. CSRF on every form. Template
 auto-escaping. ORM-only database access. All validation server-side. Uploads: images only, format
 sniffed, 5 MB limit, renamed on save, stored outside the code path. HTTPS enforced; secure, HttpOnly
 session cookies. `DEBUG = False` and `ALLOWED_HOSTS` set in production. Secrets from environment
@@ -629,8 +683,8 @@ advanced analytics · any AI feature.
 | 6b | Key issue and return recording | **Complete** |
 | 7 | Bulk data, reporting and retention | **Complete** |
 | 8 | Testing and security review | **Complete** — except the PostgreSQL run |
-| 9 | User acceptance testing | Not started — **next** |
-| 10 | Deployment and training | Started — managed-cloud pilot prepared; needs provider accounts, scheduler and domain |
+| 9 | User acceptance testing | Not started — **next**, once SMTP is configured |
+| 10 | Deployment and training | **Deployed** to Cloud Run with scheduler, backups and spend alerts. Outstanding: SMTP credentials, domain decision, administrator MFA, training |
 
 Phases 5b and 6b are numbered separately because they were added after the original plan and carry
 schedule cost that the original estimate did not include. Recurring bookings in particular are not a
