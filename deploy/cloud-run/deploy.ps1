@@ -19,15 +19,19 @@ $runtimeAccount = "$RuntimeServiceAccount@$ProjectId.iam.gserviceaccount.com"
 $schedulerAccount = "aikol-scheduler@$ProjectId.iam.gserviceaccount.com"
 $image = "$Region-docker.pkg.dev/$ProjectId/$Repository/web:latest"
 
-function Invoke-Step([string]$Name, [scriptblock]$Command) {
-    & $Command
-    if ($LASTEXITCODE -ne 0) { throw "$Name failed (exit $LASTEXITCODE). Deployment is not complete." }
+# The parameter names are deliberately unusual. A script block passed in is
+# evaluated inside this function's scope, so a plain $Name or $Command in the
+# caller's block would resolve to the parameter here, not to the caller's
+# variable — which is how a secret was once named after the step label.
+function Invoke-Step([string]$StepLabel, [scriptblock]$StepBlock) {
+    & $StepBlock
+    if ($LASTEXITCODE -ne 0) { throw "$StepLabel failed (exit $LASTEXITCODE). Deployment is not complete." }
 }
 
 # True when the resource exists. Output and stderr are swallowed; only the exit
 # code is read.
-function Test-Resource([scriptblock]$Describe) {
-    $null = & $Describe 2>&1
+function Test-Resource([scriptblock]$ProbeBlock) {
+    $null = & $ProbeBlock 2>&1
     return ($LASTEXITCODE -eq 0)
 }
 
@@ -50,20 +54,20 @@ $secretNames = @(
     "django-secret-key", "credential-encryption-key", "database-url",
     "r2-access-key-id", "r2-secret-access-key", "r2-endpoint-url"
 )
-foreach ($name in $secretNames) {
-    if (-not (Test-Resource { gcloud secrets describe $name })) {
-        throw "Create Secret Manager secret '$name' before deploying. See managed-cloud-deployment.md."
+foreach ($secretName in $secretNames) {
+    if (-not (Test-Resource { gcloud secrets describe $secretName })) {
+        throw "Create Secret Manager secret '$secretName' before deploying. See managed-cloud-deployment.md."
     }
-    Invoke-Step "Granting access to secret $name" { gcloud secrets add-iam-policy-binding $name --member "serviceAccount:$runtimeAccount" --role roles/secretmanager.secretAccessor | Out-Null }
+    Invoke-Step "Granting access to secret $secretName" { gcloud secrets add-iam-policy-binding $secretName --member "serviceAccount:$runtimeAccount" --role roles/secretmanager.secretAccessor | Out-Null }
 }
 
 $secretMap = "DJANGO_SECRET_KEY=django-secret-key:latest,DJANGO_CREDENTIAL_ENCRYPTION_KEY=credential-encryption-key:latest,DATABASE_URL=database-url:latest,R2_ACCESS_KEY_ID=r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=r2-secret-access-key:latest,R2_ENDPOINT_URL=r2-endpoint-url:latest"
 $baseEnvironment = "DJANGO_SETTINGS_MODULE=config.settings.production,R2_BUCKET_NAME=$MediaBucket,R2_BACKUP_BUCKET_NAME=$BackupBucket,WEB_CONCURRENCY=1,GUNICORN_THREADS=4"
 $bootstrapEnvironment = "$baseEnvironment,DJANGO_ALLOWED_HOSTS=localhost"
 
-function Invoke-OperationalJob([string]$Name, [string]$Environment, [string]$Command) {
-    Invoke-Step "Defining the $Name job" { gcloud run jobs deploy $Name --image $image --region $Region --service-account $runtimeAccount --cpu 1 --memory 512Mi --max-retries 0 --task-timeout 10m --set-env-vars $Environment --set-secrets $secretMap --command sh --args "-c,$Command" }
-    Invoke-Step "Running the $Name job" { gcloud run jobs execute $Name --region $Region --wait }
+function Invoke-OperationalJob([string]$JobName, [string]$JobEnvironment, [string]$JobCommand) {
+    Invoke-Step "Defining the $JobName job" { gcloud run jobs deploy $JobName --image $image --region $Region --service-account $runtimeAccount --cpu 1 --memory 512Mi --max-retries 0 --task-timeout 10m --set-env-vars $JobEnvironment --set-secrets $secretMap --command sh --args "-c,$JobCommand" }
+    Invoke-Step "Running the $JobName job" { gcloud run jobs execute $JobName --region $Region --wait }
 }
 
 # An existing deployment is backed up and migrated BEFORE the new image serves a
