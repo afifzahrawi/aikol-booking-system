@@ -176,6 +176,18 @@ class AdministratorBookingWorkspaceTests(OperationalFixtures):
             403,
         )
 
+    def test_the_person_search_and_its_hidden_field_share_one_form(self):
+        """user-combobox.js finds the hidden `on_behalf_of` input through the
+        form that contains the search box. If either moves out of that form the
+        search silently does nothing — which is how it shipped once."""
+        self.client.force_login(self.admin)
+        html = self.client.get(reverse("bookings:admin_create", args=[self.room.pk])).content.decode()
+        at = html.find("data-user-combobox")
+        self.assertGreater(at, 0, "the person search is on the page")
+        holder = html[html.rfind("<form", 0, at):html.find("</form>", at)]
+        self.assertRegex(holder, r'<input[^>]*name="on_behalf_of"[^>]*>')
+        self.assertRegex(holder, r'<input[^>]*name="on_behalf_of"[^>]*type="hidden"|<input[^>]*type="hidden"[^>]*name="on_behalf_of"')
+
     def test_an_administrator_creates_a_series_for_another_user(self):
         term = AcademicTerm.objects.create(
             name="Future semester",

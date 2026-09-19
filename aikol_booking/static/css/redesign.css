@@ -277,6 +277,14 @@ p { max-width: 72ch; }
     border-color: var(--docket-green);
     outline-color: var(--docket-green);
 }
+/* A field's ring sits inside its own box. Fields run edge to edge inside
+   dialogs and cards that clip their overflow, and a ring drawn outside the
+   box lost its left and right sides there. */
+.input:focus-visible, .select:focus-visible, .textarea:focus-visible {
+    outline: 2px solid var(--docket-green);
+    outline-offset: -2px;
+    border-radius: var(--radius-input);
+}
 .btn {
     min-height: 2.75rem;
     border-radius: var(--radius-input);
@@ -828,7 +836,7 @@ img, video, iframe { max-width: 100%; }
 .action-dialog-close svg { width: 1rem; fill: none; stroke: currentColor; stroke-width: 1.8; }
 .action-dialog-body { min-height: 8rem; padding: clamp(1.25rem, 3vw, 2rem); overflow: auto; }
 .action-dialog-body > .main { padding: 0; }
-.action-dialog-body .card { border: 0; box-shadow: none; }
+.action-dialog-body .card { border: 0; box-shadow: none; overflow: visible; }
 .action-dialog-body .card-body { padding: 0; }
 .action-dialog-body .page-head { margin-bottom: 1rem; }
 .action-dialog-body .booking-form-card { width: min(100%, 48rem); }

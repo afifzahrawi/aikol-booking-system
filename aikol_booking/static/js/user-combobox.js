@@ -6,9 +6,13 @@
         if (root.dataset.comboboxReady === "true") return;
         root.dataset.comboboxReady = "true";
         var search = root.querySelector('[role="combobox"]');
-        var hidden = root.querySelector('input[name="on_behalf_of"]');
+        // The hidden field is rendered with the rest of the form, not inside
+        // this section, so look through the whole form for it.
+        var form = root.closest("form") || document;
+        var hidden = form.querySelector('input[name="on_behalf_of"]');
         var results = root.querySelector('[role="listbox"]');
         var clear = root.querySelector(".combobox-clear");
+        if (!search || !hidden || !results || !clear) return;
         var timer;
         var active = -1;
 
