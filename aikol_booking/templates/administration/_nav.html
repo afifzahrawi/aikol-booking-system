@@ -1,14 +1,14 @@
 {% if tab == 'settings' or tab == 'content' or tab == 'data' or tab == 'audit' or tab == 'calendar' %}
 <nav class="workspace-tabs" aria-label="System administration">
     <a href="{% url 'administration:settings' %}"
-       {% if tab == 'settings' %}aria-current="page"{% endif %}>Booking rules</a>
+       {% if tab == 'settings' %}aria-current="page"{% endif %}>Booking Rules</a>
     <a href="{% url 'bookings:academic_terms' %}"
-       {% if tab == 'calendar' %}aria-current="page"{% endif %}>Academic calendars</a>
+       {% if tab == 'calendar' %}aria-current="page"{% endif %}>Academic Calendars</a>
     <a href="{% url 'administration:site_content' %}"
-       {% if tab == 'content' %}aria-current="page"{% endif %}>Site content</a>
+       {% if tab == 'content' %}aria-current="page"{% endif %}>Site Content</a>
     <a href="{% url 'importexport:data_management' %}"
        {% if tab == 'data' %}aria-current="page"{% endif %}>Data</a>
     <a href="{% url 'administration:audit' %}"
-       {% if tab == 'audit' %}aria-current="page"{% endif %}>Audit log</a>
+       {% if tab == 'audit' %}aria-current="page"{% endif %}>Audit Log</a>
 </nav>
 {% endif %}

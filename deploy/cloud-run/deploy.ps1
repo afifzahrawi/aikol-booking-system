@@ -50,6 +50,25 @@ $secretMap = "DJANGO_SECRET_KEY=django-secret-key:latest,DJANGO_CREDENTIAL_ENCRY
 $baseEnvironment = "DJANGO_SETTINGS_MODULE=config.settings.production,R2_BUCKET_NAME=$MediaBucket,R2_BACKUP_BUCKET_NAME=$BackupBucket,WEB_CONCURRENCY=1,GUNICORN_THREADS=4"
 $bootstrapEnvironment = "$baseEnvironment,DJANGO_ALLOWED_HOSTS=localhost"
 
+function Invoke-OperationalJob([string]$Name, [string]$Environment, [string]$Command) {
+    gcloud run jobs deploy $Name --image $image --region $Region --service-account $runtimeAccount --cpu 1 --memory 512Mi --max-retries 0 --task-timeout 10m --set-env-vars $Environment --set-secrets $secretMap --command sh --args "-c,$Command"
+    gcloud run jobs execute $Name --region $Region --wait
+    if ($LASTEXITCODE -ne 0) { throw "The $Name job failed. Deployment is not complete." }
+}
+
+# An existing deployment is backed up and migrated BEFORE the new image serves a
+# request. Migrations are additive, so the running code keeps working on the new
+# schema; the reverse is not true, and a new release that expects a table the
+# database does not have yet answers every request with an error until the
+# migration lands.
+$existingUrl = gcloud run services describe $Service --region $Region --format "value(status.url)" 2>$null
+if ($LASTEXITCODE -eq 0 -and $existingUrl) {
+    $publicHost = ([Uri]$existingUrl).Host
+    $releaseEnvironment = "$baseEnvironment,DJANGO_ALLOWED_HOSTS=$publicHost"
+    Invoke-OperationalJob "aikol-backup" $releaseEnvironment "python manage.py backup_database"
+    Invoke-OperationalJob "aikol-migrate" $releaseEnvironment "python manage.py migrate --noinput && python manage.py createcachetable"
+}
+
 gcloud run deploy $Service --image $image --region $Region --platform managed --allow-unauthenticated --service-account $runtimeAccount --cpu 1 --memory 512Mi --concurrency 20 --min 0 --max 1 --timeout 30 --execution-environment gen2 --no-cpu-boost --set-env-vars $bootstrapEnvironment --set-secrets $secretMap
 $publicUrl = gcloud run services describe $Service --region $Region --format "value(status.url)"
 $publicHost = ([Uri]$publicUrl).Host
@@ -63,11 +82,10 @@ $maintenanceHost = ([Uri]$maintenanceUrl).Host
 gcloud run services update $MaintenanceService --region $Region --update-env-vars "^^^^@^^^^DJANGO_ALLOWED_HOSTS=$publicHost,$maintenanceHost" | Out-Null
 gcloud run services add-iam-policy-binding $MaintenanceService --region $Region --member "serviceAccount:$schedulerAccount" --role roles/run.invoker | Out-Null
 
-gcloud run jobs deploy aikol-migrate --image $image --region $Region --service-account $runtimeAccount --cpu 1 --memory 512Mi --max-retries 0 --task-timeout 10m --set-env-vars $environment --set-secrets $secretMap --command sh --args "-c,python manage.py migrate --noinput && python manage.py createcachetable"
-
-gcloud run jobs execute aikol-migrate --region $Region --wait
-if ($LASTEXITCODE -ne 0) {
-    throw "The migration job failed. Deployment is not complete."
+if (-not $existingUrl) {
+    # First deployment: there was nothing to back up and no host to migrate under
+    # until the service existed.
+    Invoke-OperationalJob "aikol-migrate" $environment "python manage.py migrate --noinput && python manage.py createcachetable"
 }
 Write-Host "Deployment complete. Maintenance origin: $maintenanceUrl"
 Write-Host "Public origin: $publicUrl"

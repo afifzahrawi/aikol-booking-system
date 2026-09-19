@@ -166,5 +166,8 @@ Retention cleanup is never scheduled because it requires administrator review an
 
 ## Updating
 
-Run `deploy.ps1` again. It backs up the database before applying migrations. Verify the latest R2
-backup and restore test before any high-risk schema or retention change.
+Run `deploy.ps1` again. On an existing deployment it runs two Cloud Run jobs with the new image
+**before** any service receives it: `aikol-backup`, then `aikol-migrate`. Migrations are additive,
+so the code already serving traffic keeps working on the new schema, and the new code never meets
+a database that is missing a table it expects. Verify the latest R2 backup and restore test before
+any high-risk schema or retention change.

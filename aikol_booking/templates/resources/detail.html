@@ -20,7 +20,7 @@
 </div>
 
 {% if not resource.images.all and resource.placeholder %}
-<div class="gallery" style="margin-bottom:1.25rem">
+<div class="gallery mb-md">
     <img class="gallery-main framed" src="{% static resource.placeholder %}"
          alt="Placeholder drawing of {{ resource.name }}">
     <div class="gallery-thumbs">
@@ -32,7 +32,7 @@
 {% endif %}
 
 {% if resource.images.all %}
-<div class="gallery" style="margin-bottom:1.25rem">
+<div class="gallery mb-md">
     {% with resource.images.all|first as main %}
         <img class="gallery-main framed" src="{{ main.image.url }}"
              alt="{{ main.caption|default:resource.name }}">

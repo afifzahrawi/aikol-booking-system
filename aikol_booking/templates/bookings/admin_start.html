@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Create booking{% endblock %}
+{% block title %}Create Booking{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Create a booking</h1>
+<div class="page-head"><div><h1>Create a Booking</h1>
     <p class="lede">Choose the resource first. The next screen searches for the person the booking is for.</p></div></div>
 
 <nav class="workspace-tabs workspace-tabs-prominent" aria-label="Resource type">
@@ -21,8 +21,8 @@
     <article class="resource-choice">
         <div><span class="record-reference">{{ resource.code }}</span><h2>{{ resource.name }}</h2></div>
         <div class="btn-group">
-            <a class="btn btn-primary" href="{% url 'bookings:admin_create' resource.pk %}">One booking</a>
-            {% if kind == 'VENUE' %}<a class="btn" href="{% url 'bookings:admin_series_create' resource.pk %}">Repeat weekly</a>{% endif %}
+            <a class="btn btn-primary" href="{% url 'bookings:admin_create' resource.pk %}">One Booking</a>
+            {% if kind == 'VENUE' %}<a class="btn" href="{% url 'bookings:admin_series_create' resource.pk %}">Repeat Weekly</a>{% endif %}
         </div>
     </article>
 {% empty %}<div class="empty-state">No active resource matches that search.</div>{% endfor %}

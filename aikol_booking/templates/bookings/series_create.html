@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Weekly booking &mdash; {{ resource.name }}{% endblock %}
+{% block title %}Weekly Booking &mdash; {{ resource.name }}{% endblock %}
 {% block content %}
 <p class="record-reference">{{ resource.code }}</p>
-<h1>Repeat weekly &mdash; {{ resource.name }}</h1>
-<p class="lede">A semester of classes, entered once. Each day keeps its own times: a course may meet
-   Monday morning and Thursday afternoon.</p>
+<h1>Repeat Weekly &mdash; {{ resource.name }}</h1>
+<p class="lede">Book a whole semester at once. Each weekday can have its own time.</p>
 
 <section class="card">
     <div class="card-body">
@@ -42,10 +41,9 @@
                     <strong>{{ plan.bookable|length }} booking{{ plan.bookable|length|pluralize }}
                     would be created.</strong>
                     {% if plan.outside %}{{ plan.outside|length }} date{{ plan.outside|length|pluralize }}
-                        fall outside teaching and are left out &mdash; that is the calendar working as
-                        intended.{% endif %}
+                        fall outside teaching weeks and are left out.{% endif %}
                     {% if plan.clashing %}{{ plan.clashing|length }}
-                        date{{ plan.clashing|length|pluralize }} are already reserved, which is not.
+                        date{{ plan.clashing|length|pluralize }} are already reserved.
                     {% endif %}
                 </div>
 
@@ -65,7 +63,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                <div class="field" style="margin-top:1rem">
+                <div class="field mt-sm">
                     <label class="checkline">{{ form.accept_partial }} {{ form.accept_partial.label }}</label>
                     <p class="help">{{ form.accept_partial.help_text }}</p>
                 </div>

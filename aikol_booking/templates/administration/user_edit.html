@@ -5,9 +5,7 @@
 <p class="lede">{{ person.email }} &middot; {{ bookings }} booking{{ bookings|pluralize }} on record</p>
 
 <div class="notice notice-info">
-    <strong>There is no password field here, deliberately.</strong>
-    An administrator who can set another person's password is a liability, and the reset flow
-    already exists. Point them at <em>Forgotten your password?</em> instead.
+    <strong>Passwords are not set here.</strong> If someone is locked out, point them to <em>Forgotten your password?</em>
 </div>
 
 <section class="card">
@@ -30,9 +28,7 @@
         {% if totp_device and totp_device.confirmed %}
             <p>Enrolled on {{ totp_device.confirmed_at|date:"j F Y" }}.</p>
             {% if person.pk != user.pk %}
-                <p class="help">Reset this only when the person has lost both their phone and their
-                   recovery codes. Their signed-in sessions end and they set up a new authenticator
-                   at their next sign-in. The reset is written to the audit log.</p>
+                <p class="help">Use this when someone has lost both their phone and their recovery codes. They will set up a new authenticator at their next sign-in.</p>
                 <form method="post" action="{% url 'administration:user_mfa_reset' person.pk %}">
                     {% csrf_token %}
                     <button class="btn btn-danger" type="submit">Reset authenticator</button>

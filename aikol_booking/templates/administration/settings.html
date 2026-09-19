@@ -1,21 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>System settings</h1>
-    <p class="lede">Business rules live here, not in the code, so a limit can change without a
-       software release.</p></div></div>
+<div class="page-head"><div><h1>System Settings</h1>
+    <p class="lede">Booking rules, limits and email delivery.</p></div></div>
 {% include "administration/_nav.html" with tab='settings' %}
 
 {% if not email_configuration.is_ready %}
 <div class="notice notice-warn" role="status">
-    <strong>Email delivery is off.</strong> Registration and booking messages are queued but cannot
-    be sent until the SMTP host, from address and Enable email delivery are saved below.
+    <strong>Email delivery is off.</strong> Registration and booking emails are held until an SMTP host and from address are saved and delivery is enabled below.
     {% if queued_email_count %}{{ queued_email_count }} message{{ queued_email_count|pluralize }} await delivery.{% endif %}
 </div>
 {% elif queued_email_count %}
 <div class="notice notice-info" role="status">
     {{ queued_email_count }} message{{ queued_email_count|pluralize }} await the next scheduled
-    delivery run. Check the mail worker if they remain queued.
+    delivery run. 
 </div>
 {% endif %}
 
@@ -25,13 +23,10 @@
     {{ email_form.non_field_errors }}
     <section class="settings-section" aria-labelledby="email-delivery-heading">
         <div class="settings-intro">
-            <h2 id="email-delivery-heading">Email delivery</h2>
-            <p>Django sends queued account and booking messages through the SMTP server entered here.</p>
-            <p>Ask the administrator of your sending mailbox for its SMTP host, port, sign-in
-               method and permitted From address. This form supports SMTP username and password;
-               it does not support OAuth-only mailboxes. Do not paste credentials into a support chat.</p>
-            <p class="help">Enabling delivery will also send messages already waiting in the outbox
-               on the next scheduled run. Review the queued count above first.</p>
+            <h2 id="email-delivery-heading">Email Delivery</h2>
+            <p>Account and booking emails are sent through the SMTP server entered here. Your
+               mail provider can give you the host, port and sign-in details.</p>
+            <p class="help">Enabling delivery also sends the messages already waiting.</p>
             <p class="help">
                 {% if email_configuration.has_password %}A password is stored securely. Leave the password field blank to keep it.{% else %}No SMTP password is stored yet.{% endif %}
             </p>
@@ -60,8 +55,7 @@
 </form>
 
 <div class="notice notice-info">
-    The values shipped are AIKOL's confirmed answers, not arbitrary defaults. Each row says which
-    decision it came from. Changing one takes effect immediately and is written to the audit log.
+    The defaults are AIKOL's confirmed decisions; each row names its source. Changes apply immediately and are recorded in the audit log.
 </div>
 
 <section class="card">
@@ -76,7 +70,7 @@
                 <td>
                     <form method="post" class="inline">{% csrf_token %}
                         <input type="hidden" name="key" value="{{ row.key }}">
-                        <input class="input" name="value" value="{{ row.value }}" style="width:120px">
+                        <input class="input input-narrow" name="value" value="{{ row.value }}">
                 </td>
                 <td>{{ row.description }}</td>
                 <td><button class="btn btn-sm" type="submit">Save</button></form></td>

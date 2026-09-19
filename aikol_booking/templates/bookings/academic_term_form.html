@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{% if term %}Edit {{ term.name }}{% else %}Add academic calendar{% endif %}{% endblock %}
+{% block title %}{% if term %}Edit {{ term.name }}{% else %}Add Academic Calendar{% endif %}{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>{% if term %}Edit {{ term.name }}{% else %}Add academic calendar{% endif %}</h1>
+<div class="page-head"><div><h1>{% if term %}Edit {{ term.name }}{% else %}Add Academic Calendar{% endif %}</h1>
     <p class="lede">A term cannot overlap another term. Every break must sit within its term.</p></div></div>
 
 <form method="post" novalidate class="record-sheet academic-form">{% csrf_token %}
     {{ form.non_field_errors }}
-    <section class="docket-section"><div class="docket-section-heading"><h2>Teaching period</h2><p>Name and inclusive dates.</p></div>
+    <section class="docket-section"><div class="docket-section-heading"><h2>Teaching Period</h2><p>Name and inclusive dates.</p></div>
         {% include "_form_fields.html" %}</section>
-    <section class="docket-section"><div class="docket-section-heading"><h2>Named breaks</h2><p>Weekly occurrences are not created during these dates.</p></div>
+    <section class="docket-section"><div class="docket-section-heading"><h2>Named Breaks</h2><p>Weekly occurrences are not created during these dates.</p></div>
         {{ breaks.management_form }}{{ breaks.non_form_errors }}
         <div class="break-formset">
         {% for break_form in breaks %}

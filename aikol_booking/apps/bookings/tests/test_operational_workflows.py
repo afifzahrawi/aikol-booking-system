@@ -145,7 +145,7 @@ class AdministratorBookingWorkspaceTests(OperationalFixtures):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("bookings:approvals"))
         self.assertContains(response, 'aria-label="Booking resource type"')
-        self.assertContains(response, 'aria-current="page">Awaiting decision</a>')
+        self.assertContains(response, 'aria-current="page">Awaiting Decision</a>')
         self.assertContains(response, f'{reverse("bookings:manage")}?kind=VENUE')
 
     def test_the_booking_register_has_twenty_rows_and_numbered_pages(self):

@@ -132,6 +132,11 @@ class SmokeTests(TestCase):
                     self.fail(f"{url} does not link the redesign stylesheet")
                 if "{#" in html or "#}" in html:
                     self.fail(f"{url} leaks a Django template comment")
+                if 'style="' in html:
+                    # The Content-Security-Policy refuses inline styles, so one
+                    # here is not a style: it is a margin or a bar width that
+                    # silently never applies.
+                    self.fail(f"{url} carries an inline style attribute")
 
     def test_a_pending_decision_page_renders(self):
         pending = Booking.objects.create(
@@ -186,7 +191,7 @@ class SmokeTests(TestCase):
             },
         )
         self.assertContains(response, "Collection date")
-        self.assertContains(response, "Return date")
+        self.assertContains(response, "Return Date")
         self.assertContains(response, self.car.name)
         self.assertContains(response, f"end_date={returned.isoformat()}")
 

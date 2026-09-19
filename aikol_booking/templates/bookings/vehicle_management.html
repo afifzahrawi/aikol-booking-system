@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Management decision {{ booking.booking_reference }}{% endblock %}
+{% block title %}Management Decision {{ booking.booking_reference }}{% endblock %}
 {% block content %}
 <div class="record-head">
-    <div><p class="record-reference">{{ booking.booking_reference }}</p><h1>Management decision</h1>
+    <div><p class="record-reference">{{ booking.booking_reference }}</p><h1>Management Decision</h1>
         <p class="lede">Second decision for {{ booking.resource.name }}.</p></div>
     <span class="status-stamp status-pending">{{ booking.get_management_status_display }}</span>
 </div>
@@ -18,7 +18,7 @@
         </dl>
     </section>
     <section class="record-sheet record-action-sheet">
-        <h2>Assign and decide</h2>
+        <h2>Assign and Decide</h2>
         <p>Approving confirms the VMU driver and makes the vehicle eligible for key collection.</p>
         <form method="post" novalidate>{% csrf_token %}
             {{ form.non_field_errors }}{% include "_form_fields.html" %}

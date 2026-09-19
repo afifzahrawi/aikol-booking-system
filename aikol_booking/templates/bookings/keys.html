@@ -1,16 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Keys{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Key register</h1>
+<div class="page-head"><div><h1>Key Register</h1>
     <p class="lede">Keys and access cards are held by the Kulliyyah office. Every issue and return
        is recorded against the booking.</p></div></div>
 {% include "administration/_nav.html" with tab='keys' %}
 
 {% if overdue_count %}
 <div class="notice notice-warn">
-    <strong>{{ overdue_count }} key{{ overdue_count|pluralize }} out past the booking's end.</strong>
-    A booking becomes <em>completed</em> when its period passes; whether the key came back is a
-    separate fact, deliberately tracked on its own, so an outstanding key is never quietly forgotten.
+    <strong>{{ overdue_count }} key{{ overdue_count|pluralize }} still out after the booking ended.</strong>
+    Follow up with the people who collected them.
 </div>
 {% endif %}
 

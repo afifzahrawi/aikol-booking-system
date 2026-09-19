@@ -18,22 +18,22 @@
 </div>
 {% include "administration/_nav.html" with tab='reports' %}
 
-<div class="grid grid-4" style="margin-bottom:18px">
+<div class="grid grid-4">
     <div class="stat"><span class="k">Bookings</span><span class="v">{{ headline.total }}</span>
         <span class="d">{{ headline.approved }} approved &middot; {{ headline.rejected }} rejected
             &middot; {{ headline.cancelled }} cancelled</span></div>
-    <div class="stat info"><span class="k">Approval rate</span>
+    <div class="stat info"><span class="k">Approval Rate</span>
         <span class="v">{% if headline.approval_rate is not None %}{{ headline.approval_rate }}%{% else %}&mdash;{% endif %}</span>
         <span class="d">of all decided requests</span></div>
-    <div class="stat accent"><span class="k">Room hours booked</span><span class="v">{{ headline.room_hours }}</span>
+    <div class="stat accent"><span class="k">Room Hours Booked</span><span class="v">{{ headline.room_hours }}</span>
         <span class="d">approved and completed</span></div>
-    <div class="stat neutral"><span class="k">Vehicle trip days</span><span class="v">{{ headline.trip_days }}</span>
+    <div class="stat neutral"><span class="k">Vehicle Trip Days</span><span class="v">{{ headline.trip_days }}</span>
         <span class="d">approved and completed</span></div>
 </div>
 
-<section class="card" style="margin-bottom:18px">
+<section class="card">
     <div class="card-head">
-        <h2 class="label" style="margin:0">Room demand by hour and day</h2>
+        <h2 class="label">Room Demand by Hour and Day</h2>
         <span class="help">
             {% if heat.busiest %}Busiest: {{ heat.busiest.name }}
                 {{ heat.busiest.hour }}:00, {{ heat.busiest.value }} venue-hours
@@ -41,12 +41,9 @@
         </span>
     </div>
     <div class="card-body">
-        <p class="help" style="margin:0 0 12px">
+        <p class="help m-0 mb-xs">
            <span class="tag tag-illustrative">Illustrative data</span>
-           Approved venue-hours falling in each hour of the
-           bookable window. A booking is spread across the hours it occupies, so a 09:00&ndash;12:00
-           seminar adds an hour to each of three cells. Vehicles are excluded &mdash; a trip that
-           runs overnight has no meaningful hour of day.</p>
+           Approved room hours by hour of day. A 09:00&ndash;12:00 booking counts one hour in each of three cells. Vehicles are not included.</p>
 
         <div class="heat-wrap">
         <table class="heat" id="heat">
@@ -69,30 +66,30 @@
         </div>
 
         <div class="heat-foot">
-            <p class="heat-read" id="heatRead" role="status" aria-live="polite" style="margin:0">
+            <p class="heat-read m-0" id="heatRead" role="status" aria-live="polite">
                 Total {{ heat.total }} venue-hours in the period. Hover or tab a cell for its value.</p>
             <div class="heat-scale" aria-hidden="true">
                 <span>None</span>
-                <i style="background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-soft)"></i>
-                <span style="margin-left:4px">Fewer</span>
-                <i style="background:#dbe9e4"></i><i style="background:#a8ccc2"></i>
-                <i style="background:#6ba99c"></i><i style="background:#33806f"></i>
-                <i style="background:var(--brand)"></i>
+                <i class="swatch-0"></i>
+                <span class="swatch-gap">Fewer</span>
+                <i class="swatch-1"></i><i class="swatch-2"></i>
+                <i class="swatch-3"></i><i class="swatch-4"></i>
+                <i class="swatch-5"></i>
                 <span>More</span>
             </div>
         </div>
     </div>
 </section>
 
-<div class="grid grid-2" style="align-items:start">
+<div class="grid grid-2 grid-top">
     <section class="card">
-        <div class="card-head"><h2 class="label" style="margin:0">Utilisation by resource</h2></div>
+        <div class="card-head"><h2 class="label">Utilisation by Resource</h2></div>
         <div class="card-body">
-            <p class="help" style="margin:0 0 10px">Share of the 08:00&ndash;22:00 window held.</p>
+            <p class="help m-0 mb-xs">Share of the 08:00&ndash;22:00 window held.</p>
             <div class="hbars">
             {% for row in utilisation %}
                 <div class="hbar"><span>{{ row.resource.name }}</span>
-                    <div class="track"><div class="fill" style="width:{{ row.percent }}%"></div></div>
+                    <div class="track"><div class="fill" data-width="{{ row.percent }}"></div></div>
                     <span class="val">{{ row.percent }}%</span></div>
             {% empty %}
                 <div class="empty-state">No active resource.</div>
@@ -101,14 +98,14 @@
         </div>
     </section>
 
-    <div style="display:flex;flex-direction:column;gap:18px">
+    <div class="stack">
         <section class="card">
-            <div class="card-head"><h2 class="label" style="margin:0">Bookings per month</h2></div>
+            <div class="card-head"><h2 class="label">Bookings per Month</h2></div>
             <div class="card-body">
                 <div class="bars">
                 {% for row in monthly %}
                     <div class="bar-col">
-                        <div class="bar" style="height:{{ row.percent }}%"><span>{{ row.count }}</span></div>
+                        <div class="bar" data-height="{{ row.percent }}"><span>{{ row.count }}</span></div>
                         <span class="bar-label">{{ row.label }}</span>
                     </div>
                 {% endfor %}
@@ -117,7 +114,7 @@
         </section>
 
         <section class="card">
-            <div class="card-head"><h2 class="label" style="margin:0">Keys</h2></div>
+            <div class="card-head"><h2 class="label">Keys</h2></div>
             <div class="card-body">
                 <dl class="kv">
                     <dt>Out now</dt><dd>{{ keys.out }}</dd>
@@ -129,7 +126,7 @@
         </section>
 
         <section class="card">
-            <div class="card-head"><h2 class="label" style="margin:0">Most frequent requesters</h2></div>
+            <div class="card-head"><h2 class="label">Most Frequent Requesters</h2></div>
             <div class="card-body">
                 <table class="data">
                     <thead><tr><th scope="col">Name</th><th scope="col">Affiliation</th>
@@ -143,8 +140,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                <p class="help" style="margin-top:.75rem">Names and counts only. A utilisation
-                   report has no need of anybody's matriculation or telephone number.</p>
+                <p class="help mt-xs">Names and counts only.</p>
             </div>
         </section>
     </div>

@@ -12,7 +12,6 @@
     if (!toggle) return;
     var shell = document.querySelector('.docket-shell');
     var desktop = window.matchMedia('(min-width: 64rem)');
-    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     var label = toggle.querySelector('.nav-toggle-label');
     var masthead = document.querySelector('.docket-masthead');
 
@@ -21,13 +20,6 @@
         shell.style.setProperty('--masthead-h', masthead.getBoundingClientRect().height + 'px');
     }
 
-    function updateWithMotion(change) {
-        if (document.startViewTransition && !reducedMotion.matches) {
-            document.startViewTransition(change);
-        } else {
-            change();
-        }
-    }
 
     function setDesktopState(collapsed) {
         shell.classList.toggle('nav-collapsed', collapsed);
@@ -53,14 +45,12 @@
         if (desktop.matches) {
             var collapsed = !shell.classList.contains('nav-collapsed');
             sessionStorage.setItem('aikol-nav-collapsed', String(collapsed));
-            updateWithMotion(function () { setDesktopState(collapsed); });
+            setDesktopState(collapsed);
             return;
         }
-        updateWithMotion(function () {
-            var open = nav.classList.toggle('open');
-            toggle.setAttribute('aria-expanded', String(open));
-            toggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
-        });
+        var open = nav.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
     });
 
     if (desktop.addEventListener) desktop.addEventListener('change', syncMode);
@@ -144,4 +134,19 @@
     document.querySelectorAll('[data-print]').forEach(function (button) {
         button.addEventListener('click', function () { window.print(); });
     });
+})();
+
+/* Bars sized by data. A style attribute is refused by the Content-Security-
+   Policy, so the template writes the measurement as data and this applies it
+   through the CSSOM, which the policy allows. Applied after first paint, the
+   bars grow into place instead of appearing already drawn. */
+(function () {
+    'use strict';
+    function apply() {
+        document.querySelectorAll('[data-width]').forEach(function (el) { el.style.width = el.getAttribute('data-width') + '%'; });
+        document.querySelectorAll('[data-height]').forEach(function (el) { el.style.height = el.getAttribute('data-height') + '%'; });
+        document.querySelectorAll('[data-left]').forEach(function (el) { el.style.left = el.getAttribute('data-left') + '%'; });
+    }
+    if (window.requestAnimationFrame) requestAnimationFrame(function () { requestAnimationFrame(apply); });
+    else apply();
 })();

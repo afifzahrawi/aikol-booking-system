@@ -459,7 +459,7 @@ class ReportingTests(Fixtures):
     def test_the_screen_renders_the_grid(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("reporting:reports"))
-        self.assertContains(response, "Room demand by hour and day")
+        self.assertContains(response, "Room Demand by Hour and Day")
         self.assertContains(response, 'data-level=')
 
 

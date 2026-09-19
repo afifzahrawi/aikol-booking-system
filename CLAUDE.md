@@ -647,6 +647,20 @@ Full detail: `docs/technical/security.md`.
   component foundation; `static/css/tokens.css` and `static/css/redesign.css` apply the locked
   multi-page system. New screens use those tokens and established component classes rather than
   adding page-local colours, fonts or shape rules.
+- **An inline `style=""` attribute does nothing.** The Content-Security-Policy is `style-src 'self'`,
+  so the browser drops every one, silently. A margin written that way is no margin; a bar width
+  written that way is a bar with no width — which is exactly how sixty of them shipped. Use a class
+  (`.mt-sm`, `.grid-top`, `.stack`, `.plain-list`…) and, for a size that comes from data, a
+  `data-width` / `data-height` / `data-left` attribute that `chrome.js` applies. The smoke test
+  fails on any `style="` in a rendered page.
+- **Blocks that follow one another on a page are spaced by the flow rule** (`.main > * + *`), not
+  by per-element margins. Containers never sit flush; no border is hidden under the block above.
+- **Headings and tab labels are title case in the markup.** The old `text-transform: capitalize`
+  is gone: it capitalised every word, including "And" and "Of".
+- **Interface copy says the one thing the person needs.** No rationale, no engineering commentary,
+  no reassurance about what the code does internally — that belongs in this file or in `docs/`.
+- **Motion has one curve and three durations**, all tokens in `redesign.css`; see `design.md`,
+  *Motion*. Never add a second entrance to something that already arrives with the page.
 - **A `{# #}` comment in a Django template is SINGLE-LINE ONLY.** A multi-line one is not a comment
   at all — it renders verbatim on the page. Use `{% comment %}…{% endcomment %}` for anything longer
   than a line. Thirteen of these shipped before anyone looked at the site in a browser.

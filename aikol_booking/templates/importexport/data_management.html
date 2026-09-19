@@ -1,17 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Data management{% endblock %}
+{% block title %}Data Management{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Data management</h1>
-    <p class="lede">Bulk import and export. Nothing is written until you have seen the errors and
-       confirmed.</p></div></div>
+<div class="page-head"><div><h1>Data Management</h1>
+    <p class="lede">Import and export in bulk. Nothing is saved until you review and confirm.</p></div></div>
 {% include "administration/_nav.html" with tab='data' %}
 
-<div class="grid grid-2" style="align-items:start">
+<div class="grid grid-2 grid-top">
 <section class="card">
-    <div class="card-head"><h2 class="label" style="margin:0">Import</h2></div>
+    <div class="card-head"><h2 class="label">Import</h2></div>
     <div class="card-body">
-        <p class="help">Download the template, fill it in a spreadsheet, upload it. Facilities
-           first if your venue or vehicle file refers to facility codes that do not exist yet.</p>
+        <p class="help">Download the template, fill it in and upload it. Import facilities before the venues or vehicles that use them.</p>
         <p>
         {% for kind in kinds %}
             <a class="btn btn-sm" href="{% url 'importexport:template' kind %}">{{ kind|title }} template</a>
@@ -29,11 +27,9 @@
 </section>
 
 <section class="card">
-    <div class="card-head"><h2 class="label" style="margin:0">Export</h2></div>
+    <div class="card-head"><h2 class="label">Export</h2></div>
     <div class="card-body">
-        <p class="help">Venue and vehicle exports emit facilities in the same pipe-separated code
-           format the import accepts, so an export can be edited and re-imported without
-           translation. Every export is written to the audit log.</p>
+        <p class="help">Exports use the same format as the import template, so a file can be edited and imported again. Every export is recorded in the audit log.</p>
         <div class="btn-group">
             <a class="btn" href="{% url 'importexport:export_users' %}">Users</a>
             <a class="btn" href="{% url 'importexport:export_venues' %}">Venues</a>
@@ -41,22 +37,20 @@
             <a class="btn" href="{% url 'importexport:export_facilities' %}">Facilities</a>
             <a class="btn" href="{% url 'importexport:export_bookings' %}">Bookings</a>
         </div>
-        <p class="help" style="margin-top:.75rem">Password hashes are never included in any export.
-           Matriculation and telephone numbers appear only in the user export, whose purpose
-           requires them.</p>
+        <p class="help mt-xs">Passwords are never exported. Matriculation and telephone numbers appear only in the user export.</p>
     </div>
 </section>
 </div>
 
 {% if plan %}
-<section class="card" style="margin-top:1.25rem">
-    <div class="card-head"><h2 class="label" style="margin:0">Preview</h2>
+<section class="card mt-md">
+    <div class="card-head"><h2 class="label">Preview</h2>
         <span class="help">Nothing has been written yet</span></div>
     <div class="card-body">
         {% if plan.file_errors %}
             <div class="notice notice-danger">
                 <strong>The file was rejected.</strong>
-                <ul style="margin:.4rem 0 0;padding-left:1.1rem">
+                <ul class="plain-list">
                 {% for problem in plan.file_errors %}<li>{{ problem }}</li>{% endfor %}
                 </ul>
             </div>
@@ -76,7 +70,7 @@
                 <tbody>
                 {% for row in plan.invalid %}
                     <tr><td class="num">{{ row.line }}</td>
-                        <td><ul style="margin:0;padding-left:1.1rem">
+                        <td><ul class="plain-list m-0">
                         {% for problem in row.errors %}<li>{{ problem }}</li>{% endfor %}
                         </ul></td></tr>
                 {% endfor %}
@@ -86,20 +80,18 @@
             {% endif %}
 
             {% for row in plan.valid %}{% if row.warnings %}
-                {% if forloop.first %}<p class="label" style="margin-top:1rem">Warnings</p><ul class="activity">{% endif %}
+                {% if forloop.first %}<p class="label mt-sm">Warnings</p><ul class="activity">{% endif %}
                 {% for warning in row.warnings %}<li>Line {{ row.line }}: {{ warning }}</li>{% endfor %}
                 {% if forloop.last %}</ul>{% endif %}
             {% endif %}{% endfor %}
 
             {% if plan.usable %}
-            <form method="post" action="{% url 'importexport:confirm' %}" style="margin-top:1rem">
+            <form method="post" action="{% url 'importexport:confirm' %}" class="mt-sm">
                 {% csrf_token %}
                 <button class="btn btn-primary" type="submit">
                     Import {{ plan.valid|length }} row{{ plan.valid|length|pluralize }}
                 </button>
-                <p class="help" style="margin-top:.5rem">One transaction: if any statement fails,
-                   nothing is written. The rows are re-validated at this moment, because the
-                   database may have changed since the preview.</p>
+                <p class="help mt-xs">All rows are saved together or not at all, and are checked again before saving.</p>
             </form>
             {% endif %}
         {% endif %}

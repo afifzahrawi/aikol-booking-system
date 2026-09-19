@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{% if action == 'issue' %}Issue key{% else %}Record return{% endif %}{% endblock %}
+{% block title %}{% if action == 'issue' %}Issue Key{% else %}Record Return{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if action == 'issue' %}Issue the key{% else %}Record the key's return{% endif %}</h1>
+<h1>{% if action == 'issue' %}Issue the Key{% else %}Record the Key's Return{% endif %}</h1>
 
 <section class="card">
     <div class="card-body">
@@ -17,8 +17,7 @@
             {% endif %}
         </dl>
 
-        <p class="help">The person at the counter is often not the person who booked, which is why
-           this is asked for rather than assumed.</p>
+        <p class="help">The person collecting may not be the person who booked.</p>
 
         <form method="post" novalidate>
             {% csrf_token %}

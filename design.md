@@ -49,7 +49,10 @@ useful, its date or next action.
 - Amiri remains for the organisation name and major institutional moments.
 - IBM Plex Sans carries navigation, forms and prose.
 - References, dates, times and counts use IBM Plex Mono or the system monospace with tabular figures.
-- Page titles are direct; no eyebrow labels. Visible headings use title case.
+- Body text is 15 px; nothing that carries meaning is set below 12 px. Labels, help text and
+  status stamps sit at 12.8–13.6 px.
+- Page titles are direct; no eyebrow labels. Visible headings and tab labels are written in title
+  case in the markup — never produced by `text-transform: capitalize`, which capitalises "And".
 
 ## Controls and state
 
@@ -74,10 +77,17 @@ AIKOL logo second, without a divider between the marks.
 
 ## Motion
 
-Page changes and rail expansion use short, compositor-driven transitions so the persistent shell
-feels continuous without delaying navigation. Menus use a brief fade and scale, and pressed controls
-give restrained tactile feedback. The active record sheet may settle into place once on desktop.
-Reduced motion removes spatial movement. No decorative loops or blanket transitions.
+One easing family and three durations, as tokens: `--ease-out` (a soft exponential ease-out),
+`--dur-fast` 120 ms for feedback, `--dur` 220 ms for menus, `--dur-slow` 340 ms for layout. Motion
+starts from the visible state, decelerates, and never plays twice for one event.
+
+- Page changes: the shell stays put; the workspace cross-fades and rises 6 px once (280 ms). The
+  record sheet does not add a second entrance on top of that.
+- Rail: the width is a registered custom property that transitions, so the rail and the workspace
+  column move together in one curve; labels fade rather than pop. No whole-page snapshot.
+- Menus fade and scale from the control that opened them. Pressed controls scale to 0.97 at once.
+- Report bars grow into place when they are drawn. Reduced motion removes spatial movement.
+- No decorative loops or blanket transitions. Nothing animates that the person did not cause.
 
 ## Responsive contract
 

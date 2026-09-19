@@ -6,8 +6,7 @@
     <div>
         <h1>{{ resource.name }}</h1>
         <p class="lede">
-            What is already taken, worked out on the server. The browser's own check is a
-            convenience on top of this &mdash; it is never what decides anything.
+            Approved and pending bookings, week by week. Pick a free time to book it.
         </p>
     </div>
     <div class="btn-group">
@@ -15,13 +14,13 @@
     </div>
 </div>
 
-<section class="card" style="margin-bottom:18px">
+<section class="card">
     <div class="card-body">
         {% comment %} The weekday is spelled out beside the field: a date alone does not tell
            you it is a Friday, and that is usually what decides whether a slot is
            any use. {% endcomment %}
         <form method="get" class="datepick" data-auto-submit>
-            <div class="field" style="margin:0">
+            <div class="field">
                 <label for="date">Show from</label>
                 <input class="input" type="date" id="date" name="date" value="{{ day|date:'Y-m-d' }}">
             </div>
@@ -34,7 +33,7 @@
     </div>
 </section>
 
-<div class="legend" style="margin-bottom:12px">
+<div class="legend mb-xs">
     <span><span class="swatch swatch-approved"></span>Approved</span>
     <span><span class="swatch swatch-pending"></span>Pending &mdash; it still holds the slot</span>
     <span><span class="swatch swatch-free"></span>Free</span>
@@ -54,7 +53,7 @@
             <div class="avail-bar">
                 {% for block in row.blocks %}
                     <span class="avail-block{% if block.pending %} pending{% endif %}"
-                          style="left:{{ block.left }}%;width:{{ block.width }}%"
+                          data-left="{{ block.left }}" data-width="{{ block.width }}"
                           title="{{ block.title }}">{{ block.label }}</span>
                 {% endfor %}
             </div>
@@ -67,14 +66,14 @@
     </div>
 </section>
 
-<div class="btn-group" style="margin-top:18px">
+<div class="btn-group mt-md">
     <a class="btn btn-sm" href="?date={{ previous|date:'Y-m-d' }}">&larr; Previous week</a>
     <a class="btn btn-sm" href="?date={{ next|date:'Y-m-d' }}">Next week &rarr;</a>
 </div>
 
 {% if taken %}
-<section class="card" style="margin-top:1.25rem">
-    <div class="card-head"><h2 class="label" style="margin:0">Bookings in this period</h2></div>
+<section class="card mt-md">
+    <div class="card-head"><h2 class="label">Bookings in This Period</h2></div>
     <div class="table-wrap">
         <table class="data">
             <thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col">Status</th></tr></thead>
@@ -95,8 +94,7 @@
         {% include "_pagination.html" with page=bookings_page querystring=booking_querystring page_range=booking_page_range %}
     </div>
     <div class="card-body">
-        <p class="help" style="margin:0">A pending request holds the slot. Otherwise two people
-           could each be told to wait for the same room.</p>
+        <p class="help m-0">A pending request holds its time until it is decided.</p>
     </div>
 </section>
 {% endif %}

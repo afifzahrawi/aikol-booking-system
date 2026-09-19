@@ -32,7 +32,7 @@
     </div>
 </section>
 
-<section class="card" style="margin-top:1.25rem">
+<section class="card mt-md">
     <div class="card-body">
         <form method="post" novalidate>
             {% csrf_token %}
@@ -43,9 +43,7 @@
                 <button class="btn btn-danger" type="submit" name="action" value="reject">Reject</button>
                 <button class="btn btn-primary" type="submit" name="action" value="approve">Approve</button>
             </div>
-            <p class="help" style="margin-top:.75rem">The slot is checked again at this moment, not
-               only when the request was made. If it has been taken since, approving is refused
-               rather than allowed to overwrite the other booking.</p>
+            <p class="help mt-xs">The time is checked again when you approve. If it has been taken since, approval is refused.</p>
         </form>
     </div>
 </section>

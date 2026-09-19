@@ -27,23 +27,37 @@
     --docket-shadow: 0 18px 42px rgba(35, 28, 17, 0.11);
     --docket-rail: 15.5rem;
     --masthead-h: 4rem;
-    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --dur-fast: 120ms;
+    --dur: 220ms;
+    --dur-slow: 340ms;
 }
 
+/* The rail width is a registered property so the shell grid and the rail
+   itself interpolate together when the rail collapses. */
+@property --docket-rail {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 248px; /* 15.5rem; a registered initial value may not use rem */
+}
+
+/* One page transition: the shell stays, the workspace cross-fades and rises
+   a little. The old page fades out fully and quickly so the two never fight. */
 @view-transition { navigation: auto; }
 .docket-masthead { view-transition-name: masthead; }
 .app-nav { view-transition-name: rail; }
 .docket-workspace { view-transition-name: workspace; }
-::view-transition-old(workspace) { animation: page-out 110ms ease both; }
-::view-transition-new(workspace) { animation: page-in 180ms var(--ease-out) both; }
-::view-transition-group(rail), ::view-transition-group(workspace) {
-    animation-duration: 190ms;
+::view-transition-old(workspace) { animation: page-out var(--dur-fast) ease-in both; }
+::view-transition-new(workspace) { animation: page-in 280ms var(--ease-out) both; }
+::view-transition-group(rail), ::view-transition-group(masthead), ::view-transition-group(workspace) {
+    animation-duration: 280ms;
     animation-timing-function: var(--ease-out);
 }
-@keyframes page-out { to { opacity: 0.96; } }
+@keyframes page-out { to { opacity: 0; } }
 @keyframes page-in {
-    from { opacity: 0.94; transform: translateY(3px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
 }
 
 * { scrollbar-color: var(--docket-rule-dark) var(--docket-vellum); }
@@ -57,7 +71,7 @@ body {
     caret-color: var(--docket-green);
 }
 a { color: var(--docket-green-deep); text-underline-offset: 0.2em; }
-h1, h2, h3, h4 { color: var(--docket-ink); text-transform: capitalize; }
+h1, h2, h3, h4 { color: var(--docket-ink); text-wrap: balance; }
 h1 { font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.02; text-wrap: balance; }
 h2 { font-size: clamp(1.3rem, 2vw, 1.75rem); line-height: 1.15; }
 p { max-width: 72ch; }
@@ -166,10 +180,10 @@ p { max-width: 72ch; }
 
 .workspace-tabs {
     display: flex;
+    flex-wrap: wrap;
     max-width: 100%;
     gap: 0;
     margin: 0 0 1.5rem;
-    overflow-x: auto;
     border-bottom: 1px solid var(--docket-rule-dark);
 }
 .workspace-tabs a {
@@ -201,11 +215,14 @@ p { max-width: 72ch; }
     padding: clamp(1.2rem, 3vw, 2.2rem);
     box-shadow: var(--docket-shadow);
     overflow: hidden;
-    animation: docket-settle 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+/* Browsers without cross-document view transitions still get one arrival. */
+@supports not (view-transition-name: none) {
+    .record-sheet { animation: docket-settle var(--dur-slow) var(--ease-out) both; }
 }
 @keyframes docket-settle {
-    from { transform: translateY(8px); opacity: 0.92; }
-    to { transform: translateY(0); opacity: 1; }
+    from { transform: translateY(8px); opacity: 0; }
+    to { transform: none; opacity: 1; }
 }
 .record-layout { display: grid; gap: 1.25rem; align-items: start; }
 .record-action-sheet { box-shadow: none; animation: none; }
@@ -265,10 +282,11 @@ p { max-width: 72ch; }
     border-radius: var(--radius-input);
     border-color: var(--docket-rule-dark);
     font-weight: 600;
-    transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease,
-        transform 140ms var(--ease-out);
+    transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out),
+        border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out),
+        box-shadow var(--dur-fast) var(--ease-out);
 }
-.btn:active { transform: scale(0.98); }
+.btn:active { transform: scale(0.97); transition-duration: 60ms; }
 .btn-primary { color: #fffdf7; background: var(--docket-green-deep); border-color: var(--docket-green-deep); }
 .btn-danger { color: #fffdf7; background: var(--docket-oxblood); border-color: var(--docket-oxblood); }
 .btn:focus-visible, .app-nav a:focus-visible, .workspace-tabs a:focus-visible {
@@ -448,6 +466,52 @@ table.data tbody tr:nth-child(even) { background: var(--docket-paper-2); }
    only from the browser width. This matters when the desktop rail expands. */
 .main { container-type: inline-size; }
 .main > *, .grid > *, .field-row > *, .record-layout > *, .toolbar > * { min-width: 0; }
+
+/* Flow. Every top-level block on a page is separated from the next; nothing
+   sits flush against its neighbour and no border is swallowed by the block
+   above it. Inline margins used to do this, and the Content-Security-Policy
+   refuses inline styles, which is why these rules and the utilities exist. */
+.main > * + * { margin-top: var(--space-md); }
+.grid-top { align-items: start; }
+.stack { display: grid; gap: var(--space-sm); }
+.m-0 { margin: 0; }
+.mt-xs { margin-top: var(--space-xs); }
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mb-xs { margin-bottom: var(--space-xs); }
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.plain-list { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+.plain-list.m-0 { margin: 0; }
+.input-narrow { width: 7.5rem; }
+.card-body > .notice:last-child { margin-bottom: 0; }
+
+/* Type floor. The prototype's 13px body and 10-12px secondary text were too
+   small to read comfortably on a phone; nothing that carries meaning sits
+   below 0.8rem now. */
+body { font-size: 0.9375rem; line-height: 1.55; }
+.lede { font-size: 1.02rem; }
+.field label, .label, dt, th, .stat .k, .activity-band-label, .heat-scale, .bar-label, .legend, .caption { font-size: 0.85rem; }
+.help, .stat .d, .status-stamp, .badge, .pill, .tag, .pager-number, .pager-control,
+.record-reference, .mono, .nav-profile-name strong, .link-plain, .docket-index-foot, .bar-col .bar span { font-size: 0.8rem; }
+.foot-label, .nav-profile-name small { font-size: 0.72rem; }
+.nav-link-label { font-size: 0.86rem; }
+.nav-badge { font-size: 0.74rem; }
+.notice { font-size: 0.9rem; padding: 0.85rem 1.1rem; }
+.stat .k { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.stat .v { font-size: 2rem; line-height: 1.1; margin: 0.2rem 0 0.35rem; }
+table.data th, table.data td { font-size: 0.9rem; }
+
+/* Heat-map legend swatches, and the bars that used to be sized inline. */
+.heat-scale .swatch-0 { background: var(--docket-paper); box-shadow: inset 0 0 0 1px var(--docket-rule); }
+.heat-scale .swatch-1 { background: #dbe9e4; }
+.heat-scale .swatch-2 { background: #a8ccc2; }
+.heat-scale .swatch-3 { background: #6ba99c; }
+.heat-scale .swatch-4 { background: #33806f; }
+.heat-scale .swatch-5 { background: var(--docket-green); }
+.heat-scale .swatch-gap { margin-left: 0.25rem; }
+.hbar .fill { width: 0; transition: width 480ms var(--ease-out); }
+.bar-col .bar { height: 0; transition: height 480ms var(--ease-out); }
 img, video, iframe { max-width: 100%; }
 .searchbar {
     grid-template-columns:
@@ -582,7 +646,7 @@ img, video, iframe { max-width: 100%; }
     stroke: currentColor;
     stroke-width: 1.7;
 }
-.nav-profile-chevron { transition: transform 160ms var(--ease-out); }
+.nav-profile-chevron { transition: transform var(--dur) var(--ease-out); }
 .nav-profile[open] .nav-profile-chevron { transform: rotate(180deg); }
 .nav-profile-menu {
     position: absolute;
@@ -597,8 +661,9 @@ img, video, iframe { max-width: 100%; }
     opacity: 1;
     transform: scale(1);
     transform-origin: bottom left;
-    transition: opacity 140ms ease, transform 160ms var(--ease-out);
-    @starting-style { opacity: 0; transform: scale(0.97); }
+    transform-origin: bottom left;
+    transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur) var(--ease-out);
+    @starting-style { opacity: 0; transform: translateY(4px) scale(0.98); }
 }
 .nav-profile-menu a, .nav-profile-menu button {
     display: flex;
@@ -803,8 +868,9 @@ img, video, iframe { max-width: 100%; }
     opacity: 1;
     transform: scale(1);
     transform-origin: top right;
-    transition: opacity 140ms ease, transform 160ms var(--ease-out);
-    @starting-style { opacity: 0; transform: scale(0.96); }
+    transform-origin: top right;
+    transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur) var(--ease-out);
+    @starting-style { opacity: 0; transform: translateY(-4px) scale(0.98); }
 }
 .action-menu-list a { min-height: 2rem; padding: 0.35rem 0.5rem; border-radius: 6px; text-decoration: none; }
 .action-menu-list a:hover { background: var(--docket-green-soft); }
@@ -861,19 +927,35 @@ img, video, iframe { max-width: 100%; }
     .is-authenticated .app-footer { grid-column: 2; grid-row: 3; }
     .record-layout { grid-template-columns: minmax(0, 1.1fr) minmax(20rem, 0.9fr); }
 
+    .is-authenticated .docket-shell { transition: --docket-rail var(--dur-slow) var(--ease-out); }
+    /* The rail's width follows the animated --docket-rail; a second width
+       transition here would ease an already-eased value and lag the grid. */
+    .is-authenticated .app-nav { transition: padding var(--dur-slow) var(--ease-out); }
+    .is-authenticated .app-nav > a { transition: padding var(--dur-slow) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+    .nav-link-label, .nav-profile-name, .nav-profile-chevron {
+        transition: opacity var(--dur) var(--ease-out);
+    }
     .docket-shell.nav-collapsed { --docket-rail: 4.25rem; }
     .docket-shell.nav-collapsed .app-nav { padding-inline: 0.55rem; }
     .docket-shell.nav-collapsed .app-nav > a {
         display: flex;
         justify-content: center;
+        gap: 0;
         padding-inline: 0;
     }
     .docket-shell.nav-collapsed .nav-link-label,
     .docket-shell.nav-collapsed .nav-profile-name,
-    .docket-shell.nav-collapsed .nav-profile-chevron { display: none; }
+    .docket-shell.nav-collapsed .nav-profile-chevron {
+        width: 0;
+        opacity: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        pointer-events: none;
+    }
     .docket-shell.nav-collapsed .nav-profile-icon { display: grid; margin-left: 0; }
     .docket-shell.nav-collapsed .nav-profile summary { justify-content: center; padding-inline: 0; }
     .docket-shell.nav-collapsed .nav-profile-menu { inset: auto auto 0 calc(100% + 0.55rem); width: 10rem; }
+    .is-authenticated .app-nav .nav-toggle svg { transition: transform var(--dur-slow) var(--ease-out); }
     .docket-shell.nav-collapsed .nav-toggle svg { transform: rotate(180deg); }
     .docket-shell.nav-collapsed .nav-badge { position: absolute; transform: translate(0.7rem, -0.65rem); }
 }
@@ -992,7 +1074,10 @@ img, video, iframe { max-width: 100%; }
     .profile-layout { grid-template-columns: minmax(0, 1fr); }
     .workspace-tabs a { padding-inline: 0.75rem; }
     .app-footer { grid-template-columns: minmax(0, 1fr); }
-    .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr); }
+    .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
+    /* Stat cards are short; two abreast reads better than a tall column of them. */
+    .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+    .grid-4 .stat { padding: 0.9rem; }
     .searchbar { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -1005,6 +1090,13 @@ img, video, iframe { max-width: 100%; }
     .record-sheet { animation: none; }
     *, *::before, *::after { scroll-behavior: auto !important; }
     ::view-transition-old(workspace), ::view-transition-new(workspace),
-    ::view-transition-group(rail), ::view-transition-group(workspace) { animation-duration: 1ms; }
-    .btn, .nav-profile-chevron, .nav-profile-menu, .action-menu-list { transition-duration: 1ms; }
+    ::view-transition-group(rail), ::view-transition-group(masthead), ::view-transition-group(workspace) { animation-duration: 1ms; }
+    .btn, .nav-profile-chevron, .nav-profile-menu, .action-menu-list, .docket-shell, .app-nav, .app-nav > a,
+    .nav-link-label, .nav-profile-name, .nav-toggle svg, .hbar .fill, .bar-col .bar { transition-duration: 1ms; }
+}
+
+@media (max-width: 47.99rem) {
+    /* Bottom tab bar: five labels must fit a 320px screen. */
+    .is-authenticated .app-nav .nav-link-label { font-size: 0.76rem; letter-spacing: 0; }
+    .is-authenticated .app-nav .nav-badge { font-size: 0.68rem; }
 }

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Decide series{% endblock %}
+{% block title %}Decide Series{% endblock %}
 {% block content %}
-<h1>Weekly series &mdash; {{ series.resource.name }}</h1>
+<h1>Weekly Series &mdash; {{ series.resource.name }}</h1>
 <p class="lede">{{ series.purpose }}</p>
 
 <section class="card">
@@ -33,9 +33,7 @@
                 <a class="btn" href="{% url 'bookings:approvals' %}">Back</a>
                 <button class="btn btn-primary" type="submit">Approve every occurrence</button>
             </div>
-            <p class="help" style="margin-top:.75rem">Each occurrence is a real booking and is
-               re-checked separately, because each could have been overtaken on its own. One
-               summary email goes to the requester, not one per week.</p>
+            <p class="help mt-xs">Each date is checked separately. The requester receives one summary email.</p>
         </form>
     </div>
 </section>

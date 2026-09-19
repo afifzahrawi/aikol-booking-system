@@ -10,10 +10,7 @@
 {% include "resources/_tabs.html" with tab='facilities' %}
 
 <div class="notice notice-info">
-    <strong>This list is maintained here, not in the code.</strong> Adding a facility makes it
-    available on the resource forms immediately, with no software release.
-    <strong>Drag a row by its handle</strong> to set the order facilities appear in &mdash; or focus
-    a handle and press the up and down arrow keys.
+    New facilities appear on the resource forms immediately. Drag a row by its handle, or use the up and down arrow keys, to change the order.
 </div>
 
 <section class="card">
@@ -83,7 +80,7 @@
     </div>
 
     <div class="card-foot">
-        <p class="help reorder-note" id="reorderNote" style="margin:0">
+        <p class="help reorder-note m-0" id="reorderNote">
             {% if filtered %}Clear the search and filters to change the display order.
             {% elif not can_reorder %}Filter the list to 20 or fewer facilities before changing the display order.
             {% else %}Drag a handle, or press the up and down arrow keys, to change the display order.{% endif %}

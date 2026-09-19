@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Academic calendars{% endblock %}
+{% block title %}Academic Calendars{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Academic calendars</h1>
-    <p class="lede">Maintain several semesters at once. Weekly bookings use the selected term and omit its named breaks.</p></div>
+<div class="page-head"><div><h1>Academic Calendars</h1>
+    <p class="lede">Weekly bookings follow the selected semester and skip its breaks.</p></div>
     <a class="btn btn-primary" data-modal-form href="{% url 'bookings:academic_term_new' %}">Add academic calendar</a>
 </div>
 {% include "administration/_nav.html" with tab='calendar' %}

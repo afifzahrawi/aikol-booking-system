@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-1">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-4">
 </head>
 <body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -143,7 +143,7 @@
 </dialog>
 </div>
 
-<script src="{% static 'js/chrome.js' %}?v=20260920-1" defer></script>
+<script src="{% static 'js/chrome.js' %}?v=20260920-2" defer></script>
 <script src="{% static 'js/modal-forms.js' %}?v=20260919-2" defer></script>
 <script src="{% static 'js/availability.js' %}?v=20260916-2" defer></script>
 <script src="{% static 'js/user-combobox.js' %}?v=20260916-2" defer></script>

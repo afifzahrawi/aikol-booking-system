@@ -5,16 +5,14 @@
 
 {% if not allowed %}
     <div class="notice notice-warn">
-        <strong>This booking can no longer be cancelled here.</strong>
-        A user must give three days' notice. Ask the Kulliyyah office, who are not bound by the
-        cutoff because they are the people who handle the exceptions.
+        <strong>It is too late to cancel this booking yourself.</strong>
+        Cancellations need three days' notice. Contact the Kulliyyah office.
     </div>
     <a class="btn" href="{% url 'bookings:detail' booking.pk %}">Back</a>
 {% else %}
     <p>{{ booking.resource.name }}, {{ booking.start_at|date:"l d F Y, H:i" }} to
        {{ booking.end_at|date:"H:i" }}.</p>
-    <p class="help">Cancelling sets the booking's status. It never deletes the record: the history
-       stays complete, and the period becomes free for somebody else.</p>
+    <p class="help">The booking stays on your record as cancelled, and the time becomes free for others.</p>
 
     <form method="post" novalidate>
         {% csrf_token %}

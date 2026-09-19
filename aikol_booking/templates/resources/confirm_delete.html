@@ -7,8 +7,7 @@
     {# Gate one: intent. Nothing leaves the system in one click from a list. #}
     <div class="notice notice-warn">
         <strong>{{ resource.name }} is still active.</strong>
-        Deactivate it first. Requiring that makes the removal deliberate, and the resource spends
-        time visibly out of service where its absence would be noticed.
+        Deactivate it before deleting it.
     </div>
     <a class="btn" href="{% url cancel_to %}">Back</a>
 {% elif booking_count %}
@@ -20,15 +19,12 @@
     <p>Booking history is retained for seven years for audit, and history that points at a resource
        the system no longer holds is not history. The database refuses this delete; the interface is
        only reporting it.</p>
-    <p class="help"><strong>{{ resource.name }}</strong> stays deactivated: hidden from every booking
-       screen, with its record and its history intact. That is the end state for a resource no longer
-       in use.</p>
+    <p class="help"><strong>{{ resource.name }}</strong> stays deactivated: hidden from booking screens, with its history kept.</p>
     <a class="btn" href="{% url cancel_to %}">Back</a>
 {% else %}
     <p>No booking has ever referred to <strong>{{ resource.name }}</strong>, so the record and its
        photographs can be removed permanently.</p>
-    <p class="help">This is for a record entered in error. A resource that has been used is
-       deactivated instead, and keeps its history.</p>
+    <p class="help">Delete only a record entered in error. A resource that has been used stays deactivated.</p>
     <form method="post">{% csrf_token %}
         <div class="btn-group">
             <a class="btn" href="{% url cancel_to %}">Cancel</a>
