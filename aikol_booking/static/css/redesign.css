@@ -1015,7 +1015,8 @@ img, video, iframe { max-width: 100%; }
     table.data td.row-actions::before { display: none; }
     table.data td[colspan], table.data td.actions-column, table.data td.row-actions { grid-template-columns: minmax(0, 1fr); }
     table.data td.actions-column, table.data td.row-actions { padding-top: 0.6rem; }
-    table.data td.actions-column .btn, table.data td.row-actions .btn { width: 100%; justify-content: center; }
+    table.data td.actions-column .btn-group, table.data td.row-actions .btn-group { display: grid; gap: 0.5rem; }
+    table.data td.actions-column .btn, table.data td.row-actions .btn { width: 100%; justify-content: center; text-align: center; }
     table.data td.num, table.data td.status-column { text-align: left; }
     table.data .action-menu { margin: 0; }
 }
