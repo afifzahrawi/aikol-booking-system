@@ -150,3 +150,40 @@
     if (window.requestAnimationFrame) requestAnimationFrame(function () { requestAnimationFrame(apply); });
     else apply();
 })();
+
+/* Data tables become stacked records below the desktop width (redesign.css).
+   Each cell is labelled with its column heading, copied here so no template
+   has to repeat its own headers, and the table's roles are stated explicitly
+   because display: block would otherwise take them away. */
+(function () {
+    'use strict';
+    document.querySelectorAll('table.data').forEach(function (table) {
+        var headers = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
+            return th.textContent.replace(/\s+/g, ' ').trim();
+        });
+        if (!headers.length) return;
+        table.setAttribute('role', 'table');
+        table.querySelectorAll('thead, tbody').forEach(function (g) { g.setAttribute('role', 'rowgroup'); });
+        table.querySelectorAll('tr').forEach(function (tr) { tr.setAttribute('role', 'row'); });
+        table.querySelectorAll('thead th').forEach(function (th) { th.setAttribute('role', 'columnheader'); });
+        table.querySelectorAll('tbody tr').forEach(function (tr) {
+            var column = 0;
+            Array.prototype.forEach.call(tr.children, function (td) {
+                td.setAttribute('role', 'cell');
+                var span = parseInt(td.getAttribute('colspan') || '1', 10);
+                if (span === 1 && headers[column] && !td.hasAttribute('data-label')) {
+                    td.setAttribute('data-label', headers[column]);
+                }
+                column += span;
+            });
+        });
+    });
+})();
+
+/* An error summary is announced and focused, so the first thing a keyboard or
+   screen-reader user meets after a failed submit is the list of what to fix. */
+(function () {
+    'use strict';
+    var summary = document.querySelector('.form-error-summary');
+    if (summary) summary.focus({ preventScroll: false });
+})();

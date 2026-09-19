@@ -26,8 +26,12 @@ clip-art.
   redundant "My docket" or role heading.
 - The institutional masthead remains anchored at the top and the desktop rail remains fixed beneath
   it while records scroll. The footer uses IIUM teal to distinguish it from the darker docket rail.
-- Mobile replaces the rail with a compact header and bottom task navigation. Tables that are not
-  genuinely comparative become docket rows; forms become one readable column.
+- Mobile replaces the rail with a compact header and bottom task navigation: four destinations with
+  the icon above the label, and a Menu control for the rest. Forms become one readable column.
+- Below the desktop width every data table becomes a list of records: the header stays for
+  assistive technology, each row is a sheet, each cell a labelled line, and the row's action sits
+  last at full width. Between the rail appearing and 72 rem, docket rows use their two-column
+  composition rather than clipping their action.
 
 ## Materials and colour
 

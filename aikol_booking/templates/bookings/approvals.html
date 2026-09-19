@@ -39,7 +39,7 @@
                 <td>{{ b.user.full_name }}</td>
                 <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
                 <td>{{ b.purpose|truncatechars:50 }}</td>
-                <td><div class="btn-group">
+                <td class="row-actions"><div class="btn-group">
                     <a class="btn btn-sm btn-primary" data-modal-form href="{% url 'bookings:decide' b.pk %}">Decide</a>
                     {% if b.series_id %}
                         <a class="btn btn-sm" data-modal-form href="{% url 'bookings:decide_series' b.series_id %}">Whole series</a>

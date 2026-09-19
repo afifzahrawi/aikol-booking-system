@@ -55,7 +55,7 @@
                     {% elif b.status == 'CANCELLED' %}<span class="badge badge-muted">Cancelled</span>
                     {% else %}<span class="badge badge-muted">Completed</span>{% endif %}
                 </td>
-                <td><div class="btn-group">
+                <td class="row-actions"><div class="btn-group">
                     <a class="btn btn-sm" href="{% url 'bookings:detail' b.pk %}">View</a>
                 </div></td>
             </tr>

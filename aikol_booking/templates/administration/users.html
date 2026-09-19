@@ -54,7 +54,7 @@
                     {% elif not person.email_verified %}<span class="badge badge-pending">Unverified</span>
                     {% else %}<span class="badge badge-active">Active</span>{% endif %}
                 </td>
-                <td><div class="btn-group">
+                <td class="row-actions"><div class="btn-group">
                     <a class="btn btn-sm" data-modal-form href="{% url 'administration:user_edit' person.pk %}">Edit</a>
                 </div></td>
             </tr>

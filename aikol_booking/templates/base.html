@@ -6,10 +6,12 @@
 <title>{% block title %}{{ site_content.site_name }}{% endblock %} | {{ site_content.organisation }}</title>
 {% comment %} Both stylesheets are served from this repository. Nothing from a CDN: the
    application has to work on a restricted institutional network. {% endcomment %}
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32.png' %}">
+<link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicon-180.png' %}">
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-4">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-7">
 </head>
 <body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -143,10 +145,10 @@
 </dialog>
 </div>
 
-<script src="{% static 'js/chrome.js' %}?v=20260920-2" defer></script>
+<script src="{% static 'js/chrome.js' %}?v=20260920-3" defer></script>
 <script src="{% static 'js/modal-forms.js' %}?v=20260919-2" defer></script>
 <script src="{% static 'js/availability.js' %}?v=20260916-2" defer></script>
-<script src="{% static 'js/user-combobox.js' %}?v=20260916-2" defer></script>
+<script src="{% static 'js/user-combobox.js' %}?v=20260920-1" defer></script>
 <script src="{% static 'js/table-pagination.js' %}?v=20260916-1" defer></script>
 {% block scripts %}{% endblock %}
 </body>

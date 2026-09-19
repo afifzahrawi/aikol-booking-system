@@ -81,9 +81,13 @@
 
 <div class="btn-group detail-actions">
     <a class="btn" href="{% url 'bookings:availability' resource.pk %}">Check availability</a>
+    {% if resource.status == 'ACTIVE' %}
     <a class="btn btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Book this</a>
     {% if not is_vehicle %}
         <a class="btn" href="{% url 'bookings:series_create' resource.pk %}">Repeat weekly</a>
+    {% endif %}
+    {% else %}
+    <span class="status-stamp status-maintenance">Not available for booking</span>
     {% endif %}
 </div>
 {% endblock %}

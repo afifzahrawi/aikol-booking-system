@@ -70,10 +70,11 @@
                 <td>
                     <form method="post" class="inline">{% csrf_token %}
                         <input type="hidden" name="key" value="{{ row.key }}">
-                        <input class="input input-narrow" name="value" value="{{ row.value }}">
+                        <input class="input input-narrow" name="value" value="{{ row.value }}"
+                               id="setting-{{ row.key }}" aria-label="Value of {{ row.key }}">
                 </td>
                 <td>{{ row.description }}</td>
-                <td><button class="btn btn-sm" type="submit">Save</button></form></td>
+                <td class="row-actions"><button class="btn btn-sm" type="submit">Save</button></form></td>
             </tr>
         {% endfor %}
         </tbody>

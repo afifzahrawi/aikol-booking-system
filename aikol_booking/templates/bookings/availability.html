@@ -10,7 +10,11 @@
         </p>
     </div>
     <div class="btn-group">
+        {% if resource.status == 'ACTIVE' %}
         <a class="btn btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Book this</a>
+        {% else %}
+        <span class="status-stamp status-maintenance">Not available for booking</span>
+        {% endif %}
     </div>
 </div>
 

@@ -81,6 +81,20 @@
     </div>
 </section>
 
+<section class="card">
+    <div class="card-head"><h2 class="label">Bookings per Month</h2></div>
+    <div class="card-body">
+        <div class="bars">
+        {% for row in monthly %}
+            <div class="bar-col">
+                <div class="bar" data-height="{{ row.percent }}"><span>{{ row.count }}</span></div>
+                <span class="bar-label">{{ row.label }}</span>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</section>
+
 <div class="grid grid-2 grid-top">
     <section class="card">
         <div class="card-head"><h2 class="label">Utilisation by Resource</h2></div>
@@ -100,20 +114,6 @@
 
     <div class="stack">
         <section class="card">
-            <div class="card-head"><h2 class="label">Bookings per Month</h2></div>
-            <div class="card-body">
-                <div class="bars">
-                {% for row in monthly %}
-                    <div class="bar-col">
-                        <div class="bar" data-height="{{ row.percent }}"><span>{{ row.count }}</span></div>
-                        <span class="bar-label">{{ row.label }}</span>
-                    </div>
-                {% endfor %}
-                </div>
-            </div>
-        </section>
-
-        <section class="card">
             <div class="card-head"><h2 class="label">Keys</h2></div>
             <div class="card-body">
                 <dl class="kv">
@@ -128,7 +128,8 @@
         <section class="card">
             <div class="card-head"><h2 class="label">Most Frequent Requesters</h2></div>
             <div class="card-body">
-                <table class="data">
+                <div class="table-wrap">
+                <table class="data data-compact">
                     <thead><tr><th scope="col">Name</th><th scope="col">Affiliation</th>
                         <th scope="col">Bookings</th></tr></thead>
                     <tbody>
@@ -140,6 +141,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
+                </div>
                 <p class="help mt-xs">Names and counts only.</p>
             </div>
         </section>

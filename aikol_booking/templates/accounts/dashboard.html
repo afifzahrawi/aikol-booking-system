@@ -171,7 +171,7 @@
                     <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
                     <td>{% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>
                         {% else %}<span class="badge badge-pending">Pending</span>{% endif %}</td>
-                    <td class="nowrap"><a class="btn-link" href="{% url 'bookings:detail' b.pk %}">View</a></td>
+                    <td class="nowrap row-actions"><a class="btn-link" href="{% url 'bookings:detail' b.pk %}">View</a></td>
                 </tr>
             {% endfor %}
             </tbody>

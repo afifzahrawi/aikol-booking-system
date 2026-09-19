@@ -63,7 +63,7 @@
                     {% else %}<span class="badge badge-active">Administrator</span>{% endif %}</td>
                 <td>{% if f.is_active %}<span class="badge badge-active">Active</span>
                     {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}</td>
-                <td><div class="btn-group">
+                <td class="row-actions"><div class="btn-group">
                     <a class="btn btn-sm" data-modal-form href="{% url 'resources:facility_edit' f.pk %}">Edit</a>
                     <form method="post" action="{% url 'resources:facility_delete' f.pk %}" class="inline">
                         {% csrf_token %}
