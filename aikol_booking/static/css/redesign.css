@@ -229,6 +229,10 @@ p { max-width: 72ch; }
 .card-head { padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--docket-rule); }
 .card-body { padding: clamp(1rem, 2.5vw, 1.6rem); }
 .card-foot { border-top: 1px solid var(--docket-rule); }
+/* A card's action row wraps rather than running under the card's edge. */
+.card-foot.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.card-foot.actions > .btn { flex: 1 1 auto; justify-content: center; text-align: center; min-width: 0; }
+.btn[aria-disabled="true"] { color: var(--docket-muted); background: var(--docket-paper-2); border-color: var(--docket-rule); cursor: default; }
 
 .record-facts, .kv { display: grid; grid-template-columns: minmax(8rem, 0.34fr) minmax(0, 1fr); }
 .record-facts dt, .record-facts dd, .kv dt, .kv dd {

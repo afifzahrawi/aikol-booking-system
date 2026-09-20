@@ -32,7 +32,7 @@ until they arrive the card should still look like the card.
         {% if resource.status == 'ACTIVE' %}
             <a class="btn btn-sm btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Book</a>
         {% else %}
-            <span class="btn btn-sm" aria-disabled="true">Under maintenance</span>
+            <span class="btn btn-sm" aria-disabled="true">{% if resource.resource_type == 'VEHICLE' %}Not in service{% else %}Under maintenance{% endif %}</span>
         {% endif %}
     </div>
 </article>
