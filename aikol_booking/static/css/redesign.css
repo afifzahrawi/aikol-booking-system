@@ -1033,7 +1033,13 @@ img, video, iframe { max-width: 100%; }
 @media (max-width: 47.99rem) {
     body.is-authenticated { padding-bottom: 4rem; }
     .docket-masthead { flex-wrap: wrap; }
-    .brand-text { display: none; }
+    /* The system name stays on the logos' line: smaller marks, a two-line
+       name if it needs it, and no subtitle. */
+    .app-header .brand { flex: 1 1 auto; gap: 0.6rem; }
+    .brand-marks { gap: 0.5rem; }
+    .brand-text { display: grid; min-width: 0; padding-left: 0.6rem; }
+    .brand-name { font-size: 0.9rem; line-height: 1.15; text-wrap: balance; }
+    .brand-sub { display: none; }
     .header-actions { width: 100%; justify-content: space-between; padding-top: 0.65rem; border-top: 1px solid var(--docket-rule); }
     .is-authenticated .app-nav {
         position: fixed;
@@ -1150,8 +1156,9 @@ img, video, iframe { max-width: 100%; }
     .main { padding: 1rem; }
     .sticky-savebar { align-items: stretch; flex-direction: column; }
     .sticky-savebar .btn { width: 100%; }
-    .brand-marks .brand-aikol { height: 2rem; }
-    .brand-marks .brand-iium { max-width: 6.5rem; height: 2rem; }
+    .brand-marks .brand-aikol { height: 1.6rem; }
+    .brand-marks .brand-iium { max-width: 5.5rem; height: 1.6rem; }
+    .brand-name { font-size: 0.84rem; }
     .page-head, .record-head { align-items: stretch; flex-direction: column; gap: 1rem; }
     .page-head > .btn, .record-head > .btn { width: 100%; }
     .docket-toolbar, .toolbar { align-items: stretch; flex-direction: column; }
@@ -1195,4 +1202,10 @@ img, video, iframe { max-width: 100%; }
     /* Bottom tab bar: five labels must fit a 320px screen. */
     .is-authenticated .app-nav .nav-link-label { font-size: 0.76rem; letter-spacing: 0; }
     .is-authenticated .app-nav .nav-badge { font-size: 0.68rem; }
+}
+
+@media (max-width: 22.49rem) {
+    .brand-marks .brand-aikol { height: 1.35rem; }
+    .brand-marks .brand-iium { max-width: 4.6rem; height: 1.35rem; }
+    .brand-name { font-size: 0.78rem; }
 }
