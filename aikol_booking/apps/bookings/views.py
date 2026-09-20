@@ -359,10 +359,14 @@ def series_create(request, pk: int):
                 form.add_error(None, problem)
         else:
             wants_partial = data["accept_partial"]
-            if plan["clashing"] and not wants_partial:
+            left_out = len(plan["clashing"]) + len(plan["outside"])
+            if left_out and not wants_partial:
+                # Nothing is created until the requester has seen every date
+                # that would be left out — whether the calendar excludes it or
+                # somebody else already holds it.
                 flash.warning(
                     request,
-                    f"{len(plan['clashing'])} of these dates are already reserved. "
+                    f"{left_out} of these dates would be left out. "
                     "They are listed below. Tick the box to create the rest.",
                 )
             else:

@@ -47,7 +47,7 @@
                     {% endif %}
                 </div>
 
-                {% if plan.clashing %}
+                {% if plan.clashing or plan.outside %}
                 <table class="data" data-client-paginate data-pagination-label="Series conflicts pagination">
                     <thead><tr><th scope="col">Date</th><th scope="col">Time</th><th scope="col">Why it is left out</th></tr></thead>
                     <tbody>

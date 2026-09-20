@@ -192,11 +192,8 @@ class RecurrenceForm(OnBehalfMixin, StyledFormMixin, forms.Form):
     purpose = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}))
     accept_partial = forms.BooleanField(
         required=False,
-        label="Create the dates that are free, and leave out the ones already reserved",
-        help_text=(
-            "Only tick this after reading the list of clashes below. Nothing is ever "
-            "dropped without being shown to you first."
-        ),
+        label="Create the dates listed as bookable and leave out the rest",
+        help_text="Tick this after reading the list below.",
     )
 
     def __init__(self, *args, user=None, **kwargs):
