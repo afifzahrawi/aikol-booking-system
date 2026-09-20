@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Images &mdash; {{ resource.name }}{% endblock %}
+{% block title %}Images: {{ resource.name }}{% endblock %}
 {% block content %}
-<h1>Images &mdash; {{ resource.name }}</h1>
+<h1>Images: {{ resource.name }}</h1>
 
 <div class="grid grid-2">
     {% for photo in resource.images.all %}
         <figure class="card">
             <img class="framed" src="{{ photo.image.url }}" alt="{{ photo.caption|default:resource.name }}">
             <figcaption class="help">
-                {{ photo.caption|default:"No caption" }}{% if forloop.first %} &mdash; main image{% endif %}
+                {{ photo.caption|default:"No caption" }}{% if forloop.first %} (main image){% endif %}
             </figcaption>
             <form method="post" action="{% url 'resources:image_delete' resource.pk photo.pk %}">
                 {% csrf_token %}
@@ -26,7 +26,7 @@
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             <div class="dropzone mb-sm">
-                Choose a photograph to upload &mdash; JPEG, PNG or WebP, up to 5&nbsp;MB
+                Choose a photograph to upload: JPEG, PNG or WebP, up to 5&nbsp;MB
             </div>
             {% include "_form_fields.html" %}
             <button class="btn btn-primary" type="submit">Upload</button>

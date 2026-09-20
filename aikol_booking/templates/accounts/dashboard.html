@@ -116,7 +116,7 @@
                 <article class="card venue-card">
                     <h3 class="m-0"><a href="{% url 'resources:detail' resource.pk %}">{{ resource.name }}</a></h3>
                     <p class="help m-0 mb-xs">
-                        {% if kind == 'VEHICLE' %}{{ resource.seats }} seats{% else %}{{ resource.location }} &middot; seats {{ resource.capacity }}{% endif %}
+                        {% if kind == 'VEHICLE' %}{{ resource.seats }} seats{% else %}{{ resource.location }}, seats {{ resource.capacity }}{% endif %}
                     </p>
                     <a class="btn btn-sm btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}?start_date={{ search_date|date:'Y-m-d' }}&amp;start_time={{ from_time }}&amp;end_date={% if kind == 'VEHICLE' %}{{ return_date|date:'Y-m-d' }}{% else %}{{ search_date|date:'Y-m-d' }}{% endif %}&amp;end_time={{ to_time }}">Book this</a>
                 </article>
@@ -168,7 +168,7 @@
                 <tr>
                     <td class="mono nowrap">{{ b.booking_reference }}</td>
                     <td>{{ b.resource.name }}</td>
-                    <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
+                    <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }} to {{ b.end_at|date:"H:i" }}</td>
                     <td>{% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>
                         {% else %}<span class="badge badge-pending">Pending</span>{% endif %}</td>
                     <td class="nowrap row-actions"><a class="btn-link" href="{% url 'bookings:detail' b.pk %}">View</a></td>

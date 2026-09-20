@@ -32,7 +32,7 @@
         {% for e in page %}
             <tr>
                 <td class="nowrap">{{ e.created_at|date:"d M Y, H:i" }}</td>
-                <td>{{ e.actor_email|default:"—" }}</td>
+                <td>{{ e.actor_email|default:"System" }}</td>
                 <td><span class="mono">{{ e.action }}</span></td>
                 <td>{{ e.description }}</td>
             </tr>
@@ -44,7 +44,7 @@
     </div>
 
     <div class="card-foot">
-        <span class="help">{% if page.paginator.count %}Showing {{ page.start_index }}&ndash;{{ page.end_index }}
+        <span class="help">{% if page.paginator.count %}Showing {{ page.start_index }} to {{ page.end_index }}
             of {{ page.paginator.count }}{% else %}No records{% endif %}</span>
         {% include "_pagination.html" %}
     </div>

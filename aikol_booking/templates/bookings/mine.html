@@ -46,7 +46,7 @@
             <tr>
                 <td class="mono nowrap">{{ b.booking_reference }}</td>
                 <td>{{ b.resource.name }}{% if b.series_id %}<br><span class="help">Weekly series</span>{% endif %}</td>
-                <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
+                <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }} to {{ b.end_at|date:"H:i" }}</td>
                 <td>{{ b.purpose|truncatechars:60 }}</td>
                 <td>
                     {% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>

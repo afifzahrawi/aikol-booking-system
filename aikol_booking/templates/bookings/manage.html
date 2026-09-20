@@ -36,7 +36,7 @@
             </div>
             <div class="docket-time">
                 <strong>{{ b.start_at|date:"D d M Y" }}</strong>
-                <span>{{ b.start_at|date:"H:i" }}–{{ b.end_at|date:"D d M Y, H:i" }}</span>
+                <span>{{ b.start_at|date:"H:i" }} to {{ b.end_at|date:"D d M Y, H:i" }}</span>
             </div>
             <div class="docket-state">
                 <span class="status-stamp status-{{ b.status|lower }}">{{ b.get_status_display }}</span>
@@ -61,7 +61,7 @@
     <footer class="docket-index-foot">
         <span>{% if kind == venue_kind %}{{ counts.VENUE }} room bookings{% else %}{{ counts.VEHICLE }} car bookings{% endif %}</span>
         {% include "_pagination.html" %}
-        <span>{% if page.paginator.count %}Showing {{ page.start_index }}&ndash;{{ page.end_index }} of {{ page.paginator.count }}{% else %}No records{% endif %}</span>
+        <span>{% if page.paginator.count %}Showing {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}{% else %}No records{% endif %}</span>
     </footer>
 </section>
 {% endblock %}

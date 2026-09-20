@@ -181,7 +181,7 @@ def create_booking(
         raise ValidationError(
             [
                 f"Already reserved: {timezone.localtime(c.start_at):%d %b %Y, %H:%M}"
-                f"–{timezone.localtime(c.end_at):%H:%M} ({c.get_status_display().lower()})."
+                f" to {timezone.localtime(c.end_at):%H:%M} ({c.get_status_display().lower()})."
                 for c in clashes
             ]
         )
@@ -506,7 +506,7 @@ def create_series(
     if plan["clashing"] and not accept_partial:
         raise ValidationError(
             [
-                f"{occ['date']:%a %d %b %Y} {occ['start_time']:%H:%M}–"
+                f"{occ['date']:%a %d %b %Y} {occ['start_time']:%H:%M} to "
                 f"{occ['end_time']:%H:%M} is already reserved."
                 for occ in plan["clashing"]
             ]

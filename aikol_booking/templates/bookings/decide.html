@@ -24,7 +24,7 @@
             </div>
             <ul class="activity">
             {% for other in overlapping %}
-                <li>{{ other.booking_reference }} &mdash; {{ other.user.full_name }},
+                <li>{{ other.booking_reference }}, {{ other.user.full_name }},
                     {{ other.get_status_display|lower }}</li>
             {% endfor %}
             </ul>

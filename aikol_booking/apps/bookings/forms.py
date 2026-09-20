@@ -58,7 +58,7 @@ class OnBehalfMixin:
         if not person:
             return ""
         identifier = person.identification_number or "Public account"
-        return f"{person.full_name} — {person.email} · {identifier}"
+        return f"{person.full_name}, {person.email}, {identifier}"
 
 
 class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):

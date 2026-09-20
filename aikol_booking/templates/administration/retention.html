@@ -16,7 +16,7 @@
             <dt>Cutoff</dt><dd>anything finishing before {{ preview.cutoff|date:"d F Y" }}</dd>
             <dt>Booking records</dt><dd>{{ preview.bookings }}</dd>
             <dt>Key handover records</dt><dd>{{ preview.handovers }}
-                <span class="help">&mdash; removed in the same batch</span></dd>
+                <span class="help">(removed in the same batch)</span></dd>
             {% if preview.earliest %}
                 <dt>Oldest</dt><dd>{{ preview.earliest|date:"d M Y" }}</dd>
                 <dt>Newest eligible</dt><dd>{{ preview.latest|date:"d M Y" }}</dd>

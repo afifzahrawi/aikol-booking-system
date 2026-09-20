@@ -114,7 +114,7 @@ class Command(BaseCommand):
         )
         content.phone = "03-6196 4000"
         content.email = "booking-aikol@iium.edu.my"
-        content.office_hours = "Mon–Fri, 08:30–17:00"
+        content.office_hours = "Monday to Friday, 08:30 to 17:00"
         content.save()
 
         Announcement.objects.get_or_create(

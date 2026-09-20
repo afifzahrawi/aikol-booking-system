@@ -2,7 +2,7 @@
 {% block title %}{{ person.full_name }}{% endblock %}
 {% block content %}
 <h1>{{ person.full_name }}</h1>
-<p class="lede">{{ person.email }} &middot; {{ bookings }} booking{{ bookings|pluralize }} on record</p>
+<p class="lede">{{ person.email }}, {{ bookings }} booking{{ bookings|pluralize }} on record</p>
 
 <div class="notice notice-info">
     <strong>Passwords are not set here.</strong> If someone is locked out, point them to <em>Forgotten your password?</em>

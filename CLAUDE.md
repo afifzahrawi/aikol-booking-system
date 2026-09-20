@@ -659,6 +659,19 @@ Full detail: `docs/technical/security.md`.
   is gone: it capitalised every word, including "And" and "Of".
 - **Interface copy says the one thing the person needs.** No rationale, no engineering commentary,
   no reassurance about what the code does internally — that belongs in this file or in `docs/`.
+- **Visible text uses ordinary punctuation.** No em or en dashes and no middle dots in anything a
+  person reads on screen or in an email: a comma, a colon, a full stop, or the word "to" for a
+  range ("09:00 to 11:00"). Dashes in code comments and in this file are fine. The default
+  `SiteContent.subtitle` and the seeded office hours follow the same rule (migration
+  `administration.0004`).
+- **No eyebrow labels.** Nothing sits above a heading in small tracked capitals. A booking reference
+  is a heading in its own right (`bookings/detail.html`) or a plain monospace line in a docket row;
+  a resource code is not shown to a requester at all. `dt`, footer headings, search-bar keys and the
+  like are sentence case with normal letter-spacing; status stamps and badges are the one place
+  capitals remain.
+- **Counts are a ruled figures strip, not a row of cards.** `.grid-4 > .stat` and `.booking-stats`
+  render as one strip with hairlines between figures (`redesign.css`, *Figures*); do not put the
+  card border back or add a fifth identical box.
 - **Motion has one curve and three durations**, all tokens in `redesign.css`; see `design.md`,
   *Motion*. Never add a second entrance to something that already arrives with the page.
 - **A `{# #}` comment in a Django template is SINGLE-LINE ONLY.** A multi-line one is not a comment

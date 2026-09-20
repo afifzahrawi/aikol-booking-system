@@ -108,10 +108,10 @@ p { max-width: 72ch; }
 .app-nav .rail-heading {
     display: none;
     color: #dac79e;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
 }
 .app-nav a {
     display: flex;
@@ -174,15 +174,16 @@ p { max-width: 72ch; }
 .lede { margin: 0.35rem 0 0; color: var(--docket-muted); font-size: 0.96rem; }
 .record-reference {
     display: block;
-    margin: 0 0 0.3rem;
-    color: var(--docket-green-deep);
-    font-family: var(--font-outlier);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    margin: 0 0 0.15rem;
+    color: var(--docket-muted);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
     font-variant-numeric: tabular-nums;
 }
+a.record-reference { color: var(--docket-green-deep); text-decoration: underline; text-underline-offset: 0.15em; }
 
 .workspace-tabs {
     display: flex;
@@ -468,9 +469,30 @@ table.data .actions-column .action-menu { margin-inline: auto; }
 table.data td { border-color: var(--docket-rule); }
 table.data tbody tr:nth-child(even) { background: var(--docket-paper-2); }
 
-.stat { padding: 1.1rem; border-color: var(--docket-rule-dark); border-top-width: 1px; }
+.grid-4:has(> .stat), .booking-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-top: 1px solid var(--docket-rule-dark);
+    border-bottom: 1px solid var(--docket-rule);
+}
+/* Each figure draws a hairline above and to its left; the strip clips the
+   ones on its outer edge, so any number of columns rules itself correctly. */
+.stat {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    padding: 1rem 1.25rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: -1px -1px 0 0 var(--docket-rule);
+}
 .stat::before { display: none; }
-.stat .v { color: var(--docket-ink); font-family: var(--font-outlier); font-variant-numeric: tabular-nums; }
+.stat .k { order: 2; color: var(--docket-ink-2); }
+.stat .v { order: 1; color: var(--docket-ink); font-family: var(--font-outlier); font-variant-numeric: tabular-nums; }
+.stat .d { order: 3; margin-top: 0.2rem; color: var(--docket-muted); }
 
 .login-page { background: var(--docket-vellum); }
 .login-hero::after { background: rgba(15, 35, 31, 0.78); }
@@ -523,7 +545,7 @@ body { font-size: 0.9375rem; line-height: 1.55; }
 .nav-badge { font-size: 0.74rem; }
 .notice { font-size: 0.9rem; padding: 0.85rem 1.1rem; }
 .stat .k { text-transform: none; letter-spacing: 0; font-weight: 600; }
-.stat .v { font-size: 2rem; line-height: 1.1; margin: 0.2rem 0 0.35rem; }
+.stat .v { font-size: 2.1rem; line-height: 1.05; margin: 0 0 0.15rem; }
 table.data th, table.data td { font-size: 0.9rem; }
 
 /* Heat-map legend swatches, and the bars that used to be sized inline. */
@@ -546,13 +568,7 @@ img, video, iframe { max-width: 100%; }
 }
 
 .announcement-stack { margin: 1.5rem 0; }
-.announcement-stack .section-heading-row {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-}
+.announcement-stack .section-heading-row { margin-bottom: 0.75rem; }
 .announcement-stack .section-heading-row h2 { margin: 0; }
 .announcement-stack .section-heading-row p { margin: 0.2rem 0 0; color: var(--docket-muted); }
 .announcement {
@@ -660,7 +676,7 @@ img, video, iframe { max-width: 100%; }
 }
 .nav-profile-name { display: grid; min-width: 0; line-height: 1.15; }
 .nav-profile-name strong { overflow: hidden; font-size: 0.78rem; text-overflow: ellipsis; white-space: nowrap; }
-.nav-profile-name small { color: #c3d4cf; font-size: 0.65rem; text-transform: uppercase; }
+.nav-profile-name small { color: #c3d4cf; font-size: 0.65rem; text-transform: none; letter-spacing: 0; }
 .nav-profile-chevron {
     display: none;
     width: 1rem;
@@ -1188,9 +1204,10 @@ img, video, iframe { max-width: 100%; }
     .workspace-tabs a { padding-inline: 0.75rem; }
     .app-footer { grid-template-columns: minmax(0, 1fr); }
     .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
-    /* Stat cards are short; two abreast reads better than a tall column of them. */
-    .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-    .grid-4 .stat { padding: 0.9rem; }
+    /* Two figures abreast on a phone. */
+    .grid-4:has(> .stat), .booking-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat { padding: 0.85rem 1rem; }
+    .booking-stats .stat:nth-child(3) { grid-column: 1 / -1; }
     .searchbar { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -1219,3 +1236,16 @@ img, video, iframe { max-width: 100%; }
     .brand-marks .brand-iium { max-width: 4.6rem; height: 1.35rem; }
     .brand-name { font-size: 0.78rem; }
 }
+
+/* Labels are ordinary text. The prototype set every small heading in tracked
+   capitals, which reads as decoration rather than information. */
+.summary-box dt, .kv dt, .meta-list dt, .record-facts dt,
+.app-footer .foot-label, .searchbar .k, .daypick .dow, .board-head .k, .steps li .n,
+.header-user .role, .login-kicker, .login-panel-label {
+    letter-spacing: 0;
+    text-transform: none;
+}
+.summary-box dt, .kv dt, .meta-list dt, .record-facts dt { color: var(--docket-muted); font-weight: 600; }
+.app-footer .foot-label { font-size: 0.85rem; font-weight: 600; }
+.searchbar .k, .board-head .k { font-size: 0.82rem; font-weight: 600; }
+.daypick .dow { font-size: 0.8rem; opacity: 1; }

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Availability &mdash; {{ resource.name }}{% endblock %}
+{% block title %}Availability: {{ resource.name }}{% endblock %}
 {% block content %}
 
 <div class="page-head">
@@ -39,7 +39,7 @@
 
 <div class="legend mb-xs">
     <span><span class="swatch swatch-approved"></span>Approved</span>
-    <span><span class="swatch swatch-pending"></span>Pending &mdash; it still holds the slot</span>
+    <span><span class="swatch swatch-pending"></span>Pending, still holding the slot</span>
     <span><span class="swatch swatch-free"></span>Free</span>
 </div>
 
@@ -94,7 +94,7 @@
         </table>
     </div>
     <div class="card-foot">
-        <span class="help">Showing {{ bookings_page.start_index }}&ndash;{{ bookings_page.end_index }} of {{ bookings_page.paginator.count }}</span>
+        <span class="help">Showing {{ bookings_page.start_index }} to {{ bookings_page.end_index }} of {{ bookings_page.paginator.count }}</span>
         {% include "_pagination.html" with page=bookings_page querystring=booking_querystring page_range=booking_page_range %}
     </div>
     <div class="card-body">

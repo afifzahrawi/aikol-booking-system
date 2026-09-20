@@ -19,7 +19,7 @@
 <div class="resource-choice-list">
 {% for resource in resources %}
     <article class="resource-choice">
-        <div><span class="record-reference">{{ resource.code }}</span><h2>{{ resource.name }}</h2></div>
+        <div><h2>{{ resource.name }}</h2><span class="help">{{ resource.code }}</span></div>
         <div class="btn-group">
             <a class="btn btn-primary" href="{% url 'bookings:admin_create' resource.pk %}">One Booking</a>
             {% if kind == 'VENUE' %}<a class="btn" href="{% url 'bookings:admin_series_create' resource.pk %}">Repeat Weekly</a>{% endif %}

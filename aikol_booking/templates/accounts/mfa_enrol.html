@@ -11,14 +11,14 @@
 <div class="mfa-layout">
     <section class="form-sheet mfa-sheet" aria-labelledby="mfa-scan-heading">
         <div class="docket-section-heading">
-            <h2 id="mfa-scan-heading">1. Scan This Code</h2>
+            <h2 id="mfa-scan-heading">Scan This Code</h2>
             <p>Open Google Authenticator, Microsoft Authenticator, Aegis or any app that supports
                time-based codes, choose <em>Add account</em>, and point the camera here.</p>
         </div>
         <figure class="mfa-qr" aria-label="QR code for {{ issuer }}">{{ qr_svg|safe }}</figure>
         <details class="mfa-manual">
             <summary>Camera not working? Enter the key by hand</summary>
-            <p>Account: <strong>{{ user.email }}</strong> · Issuer: <strong>{{ issuer }}</strong></p>
+            <p>Account: <strong>{{ user.email }}</strong><br>Issuer: <strong>{{ issuer }}</strong></p>
             <p class="mfa-key"><code>{{ manual_key }}</code></p>
             <p class="help">Keep this key as private as a password.</p>
         </details>
@@ -26,7 +26,7 @@
 
     <section class="form-sheet mfa-sheet" aria-labelledby="mfa-confirm-heading">
         <div class="docket-section-heading">
-            <h2 id="mfa-confirm-heading">2. Enter the Code the App Shows</h2>
+            <h2 id="mfa-confirm-heading">Enter the Code the App Shows</h2>
             <p>This confirms the app is set up correctly.</p>
         </div>
         <form method="post" novalidate>

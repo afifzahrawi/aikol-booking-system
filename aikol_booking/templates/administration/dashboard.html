@@ -36,8 +36,8 @@
         <div class="card-body">
             <ul class="activity">
             {% for b in recent %}
-                <li><a href="{% url 'bookings:detail' b.pk %}">{{ b.booking_reference }}</a>
-                    &mdash; {{ b.resource.name }}, {{ b.user.full_name }},
+                <li><a href="{% url 'bookings:detail' b.pk %}">{{ b.booking_reference }}</a>:
+                    {{ b.resource.name }}, {{ b.user.full_name }},
                     {{ b.start_at|date:"d M Y H:i" }} ({{ b.get_status_display|lower }})</li>
             {% empty %}
                 <li class="help">Nothing yet.</li>

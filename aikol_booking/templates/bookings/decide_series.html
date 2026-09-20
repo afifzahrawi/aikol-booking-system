@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Decide Series{% endblock %}
 {% block content %}
-<h1>Weekly Series &mdash; {{ series.resource.name }}</h1>
+<h1>Weekly Series: {{ series.resource.name }}</h1>
 <p class="lede">{{ series.purpose }}</p>
 
 <section class="card">
@@ -12,7 +12,7 @@
         {% for b in page %}
             <tr>
                 <td class="mono nowrap">{{ b.booking_reference }}</td>
-                <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }}&ndash;{{ b.end_at|date:"H:i" }}</td>
+                <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }} to {{ b.end_at|date:"H:i" }}</td>
                 <td>{{ b.get_status_display }}</td>
             </tr>
         {% endfor %}
@@ -20,7 +20,7 @@
     </table>
     </div>
     <div class="card-foot">
-        <span class="help">Showing {{ page.start_index }}&ndash;{{ page.end_index }} of {{ page.paginator.count }}</span>
+        <span class="help">Showing {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}</span>
         {% include "_pagination.html" %}
     </div>
     <div class="card-body">

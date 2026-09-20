@@ -2,7 +2,7 @@
 {% block title %}Cancel Series{% endblock %}
 {% block content %}
 <h1>Cancel the Weekly Series</h1>
-<p>{{ series.resource.name }} &mdash; {{ series.purpose }}</p>
+<p>{{ series.resource.name }}: {{ series.purpose }}</p>
 
 <div class="notice notice-warn">
     <strong>{{ future|length }} future occurrence{{ future|length|pluralize }} would be cancelled.</strong>

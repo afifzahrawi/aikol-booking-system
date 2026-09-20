@@ -78,7 +78,7 @@
     </div>
 {% endif %}
     <div class="card-foot key-register-foot">
-        <span class="help">{% if page.paginator.count %}Showing {{ page.start_index }}&ndash;{{ page.end_index }} of {{ page.paginator.count }}{% else %}No records{% endif %}</span>
+        <span class="help">{% if page.paginator.count %}Showing {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}{% else %}No records{% endif %}</span>
         {% include "_pagination.html" %}
     </div>
 </section>

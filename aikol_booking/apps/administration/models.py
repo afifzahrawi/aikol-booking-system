@@ -79,7 +79,7 @@ class SiteContent(models.Model):
 
     site_name = models.CharField(max_length=80, default="Venue and Vehicle Booking")
     subtitle = models.CharField(
-        max_length=120, default="Ahmad Ibrahim Kulliyyah of Laws · IIUM"
+        max_length=120, default="Ahmad Ibrahim Kulliyyah of Laws, IIUM"
     )
     organisation = models.CharField(max_length=120, default="Ahmad Ibrahim Kulliyyah of Laws")
     logo = models.ImageField(upload_to="site/", blank=True)

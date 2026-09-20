@@ -95,7 +95,7 @@ def confirm_import(request):
     if not plan.valid:
         flash.error(
             request,
-            "None of those rows is still valid — the database has changed since the preview. "
+            "None of those rows is still valid. The database has changed since the preview. "
             "Upload the file again to see why.",
         )
         return redirect("importexport:data_management")

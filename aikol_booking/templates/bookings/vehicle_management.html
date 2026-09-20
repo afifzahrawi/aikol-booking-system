@@ -2,8 +2,8 @@
 {% block title %}Management Decision {{ booking.booking_reference }}{% endblock %}
 {% block content %}
 <div class="record-head">
-    <div><p class="record-reference">{{ booking.booking_reference }}</p><h1>Management Decision</h1>
-        <p class="lede">Second decision for {{ booking.resource.name }}.</p></div>
+    <div><h1>Management Decision</h1>
+        <p class="lede">{{ booking.booking_reference }}, second decision for {{ booking.resource.name }}.</p></div>
     <span class="status-stamp status-pending">{{ booking.get_management_status_display }}</span>
 </div>
 

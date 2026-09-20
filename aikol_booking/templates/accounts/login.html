@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-12">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-13">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -36,7 +36,6 @@
         </div>
 
         <div class="login-introduction">
-            <p class="login-kicker">AIKOL resource booking</p>
             <h1>{{ site_content.login_intro_heading }}</h1>
             <p>{{ site_content.login_intro }}</p>
             <ul>
@@ -45,16 +44,15 @@
         </div>
 
         <p class="foot">
-            {{ site_content.organisation }}{% if site_content.phone %} · {{ site_content.phone }}{% endif %}
+            {{ site_content.organisation }}{% if site_content.phone %}<br>{{ site_content.phone }}{% endif %}
         </p>
     </section>
 
     <section class="login-panel">
         <main class="login-card" id="main">
             <div class="card-body">
-                <p class="login-panel-label">Secure access</p>
-                <h2>Welcome Back</h2>
-                <p class="login-panel-copy">Sign in to request a booking or manage the day's work.</p>
+                <h2>Sign In</h2>
+                <p class="login-panel-copy">Request a booking, or manage the day's work.</p>
 
                 {% if messages %}
                     {% for m in messages %}<p class="notice notice-{{ m.tags }}">{{ m }}</p>{% endfor %}

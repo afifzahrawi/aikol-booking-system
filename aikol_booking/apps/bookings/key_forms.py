@@ -37,5 +37,5 @@ class ReturnKeyForm(StyledFormMixin, forms.Form):
         required=False,
         widget=forms.Textarea(attrs={"rows": 2}),
         label="Notes on condition",
-        help_text="Anything the office should know — damage, something left behind.",
+        help_text="Anything the office should know, such as damage or something left behind.",
     )

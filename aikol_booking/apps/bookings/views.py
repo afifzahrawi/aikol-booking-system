@@ -190,7 +190,7 @@ def availability(request, pk: int):
                     "label": "All day" if multi_day else f"{local_start:%H:%M}",
                     "title": (
                         f"{local_start:%d %b %H:%M} to {local_end:%d %b %H:%M}"
-                        f" — {booking.get_status_display().lower()}"
+                        f", {booking.get_status_display().lower()}"
                     ),
                 }
             )
@@ -832,7 +832,7 @@ def decide_series(request, pk: int):
         if refused:
             flash.warning(
                 request,
-                f"{len(approved)} occurrences approved. {len(refused)} could not be — "
+                f"{len(approved)} occurrences approved. {len(refused)} could not be: "
                 "their periods were taken after the series was requested.",
             )
         else:
@@ -890,7 +890,7 @@ def slot_check(request, pk: int):
             "problems": problems,
             "message": (
                 f"Already reserved: {timezone.localtime(first.start_at):%d %b %Y, %H:%M}"
-                f"–{timezone.localtime(first.end_at):%H:%M}."
+                f" to {timezone.localtime(first.end_at):%H:%M}."
                 if first
                 else ""
             ),

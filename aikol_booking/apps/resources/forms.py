@@ -91,7 +91,7 @@ class VehicleForm(StyledFormMixin, forms.ModelForm):
             ),
             "status": (
                 "Setting a vehicle to maintenance hides it from the booking screens. Bookings "
-                "already made are not cancelled — handle each deliberately, with a reason."
+                "already made are not cancelled. Handle each one, with a reason."
             ),
         }
 

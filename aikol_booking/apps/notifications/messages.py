@@ -44,7 +44,7 @@ def _details(booking) -> str:
 def booking_submitted(booking) -> None:
     queue_email(
         to=booking.user.email,
-        subject=f"Booking request received — {booking.booking_reference}",
+        subject=f"Booking request received: {booking.booking_reference}",
         body=(
             _greeting(booking)
             + "Your booking request has been received and is awaiting a decision "
@@ -61,7 +61,7 @@ def booking_approved(booking) -> None:
     vehicle_wait = booking.resource.resource_type == "VEHICLE"
     queue_email(
         to=booking.user.email,
-        subject=f"Booking approved — {booking.booking_reference}",
+        subject=f"Booking approved: {booking.booking_reference}",
         body=(
             _greeting(booking)
             + (
@@ -84,7 +84,7 @@ def booking_approved(booking) -> None:
 
 def vehicle_management_decided(booking, *, approved: bool) -> None:
     if approved:
-        subject = f"Vehicle use approved — {booking.booking_reference}"
+        subject = f"Vehicle use approved: {booking.booking_reference}"
         outcome = (
             "Kulliyyah management has approved the vehicle use and the VMU driver has been "
             "assigned. Your vehicle booking is now fully approved."
@@ -92,7 +92,7 @@ def vehicle_management_decided(booking, *, approved: bool) -> None:
         tail = f"\nAssigned driver: {booking.driver_name}\n"
         kind = "VEHICLE_MANAGEMENT_APPROVED"
     else:
-        subject = f"Vehicle use not approved — {booking.booking_reference}"
+        subject = f"Vehicle use not approved: {booking.booking_reference}"
         outcome = "Kulliyyah management did not approve the vehicle use. The booking is released."
         tail = f"\nReason given: {booking.management_decision_reason}\n"
         kind = "VEHICLE_MANAGEMENT_REJECTED"
@@ -107,7 +107,7 @@ def vehicle_management_decided(booking, *, approved: bool) -> None:
 def booking_rejected(booking) -> None:
     queue_email(
         to=booking.user.email,
-        subject=f"Booking not approved — {booking.booking_reference}",
+        subject=f"Booking not approved: {booking.booking_reference}",
         body=(
             _greeting(booking)
             + "Your booking request was not approved.\n\n"
@@ -122,7 +122,7 @@ def booking_rejected(booking) -> None:
 def booking_cancelled(booking) -> None:
     queue_email(
         to=booking.user.email,
-        subject=f"Booking cancelled — {booking.booking_reference}",
+        subject=f"Booking cancelled: {booking.booking_reference}",
         body=(
             _greeting(booking)
             + "This booking has been cancelled.\n\n"
@@ -142,7 +142,7 @@ def series_decided(series, bookings: list, *, approved: bool, reason: str = "") 
     reading all of them.
     """
     dates = "\n".join(
-        f"  {timezone.localtime(b.start_at):%a %d %b %Y, %H:%M}–"
+        f"  {timezone.localtime(b.start_at):%a %d %b %Y, %H:%M} to "
         f"{timezone.localtime(b.end_at):%H:%M}  {b.booking_reference}"
         for b in bookings
     )
@@ -158,7 +158,7 @@ def series_decided(series, bookings: list, *, approved: bool, reason: str = "") 
         body += f"\nReason given: {reason}\n"
     queue_email(
         to=series.user.email,
-        subject=f"Recurring booking {verb} — {series.resource.name}",
+        subject=f"Recurring booking {verb}: {series.resource.name}",
         body=body,
         kind="SERIES_APPROVED" if approved else "SERIES_REJECTED",
     )
@@ -171,7 +171,7 @@ def series_submitted(series, bookings: list, *, skipped: list) -> None:
     is discovered in week seven, by a class standing outside a locked room.
     """
     dates = "\n".join(
-        f"  {timezone.localtime(b.start_at):%a %d %b %Y, %H:%M}–"
+        f"  {timezone.localtime(b.start_at):%a %d %b %Y, %H:%M} to "
         f"{timezone.localtime(b.end_at):%H:%M}  {b.booking_reference}"
         for b in bookings
     )
@@ -185,7 +185,7 @@ def series_submitted(series, bookings: list, *, skipped: list) -> None:
     )
     if skipped:
         left_out = "\n".join(
-            f"  {occ['date']:%a %d %b %Y}  — {occ.get('skip_reason') or 'already reserved'}"
+            f"  {occ['date']:%a %d %b %Y}: {occ.get('skip_reason') or 'already reserved'}"
             for occ in skipped
         )
         body += (
@@ -195,7 +195,7 @@ def series_submitted(series, bookings: list, *, skipped: list) -> None:
         )
     queue_email(
         to=series.user.email,
-        subject=f"Recurring booking request received — {series.resource.name}",
+        subject=f"Recurring booking request received: {series.resource.name}",
         body=body,
         kind="SERIES_SUBMITTED",
     )
@@ -208,7 +208,7 @@ def series_cancelled(series, bookings: list, *, reason: str) -> None:
     )
     queue_email(
         to=series.user.email,
-        subject=f"Recurring booking cancelled — {series.resource.name}",
+        subject=f"Recurring booking cancelled: {series.resource.name}",
         body=(
             f"Assalamualaikum {series.user.full_name},\n\n"
             f"{len(bookings)} future occurrence{'' if len(bookings) == 1 else 's'} of your "
