@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-11">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260920-12">
 </head>
 <body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -41,20 +41,14 @@
         </span>
     </a>
     <span class="header-spacer"></span>
+    {% if mfa_gate %}
+    <div class="header-actions"><span class="link-plain">{{ user.email }}</span></div>
+    {% elif not user.is_authenticated %}
     <div class="header-actions">
-    {% if user.is_authenticated and not mfa_gate %}
-        {% if user.is_approver %}
-            {% comment %} The two views are the same application, so this is a link and not
-               a mode switch: what somebody may do is decided by their role. {% endcomment %}
-            <a class="link-plain" href="{% if admin_area %}{% url 'accounts:dashboard' %}{% else %}{% url 'administration:dashboard' %}{% endif %}">{% if admin_area %}User view{% else %}Administrator view{% endif %}</a>
-        {% endif %}
-    {% elif mfa_gate %}
-        <span class="link-plain">{{ user.email }}</span>
-    {% else %}
         <a class="link-plain" href="{% url 'accounts:login' %}">Sign in</a>
         <a class="link-plain" href="{% url 'accounts:register' %}">Register</a>
-    {% endif %}
     </div>
+    {% endif %}
 </header>
 
 {% if user.is_authenticated and not mfa_gate %}
@@ -91,6 +85,11 @@
             <svg class="nav-profile-chevron" aria-hidden="true" viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"></path></svg>
         </summary>
         <div class="nav-profile-menu" aria-label="Account actions">
+            {% if user.is_approver %}
+                {% comment %} The two views are the same application, so this is a link and not
+                   a mode switch: what somebody may do is decided by their role. {% endcomment %}
+                <a href="{% if admin_area %}{% url 'accounts:dashboard' %}{% else %}{% url 'administration:dashboard' %}{% endif %}">{% if admin_area %}User View{% else %}Administrator View{% endif %}</a>
+            {% endif %}
             <a href="{% url 'accounts:profile' %}">Edit Profile</a>
             <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
                 <button type="submit">Sign Out</button>

@@ -165,6 +165,12 @@ p { max-width: 72ch; }
     border-bottom: 1px solid var(--docket-rule-dark);
 }
 .page-head h1, .record-head h1 { margin: 0; }
+/* app.css stacks the page head below 940px but this file's align-items
+   outranked its "stretch", and flex-end in a column means right-aligned:
+   page titles drifted to the right edge at tablet widths. */
+@media (max-width: 940px) {
+    .page-head, .record-head { align-items: stretch; }
+}
 .lede { margin: 0.35rem 0 0; color: var(--docket-muted); font-size: 0.96rem; }
 .record-reference {
     display: block;
