@@ -55,6 +55,18 @@ def style_widgets(form: forms.BaseForm) -> None:
         if field.required:
             widget.attrs.setdefault("aria-required", "true")
 
+        # A native date, time or datetime-local control accepts one format only.
+        # Django renders a bound value in the locale's first input format —
+        # 31/12/2027 under en-gb — and the browser silently shows an empty
+        # control, so every edit form lost its dates until this was set.
+        kind = getattr(widget, "input_type", None)  # Django moves attrs["type"] here
+        if kind == "date" and isinstance(widget, forms.DateInput):
+            widget.format = "%Y-%m-%d"
+        elif kind == "time" and isinstance(widget, forms.TimeInput):
+            widget.format = "%H:%M"
+        elif kind == "datetime-local" and isinstance(widget, forms.DateTimeInput):
+            widget.format = "%Y-%m-%dT%H:%M"
+
 
 def associate_help_text(form: forms.BaseForm) -> None:
     """Point each control at its own help text with `aria-describedby`.

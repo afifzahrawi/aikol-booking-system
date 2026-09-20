@@ -66,6 +66,19 @@ class FormStylingTests(TestCase):
         html = self.client.get(reverse("accounts:register")).content.decode()
         self.assertIn('aria-required="true"', html)
 
+    def test_a_bound_date_renders_in_the_format_a_date_input_accepts(self):
+        """Under en-gb Django writes 31/12/2027 into value=""; a native date
+        control rejects that and shows nothing, so every edit form appeared to
+        have lost its dates."""
+        import datetime as dt
+
+        from apps.resources.forms import VehicleForm
+
+        form = VehicleForm(initial={"road_tax_expiry": dt.date(2027, 12, 31)})
+        html = str(form["road_tax_expiry"])
+        self.assertIn('value="2027-12-31"', html)
+        self.assertNotIn("31/12/2027", html)
+
     def test_a_checkbox_is_not_given_a_text_field_class(self):
         """`.input` on a checkbox would give it a 300px-wide bordered box."""
         html = self.client.get(reverse("accounts:register")).content.decode()
