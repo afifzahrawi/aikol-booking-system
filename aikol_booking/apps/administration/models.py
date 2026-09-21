@@ -75,9 +75,50 @@ class SystemSetting(models.Model):
     def __str__(self) -> str:
         return f"{self.key} = {self.value}"
 
+    #: How the settings screen edits each value. Anything not listed is a
+    #: plain text field. Stored values do not change: a yes/no setting is
+    #: still "1" or "0" in the table, so every reader keeps working.
+    BOOLEAN_KEYS = frozenset({"cancellation_reason_required", "allow_user_cancel_approved"})
+    CHOICE_KEYS: dict[str, tuple[tuple[str, str], ...]] = {
+        "retention_disposal_action": (
+            ("EXPORT", "Export to a file, then remove"),
+            ("ARCHIVE", "Copy to the archive table, then remove"),
+        ),
+    }
+    TIME_KEYS = frozenset({"bookable_window_start", "bookable_window_end"})
+    NUMBER_KEYS = frozenset({
+        "advance_booking_limit_days", "maximum_booking_minutes", "cancellation_cutoff_hours",
+        "booking_retention_years", "maximum_vehicle_trip_days", "maximum_series_occurrences",
+    })
+
     @property
     def label(self) -> str:
         return self.LABELS.get(self.key, self.key.replace("_", " ").capitalize())
+
+    @property
+    def input_kind(self) -> str:
+        if self.key in self.BOOLEAN_KEYS:
+            return "boolean"
+        if self.key in self.CHOICE_KEYS:
+            return "choice"
+        if self.key in self.TIME_KEYS:
+            return "time"
+        if self.key in self.NUMBER_KEYS:
+            return "number"
+        return "text"
+
+    @property
+    def choices(self) -> tuple[tuple[str, str], ...]:
+        if self.key in self.BOOLEAN_KEYS:
+            return (("1", "Yes"), ("0", "No"))
+        return self.CHOICE_KEYS.get(self.key, ())
+
+    @property
+    def display_value(self) -> str:
+        for value, label in self.choices:
+            if value == self.value:
+                return label
+        return self.value
 
     @classmethod
     def get(cls, key: str, default: str | None = None) -> str:

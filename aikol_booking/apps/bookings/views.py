@@ -196,6 +196,15 @@ def availability(request, pk: int):
             )
         rows.append({"date": current, "blocks": blocks})
 
+    # A time the requester types here goes with them to the booking form, so
+    # the chart is where the slot is chosen and the form only asks the rest.
+    chosen_start = _valid_time(request.GET.get("start_time"))
+    chosen_end = _valid_time(request.GET.get("end_time"))
+    slot_query = "".join(
+        f"&{name}={value}"
+        for name, value in (("start_time", chosen_start), ("end_time", chosen_end))
+        if value
+    )
     return render(
         request,
         "bookings/availability.html",
@@ -214,11 +223,22 @@ def availability(request, pk: int):
             "close_at": close_at.strftime("%H:%M"),
             "previous": day - dt.timedelta(days=DAYS),
             "next": day + dt.timedelta(days=DAYS),
+            "chosen_start": chosen_start,
+            "chosen_end": chosen_end,
+            "slot_query": slot_query,
         },
     )
 
 
 # ---------------------------------------------------------------- creating
+
+
+def _valid_time(raw: str | None) -> str:
+    """"HH:MM" or empty; anything else is dropped rather than echoed."""
+    try:
+        return dt.time.fromisoformat(raw or "").strftime("%H:%M") if raw else ""
+    except ValueError:
+        return ""
 
 
 @login_required

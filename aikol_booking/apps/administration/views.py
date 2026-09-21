@@ -245,7 +245,7 @@ def settings_list(request):
                 description=f"{setting.key}: {before} to {setting.value}.",
                 request=request,
             )
-            flash.success(request, f"{setting.key} set to {setting.value}.")
+            flash.success(request, f"{setting.label} set to {setting.display_value}.")
             return redirect("administration:settings")
         flash.error(request, "That value was not accepted.")
     return render(

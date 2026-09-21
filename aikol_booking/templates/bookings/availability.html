@@ -11,7 +11,7 @@
     </div>
     <div class="btn-group">
         {% if resource.status == 'ACTIVE' %}
-        <a class="btn btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Book this</a>
+        <a class="btn btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}?start_date={{ day|date:'Y-m-d' }}{{ slot_query }}">Book this</a>
         {% else %}
         <span class="status-stamp status-maintenance">Not available for booking</span>
         {% endif %}
@@ -28,10 +28,19 @@
                 <label for="date">Show from</label>
                 <input class="input" type="date" id="date" name="date" value="{{ day|date:'Y-m-d' }}">
             </div>
+            <div class="field">
+                <label for="start_time">From</label>
+                <input class="input input-narrow" type="time" id="start_time" name="start_time" value="{{ chosen_start }}" min="{{ open_at }}" max="{{ close_at }}" step="900">
+            </div>
+            <div class="field">
+                <label for="end_time">To</label>
+                <input class="input input-narrow" type="time" id="end_time" name="end_time" value="{{ chosen_end }}" min="{{ open_at }}" max="{{ close_at }}" step="900">
+            </div>
             <div class="picked">
                 <span class="dow">{{ day|date:"l" }}</span>
                 <span class="full">{{ day|date:"d F Y" }}</span>
             </div>
+            <p class="help datepick-help">Enter a time and every Book link below carries it to the form.</p>
             <noscript><button class="btn" type="submit">Update chart</button></noscript>
         </form>
     </div>
@@ -53,7 +62,7 @@
 
     {% for row in rows %}
         <div class="avail-row">
-            <span>{{ row.date|date:"D d M" }}</span>
+            <span><a href="{% url 'bookings:create' resource.pk %}?start_date={{ row.date|date:'Y-m-d' }}{{ slot_query }}" data-modal-form data-modal-size="wide" class="avail-day" aria-label="Book {{ resource.name }} on {{ row.date|date:'l d F' }}">{{ row.date|date:"D d M" }}</a></span>
             <div class="avail-bar">
                 {% for block in row.blocks %}
                     <span class="avail-block{% if block.pending %} pending{% endif %}"
@@ -103,4 +112,4 @@
 </section>
 {% endif %}
 {% endblock %}
-{% block scripts %}{% load static %}<script src="{% static 'js/availability-page.js' %}" defer></script>{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/availability-page.js' %}?v=20260922-1" defer></script>{% endblock %}

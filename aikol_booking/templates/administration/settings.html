@@ -70,8 +70,15 @@
                 <td>
                     <form method="post" class="inline">{% csrf_token %}
                         <input type="hidden" name="key" value="{{ row.key }}">
+                        {% if row.choices %}
+                        <select class="input input-narrow" name="value" id="setting-{{ row.key }}" aria-label="Value of {{ row.label }}">
+                            {% for value, label in row.choices %}<option value="{{ value }}"{% if value == row.value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                        </select>
+                        {% else %}
                         <input class="input input-narrow" name="value" value="{{ row.value }}"
+                               {% if row.input_kind == "number" %}type="number" min="1" inputmode="numeric"{% elif row.input_kind == "time" %}type="time"{% endif %}
                                id="setting-{{ row.key }}" aria-label="Value of {{ row.label }}">
+                        {% endif %}
                 </td>
                 <td>{{ row.description }}</td>
                 <td class="row-actions"><button class="btn btn-sm" type="submit">Save</button></form></td>

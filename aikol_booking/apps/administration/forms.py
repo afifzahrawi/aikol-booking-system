@@ -58,9 +58,30 @@ class UserAdminForm(StyledFormMixin, forms.ModelForm):
 
 
 class SystemSettingForm(StyledFormMixin, forms.ModelForm):
+    """One value at a time. The screen offers a choice where the setting has
+    one; this form refuses anything outside it, whatever the browser sent."""
+
     class Meta:
         model = SystemSetting
         fields = ("value",)
+
+    def clean_value(self):
+        value = self.cleaned_data["value"].strip()
+        setting = self.instance
+        allowed = [choice for choice, _ in setting.choices]
+        if allowed and value not in allowed:
+            raise forms.ValidationError("Choose one of the offered values.")
+        if setting.input_kind == "number":
+            if not value.isdigit() or int(value) < 1:
+                raise forms.ValidationError("Enter a whole number of 1 or more.")
+        if setting.input_kind == "time":
+            import datetime as dt
+
+            try:
+                dt.time.fromisoformat(value)
+            except ValueError as exc:
+                raise forms.ValidationError("Enter a time as HH:MM.") from exc
+        return value
 
 
 class EmailConfigurationForm(StyledFormMixin, forms.ModelForm):

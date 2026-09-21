@@ -243,3 +243,30 @@ class AcademicCalendarScreenTests(OperationalFixtures):
     def test_an_ordinary_user_cannot_manage_calendars(self):
         self.client.force_login(self.requester)
         self.assertEqual(self.client.get(reverse("bookings:academic_terms")).status_code, 403)
+
+
+class AvailabilityHandoffTests(OperationalFixtures):
+    def test_the_chosen_slot_travels_from_the_chart_to_the_form(self):
+        """A time typed on the availability page reaches every Book link, and
+        the booking form opens with the slot filled in."""
+        self.client.force_login(self.requester)
+        page = self.client.get(
+            reverse("bookings:availability", args=[self.room.pk]),
+            {"date": self.day.isoformat(), "start_time": "10:00", "end_time": "12:00"},
+        )
+        create = reverse("bookings:create", args=[self.room.pk])
+        self.assertContains(page, f"{create}?start_date={self.day.isoformat()}&amp;start_time=10:00&amp;end_time=12:00")
+        form = self.client.get(create, {"start_date": self.day.isoformat(), "start_time": "10:00", "end_time": "12:00"})
+        self.assertContains(form, f'value="{self.day.isoformat()}"')
+        self.assertContains(form, 'value="10:00"')
+        self.assertContains(form, 'value="12:00"')
+
+    def test_a_malformed_time_is_dropped_not_echoed(self):
+        self.client.force_login(self.requester)
+        page = self.client.get(
+            reverse("bookings:availability", args=[self.room.pk]),
+            {"date": self.day.isoformat(), "start_time": "<b>x</b>"},
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, "start_time=&lt;b")
+        self.assertNotContains(page, "start_time=<b")
