@@ -10,7 +10,10 @@ from django import forms
 
 from config.forms import StyledFormMixin
 from django.conf import settings
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
+from django.template import loader
+
+from apps.notifications.services import queue_email
 
 from .models import Affiliation, User
 
@@ -137,6 +140,30 @@ class RegistrationForm(StyledFormMixin, UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class OutboxPasswordResetForm(StyledFormMixin, PasswordResetForm):
+    """Django's reset form, delivering through the outbox.
+
+    The stock form calls send_mail() with the process's own EMAIL_* settings,
+    which in production point nowhere: the only SMTP profile is the one the
+    administrator enters on the System screen, and only the outbox worker
+    reads it. A reset that bypassed the outbox was a reset nobody received.
+    """
+
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        subject = loader.render_to_string(subject_template_name, context)
+        subject = "".join(subject.splitlines())
+        body = loader.render_to_string(email_template_name, context)
+        queue_email(to=to_email, subject=subject, body=body, kind="PASSWORD_RESET")
 
 
 class EmailAuthenticationForm(StyledFormMixin, AuthenticationForm):

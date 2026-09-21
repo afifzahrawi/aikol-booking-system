@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views
+from .forms import OutboxPasswordResetForm
 
 app_name = "accounts"
 
@@ -16,10 +17,12 @@ urlpatterns = [
     path("register/check-your-email/", views.register_done, name="register_done"),
     path("verify/<uidb64>/<token>/", views.verify_email, name="verify"),
     # Django's own password reset, wired to this project's templates. The views
-    # are well tested and there is no reason to reimplement them.
+    # are well tested and there is no reason to reimplement them; only the
+    # form changes, so the message goes through the outbox.
     path(
         "password-reset/",
         auth_views.PasswordResetView.as_view(
+            form_class=OutboxPasswordResetForm,
             template_name="accounts/password_reset.html",
             email_template_name="accounts/password_reset_email.txt",
             subject_template_name="accounts/password_reset_subject.txt",

@@ -85,6 +85,17 @@ class EnumerationTests(TestCase):
         self.assertEqual(known.status_code, unknown.status_code)
         self.assertEqual(known["Location"], unknown["Location"])
 
+    def test_password_reset_goes_through_the_outbox(self):
+        """Django's stock form calls send_mail() with the process's EMAIL_*
+        settings, which production does not have: the only SMTP profile is the
+        administrator's, and only the outbox worker reads it. A reset that
+        skipped the outbox reached nobody, which is how it shipped."""
+        self.client.post("/password-reset/", {"email": self.existing.email})
+        message = EmailOutbox.objects.get(kind="PASSWORD_RESET")
+        self.assertEqual(message.to_address, self.existing.email)
+        self.assertIn("/password-reset/", message.body)
+        self.assertNotIn("\n", message.subject)
+
 
 class ThrottleTests(TestCase):
     def setUp(self) -> None:
