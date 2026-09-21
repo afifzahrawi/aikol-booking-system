@@ -12,6 +12,8 @@ intended to be read in a browser and printed to PDF.
 | [technical/database-schema.md](technical/database-schema.md) | Tables, the shared `resources` design, facilities, the email outbox, indexing strategy, migration notes |
 | [technical/booking-rules.md](technical/booking-rules.md) | The overlap rule, status lifecycle, venue and vehicle rules, recurrence, cancellation, key handover, confirmation email, concurrency handling |
 | [technical/data-retention.md](technical/data-retention.md) | Retention policy, export and archiving, batched deletion, backup and restore |
+| [user-guide.md](user-guide.md) | First-time guide for requesters: account, finding a room or car, availability, booking, weekly bookings, cancelling, keys |
+| [uat-test-script.md](uat-test-script.md) | Acceptance test script for the office: 17 sections, every use case with expected results, phone runs marked |
 | [technical/managed-cloud-deployment.md](technical/managed-cloud-deployment.md) | Cloud Run, Neon and R2 deployment, scheduled jobs, cost controls and go-live checks |
 | [technical/custom-domain.md](technical/custom-domain.md) | Giving production its own hostname: registrar, verification, Cloud Run domain mapping, `-PublicDomain` |
 | [technical/security.md](technical/security.md) | Authentication, self-registration, the three roles, personal data, upload handling, destructive-operation safeguards, server operations |

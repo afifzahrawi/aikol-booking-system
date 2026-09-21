@@ -233,6 +233,8 @@ acceptance testing to find more of that kind.
 ├── docs/
 │   ├── README.md
 │   ├── ux-audit.md             # the end-to-end interface audit that drove the redesign
+│   ├── user-guide.md           # first-time guide for requesters
+│   ├── uat-test-script.md      # the acceptance test script the office works through
 │   └── technical/              # architecture, schema, booking rules, retention, security,
 │                               # testing, bulk import, prototype guide, managed-cloud
 │                               # deployment, SMTP setup, custom domain, action test matrix
