@@ -147,6 +147,19 @@ def verify_email(request, uidb64: str, token: str):
     return redirect("accounts:login")
 
 
+class PasswordResetView(auth_views.PasswordResetView):
+    """Django's reset view behind the same two-bucket limit as sign-in.
+
+    The limit was defined with the others and never applied, because the URL
+    pointed at Django's view directly. Without it the form is a free way to
+    fill a person's inbox and to keep the outbox busy."""
+
+    def post(self, request, *args, **kwargs):
+        if is_throttled(request, "password_reset", request.POST.get("email", "").lower()):
+            return render(request, "accounts/throttled.html", status=429)
+        return super().post(request, *args, **kwargs)
+
+
 class LoginView(auth_views.LoginView):
     form_class = EmailAuthenticationForm
     template_name = "accounts/login.html"

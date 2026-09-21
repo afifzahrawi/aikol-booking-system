@@ -164,6 +164,21 @@ class ThrottleTests(TestCase):
         )
         self.assertEqual(response.status_code, 429)
 
+    def test_password_reset_is_rate_limited(self):
+        limit = LIMITS["password_reset"].attempts
+        for _ in range(limit):
+            self.client.post("/password-reset/", {"email": self.user.email})
+        response = self.client.post("/password-reset/", {"email": self.user.email})
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(EmailOutbox.objects.filter(kind="PASSWORD_RESET").count(), limit)
+
+    def test_the_admin_login_form_is_not_a_second_door(self):
+        """Django's admin ships its own sign-in form, outside the rate limit.
+        It sends people to the application's."""
+        response = self.client.get("/admin/login/")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["Location"].startswith("/sign-in/"))
+
     def test_registration_is_rate_limited(self):
         for i in range(LIMITS["register"].attempts):
             self.client.post("/register/", dict(REGISTRATION, email=f"a{i}@iium.edu.my",

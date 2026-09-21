@@ -865,8 +865,14 @@ img, video, iframe { max-width: 100%; }
 .action-dialog-close svg { width: 1rem; fill: none; stroke: currentColor; stroke-width: 1.8; }
 .action-dialog-body { min-height: 8rem; padding: clamp(1.25rem, 3vw, 2rem); overflow: auto; }
 .action-dialog-body > .main { padding: 0; }
-.action-dialog-body .card { border: 0; box-shadow: none; overflow: visible; }
+/* modal-forms.js moves the page's children into the dialog without the .main
+   wrapper, so the flow rule has to be restated here. Cards lose their frame in
+   a dialog; a second card is separated from the first by a rule instead. */
+.action-dialog-body > * + * { margin-top: var(--space-md); }
+.action-dialog-body .card { border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+.action-dialog-body .card + .card { padding-top: var(--space-md); border-top: 1px solid var(--docket-rule); }
 .action-dialog-body .card-body { padding: 0; }
+.action-dialog-body > h1 { font-size: clamp(1.5rem, 2.6vw, 2rem); }
 .action-dialog-body .page-head { margin-bottom: 1rem; }
 .action-dialog-body .booking-form-card { width: min(100%, 48rem); }
 .action-dialog-body .booking-form { width: 100%; max-width: 44rem; }

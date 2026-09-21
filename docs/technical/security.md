@@ -263,3 +263,26 @@ Managed infrastructure removes host patching and SSH, but these remain ours:
   `requirements.txt` and in `CLAUDE.md`.
 - Review dependencies before adding any; every dependency is a maintenance obligation.
 - Run `python manage.py check --deploy` before each production deployment and resolve every warning.
+
+## OWASP Top 10 review, 21 September 2026
+
+A review of the deployed system against the OWASP Top 10 (2021), combining the static checks,
+the test suite, and live probes against a development copy and the production headers. Two
+findings were fixed the same day and are marked as such.
+
+| Category | Result | Evidence |
+| --- | --- | --- |
+| A01 Broken access control | Pass | Every restricted route is checked as every role (`test_the_matrix_holds`, `tools/test_action_matrix.py`); object ownership on read and cancel (`test_somebody_else_cannot_read_it`, `_cancel_it`); `next` is checked with `url_has_allowed_host_and_scheme` (probe: `next=https://evil.example/` and `//evil.example/` both land on `/`); no `fields = "__all__"` on any form. |
+| A02 Cryptographic failures | Pass | HTTPS only with HSTS preload; `Secure`, `HttpOnly`, `SameSite=Lax` cookies; PBKDF2 password hashing; SMTP password and TOTP secrets under Fernet with the key in Secret Manager; no secret in the image. |
+| A03 Injection | Pass | ORM throughout; the one `executemany` in the importer quotes identifiers with the connection's own quoting and binds every value; `|safe` appears once, on a server-rendered QR SVG; user text is escaped (probe: an `<img onerror>` display name renders as text). No `eval`, `pickle` or shell strings; `pg_dump` is called with an argument list. |
+| A04 Insecure design | Pass | Two-bucket rate limits on every public authentication endpoint; a second factor for staff; email through an outbox so no request waits on SMTP; deactivate-never-delete. |
+| A05 Security misconfiguration | Pass | Production headers as served: `Content-Security-Policy` deny-by-default, `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy: same-origin`, `Permissions-Policy`. `DEBUG` off; an unknown `Host` header is refused (404). `manage.py check --deploy` is asserted by a test. |
+| A06 Vulnerable components | Pass | `pip-audit` against `requirements.txt`: no known vulnerabilities. Everything is pinned; nothing loads from a CDN. |
+| A07 Identification and authentication | **Two findings, fixed** | (1) The `password_reset` rate limit was defined but never applied because the URL pointed at Django's view directly; a subclass now enforces it and a test asserts the 429. (2) Django's admin exposed its own sign-in form at `/admin/login/`, outside the rate limit; it now redirects to the application's sign-in. Also verified: the session key rotates on sign-in; failed sign-ins do not reveal whether the account exists; registration does not enumerate addresses. |
+| A08 Software and data integrity | Pass | No third-party scripts, so no SRI question; CSRF token on every form (`test_every_form_carries_a_csrf_token`); the image is built from the repository and deployed by digest-pinned tag. |
+| A09 Logging and monitoring | Adequate | Business actions in the append-only audit log; request logs in Cloud Logging; enumeration attempts logged (`test_the_attempt_is_logged`). Not done: an alert on repeated 429s. Low priority at this traffic. |
+| A10 Server-side request forgery | Not applicable | The application makes no request to a user-supplied URL. Uploads are read by Pillow from the request body, never fetched. |
+
+Not covered by this review, and worth doing before a wider launch: a dependency review on each
+Django security release (subscribe to the django-announce list), and a repeat of the header
+check whenever the CSP changes.
