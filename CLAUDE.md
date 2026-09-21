@@ -47,9 +47,9 @@ key custody, user management, settings and the audit log are in place, and
 bulk CSV import and export, reporting and retention are built, and the
 **security review is done**. Production runs at the generated `*.run.app` hostname on Cloud Run
 with Neon PostgreSQL and Cloudflare R2 — see `docs/technical/managed-cloud-deployment.md`.
-Phase 9 (user acceptance testing) has not started; three operational items block it (section 5,
-*Still open*), the first being that **no SMTP credentials have been entered, so no email has ever
-left the production outbox**.
+Phase 9 (user acceptance testing) can begin: **email leaves the production outbox** (Gmail SMTP,
+entered on the System screen on 21 September 2026, verified end to end with a password reset).
+Two operational items remain open (section 5, *Still open*).
 
 ### Since the security review
 
@@ -196,9 +196,9 @@ Phase 9, user acceptance testing. Training, under Phase 10.
 
 ### Next step
 
-**Get email leaving the outbox.** The Kulliyyah office enters SMTP credentials under System →
-Settings; until then no verification, reset or booking email is delivered, and acceptance testing
-cannot start because a new user cannot finish registering. Then Phase 9 with the office.
+**Phase 9 with the office.** Email is delivered, so a new user can finish registering. The first
+end-to-end test exposed that the password reset was bypassing the outbox (fixed the same day); expect
+acceptance testing to find more of that kind.
 
 ---
 
@@ -264,7 +264,7 @@ prototype.
 | Database (dev) | **SQLite** | Zero setup |
 | Database (prod) | **PostgreSQL 15+** | Required — the overlap exclusion constraint needs it |
 | Authentication | **Django's own auth. No IIUM SSO** | Confirmed decision, not a placeholder — see section 5 |
-| Email | **Administrator-configured SMTP, sent from a database outbox on a schedule** | Password encrypted at rest; account and booking confirmations. **Not yet configured in production** |
+| Email | **Administrator-configured SMTP, sent from a database outbox on a schedule** | Password encrypted at rest; account and booking confirmations. Configured in production (Gmail, App Password) |
 | Scheduled jobs | **Cloud Scheduler calling a private, IAM-authenticated maintenance service** (`config/maintenance.py`) | Outbox drain, `COMPLETED` transition, backups. A request-billed service, not a Cloud Run Job — Jobs bill a one-minute minimum per run. No Celery |
 | Charts (app) | Plain HTML/CSS; **Chart.js** only if a chart genuinely needs it | Vendored if adopted |
 | Web server | **Gunicorn + WhiteNoise in one container** | TLS is terminated by Cloud Run; the Caddy/Compose files remain for a self-hosted fallback |
@@ -399,16 +399,14 @@ these decisions are the authority for them.
 
 ### Still open
 
-The system is deployed. Three items require the Kulliyyah office or the AIKOL account owner, and
-the first blocks user acceptance testing outright:
+The system is deployed and email is delivered (Gmail SMTP through the administrator screen; a
+Google App Password, port 587 with TLS). Two items require the Kulliyyah office or the AIKOL account
+owner:
 
-1. **Enter SMTP credentials** under System → Settings (`docs/technical/smtp-setup.md`). Until then
-   verification, password-reset and booking emails accumulate in the outbox and nobody receives
-   them, so a self-registered user cannot complete registration.
-2. **Decide on a domain.** Production answers only at the generated `*.run.app` address. A `.my`
+1. **Decide on a domain.** Production answers only at the generated `*.run.app` address. A `.my`
    registration is a recurring fee and raises the question of institutional versus personal
    ownership; neither has been decided.
-3. **Authenticator enrolment by every approver and administrator** at their next sign-in. The
+2. **Authenticator enrolment by every approver and administrator** at their next sign-in. The
    system forces it; the office should expect the step and keep the recovery codes it prints
    somewhere that is not the phone.
 
@@ -721,8 +719,8 @@ advanced analytics · any AI feature.
 | 6b | Key issue and return recording | **Complete** |
 | 7 | Bulk data, reporting and retention | **Complete** |
 | 8 | Testing and security review | **Complete** — except the PostgreSQL run |
-| 9 | User acceptance testing | Not started — **next**, once SMTP is configured |
-| 10 | Deployment and training | **Deployed** to Cloud Run with scheduler, backups and spend alerts. Outstanding: SMTP credentials, domain decision, training |
+| 9 | User acceptance testing | **Next.** Email is delivered; nothing blocks it |
+| 10 | Deployment and training | **Deployed** to Cloud Run with scheduler, backups and spend alerts; SMTP configured. Outstanding: domain decision, training |
 
 Phases 5b and 6b are numbered separately because they were added after the original plan and carry
 schedule cost that the original estimate did not include. Recurring bookings in particular are not a
