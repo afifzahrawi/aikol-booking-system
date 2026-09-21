@@ -195,7 +195,7 @@ def settings_list(request):
     """Business rules live here, not in the code, so AIKOL can change a limit
     without a software release."""
     SystemSetting.seed()
-    rows = SystemSetting.objects.all()
+    rows = sorted(SystemSetting.objects.all(), key=lambda row: row.label)
     email_configuration = EmailConfiguration.load()
     queued_email_count = EmailOutbox.objects.filter(
         status__in=(EmailStatus.PENDING, EmailStatus.FAILED), attempts__lt=5

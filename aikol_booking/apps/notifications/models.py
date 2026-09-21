@@ -1,7 +1,7 @@
 """Outbound email, through a table rather than a queue.
 
 A row is written in the SAME transaction as the action that caused it, and cron
-drains it every five minutes. Two reasons, both concrete:
+drains it every minute. Two reasons, both concrete:
 
   - A booking must never fail because a mail server is slow.
   - A semester-long series must never hold a request open behind 26 SMTP

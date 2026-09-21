@@ -16,20 +16,57 @@ class SystemSetting(models.Model):
     description = models.CharField(max_length=200, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    #: Confirmed by AIKOL. The source decision is named so that nobody changes
-    #: one of these believing it was an arbitrary choice.
+    #: Confirmed by AIKOL; CLAUDE.md section 6 names the decision behind each
+    #: value so nobody changes one believing it was arbitrary. The wording here
+    #: is for the administrator reading the screen, not for the record.
     DEFAULTS: dict[str, tuple[str, str]] = {
-        "advance_booking_limit_days": ("90", "How far ahead a booking may be made (decision 7)"),
-        "maximum_booking_minutes": ("540", "Longest single booking, nine hours (decision 8)"),
-        "bookable_window_start": ("08:00", "Earliest bookable time (decision 9)"),
-        "bookable_window_end": ("22:00", "Latest bookable time (decision 9)"),
-        "cancellation_cutoff_hours": ("72", "Notice a user must give, three days (decisions 12, 13)"),
-        "cancellation_reason_required": ("1", "A reason is mandatory (follow-up decision)"),
-        "allow_user_cancel_approved": ("1", "A user may cancel their own approved booking (decision 12)"),
-        "booking_retention_years": ("7", "How long booking records are kept (decision 19)"),
-        "retention_disposal_action": ("EXPORT", "Expired records are exported, not deleted (decision 20)"),
-        "maximum_vehicle_trip_days": ("7", "Longest vehicle trip; to be confirmed by AIKOL"),
-        "maximum_series_occurrences": ("60", "Guard on a single recurring request"),
+        "advance_booking_limit_days": (
+            "90", "How many days ahead a booking may be made. 90 is three months."
+        ),
+        "maximum_booking_minutes": (
+            "540", "Longest single booking, in minutes. 540 is nine hours."
+        ),
+        "bookable_window_start": ("08:00", "Earliest time a booking may start."),
+        "bookable_window_end": ("22:00", "Latest time a booking may end."),
+        "cancellation_cutoff_hours": (
+            "72",
+            "How many hours before the start a user may still cancel. 72 is three days. "
+            "The office is not bound by this.",
+        ),
+        "cancellation_reason_required": (
+            "1", "1 means a reason must be given when cancelling. 0 makes it optional."
+        ),
+        "allow_user_cancel_approved": (
+            "1",
+            "1 lets a user cancel their own booking after it is approved. "
+            "0 limits them to bookings still awaiting a decision.",
+        ),
+        "booking_retention_years": (
+            "7", "How many years booking records are kept before they can be exported and removed."
+        ),
+        "retention_disposal_action": (
+            "EXPORT",
+            "What happens to records past retention. EXPORT writes them to a file before removing them.",
+        ),
+        "maximum_vehicle_trip_days": ("7", "Longest vehicle trip, in days."),
+        "maximum_series_occurrences": (
+            "60", "Most bookings one weekly request may create. A semester is about 14 to 20."
+        ),
+    }
+
+    #: Plain names for the settings screen; the key stays the identifier.
+    LABELS: dict[str, str] = {
+        "advance_booking_limit_days": "Book ahead limit",
+        "maximum_booking_minutes": "Longest booking",
+        "bookable_window_start": "Day starts",
+        "bookable_window_end": "Day ends",
+        "cancellation_cutoff_hours": "Cancellation notice",
+        "cancellation_reason_required": "Reason to cancel",
+        "allow_user_cancel_approved": "Cancel after approval",
+        "booking_retention_years": "Keep records for",
+        "retention_disposal_action": "After retention",
+        "maximum_vehicle_trip_days": "Longest vehicle trip",
+        "maximum_series_occurrences": "Weekly request cap",
     }
 
     class Meta:
@@ -37,6 +74,10 @@ class SystemSetting(models.Model):
 
     def __str__(self) -> str:
         return f"{self.key} = {self.value}"
+
+    @property
+    def label(self) -> str:
+        return self.LABELS.get(self.key, self.key.replace("_", " ").capitalize())
 
     @classmethod
     def get(cls, key: str, default: str | None = None) -> str:

@@ -55,7 +55,7 @@
 </form>
 
 <div class="notice notice-info">
-    The defaults are AIKOL's confirmed decisions; each row names its source. Changes apply immediately and are recorded in the audit log.
+    The defaults are the rules AIKOL confirmed. Changes apply immediately and are recorded in the audit log.
 </div>
 
 <section class="card">
@@ -66,12 +66,12 @@
         <tbody>
         {% for row in rows %}
             <tr>
-                <td><span class="mono">{{ row.key }}</span></td>
+                <td><strong>{{ row.label }}</strong><br><span class="help mono">{{ row.key }}</span></td>
                 <td>
                     <form method="post" class="inline">{% csrf_token %}
                         <input type="hidden" name="key" value="{{ row.key }}">
                         <input class="input input-narrow" name="value" value="{{ row.value }}"
-                               id="setting-{{ row.key }}" aria-label="Value of {{ row.key }}">
+                               id="setting-{{ row.key }}" aria-label="Value of {{ row.label }}">
                 </td>
                 <td>{{ row.description }}</td>
                 <td class="row-actions"><button class="btn btn-sm" type="submit">Save</button></form></td>

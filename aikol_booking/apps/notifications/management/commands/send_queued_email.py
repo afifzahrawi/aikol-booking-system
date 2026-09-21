@@ -1,4 +1,4 @@
-"""Drain the email outbox. Run from cron every five minutes.
+"""Drain the email outbox. Run from the scheduler every minute.
 
 Idempotent: a row already SENT is never sent twice, and a run that dies halfway
 leaves the remaining rows PENDING for the next one.

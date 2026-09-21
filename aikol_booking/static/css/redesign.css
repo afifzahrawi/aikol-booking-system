@@ -467,6 +467,8 @@ table.data th {
 table.data .status-column, table.data .actions-column { text-align: center; }
 table.data .actions-column .action-menu { margin-inline: auto; }
 table.data td { border-color: var(--docket-rule); }
+/* Numbers read under their heading, like every other column. */
+table.data .num { text-align: left; }
 table.data tbody tr:nth-child(even) { background: var(--docket-paper-2); }
 
 .grid-4:has(> .stat), .booking-stats {
@@ -528,6 +530,7 @@ table.data tbody tr:nth-child(even) { background: var(--docket-paper-2); }
 .plain-list.m-0 { margin: 0; }
 .input-narrow { width: 7.5rem; }
 .card-body > .notice:last-child { margin-bottom: 0; }
+.card-body form > .btn-group:last-child { margin-top: 1.5rem; }
 
 /* Type floor. The prototype's 13px body and 10-12px secondary text were too
    small to read comfortably on a phone; nothing that carries meaning sits

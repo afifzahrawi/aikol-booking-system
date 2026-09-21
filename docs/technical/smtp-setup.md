@@ -18,8 +18,8 @@ required; the code cannot create an email identity or bypass a provider's authen
    verification links could have expired (the link validity is three days).
 5. Tick **Enable email delivery** and choose **Save email settings**. Never paste the password
    into a chat, ticket or source file; enter it only into the authenticated administrator form.
-6. Register a disposable test account using a mailbox you control. Allow up to five minutes for
-   the scheduled sender. Check the inbox and spam folder, follow the verification link, then
+6. Register a disposable test account using a mailbox you control. The outbox is sent every
+   minute. Check the inbox and spam folder, follow the verification link, then
    submit a test booking and confirm the booking email arrives.
 
 If the test email does not arrive, turn delivery off to pause further attempts while diagnosing.

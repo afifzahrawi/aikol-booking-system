@@ -107,10 +107,16 @@ Create exactly three schedules, which fit the current Cloud Scheduler free allow
 is checked by Cloud Run IAM before Django receives a request:
 
 ```powershell
-gcloud scheduler jobs create http aikol-email-every-five-minutes --location $region --schedule "*/5 * * * *" --time-zone "Asia/Kuala_Lumpur" --uri "$maintenanceUrl/internal/maintenance/email/" --http-method POST --oidc-service-account-email $runner --oidc-token-audience $maintenanceUrl
+gcloud scheduler jobs create http aikol-email-every-minute --location $region --schedule "* * * * *" --time-zone "Asia/Kuala_Lumpur" --uri "$maintenanceUrl/internal/maintenance/email/" --http-method POST --oidc-service-account-email $runner --oidc-token-audience $maintenanceUrl
 gcloud scheduler jobs create http aikol-complete-nightly --location $region --schedule "15 0 * * *" --time-zone "Asia/Kuala_Lumpur" --uri "$maintenanceUrl/internal/maintenance/complete/" --http-method POST --oidc-service-account-email $runner --oidc-token-audience $maintenanceUrl
 gcloud scheduler jobs create http aikol-backup-nightly --location $region --schedule "45 0 * * *" --time-zone "Asia/Kuala_Lumpur" --uri "$maintenanceUrl/internal/maintenance/backup/" --http-method POST --oidc-service-account-email $runner --oidc-token-audience $maintenanceUrl
 ```
+
+The outbox runs every minute so a verification or reset link arrives while the person is still
+waiting for it; the two nightly jobs run once. Each run is one short request to the maintenance
+service (well under a second once the instance is warm), so a month of them stays inside the Cloud
+Run free allowance. The job was first created as `aikol-email-every-five-minutes`; to move an
+existing project to the minute schedule, delete that job and create the one above.
 
 Retention cleanup is never scheduled because it requires administrator review and confirmation.
 
