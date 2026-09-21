@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load periods %}
 {% block title %}{{ booking.booking_reference }}{% endblock %}
 {% block content %}
 <div class="record-head">
@@ -23,8 +24,7 @@
     <div class="card-body">
         <dl class="kv">
             <dt>Status</dt><dd>{{ booking.get_status_display }}</dd>
-            <dt>When</dt><dd>{{ booking.start_at|date:"l, d F Y, H:i" }} to
-                {{ booking.end_at|date:"l, d F Y, H:i" }}</dd>
+            <dt>When</dt><dd>{% period booking.start_at booking.end_at %}</dd>
             <dt>Purpose</dt><dd>{{ booking.purpose }}</dd>
             <dt>Requested for</dt><dd>{{ booking.user.full_name }}</dd>
             {% if booking.created_by_id != booking.user_id %}

@@ -5,7 +5,7 @@
 <div class="page-head">
     <div>
         <h1>{{ resource.name }}</h1>
-        <p class="lede mono">{{ resource.code }}</p>
+        {% if user.is_approver %}<p class="lede mono">{{ resource.code }}</p>{% endif %}
     </div>
     {% if user.is_administrator %}
     <div class="btn-group">
@@ -63,9 +63,9 @@
                 {% endif %}
             {% else %}
                 <dt>Type</dt><dd>{{ resource.get_venue_type_display }}</dd>
-                <dt>Location</dt><dd>{{ resource.location }}{% if resource.floor %}, {{ resource.floor }}{% endif %}</dd>
+                <dt>Location</dt><dd>{{ resource.location }}</dd>
                 <dt>Capacity</dt><dd>{{ resource.capacity }}</dd>
-                <dt>Open</dt><dd>{{ resource.opens_at }} to {{ resource.closes_at }}</dd>
+                <dt>Open</dt><dd>{{ resource.opens_at|time:"H:i" }} to {{ resource.closes_at|time:"H:i" }}</dd>
             {% endif %}
             <dt>Approval</dt><dd>{% if resource.approval_required %}Required{% else %}Not required{% endif %}</dd>
         </dl>

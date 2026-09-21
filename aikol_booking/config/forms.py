@@ -87,6 +87,10 @@ def associate_help_text(form: forms.BaseForm) -> None:
 
 
 class StyledFormMixin:
+    # Django appends a colon to every auto-rendered label; hand-written labels
+    # elsewhere have none, and a form should not look different from the page.
+    label_suffix = ""
+
     """Mix in before `forms.Form` / `forms.ModelForm`.
 
     Set `layout` to group fields into rows. A booking's date and time belong

@@ -125,8 +125,9 @@ class SiteContent(models.Model):
     organisation = models.CharField(max_length=120, default="Ahmad Ibrahim Kulliyyah of Laws")
     logo = models.ImageField(upload_to="site/", blank=True)
     logo_alt = models.CharField(max_length=200, blank=True)
-    iium_logo = models.ImageField(upload_to="site/", blank=True)
+    iium_logo = models.ImageField("IIUM logo", upload_to="site/", blank=True)
     iium_logo_alt = models.CharField(
+        "IIUM logo description",
         max_length=200,
         default="International Islamic University Malaysia",
     )

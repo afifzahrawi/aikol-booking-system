@@ -218,6 +218,7 @@ a.record-reference { color: var(--docket-green-deep); text-decoration: underline
     box-shadow: none;
 }
 .card { overflow: hidden; border-color: var(--docket-rule-dark); }
+.record-sheet > .card-body { padding: 0; }
 .record-sheet {
     padding: clamp(1.2rem, 3vw, 2.2rem);
     box-shadow: var(--docket-shadow);
@@ -247,7 +248,7 @@ a.record-reference { color: var(--docket-green-deep); text-decoration: underline
     padding: 0.75rem 0;
     border-bottom: 1px solid var(--docket-rule);
 }
-.record-facts dt, .kv dt { color: var(--docket-muted); font-size: 0.78rem; font-weight: 600; }
+.record-facts dt, .kv dt { color: var(--docket-muted); font-weight: 600; }
 .record-facts dd, .kv dd { color: var(--docket-ink); }
 
 .docket-toolbar, .toolbar {
@@ -540,10 +541,13 @@ body { font-size: 0.9375rem; line-height: 1.55; }
 .field label, .label, dt, th, .stat .k, .activity-band-label, .heat-scale, .bar-label, .legend, .caption { font-size: 0.85rem; }
 .help, .stat .d, .status-stamp, .badge, .pill, .tag, .pager-number, .pager-control,
 .record-reference, .mono, .nav-profile-name strong, .link-plain, .docket-index-foot, .bar-col .bar span { font-size: 0.8rem; }
-.app-footer .foot-label, .nav-profile-name small, .docket-masthead .brand-sub { font-size: 0.74rem; }
+.btn-sm { font-size: 0.85rem; }
+.record-facts dt, .kv dt { font-size: 0.85rem; }
+.venue-card .loc, .caption, .app-footer, .app-footer .foot-label, .activity li { font-size: 0.85rem; }
+.nav-profile-name small, .docket-masthead .brand-sub { font-size: 0.78rem; }
 .board-head .k, .board-hours span, .avail-scale .ticks, .avail-row > span, .avail-block, .bar-col .bar-label, .heat-scale span,
 .hbar .val, .bar-col .bar span, table.heat th, table.heat td { font-size: 0.8rem; }
-.app-nav .nav-profile-name small { font-size: 0.72rem; }
+.app-nav .nav-profile-name small { font-size: 0.78rem; }
 .nav-link-label { font-size: 0.86rem; }
 .nav-badge { font-size: 0.74rem; }
 .notice { font-size: 0.9rem; padding: 0.85rem 1.1rem; }
@@ -559,8 +563,8 @@ table.data th, table.data td { font-size: 0.9rem; }
 .heat-scale .swatch-4 { background: #33806f; }
 .heat-scale .swatch-5 { background: var(--docket-green); }
 .heat-scale .swatch-gap { margin-left: 0.25rem; }
-.hbar .fill { width: 0; transition: width 480ms var(--ease-out); }
-.bar-col .bar { height: 0; transition: height 480ms var(--ease-out); }
+.hbar .fill { width: 0; transition: width var(--dur-slow) var(--ease-out); }
+.bar-col .bar { height: 0; transition: height var(--dur-slow) var(--ease-out); }
 img, video, iframe { max-width: 100%; }
 .searchbar {
     grid-template-columns:
@@ -1024,10 +1028,13 @@ img, video, iframe { max-width: 100%; }
 /* Below the desktop width every data table becomes a list of records: the
    header is kept for assistive technology, each row is a sheet, each cell a
    labelled line, and the action sits at the end at full width where a thumb
-   can reach it. chrome.js copies the column headings into data-label. */
-@media (max-width: 63.99rem) {
-    .table-wrap { overflow: visible; }
+   can reach it. chrome.js copies the column headings into data-label. The
+   query is on the table's container, not the viewport: with the rail open a
+   laptop gives a table less room than a tablet does. */
+.table-wrap { container-type: inline-size; overflow-x: auto; }
+@container (max-width: 51.99rem) {
     table.data, .table-wrap > table.data, table.data tbody, table.data tr, table.data td { display: block; min-width: 0; }
+    table.data .nowrap { white-space: normal; }
     table.data thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     table.data tbody tr {
         display: grid;
@@ -1046,6 +1053,7 @@ img, video, iframe { max-width: 100%; }
         padding: 0.15rem 0;
         border: 0;
         font-size: 0.95rem;
+        overflow-wrap: anywhere;
     }
     table.data td[data-label]::before {
         content: attr(data-label);
@@ -1236,7 +1244,7 @@ img, video, iframe { max-width: 100%; }
 
 @media (max-width: 47.99rem) {
     /* Bottom tab bar: five labels must fit a 320px screen. */
-    .is-authenticated .app-nav .nav-link-label { font-size: 0.76rem; letter-spacing: 0; }
+    .is-authenticated .app-nav .nav-link-label { font-size: 0.8rem; letter-spacing: 0; }
     .is-authenticated .app-nav .nav-badge { font-size: 0.68rem; }
 }
 
@@ -1258,3 +1266,11 @@ img, video, iframe { max-width: 100%; }
 .app-footer .foot-label { font-size: 0.85rem; font-weight: 600; }
 .searchbar .k, .board-head .k { font-size: 0.82rem; font-weight: 600; }
 .daypick .dow { font-size: 0.8rem; opacity: 1; }
+
+/* Availability: the axis header and the rows share one label column, and the
+   two hour labels keep apart on a narrow screen. */
+.board-head, .board-row, .avail-row, .avail-scale { grid-template-columns: minmax(5.5rem, 7.5rem) minmax(0, 1fr); gap: 0.75rem; }
+.board-hours { gap: 0.5rem; }
+@media (max-width: 39.99rem) {
+    .board-head, .board-row, .avail-row, .avail-scale { grid-template-columns: 4.5rem minmax(0, 1fr); gap: 0.5rem; }
+}

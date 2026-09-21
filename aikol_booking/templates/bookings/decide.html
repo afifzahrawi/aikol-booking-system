@@ -1,15 +1,16 @@
 {% extends "base.html" %}
+{% load periods %}
 {% block title %}Decide {{ booking.booking_reference }}{% endblock %}
 {% block content %}
 <h1>{{ booking.booking_reference }}</h1>
 
 <section class="card">
     <div class="card-body">
+        {% if already_started %}<div class="notice notice-warn mb-sm">This booking's start time has already passed.</div>{% endif %}
         <dl class="kv">
             <dt>Resource</dt><dd>{{ booking.resource.name }}</dd>
             <dt>Requester</dt><dd>{{ booking.user.full_name }}</dd>
-            <dt>When</dt><dd>{{ booking.start_at|date:"l d F Y, H:i" }} to
-                {{ booking.end_at|date:"l d F Y, H:i" }}</dd>
+            <dt>When</dt><dd>{% period booking.start_at booking.end_at %}</dd>
             <dt>Purpose</dt><dd>{{ booking.purpose }}</dd>
             {% if booking.driver_arrangement %}
                 <dt>Driver route</dt><dd>{{ booking.get_driver_arrangement_display }}</dd>
@@ -43,7 +44,6 @@
                 <button class="btn btn-danger" type="submit" name="action" value="reject">Reject</button>
                 <button class="btn btn-primary" type="submit" name="action" value="approve">Approve</button>
             </div>
-            <p class="help mt-xs">The time is checked again when you approve. If it has been taken since, approval is refused.</p>
         </form>
     </div>
 </section>

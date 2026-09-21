@@ -177,7 +177,7 @@ class BookingSeries(models.Model):
         verbose_name_plural = "booking series"
 
     def __str__(self) -> str:
-        return f"Series {self.pk} · {self.resource}"
+        return f"Series {self.pk}, {self.resource}"
 
 
 class Booking(models.Model):
@@ -277,7 +277,7 @@ class Booking(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.booking_reference} · {self.resource.name}"
+        return f"{self.booking_reference}, {self.resource.name}"
 
     # -- Derived ---------------------------------------------------------
 

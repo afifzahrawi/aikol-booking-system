@@ -47,6 +47,7 @@
                 </div>
 
                 {% if plan.clashing or plan.outside %}
+                <div class="table-wrap">
                 <table class="data" data-client-paginate data-pagination-label="Series conflicts pagination">
                     <thead><tr><th scope="col">Date</th><th scope="col">Time</th><th scope="col">Why it is left out</th></tr></thead>
                     <tbody>
@@ -62,6 +63,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
+</div>
                 <div class="field mt-sm">
                     <label class="checkline">{{ form.accept_partial }} {{ form.accept_partial.label }}</label>
                     <p class="help">{{ form.accept_partial.help_text }}</p>

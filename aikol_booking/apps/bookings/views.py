@@ -672,7 +672,7 @@ def bookable_user_search(request):
                 {
                     "id": person.pk,
                     "label": person.full_name,
-                    "meta": f"{person.email} · {person.identification_number or 'Public account'}",
+                    "meta": f"{person.email}, {person.identification_number or 'Public account'}",
                 }
                 for person in people
             ]
@@ -801,7 +801,12 @@ def decide(request, pk: int):
     return render(
         request,
         "bookings/decide.html",
-        {"booking": booking, "form": form, "overlapping": overlapping},
+        {
+            "booking": booking,
+            "form": form,
+            "overlapping": overlapping,
+            "already_started": booking.start_at <= timezone.now(),
+        },
     )
 
 

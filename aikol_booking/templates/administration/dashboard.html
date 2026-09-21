@@ -19,7 +19,7 @@
 {% if keys_overdue %}
 <div class="notice notice-warn">
     <strong>{{ keys_overdue }} key{{ keys_overdue|pluralize }} still out after the booking ended.</strong>
-    <a href="{% url 'bookings:keys' %}">See who has them</a>.
+    <a href="{% url 'bookings:keys' %}">See who has {{ keys_overdue|pluralize:"it,them" }}</a>.
 </div>
 {% endif %}
 

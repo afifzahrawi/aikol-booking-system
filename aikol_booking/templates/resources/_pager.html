@@ -1,7 +1,7 @@
 <div class="card-foot">
     <span class="help">
         {% if page.paginator.count %}
-            Showing {{ page.object_list|length }} on this page out of {{ page.paginator.count }} total
+            Showing {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}
         {% else %}No records{% endif %}
     </span>
     {% include "_pagination.html" %}

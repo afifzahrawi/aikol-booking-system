@@ -60,7 +60,7 @@
                 </div></td>
             </tr>
         {% empty %}
-            <tr><td colspan="6"><div class="empty-state">No booking matches the current filters.</div></td></tr>
+            <tr><td colspan="6"><div class="empty-state">{% if request.GET.status or request.GET.when %}No booking matches the current filters.{% else %}You have no bookings yet. Start from <a href="{% url 'resources:venues' %}">Venues</a> or <a href="{% url 'resources:vehicles' %}">Vehicles</a>.{% endif %}</div></td></tr>
         {% endfor %}
         </tbody>
     </table>
@@ -68,8 +68,7 @@
 
     <div class="card-foot">
         <span class="help">
-            {% if page.paginator.count %}Showing {{ page.object_list|length }} on this page out of
-                {{ page.paginator.count }} total{% else %}No records{% endif %}
+            {% if page.paginator.count %}Showing {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}{% else %}No records{% endif %}
         </span>
         {% include "_pagination.html" %}
     </div>

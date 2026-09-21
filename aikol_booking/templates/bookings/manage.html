@@ -36,7 +36,7 @@
             </div>
             <div class="docket-time">
                 <strong>{{ b.start_at|date:"D d M Y" }}</strong>
-                <span>{{ b.start_at|date:"H:i" }} to {{ b.end_at|date:"D d M Y, H:i" }}</span>
+                <span>{{ b.start_at|date:"H:i" }} to {% if b.start_at|date:"Ymd" == b.end_at|date:"Ymd" %}{{ b.end_at|date:"H:i" }}{% else %}{{ b.end_at|date:"D d M Y, H:i" }}{% endif %}</span>
             </div>
             <div class="docket-state">
                 <span class="status-stamp status-{{ b.status|lower }}">{{ b.get_status_display }}</span>

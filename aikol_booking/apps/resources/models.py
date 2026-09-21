@@ -184,7 +184,7 @@ class Venue(Resource):
 
     @property
     def card_subtitle(self) -> str:
-        return f"{self.get_venue_type_display()} · {self.location} · seats {self.capacity}"
+        return f"{self.get_venue_type_display()}, {self.location}, seats {self.capacity}"
 
     def save(self, *args, **kwargs):
         self.resource_type = ResourceType.VENUE
@@ -233,8 +233,8 @@ class Vehicle(Resource):
     @property
     def card_subtitle(self) -> str:
         return (
-            f"{self.make} {self.model} {self.year} · {self.seats} seats · "
-            f"{self.get_transmission_display()} · {self.registration_number}"
+            f"{self.make} {self.model} {self.year}, {self.seats} seats, "
+            f"{self.get_transmission_display()}, {self.registration_number}"
         )
 
     def save(self, *args, **kwargs):

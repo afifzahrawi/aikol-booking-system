@@ -2,7 +2,7 @@
 {% block title %}Manage Vehicles{% endblock %}
 {% block content %}
 <div class="page-head">
-    <div><h1>Vehicles</h1><p class="lede">Kulliyyah vehicles. Status is a field on the edit form.</p></div>
+    <div><h1>Vehicles</h1><p class="lede">Kulliyyah vehicles and their availability.</p></div>
     <div class="btn-group"><a class="btn btn-primary" data-modal-form href="{% url 'resources:vehicle_new' %}">Add vehicle</a></div>
 </div>
 {% include "resources/_tabs.html" with tab='vehicles' %}
@@ -26,7 +26,7 @@
                 <td class="num">{{ car.seats }}</td>
                 <td class="nowrap">{{ car.road_tax_expiry }}</td>
                 <td class="num">{{ car.booking_count }}</td>
-                <td class="status-column">{% if car.status == 'ACTIVE' %}<span class="badge badge-active">Active</span>
+                <td class="status-column">{% if car.status == 'ACTIVE' %}<span class="badge badge-active">Available</span>
                     {% else %}<span class="badge badge-inactive">Maintenance</span>{% endif %}</td>
                 <td class="actions-column"><details class="action-menu">
                     <summary aria-label="Actions for {{ car.name }}" title="Actions">

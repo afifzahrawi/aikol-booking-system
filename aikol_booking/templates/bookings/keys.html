@@ -9,7 +9,7 @@
 {% if overdue_count %}
 <div class="notice notice-warn">
     <strong>{{ overdue_count }} key{{ overdue_count|pluralize }} still out after the booking ended.</strong>
-    Follow up with the people who collected them.
+    Follow up with {{ overdue_count|pluralize:"the person who collected it,the people who collected them" }}.
 </div>
 {% endif %}
 

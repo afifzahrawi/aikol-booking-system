@@ -48,11 +48,12 @@ class UserAdminForm(StyledFormMixin, forms.ModelForm):
             "full_name", "email", "identification_number", "phone",
             "affiliation", "role", "is_active", "email_verified",
         )
+        labels = {"is_active": "Active account", "email_verified": "Email address verified"}
         help_texts = {
             "role": "What they may do in the system.",
-            "affiliation": "Their relationship to IIUM. Kulliyyah vehicles always use a VMU driver.",
-            "is_active": "Deactivating retires an account. It never deletes it, and history stays.",
-            "email_verified": "Tick only to confirm an address by hand when email has failed.",
+            "affiliation": "Student, staff or public.",
+            "is_active": "Untick to retire the account. Its booking history is kept.",
+            "email_verified": "Tick only to confirm the address yourself when the verification email cannot reach them.",
         }
 
 
@@ -93,6 +94,8 @@ class EmailConfigurationForm(StyledFormMixin, forms.ModelForm):
             "host": "SMTP host",
             "port": "SMTP port",
             "username": "SMTP username",
+            "use_tls": "Use TLS",
+            "use_ssl": "Use SSL",
             "default_from_email": "From address",
             "timeout_seconds": "Connection timeout (seconds)",
             "is_active": "Enable email delivery",
