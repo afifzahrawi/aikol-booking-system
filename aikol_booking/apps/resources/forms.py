@@ -6,7 +6,7 @@ import re
 
 from django import forms
 
-from config.forms import StyledFormMixin
+from config.forms import StyledFormMixin, yes_no_field
 
 from .models import Facility, ResourceImage, ResourceStatus, Vehicle, Venue
 from .validators import validate_image_upload
@@ -105,8 +105,8 @@ class FacilityForm(StyledFormMixin, forms.ModelForm):
     """Display order is absent deliberately: it is set by dragging rows, not
     typed. A number field here would let two facilities claim the same position
     and would need the rest of the list renumbered by hand to insert anything."""
+    is_active = yes_no_field("Offered", help_text="No hides it from venue forms and filters; venues that have it keep it.")
     layout = [["name", "code"], ["applies_to", "is_active"]]
-
 
     class Meta:
         model = Facility

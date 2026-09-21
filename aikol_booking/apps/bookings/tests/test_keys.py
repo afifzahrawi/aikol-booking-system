@@ -284,7 +284,7 @@ class AdministrationScreenTests(KeyFixtures):
                 "full_name": self.owner.full_name, "email": self.owner.email,
                 "identification_number": "", "phone": self.owner.phone,
                 "affiliation": self.owner.affiliation, "role": self.owner.role,
-                "email_verified": "on",
+                "is_active": "False", "email_verified": "True",
             },
         )
         self.owner.refresh_from_db()

@@ -28,6 +28,32 @@ TEXT_WIDGETS = (
 )
 
 
+def yes_no_field(label: str, *, help_text: str = "", initial: bool = True) -> forms.TypedChoiceField:
+    """An on/off setting offered as Yes or No in a drop-down.
+
+    A tick box reads as a form to be filled in; on an administrator screen a
+    named choice reads as a rule being set. The model field stays a boolean:
+    the choice values are the strings Django renders for a bound boolean, so
+    the current value is selected without any translation."""
+    return forms.TypedChoiceField(
+        label=label,
+        help_text=help_text,
+        choices=(("True", "Yes"), ("False", "No")),
+        coerce=lambda value: value == "True",
+        empty_value=False,
+        initial="True" if initial else "False",
+        widget=forms.Select,
+    )
+
+
+class ImageInput(forms.ClearableFileInput):
+    """Django's file input with its "Clear" tick box replaced by a labelled
+    choice and a preview of the current image."""
+
+    template_name = "widgets/image_input.html"
+    clear_checkbox_label = "Remove the current image when I save"
+
+
 def style_widgets(form: forms.BaseForm) -> None:
     """Give every control the class the stylesheet is looking for.
 
@@ -87,10 +113,6 @@ def associate_help_text(form: forms.BaseForm) -> None:
 
 
 class StyledFormMixin:
-    # Django appends a colon to every auto-rendered label; hand-written labels
-    # elsewhere have none, and a form should not look different from the page.
-    label_suffix = ""
-
     """Mix in before `forms.Form` / `forms.ModelForm`.
 
     Set `layout` to group fields into rows. A booking's date and time belong
@@ -107,6 +129,10 @@ class StyledFormMixin:
     layout: list[list[str]] = []
 
     def __init__(self, *args, **kwargs):
+        # Django appends a colon to every auto-rendered label; hand-written
+        # labels elsewhere have none. BaseForm reads this keyword, not a class
+        # attribute, so it is set here.
+        kwargs.setdefault("label_suffix", "")
         super().__init__(*args, **kwargs)
         style_widgets(self)
         associate_help_text(self)

@@ -41,14 +41,13 @@
                 {% include "_field.html" with field=email_form.password %}
             </div>
             <div class="field-row">
-                {% include "_field.html" with field=email_form.use_tls %}
-                {% include "_field.html" with field=email_form.use_ssl %}
+                {% include "_field.html" with field=email_form.encryption %}
+                {% include "_field.html" with field=email_form.timeout_seconds %}
             </div>
             <div class="field-row">
                 {% include "_field.html" with field=email_form.default_from_email %}
-                {% include "_field.html" with field=email_form.timeout_seconds %}
+                {% include "_field.html" with field=email_form.is_active %}
             </div>
-            {% include "_field.html" with field=email_form.is_active %}
             <button class="btn btn-primary" type="submit">Save email settings</button>
         </div>
     </section>

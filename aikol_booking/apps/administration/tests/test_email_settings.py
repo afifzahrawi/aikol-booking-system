@@ -29,10 +29,10 @@ class EmailSettingsTests(TestCase):
                 "email-port": "587",
                 "email-username": "mailer",
                 "email-password": "smtp-secret-value",
-                "email-use_tls": "on",
+                "email-encryption": "tls",
                 "email-default_from_email": "AIKOL Booking <booking@example.test>",
                 "email-timeout_seconds": "20",
-                "email-is_active": "on",
+                "email-is_active": "True",
             },
         )
 
@@ -58,10 +58,10 @@ class EmailSettingsTests(TestCase):
                 "email-port": "587",
                 "email-username": "mailer",
                 "email-password": "",
-                "email-use_tls": "on",
+                "email-encryption": "tls",
                 "email-default_from_email": "booking@example.test",
                 "email-timeout_seconds": "20",
-                "email-is_active": "on",
+                "email-is_active": "True",
             },
         )
 
@@ -94,8 +94,8 @@ class EmailSettingsTests(TestCase):
                 "phone": person.phone,
                 "affiliation": person.affiliation,
                 "role": person.role,
-                "is_active": "on",
-                "email_verified": "on",
+                "is_active": "True",
+                "email_verified": "True",
             },
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )

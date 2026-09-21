@@ -45,4 +45,15 @@
         {% endif %}
     </div>
 </section>
+
+{% if person.pk != user.pk %}
+<section class="card" aria-labelledby="delete-account-heading">
+    <div class="card-body">
+        <h2 id="delete-account-heading">Delete Account</h2>
+        <p class="help">Only for an account created in error. An account with any booking history
+           is retired (Active account set to No), never deleted.</p>
+        <a class="btn btn-danger" data-modal-form href="{% url 'administration:user_delete' person.pk %}">Delete account</a>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

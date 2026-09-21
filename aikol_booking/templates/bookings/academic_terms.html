@@ -16,7 +16,10 @@
         <div class="term-breaks">
             {% for item in term.breaks.all %}<span>{{ item.name }}, {{ item.start_date|date:"d M" }} to {{ item.end_date|date:"d M" }}</span>{% empty %}<span>No breaks recorded</span>{% endfor %}
         </div>
-        <a class="btn btn-sm" data-modal-form href="{% url 'bookings:academic_term_edit' term.pk %}">Edit calendar</a>
+        <div class="btn-group term-actions">
+            <a class="btn btn-sm" data-modal-form href="{% url 'bookings:academic_term_edit' term.pk %}">Edit calendar</a>
+            <a class="btn btn-sm btn-danger" data-modal-form href="{% url 'bookings:academic_term_delete' term.pk %}">Delete</a>
+        </div>
     </article>
 {% empty %}<div class="empty-state">No academic calendar has been entered.</div>{% endfor %}
 </div>

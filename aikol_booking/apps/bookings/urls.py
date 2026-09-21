@@ -41,6 +41,11 @@ urlpatterns = [
         views.academic_term_edit,
         name="academic_term_edit",
     ),
+    path(
+        "manage/academic-calendars/<int:pk>/delete/",
+        views.academic_term_delete,
+        name="academic_term_delete",
+    ),
     # Keys are held by the office, so these are administrator-only.
     path("manage/keys/", key_views.key_register, name="keys"),
     path("manage/keys/<int:pk>/issue/", key_views.key_issue, name="key_issue"),

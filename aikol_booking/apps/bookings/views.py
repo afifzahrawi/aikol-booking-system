@@ -757,6 +757,27 @@ def academic_terms(request):
 
 
 @administrator_required
+def academic_term_delete(request, pk: int):
+    """A calendar carries no booking. Weekly requests that used it keep the
+    dates they were given; only the calendar itself and its breaks go."""
+    term = get_object_or_404(AcademicTerm, pk=pk)
+    if request.method == "POST":
+        name = term.name
+        term.delete()
+        log_action(
+            actor=request.user,
+            action="ACADEMIC_TERM_DELETED",
+            entity_type="AcademicTerm",
+            entity_id=pk,
+            description=f"{name} deleted.",
+            request=request,
+        )
+        flash.success(request, f"{name} deleted.")
+        return redirect("bookings:academic_terms")
+    return render(request, "bookings/academic_term_delete.html", {"term": term})
+
+
+@administrator_required
 @transaction.atomic
 def academic_term_edit(request, pk: int | None = None):
     term = get_object_or_404(AcademicTerm, pk=pk) if pk else AcademicTerm()

@@ -1280,3 +1280,10 @@ img, video, iframe { max-width: 100%; }
 .avail-day { color: var(--docket-green-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
 .avail-day:hover { color: var(--docket-green); }
 .datepick-help { flex-basis: 100%; margin: 0; }
+
+/* A stored image, shown before the control that replaces or removes it. */
+.image-current { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 0.5rem; }
+.image-current-preview { width: 4.5rem; height: 3rem; object-fit: contain; background: var(--docket-paper-2); border: 1px solid var(--docket-rule); border-radius: var(--radius-input); }
+.image-current-text { display: grid; gap: 0.3rem; min-width: 0; }
+.image-current .checkline { margin: 0; }
+.term-actions { flex-wrap: wrap; }

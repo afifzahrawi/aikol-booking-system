@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from django import forms
 
-from config.forms import StyledFormMixin
+from config.forms import ImageInput, StyledFormMixin, yes_no_field
 
 from apps.accounts.models import Affiliation, Role, User
 from apps.notifications.models import EmailConfiguration
@@ -34,6 +34,14 @@ class UserAdminForm(StyledFormMixin, forms.ModelForm):
     """Roles and activation. A password is never set here — an administrator
     who can read or choose someone else's password is a liability, and the
     reset flow already exists."""
+    is_active = yes_no_field(
+        "Active account", help_text="No retires the account. Its booking history is kept."
+    )
+    email_verified = yes_no_field(
+        "Email address verified",
+        help_text="Set Yes yourself only when the verification email cannot reach them.",
+        initial=False,
+    )
     layout = [
         ["full_name", "email"],
         ["identification_number", "phone"],
@@ -48,12 +56,9 @@ class UserAdminForm(StyledFormMixin, forms.ModelForm):
             "full_name", "email", "identification_number", "phone",
             "affiliation", "role", "is_active", "email_verified",
         )
-        labels = {"is_active": "Active account", "email_verified": "Email address verified"}
         help_texts = {
             "role": "What they may do in the system.",
             "affiliation": "Student, staff or public.",
-            "is_active": "Untick to retire the account. Its booking history is kept.",
-            "email_verified": "Tick only to confirm the address yourself when the verification email cannot reach them.",
         }
 
 
@@ -91,11 +96,26 @@ class EmailConfigurationForm(StyledFormMixin, forms.ModelForm):
         widget=forms.PasswordInput(render_value=False),
         help_text="Leave blank to keep the stored password.",
     )
+    ENCRYPTION_CHOICES = (
+        ("tls", "STARTTLS, usually port 587"),
+        ("ssl", "SSL, usually port 465"),
+        ("none", "None"),
+    )
+    encryption = forms.ChoiceField(
+        label="Encryption",
+        choices=ENCRYPTION_CHOICES,
+        help_text="Gmail and Microsoft 365 use STARTTLS on port 587.",
+    )
+    is_active = yes_no_field(
+        "Email delivery",
+        help_text="Yes sends the messages waiting in the outbox and every new one.",
+        initial=False,
+    )
     layout = [
         ["host", "port"],
         ["username", "password"],
-        ["use_tls", "use_ssl"],
-        ["default_from_email", "timeout_seconds"],
+        ["encryption", "timeout_seconds"],
+        ["default_from_email", "is_active"],
     ]
 
     class Meta:
@@ -105,8 +125,6 @@ class EmailConfigurationForm(StyledFormMixin, forms.ModelForm):
             "port",
             "username",
             "password",
-            "use_tls",
-            "use_ssl",
             "default_from_email",
             "timeout_seconds",
             "is_active",
@@ -115,23 +133,28 @@ class EmailConfigurationForm(StyledFormMixin, forms.ModelForm):
             "host": "SMTP host",
             "port": "SMTP port",
             "username": "SMTP username",
-            "use_tls": "Use TLS",
-            "use_ssl": "Use SSL",
             "default_from_email": "From address",
             "timeout_seconds": "Connection timeout (seconds)",
-            "is_active": "Enable email delivery",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        configuration = self.instance
+        self.fields["encryption"].initial = (
+            "ssl" if configuration.use_ssl else "tls" if configuration.use_tls else "none"
+        )
 
     def clean(self):
         cleaned = super().clean()
-        if cleaned.get("use_tls") and cleaned.get("use_ssl"):
-            raise forms.ValidationError("Choose TLS or SSL, not both.")
         if cleaned.get("is_active") and not cleaned.get("host"):
-            self.add_error("host", "Enter an SMTP host before enabling email delivery.")
+            self.add_error("host", "Enter an SMTP host before turning delivery on.")
         return cleaned
 
     def save(self, commit=True):
         configuration = super().save(commit=False)
+        encryption = self.cleaned_data["encryption"]
+        configuration.use_tls = encryption == "tls"
+        configuration.use_ssl = encryption == "ssl"
         password = self.cleaned_data.get("password")
         if password:
             configuration.set_password(password)
@@ -165,6 +188,10 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
             "login_intro": forms.Textarea(attrs={"rows": 4}),
             "login_points": forms.Textarea(attrs={"rows": 4}),
             "address": forms.Textarea(attrs={"rows": 3}),
+            "logo": ImageInput,
+            "iium_logo": ImageInput,
+            "login_image": ImageInput,
+            "home_image": ImageInput,
         }
 
     def _clean_image(self, field_name):
@@ -191,6 +218,7 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
 
 
 class AnnouncementForm(StyledFormMixin, forms.ModelForm):
+    is_active = yes_no_field("Published", help_text="No keeps it on file without showing it.")
     layout = [["tone", "is_active"], ["starts_at", "ends_at"]]
 
     class Meta:

@@ -670,6 +670,17 @@ Full detail: `docs/technical/security.md`.
   a resource code is not shown to a requester at all. `dt`, footer headings, search-bar keys and the
   like are sentence case with normal letter-spacing; status stamps and badges are the one place
   capitals remain.
+- **On/off settings on administrator screens are a Yes/No choice, not a tick box.**
+  `config.forms.yes_no_field` renders a boolean model field as a two-option drop-down and stores
+  the same boolean; the SMTP encryption is one choice (STARTTLS, SSL, None) written back to
+  `use_tls`/`use_ssl`. A tick box remains only where it is a declaration or a selection: the
+  "not from IIUM" statement, partial-series consent, weekday pickers, facility grids.
+- **Image fields use `config.forms.ImageInput`**, which shows the current image with a labelled
+  "remove on save" choice instead of Django's bare "Clear" box. `FORM_RENDERER` is
+  `TemplatesSetting` so widget templates live in `templates/widgets/`.
+- **Accounts and academic calendars can be deleted through the same two gates as a resource**
+  (retired first; no booking history, which PROTECT enforces). A person with history is retired,
+  never deleted; a calendar carries no booking and may go at any time.
 - **Counts are a ruled figures strip, not a row of cards.** `.grid-4 > .stat` and `.booking-stats`
   render as one strip with hairlines between figures (`redesign.css`, *Figures*); do not put the
   card border back or add a fifth identical box.

@@ -58,7 +58,7 @@ class SiteContentTests(TestCase):
                 "title": "Office closure",
                 "message": "Key collection closes at 4.30 pm.",
                 "tone": Announcement.Tone.IMPORTANT,
-                "is_active": "on",
+                "is_active": "True",
             },
         )
 

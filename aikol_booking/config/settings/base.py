@@ -20,6 +20,8 @@ DEBUG = False
 ALLOWED_HOSTS: list[str] = []
 
 INSTALLED_APPS = [
+    # Listed so the form renderer below still finds Django's own widget templates.
+    "django.forms",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -141,3 +143,7 @@ MESSAGE_TAGS = {_messages.WARNING: "warn"}
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DJANGO_DEFAULT_FROM_EMAIL", "AIKOL Booking <booking-aikol@iium.edu.my>"
 )
+
+# Widgets render through the project's template directories, so a widget
+# template can live in templates/widgets/ beside the page templates that use it.
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"

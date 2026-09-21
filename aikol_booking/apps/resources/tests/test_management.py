@@ -367,7 +367,7 @@ class FacilityTests(Fixtures):
         self.client.force_login(self.admin)
         self.client.post(
             reverse("resources:facility_new"),
-            {"name": "Hearing Loop", "applies_to": "VENUE", "is_active": "on"},
+            {"name": "Hearing Loop", "applies_to": "VENUE", "is_active": "True"},
         )
         facility = Facility.objects.get(name="Hearing Loop")
         self.assertEqual(facility.code, "hearing_loop")
@@ -381,7 +381,7 @@ class FacilityTests(Fixtures):
         facility = self.facilities[0]
         self.client.post(
             reverse("resources:facility_edit", args=[facility.pk]),
-            {"name": "Renamed", "code": "something_else", "applies_to": "VENUE", "is_active": "on"},
+            {"name": "Renamed", "code": "something_else", "applies_to": "VENUE", "is_active": "True"},
         )
         facility.refresh_from_db()
         self.assertEqual(facility.name, "Renamed")

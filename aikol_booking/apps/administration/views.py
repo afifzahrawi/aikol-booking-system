@@ -7,7 +7,7 @@ import datetime as dt
 from django.contrib import messages as flash
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, ProtectedError, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -156,6 +156,42 @@ def user_edit(request, pk: int):
             "bookings": person.bookings.count(),
             "totp_device": getattr(person, "totp_device", None),
         },
+    )
+
+
+@administrator_required
+def user_delete(request, pk: int):
+    """Two gates, as for a resource: the account must already be retired, and
+    nothing in the booking record may refer to it. The second is enforced by
+    the database (PROTECT); the screen says which gate stopped it."""
+    person = get_object_or_404(User, pk=pk)
+    if person.pk == request.user.pk:
+        flash.error(request, "You cannot delete your own account.")
+        return redirect("administration:user_edit", pk=pk)
+    history = (
+        Booking.objects.filter(Q(user=person) | Q(created_by=person) | Q(decided_by=person)).count()
+    )
+    if request.method == "POST" and not person.is_active and not history:
+        email = person.email
+        try:
+            person.delete()
+        except ProtectedError:
+            flash.error(request, f"{email} appears in booking or key records and cannot be deleted.")
+            return redirect("administration:user_edit", pk=pk)
+        log_action(
+            actor=request.user,
+            action="USER_DELETED",
+            entity_type="User",
+            entity_id=pk,
+            description="Account deleted; it had no booking history.",
+            request=request,
+        )
+        flash.success(request, f"{email} deleted.")
+        return redirect("administration:users")
+    return render(
+        request,
+        "administration/user_delete.html",
+        {"person": person, "history": history},
     )
 
 

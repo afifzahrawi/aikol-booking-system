@@ -373,7 +373,7 @@ class PersonalDataTests(TestCase):
                 "full_name": self.person.full_name, "email": self.person.email,
                 "identification_number": "STAFF-9001", "phone": self.person.phone,
                 "affiliation": self.person.affiliation, "role": self.person.role,
-                "is_active": "on", "email_verified": "on",
+                "is_active": "True", "email_verified": "True",
             },
         )
         for entry in AuditLog.objects.all():
