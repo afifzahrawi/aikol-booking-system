@@ -6,7 +6,10 @@ param(
     [string]$Repository = "aikol-booking",
     [string]$RuntimeServiceAccount = "aikol-runtime",
     [string]$MediaBucket = "aikol-booking-media",
-    [string]$BackupBucket = "aikol-booking-backups"
+    [string]$BackupBucket = "aikol-booking-backups",
+    # The custom hostname mapped to the public service, if one exists
+    # (see docs/technical/custom-domain.md). Left empty, only the run.app name is served.
+    [string]$PublicDomain = ""
 )
 
 # Windows PowerShell 5.1 turns anything a native command writes to stderr into
@@ -18,6 +21,13 @@ $ErrorActionPreference = "Continue"
 $runtimeAccount = "$RuntimeServiceAccount@$ProjectId.iam.gserviceaccount.com"
 $schedulerAccount = "aikol-scheduler@$ProjectId.iam.gserviceaccount.com"
 $image = "$Region-docker.pkg.dev/$ProjectId/$Repository/web:latest"
+
+# Django answers only for the hostnames it is told about. The run.app name is
+# always included: health checks and the maintenance service use it.
+function Get-AllowedHosts([string]$RunHost) {
+    if ($PublicDomain) { return "$RunHost,$PublicDomain" }
+    return $RunHost
+}
 
 # The parameter names are deliberately unusual. A script block passed in is
 # evaluated inside this function's scope, so a plain $Name or $Command in the
@@ -81,6 +91,8 @@ if (Test-Resource { gcloud run services describe $Service --region $Region }) {
 }
 if ($existingUrl) {
     $publicHost = ([Uri]$existingUrl).Host
+    # Jobs serve no request, so the run.app name alone is enough; a comma-separated
+    # list would be split by --set-env-vars anyway.
     $releaseEnvironment = "$baseEnvironment,DJANGO_ALLOWED_HOSTS=$publicHost"
     Invoke-OperationalJob "aikol-backup" $releaseEnvironment "python manage.py backup_database"
     Invoke-OperationalJob "aikol-migrate" $releaseEnvironment "python manage.py migrate --noinput && python manage.py createcachetable"
@@ -89,23 +101,22 @@ if ($existingUrl) {
 Invoke-Step "Deploying the public service" { gcloud run deploy $Service --image $image --region $Region --platform managed --allow-unauthenticated --service-account $runtimeAccount --cpu 1 --memory 512Mi --concurrency 20 --min 0 --max 1 --timeout 30 --execution-environment gen2 --no-cpu-boost --set-env-vars $bootstrapEnvironment --set-secrets $secretMap }
 $publicUrl = (gcloud run services describe $Service --region $Region --format "value(status.url)" 2>&1 | Where-Object { $_ -is [string] } | Select-Object -Last 1)
 $publicHost = ([Uri]$publicUrl).Host
-$environment = "$baseEnvironment,DJANGO_ALLOWED_HOSTS=$publicHost"
-Invoke-Step "Pinning the public hostname" { gcloud run services update $Service --region $Region --update-env-vars "DJANGO_ALLOWED_HOSTS=$publicHost" | Out-Null }
+$allowedHosts = Get-AllowedHosts $publicHost
+# "^@^" tells gcloud to split on "@" instead of ",", so a list of hostnames stays
+# one value. From PowerShell the carets reach gcloud as written.
+Invoke-Step "Pinning the public hostname" { gcloud run services update $Service --region $Region --update-env-vars "^@^DJANGO_ALLOWED_HOSTS=$allowedHosts" | Out-Null }
 
-$maintenanceEnvironment = "$environment,DJANGO_MAINTENANCE_SERVICE=1"
+$maintenanceEnvironment = "$baseEnvironment,DJANGO_ALLOWED_HOSTS=$publicHost,DJANGO_MAINTENANCE_SERVICE=1"
 Invoke-Step "Deploying the maintenance service" { gcloud run deploy $MaintenanceService --image $image --region $Region --platform managed --no-allow-unauthenticated --service-account $runtimeAccount --cpu 1 --memory 512Mi --concurrency 1 --min 0 --max 1 --timeout 600 --execution-environment gen2 --no-cpu-boost --set-env-vars $maintenanceEnvironment --set-secrets $secretMap }
 $maintenanceUrl = (gcloud run services describe $MaintenanceService --region $Region --format "value(status.url)" 2>&1 | Where-Object { $_ -is [string] } | Select-Object -Last 1)
 $maintenanceHost = ([Uri]$maintenanceUrl).Host
-# "^@^" tells gcloud to split on "@" instead of ",", so the two hostnames stay
-# one value. From PowerShell the carets reach gcloud as written; do not escape
-# them for cmd.exe.
-Invoke-Step "Pinning the maintenance hostnames" { gcloud run services update $MaintenanceService --region $Region --update-env-vars "^@^DJANGO_ALLOWED_HOSTS=$publicHost,$maintenanceHost" | Out-Null }
+Invoke-Step "Pinning the maintenance hostnames" { gcloud run services update $MaintenanceService --region $Region --update-env-vars "^@^DJANGO_ALLOWED_HOSTS=$allowedHosts,$maintenanceHost" | Out-Null }
 Invoke-Step "Allowing the scheduler to invoke maintenance" { gcloud run services add-iam-policy-binding $MaintenanceService --region $Region --member "serviceAccount:$schedulerAccount" --role roles/run.invoker | Out-Null }
 
 if (-not $existingUrl) {
     # First deployment: there was nothing to back up and no host to migrate under
     # until the service existed.
-    Invoke-OperationalJob "aikol-migrate" $environment "python manage.py migrate --noinput && python manage.py createcachetable"
+    Invoke-OperationalJob "aikol-migrate" "$baseEnvironment,DJANGO_ALLOWED_HOSTS=$publicHost" "python manage.py migrate --noinput && python manage.py createcachetable"
 }
 Write-Host "Deployment complete. Maintenance origin: $maintenanceUrl"
 Write-Host "Public origin: $publicUrl"

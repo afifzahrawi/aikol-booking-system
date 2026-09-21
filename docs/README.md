@@ -13,6 +13,7 @@ intended to be read in a browser and printed to PDF.
 | [technical/booking-rules.md](technical/booking-rules.md) | The overlap rule, status lifecycle, venue and vehicle rules, recurrence, cancellation, key handover, confirmation email, concurrency handling |
 | [technical/data-retention.md](technical/data-retention.md) | Retention policy, export and archiving, batched deletion, backup and restore |
 | [technical/managed-cloud-deployment.md](technical/managed-cloud-deployment.md) | Cloud Run, Neon and R2 deployment, scheduled jobs, cost controls and go-live checks |
+| [technical/custom-domain.md](technical/custom-domain.md) | Giving production its own hostname: registrar, verification, Cloud Run domain mapping, `-PublicDomain` |
 | [technical/security.md](technical/security.md) | Authentication, self-registration, the three roles, personal data, upload handling, destructive-operation safeguards, server operations |
 | [technical/testing-strategy.md](technical/testing-strategy.md) | What must be tested, the required conflict, recurrence, vehicle, key, email and facility tests, performance checks |
 | [technical/bulk-import.md](technical/bulk-import.md) | CSV formats, validation rules, transaction behaviour |

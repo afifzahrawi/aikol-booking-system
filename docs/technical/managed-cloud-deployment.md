@@ -89,8 +89,9 @@ first rollout and then restricts Django to that hostname:
 The script builds the image, deploys the web service, deploys the jobs, creates a pre-migration
 backup and runs migrations. On a brand-new empty database the first backup is intentionally empty.
 
-Map the public hostname to the Cloud Run service using Cloud Run domain mapping or a supported
-HTTPS proxy. Keep the generated `run.app` hostname allowed for health checks and job operations.
+A custom hostname is mapped with Cloud Run domain mapping and passed to every deployment as
+`-PublicDomain`; `custom-domain.md` has the whole procedure. The generated `run.app` hostname stays
+allowed for health checks and the scheduler.
 
 ## Scheduler setup
 

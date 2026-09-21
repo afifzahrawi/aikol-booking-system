@@ -235,7 +235,7 @@ acceptance testing to find more of that kind.
 │   ├── ux-audit.md             # the end-to-end interface audit that drove the redesign
 │   └── technical/              # architecture, schema, booking rules, retention, security,
 │                               # testing, bulk import, prototype guide, managed-cloud
-│                               # deployment, SMTP setup, action test matrix
+│                               # deployment, SMTP setup, custom domain, action test matrix
 └── tools/
     ├── generate_placeholder_images.py
     └── test_action_matrix.py   # drives every named route as every role
@@ -405,7 +405,8 @@ owner:
 
 1. **Decide on a domain.** Production answers only at the generated `*.run.app` address. A `.my`
    registration is a recurring fee and raises the question of institutional versus personal
-   ownership; neither has been decided.
+   ownership; neither has been decided. The procedure, once decided, is
+   `docs/technical/custom-domain.md`; `deploy.ps1 -PublicDomain` carries the name.
 2. **Authenticator enrolment by every approver and administrator** at their next sign-in. The
    system forces it; the office should expect the step and keep the recovery codes it prints
    somewhere that is not the phone.
