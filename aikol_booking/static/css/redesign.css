@@ -1313,3 +1313,4 @@ img, video, iframe { max-width: 100%; }
     border-radius: var(--radius-card);
     font-weight: 600;
 }
+.upload-limit-error { margin: 0.6rem 0 0; }

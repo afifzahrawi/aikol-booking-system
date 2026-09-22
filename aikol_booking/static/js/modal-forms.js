@@ -129,8 +129,13 @@
         });
         body.replaceChildren(...content.childNodes);
         document.dispatchEvent(new CustomEvent('aikol:modal-content', {detail: {root: body}}));
-        const form = body.querySelector('form');
-        if (form) wireForm(form, actionUrl);
+        // Every form, not the first one. A screen can hold several — the
+        // images screen has a Remove form per photograph before the upload
+        // form — and an unwired form submits the whole page from inside the
+        // dialog, which looks like nothing happening.
+        body.querySelectorAll('form').forEach(form => {
+            wireForm(form, form.getAttribute('action') || actionUrl);
+        });
         window.setTimeout(() => {
             const focusTarget = body.querySelector('.form-error-summary, input:not([type="hidden"]), select, textarea, button');
             if (focusTarget) focusTarget.focus();

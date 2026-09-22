@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import io
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -492,4 +493,28 @@ class MultipleImageUploadTests(Fixtures):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "broken.png")
+        self.assertEqual(ResourceImage.objects.count(), 0)
+
+
+class UploadLimitTests(Fixtures):
+    def test_the_file_field_carries_the_limit_for_the_browser(self):
+        """The server refuses an oversized file only after the whole thing has
+        arrived, and a request past the platform's ceiling never gets an answer
+        at all. The browser is told the limit so it can refuse first."""
+        self.client.force_login(self.admin)
+        html = self.client.get(
+            reverse("resources:images", args=[self.venue.pk])
+        ).content.decode()
+        self.assertIn(f'data-max-bytes="{settings.MAX_UPLOAD_BYTES}"', html)
+
+    def test_an_oversized_file_is_still_refused_by_the_server(self):
+        self.client.force_login(self.admin)
+        big = SimpleUploadedFile(
+            "huge.png", b"x" * (settings.MAX_UPLOAD_BYTES + 1), content_type="image/png"
+        )
+        response = self.client.post(
+            reverse("resources:images", args=[self.venue.pk]), {"images": big}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The limit is 5 MB")
         self.assertEqual(ResourceImage.objects.count(), 0)

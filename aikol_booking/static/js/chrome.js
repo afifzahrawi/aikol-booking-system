@@ -65,11 +65,18 @@
 
     document.querySelectorAll('[data-history-back]').forEach(function (link) {
         link.addEventListener('click', function (event) {
-            var previousIsLocal = false;
-            if (document.referrer) {
-                previousIsLocal = new URL(document.referrer).origin === window.location.origin;
-            }
-            if (previousIsLocal && window.history.length > 1) {
+            // Going back one entry is right only when the entry behind is a
+            // different page. A form that posts and redirects to itself, or a
+            // dialog that reloads the page, leaves the same URL behind: Back
+            // then appeared to do nothing and had to be pressed twice. In that
+            // case the link's own href, the section this page belongs to, is
+            // the honest destination.
+            if (!document.referrer) return;
+            var previous = new URL(document.referrer, window.location.href);
+            if (previous.origin !== window.location.origin) return;
+            var here = window.location.href.split('#')[0];
+            if (previous.href.split('#')[0] === here) return;
+            if (window.history.length > 1) {
                 event.preventDefault();
                 window.history.back();
             }

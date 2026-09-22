@@ -13,6 +13,7 @@ and the architecture rule says apps may import from `accounts`, `resources`,
 from __future__ import annotations
 
 from django import forms
+from django.conf import settings
 
 TEXT_WIDGETS = (
     forms.TextInput,
@@ -67,6 +68,12 @@ def style_widgets(form: forms.BaseForm) -> None:
         if isinstance(widget, (forms.CheckboxInput, forms.CheckboxSelectMultiple,
                                forms.RadioSelect)):
             continue
+        if isinstance(widget, forms.FileInput):
+            # The browser refuses an oversized file before the upload starts.
+            # Without this the person waits for a large file to travel, and on
+            # a platform with its own request ceiling the answer never arrives
+            # at all: the screen simply does nothing.
+            widget.attrs.setdefault("data-max-bytes", settings.MAX_UPLOAD_BYTES)
         if isinstance(widget, forms.Textarea):
             css = "textarea"
         elif isinstance(widget, (forms.Select, forms.SelectMultiple)):
