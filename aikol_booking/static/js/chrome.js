@@ -63,6 +63,23 @@
     syncMastheadHeight();
     syncMode();
 
+    // A time field with a quarter-hour step still accepts a typed 13:16: the
+    // step drives the arrows only. The value is rounded here as soon as it is
+    // entered, so the form's own rule almost never has to refuse anything.
+    document.addEventListener('change', function (event) {
+        var field = event.target;
+        if (!field.matches || !field.matches('input[type="time"][step="900"]')) return;
+        var parts = /^(\d{1,2}):(\d{2})/.exec(field.value || '');
+        if (!parts) return;
+        var minutes = Number(parts[2]);
+        var rounded = Math.round(minutes / 15) * 15;
+        var hour = Number(parts[1]) + (rounded === 60 ? 1 : 0);
+        if (hour > 23) { hour = 23; rounded = 45; }
+        if (rounded === 60) rounded = 0;
+        if (minutes === rounded) return;
+        field.value = String(hour).padStart(2, '0') + ':' + String(rounded).padStart(2, '0');
+    });
+
     document.querySelectorAll('[data-history-back]').forEach(function (link) {
         link.addEventListener('click', function (event) {
             // Going back one entry is right only when the entry behind is a

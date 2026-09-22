@@ -62,6 +62,41 @@ class OnBehalfMixin:
         return f"{person.full_name}, {describe_person(person)}"
 
 
+QUARTER_MINUTES = (0, 15, 30, 45)
+
+
+def quarter_hour(value):
+    """Refuse a time that is not on the quarter.
+
+    `step="900"` drives the spinner arrows and nothing else: a typed 13:16 is
+    accepted by the browser, and the form is rendered with novalidate anyway.
+    The rule has to live here, where it cannot be bypassed, because a room
+    handed over at 13:16 is a room nobody can describe in a timetable.
+    """
+    if value is None:
+        return value
+    if value.minute not in QUARTER_MINUTES or value.second or value.microsecond:
+        raise forms.ValidationError(
+            "Set the time on the quarter hour: %(examples)s.",
+            params={"examples": f"{value.hour:02d}:00, {value.hour:02d}:15, "
+                                f"{value.hour:02d}:30 or {value.hour:02d}:45"},
+        )
+    return value
+
+
+class TimeOnTheQuarterField(forms.TimeField):
+    """A time field that only accepts :00, :15, :30 and :45."""
+
+    def __init__(self, *args, **kwargs):
+        attrs = {"type": "time", "step": 900}
+        attrs.update(kwargs.pop("attrs", {}))
+        kwargs.setdefault("widget", forms.TimeInput(attrs=attrs))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, value):
+        return quarter_hour(super().clean(value))
+
+
 class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
     """One form for both kinds of resource.
 
@@ -80,18 +115,14 @@ class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
     start_date = forms.DateField(
         label="Start Date", widget=forms.DateInput(attrs={"type": "date"})
     )
-    start_time = forms.TimeField(
-        label="Start Time", widget=forms.TimeInput(attrs={"type": "time", "step": 900})
-    )
+    start_time = TimeOnTheQuarterField(label="Start Time")
     end_date = forms.DateField(
         required=False,
         label="End Date",
         widget=forms.DateInput(attrs={"type": "date"}),
         help_text="Vehicles only. Leave blank for a same-day trip.",
     )
-    end_time = forms.TimeField(
-        label="End Time", widget=forms.TimeInput(attrs={"type": "time", "step": 900})
-    )
+    end_time = TimeOnTheQuarterField(label="End Time")
     purpose = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 3}),
         help_text="Visible to the requester and on the record.",
@@ -211,12 +242,8 @@ class RecurrenceForm(OnBehalfMixin, StyledFormMixin, forms.Form):
         self.fields["term"].initial = AcademicTerm.current()
         for index, label in WEEKDAYS:
             self.fields[f"day_{index}"] = forms.BooleanField(required=False, label=label)
-            self.fields[f"from_{index}"] = forms.TimeField(
-                required=False, widget=forms.TimeInput(attrs={"type": "time"})
-            )
-            self.fields[f"to_{index}"] = forms.TimeField(
-                required=False, widget=forms.TimeInput(attrs={"type": "time"})
-            )
+            self.fields[f"from_{index}"] = TimeOnTheQuarterField(required=False)
+            self.fields[f"to_{index}"] = TimeOnTheQuarterField(required=False)
 
     def weekday_rows(self):
         """The three fields for each weekday, grouped, so the template renders a

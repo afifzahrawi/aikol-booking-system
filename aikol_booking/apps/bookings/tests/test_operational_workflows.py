@@ -367,3 +367,38 @@ class AvailabilityChartTests(OperationalFixtures):
             {"date": self.day.isoformat()},
         )
         self.assertContains(office, "Bookings in This Period")
+
+
+class QuarterHourTests(OperationalFixtures):
+    def submit(self, start="14:07", end="15:00"):
+        self.client.force_login(self.requester)
+        return self.client.post(
+            reverse("bookings:create", args=[self.room.pk]),
+            {
+                "start_date": (self.day + dt.timedelta(days=1)).isoformat(),
+                "start_time": start,
+                "end_time": end,
+                "purpose": "Quarter hour check",
+                "attendees": 4,
+            },
+        )
+
+    def test_a_time_off_the_quarter_is_refused(self):
+        """step="900" drives the spinner arrows and nothing else, and the form
+        is rendered with novalidate, so a typed 14:07 reached the server."""
+        response = self.submit()
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "on the quarter hour")
+        self.assertFalse(Booking.objects.exists())
+
+    def test_the_end_time_is_checked_too(self):
+        response = self.submit(start="14:00", end="15:20")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Booking.objects.exists())
+
+    def test_a_quarter_hour_is_accepted(self):
+        response = self.submit(start="14:15", end="15:45")
+        self.assertEqual(response.status_code, 302)
+        booking = Booking.objects.get()
+        self.assertEqual(timezone.localtime(booking.start_at).minute, 15)
+        self.assertEqual(timezone.localtime(booking.end_at).minute, 45)
