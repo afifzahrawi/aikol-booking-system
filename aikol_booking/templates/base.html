@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260922-3">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260922-4">
 </head>
 <body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -68,7 +68,6 @@
     <a href="{% url 'resources:vehicles' %}" {% if shell_nav == 'vehicles' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 16-1-4 2-5h12l2 5-1 4M6 16h12M7 16v3M17 16v3"></path><circle cx="7" cy="13" r="1"></circle><circle cx="17" cy="13" r="1"></circle></svg><span class="nav-link-label">Vehicles</span></a>
 {% if user.is_approver %}
     <span class="nav-divider" role="separator"></span>
-    <span class="rail-heading">Kulliyyah Office</span>
 {% endif %}
 {% if user.is_administrator %}
     <a href="{% url 'administration:dashboard' %}" {% if shell_nav == 'overview' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"></path></svg><span class="nav-link-label">Overview</span></a>

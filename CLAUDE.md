@@ -676,8 +676,8 @@ Full detail: `docs/technical/security.md`.
   `use_tls`/`use_ssl`. A tick box remains only where it is a declaration or a selection: the
   "not from IIUM" statement, partial-series consent, weekday pickers, facility grids.
 - **Staff have one rail, not two views.** A person who approves bookings also makes them, so the
-  requester's entries sit above a rule and the Kulliyyah's work below it, under a "Kulliyyah
-  Office" heading. There is no User View / Administrator View switch. `shell_nav` distinguishes
+  requester's entries sit above a rule and the Kulliyyah's work below it. There is no User View /
+  Administrator View switch, and no heading over either group: the rule is the separation. `shell_nav` distinguishes
   `home` (`/`) from `overview` (`/manage/`), and a resource page resolves to `venues` or
   `vehicles` by looking the resource up, because the path does not say which kind it is.
 - **A long form saves from every section**, not only from the bar at the foot: someone editing the
