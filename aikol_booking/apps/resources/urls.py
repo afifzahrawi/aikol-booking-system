@@ -23,6 +23,11 @@ urlpatterns = [
         views.resource_image_delete,
         name="image_delete",
     ),
+    path(
+        "manage/resource/<int:pk>/images/<int:image_pk>/move/",
+        views.resource_image_move,
+        name="image_move",
+    ),
     path("manage/facilities/", views.manage_facilities, name="manage_facilities"),
     path("manage/facilities/new/", views.facility_edit, name="facility_new"),
     path("manage/facilities/<int:pk>/", views.facility_edit, name="facility_edit"),

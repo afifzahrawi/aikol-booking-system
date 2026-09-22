@@ -333,6 +333,33 @@ def resource_images(request, pk: int):
 
 @administrator_required
 @require_POST
+def resource_image_move(request, pk: int, image_pk: int):
+    """Swap a photograph with its neighbour. The first is the main image, so
+    the order is what decides which photograph represents the resource."""
+    image = get_object_or_404(ResourceImage, pk=image_pk, resource_id=pk)
+    images = list(ResourceImage.objects.filter(resource_id=pk).order_by("display_order", "id"))
+    index = next(i for i, item in enumerate(images) if item.pk == image.pk)
+    step = -1 if request.POST.get("direction") == "earlier" else 1
+    target = index + step
+    if 0 <= target < len(images):
+        images[index], images[target] = images[target], images[index]
+        for position, item in enumerate(images):
+            if item.display_order != position:
+                item.display_order = position
+                item.save(update_fields=["display_order"])
+        log_action(
+            actor=request.user,
+            action="RESOURCE_IMAGE_REORDERED",
+            entity_type="Resource",
+            entity_id=pk,
+            description="Photograph order changed.",
+            request=request,
+        )
+    return redirect("resources:images", pk=pk)
+
+
+@administrator_required
+@require_POST
 def resource_image_delete(request, pk: int, image_pk: int):
     image = get_object_or_404(ResourceImage, pk=image_pk, resource_id=pk)
     image.delete()

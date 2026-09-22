@@ -12,25 +12,45 @@ from .models import SiteContent
 #: form all hang off one resource, but the path does not say whether it is a
 #: room or a car, so the rail highlighted neither. /series/<pk>/ is deliberately
 #: not here: that number is a series, not a resource.
-RESOURCE_PATH = re.compile(r"^/resource/(\d+)/")
+RESOURCE_PATH = re.compile(r"^/(?:manage/)?resource/(\d+)/")
+
+#: Where Back goes when there is nowhere to go back to. The section the page
+#: belongs to, not the dashboard: somebody editing a room's photographs wants
+#: the room list, and being sent to the Overview loses their place.
+SECTION_ROOTS = {
+    "home": "accounts:dashboard",
+    "mine": "bookings:mine",
+    "venues": "resources:venues",
+    "vehicles": "resources:vehicles",
+    "overview": "administration:dashboard",
+    "bookings": "bookings:manage",
+    "approvals": "bookings:approvals",
+    "keys": "bookings:keys",
+    "resources": "resources:manage_venues",
+    "users": "administration:users",
+    "reports": "reporting:reports",
+    "system": "administration:settings",
+}
 
 
-def _resource_nav(path: str) -> str:
+def _resource_kind(path: str) -> str:
+    """"VENUE", "VEHICLE" or "" for a path that names one resource."""
     match = RESOURCE_PATH.match(path)
     if not match:
         return ""
-    from apps.resources.models import Resource, ResourceType
+    from apps.resources.models import Resource
 
-    kind = (
+    return (
         Resource.objects.filter(pk=match.group(1))
         .values_list("resource_type", flat=True)
         .first()
+        or ""
     )
-    if kind == ResourceType.VENUE:
-        return "venues"
-    if kind == ResourceType.VEHICLE:
-        return "vehicles"
-    return ""
+
+
+def _resource_nav(path: str) -> str:
+    kind = _resource_kind(path)
+    return {"VENUE": "venues", "VEHICLE": "vehicles"}.get(kind, "")
 
 
 def site_content(request):
@@ -39,6 +59,19 @@ def site_content(request):
     # RequestSite. A distinct key keeps editable content from being replaced on
     # the sign-in and password-reset screens.
     return {"site_content": SiteContent.load()}
+
+
+def _section_root(path: str, shell_nav: str, is_admin_area: bool) -> str:
+    """The list a page belongs to. A room's photographs belong to the room
+    list, and a car's to the car list, which the nav key alone cannot say."""
+    if shell_nav == "resources":
+        kind = _resource_kind(path)
+        if kind == "VEHICLE" or path.startswith("/manage/cars/"):
+            return "resources:manage_vehicles"
+        if path.startswith("/manage/facilities/"):
+            return "resources:manage_facilities"
+    default = "administration:dashboard" if is_admin_area else "accounts:dashboard"
+    return SECTION_ROOTS.get(shell_nav, default)
 
 
 def chrome(request):
@@ -84,7 +117,9 @@ def chrome(request):
             "pending_count": 0,
             "shell_nav": shell_nav,
             "show_back_navigation": view_name not in requester_roots,
-            "back_fallback_url": reverse("accounts:dashboard"),
+            "back_fallback_url": reverse(
+                SECTION_ROOTS.get(shell_nav, "accounts:dashboard")
+            ),
         }
 
     from apps.bookings.models import Booking, BookingStatus
@@ -128,7 +163,5 @@ def chrome(request):
         "pending_count": Booking.objects.filter(status=BookingStatus.PENDING).count(),
         "shell_nav": shell_nav,
         "show_back_navigation": view_name not in (admin_roots if is_admin_area else requester_roots),
-        "back_fallback_url": reverse(
-            "administration:dashboard" if is_admin_area else "accounts:dashboard"
-        ),
+        "back_fallback_url": reverse(_section_root(path, shell_nav, is_admin_area)),
     }

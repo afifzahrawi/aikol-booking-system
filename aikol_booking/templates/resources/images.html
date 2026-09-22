@@ -4,6 +4,9 @@
 {% block content %}
 <h1>Images: {{ resource.name }}</h1>
 
+<p class="lede">The first photograph represents the resource everywhere else. Move one to the front to
+   make it the main image.</p>
+
 <div class="grid grid-2">
     {% for photo in resource.images.all %}
         <figure class="card image-card">
@@ -12,10 +15,24 @@
                 <figcaption class="help">
                     {{ photo.caption|default:"No caption" }}{% if forloop.first %} (main image){% endif %}
                 </figcaption>
-                <form method="post" action="{% url 'resources:image_delete' resource.pk photo.pk %}">
-                    {% csrf_token %}
-                    <button class="btn btn-sm btn-danger" type="submit">Remove</button>
-                </form>
+                <div class="image-card-actions">
+                    <form method="post" action="{% url 'resources:image_move' resource.pk photo.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="direction" value="earlier">
+                        <button class="btn btn-sm" type="submit" {% if forloop.first %}disabled{% endif %}
+                                aria-label="Move this photograph earlier" title="Move earlier">&uarr;</button>
+                    </form>
+                    <form method="post" action="{% url 'resources:image_move' resource.pk photo.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="direction" value="later">
+                        <button class="btn btn-sm" type="submit" {% if forloop.last %}disabled{% endif %}
+                                aria-label="Move this photograph later" title="Move later">&darr;</button>
+                    </form>
+                    <form method="post" action="{% url 'resources:image_delete' resource.pk photo.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-danger" type="submit">Remove</button>
+                    </form>
+                </div>
             </div>
         </figure>
     {% empty %}

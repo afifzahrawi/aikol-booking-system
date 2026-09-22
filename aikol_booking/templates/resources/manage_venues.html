@@ -33,7 +33,7 @@
                     <div class="action-menu-list">
                         <a href="{% url 'resources:detail' venue.pk %}">Preview</a>
                         <a data-modal-form href="{% url 'resources:venue_edit' venue.pk %}">Edit</a>
-                        <a data-modal-form href="{% url 'resources:images' venue.pk %}">Images</a>
+                        <a href="{% url 'resources:images' venue.pk %}">Images</a>
                         <a class="danger" data-modal-form href="{% url 'resources:delete' venue.pk %}">Delete</a>
                     </div>
                 </details></td>

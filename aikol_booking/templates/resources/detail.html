@@ -14,34 +14,50 @@
         {% else %}
             <a class="btn" data-modal-form href="{% url 'resources:venue_edit' resource.pk %}">Edit</a>
         {% endif %}
-        <a class="btn" data-modal-form href="{% url 'resources:images' resource.pk %}">Images</a>
+        <a class="btn" href="{% url 'resources:images' resource.pk %}">Images</a>
     </div>
     {% endif %}
 </div>
 
+{% comment %} The thumbnails are buttons, so a photograph can be brought to the
+   front by pointer or keyboard. Without the script every photograph is still
+   reachable: the list simply does not swap in place. {% endcomment %}
 {% if not resource.images.all and resource.placeholder %}
-<div class="gallery mb-md">
-    <img class="gallery-main framed" src="{% static resource.placeholder %}"
+<div class="gallery mb-md" data-gallery>
+    <img class="gallery-main framed" data-gallery-main src="{% static resource.placeholder %}"
          alt="Placeholder drawing of {{ resource.name }}">
     <div class="gallery-thumbs">
         {% for view in views %}
-            <img class="thumb framed" src="{% static view %}" alt="Placeholder view of {{ resource.name }}">
+            <button class="thumb-button" type="button" data-gallery-thumb
+                    data-full="{% static view %}" aria-current="{% if forloop.first %}true{% else %}false{% endif %}">
+                <img class="thumb framed" src="{% static view %}" alt="Placeholder view {{ forloop.counter }} of {{ resource.name }}">
+            </button>
         {% endfor %}
     </div>
 </div>
 {% endif %}
 
 {% if resource.images.all %}
-<div class="gallery mb-md">
+<div class="gallery mb-md" data-gallery>
     {% with resource.images.all|first as main %}
-        <img class="gallery-main framed" src="{{ main.image.url }}"
+        <img class="gallery-main framed" data-gallery-main src="{{ main.image.url }}"
              alt="{{ main.caption|default:resource.name }}">
     {% endwith %}
     {% if resource.images.all|length > 1 %}
+        <p class="help gallery-caption" data-gallery-caption>
+            {% with resource.images.all|first as main %}1 of {{ resource.images.all|length }}{% if main.caption %}. {{ main.caption }}{% endif %}{% endwith %}
+        </p>
         <div class="gallery-thumbs">
             {% for photo in resource.images.all %}
-                <img class="thumb framed" src="{{ photo.image.url }}"
-                     alt="{{ photo.caption|default:resource.name }}">
+                <button class="thumb-button" type="button" data-gallery-thumb
+                        data-full="{{ photo.image.url }}"
+                        data-caption="{{ photo.caption }}"
+                        data-position="{{ forloop.counter }} of {{ resource.images.all|length }}"
+                        aria-current="{% if forloop.first %}true{% else %}false{% endif %}"
+                        aria-label="Show photograph {{ forloop.counter }}{% if photo.caption %}, {{ photo.caption }}{% endif %}">
+                    <img class="thumb framed" src="{{ photo.image.url }}"
+                         alt="{{ photo.caption|default:resource.name }}">
+                </button>
             {% endfor %}
         </div>
     {% endif %}
@@ -91,3 +107,5 @@
     {% endif %}
 </div>
 {% endblock %}
+
+{% block scripts %}{% load static %}<script src="{% static 'js/gallery.js' %}?v=20260922-1" defer></script>{% endblock %}

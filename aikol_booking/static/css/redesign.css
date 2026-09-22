@@ -1294,6 +1294,8 @@ img, video, iframe { max-width: 100%; }
     padding: 0.9rem 1.1rem 1rem;
 }
 .image-card-foot figcaption { margin: 0; }
+.image-card-actions { display: flex; align-items: center; gap: 0.4rem; }
+.image-card-actions .btn { min-width: 2.5rem; }
 
 /* The page says where to drop only while something is being dragged over it. */
 .image-drop-overlay {
@@ -1314,3 +1316,20 @@ img, video, iframe { max-width: 100%; }
     font-weight: 600;
 }
 .upload-limit-error { margin: 0.6rem 0 0; }
+
+/* Gallery: the thumbnails are buttons, and the one on show says so. */
+.gallery-thumbs { flex-wrap: wrap; }
+.thumb-button {
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-input);
+    cursor: pointer;
+}
+.thumb-button img { display: block; transition: opacity var(--dur-fast) var(--ease-out); }
+.thumb-button[aria-current="false"] img { opacity: 0.68; }
+.thumb-button:hover img { opacity: 1; }
+.thumb-button[aria-current="true"] img { border-color: var(--docket-green); border-width: 2px; }
+.thumb-button:focus-visible { outline: 2px solid var(--docket-green); outline-offset: 2px; }
+.gallery-caption { margin: 0.55rem 0 0; }
+.gallery-thumbs { margin-top: 0.75rem; }

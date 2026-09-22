@@ -294,3 +294,53 @@ class RailHighlightTests(TestCase):
             reverse("bookings:availability", args=[self.car.pk]),
         ):
             self.assert_current(url, "Vehicles")
+
+
+class BackDestinationTests(TestCase):
+    """Back falls through to the list a page belongs to. Sending somebody from
+    a room's photographs to the Overview loses their place."""
+
+    def setUp(self):
+        from apps.accounts.models import Affiliation, Role, User
+        from apps.resources.models import Vehicle, Venue
+
+        self.admin = User.objects.create_user(
+            email="office@demo.aikol.test", password="prototype-password-1",
+            full_name="Kulliyyah Office", phone="03-6196 4000",
+            affiliation=Affiliation.STAFF, role=Role.ADMINISTRATOR, email_verified=True,
+        )
+        self.room = Venue.objects.create(
+            code="ROOM-BACK", name="Back Room", venue_type=Venue.VenueType.MEETING,
+            location="Level 1", capacity=8,
+        )
+        self.car = Vehicle.objects.create(
+            code="CAR-BACK", name="Back Car", registration_number="WBK 1",
+            make="Proton", model="Saga", year=2024, seats=5,
+            road_tax_expiry=timezone.localdate() + dt.timedelta(days=200),
+        )
+        self.client.force_login(self.admin)
+
+    def assert_back_to(self, url, expected):
+        html = self.client.get(url).content.decode()
+        at = html.find('class="back-navigation"')
+        self.assertGreater(at, 0, f"{url} offers Back")
+        tag = html[at:html.index(">", at)]
+        self.assertIn(f'href="{expected}"', html[html.rfind("<a ", 0, at):at] + tag)
+
+    def test_a_rooms_photographs_go_back_to_the_room_list(self):
+        self.assert_back_to(
+            reverse("resources:images", args=[self.room.pk]),
+            reverse("resources:manage_venues"),
+        )
+
+    def test_a_cars_photographs_go_back_to_the_car_list(self):
+        self.assert_back_to(
+            reverse("resources:images", args=[self.car.pk]),
+            reverse("resources:manage_vehicles"),
+        )
+
+    def test_a_person_goes_back_to_people(self):
+        self.assert_back_to(
+            reverse("administration:user_edit", args=[self.admin.pk]),
+            reverse("administration:users"),
+        )

@@ -518,3 +518,106 @@ class UploadLimitTests(Fixtures):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "The limit is 5 MB")
         self.assertEqual(ResourceImage.objects.count(), 0)
+
+
+class ImageOrderTests(Fixtures):
+    def make_images(self, count=3):
+        images = []
+        for index in range(count):
+            upload = SimpleUploadedFile(f"{index}.png", png_bytes(), content_type="image/png")
+            images.append(
+                ResourceImage.objects.create(
+                    resource=self.venue, image=upload, display_order=index
+                )
+            )
+        return images
+
+    def order(self):
+        return list(
+            ResourceImage.objects.filter(resource=self.venue)
+            .order_by("display_order", "id")
+            .values_list("pk", flat=True)
+        )
+
+    def tearDown(self):
+        for image in ResourceImage.objects.all():
+            image.image.delete(save=False)
+
+    def test_a_photograph_moves_earlier_and_becomes_the_main_image(self):
+        first, second, third = self.make_images()
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse("resources:image_move", args=[self.venue.pk, second.pk]),
+            {"direction": "earlier"},
+        )
+        self.assertEqual(self.order(), [second.pk, first.pk, third.pk])
+
+    def test_a_photograph_moves_later(self):
+        first, second, third = self.make_images()
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse("resources:image_move", args=[self.venue.pk, first.pk]),
+            {"direction": "later"},
+        )
+        self.assertEqual(self.order(), [second.pk, first.pk, third.pk])
+
+    def test_the_ends_stay_put(self):
+        first, second, third = self.make_images()
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse("resources:image_move", args=[self.venue.pk, first.pk]),
+            {"direction": "earlier"},
+        )
+        self.client.post(
+            reverse("resources:image_move", args=[self.venue.pk, third.pk]),
+            {"direction": "later"},
+        )
+        self.assertEqual(self.order(), [first.pk, second.pk, third.pk])
+
+    def test_an_ordinary_user_cannot_reorder(self):
+        first, second, _ = self.make_images()
+        self.client.force_login(self.plain)
+        response = self.client.post(
+            reverse("resources:image_move", args=[self.venue.pk, second.pk]),
+            {"direction": "earlier"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.order()[0], first.pk)
+
+
+class GalleryTests(Fixtures):
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.plain)
+
+    def tearDown(self):
+        for image in ResourceImage.objects.all():
+            image.image.delete(save=False)
+
+    def test_each_photograph_is_a_control_that_brings_it_to_the_front(self):
+        """Only the first photograph was ever shown large; the rest sat as
+        pictures nothing could do anything with."""
+        for index in range(3):
+            ResourceImage.objects.create(
+                resource=self.venue,
+                image=SimpleUploadedFile(f"{index}.png", png_bytes(), content_type="image/png"),
+                caption=f"View {index}",
+                display_order=index,
+            )
+        html = self.client.get(
+            reverse("resources:detail", args=[self.venue.pk])
+        ).content.decode()
+        self.assertEqual(html.count("data-gallery-thumb"), 3)
+        self.assertIn('aria-current="true"', html)
+        self.assertIn("1 of 3", html)
+        self.assertIn("js/gallery.js", html)
+
+    def test_a_single_photograph_needs_no_thumbnails(self):
+        ResourceImage.objects.create(
+            resource=self.venue,
+            image=SimpleUploadedFile("one.png", png_bytes(), content_type="image/png"),
+        )
+        html = self.client.get(
+            reverse("resources:detail", args=[self.venue.pk])
+        ).content.decode()
+        self.assertNotIn("data-gallery-thumb", html)
