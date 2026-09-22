@@ -86,10 +86,17 @@ class KeyCustodyTests(KeyFixtures):
         self.assertIn("only for an approved booking", str(ctx.exception))
         self.assertEqual(KeyHandover.objects.count(), 0)
 
-    def test_the_collector_must_be_named(self):
-        with self.assertRaises(ValidationError) as ctx:
-            issue_key(self.booking, issued_by=self.clerk, collected_by_name="   ")
-        self.assertIn("often not the person who booked", str(ctx.exception))
+    def test_a_blank_collector_records_the_person_who_booked(self):
+        """The office types a name only when somebody else comes for the key.
+        The row still answers "who has this" either way."""
+        handover = issue_key(self.booking, issued_by=self.clerk, collected_by_name="   ")
+        self.assertEqual(handover.collected_by_name, self.booking.user.full_name)
+
+    def test_a_named_collector_is_kept_as_typed(self):
+        handover = issue_key(
+            self.booking, issued_by=self.clerk, collected_by_name=" Aiman bin Hassan "
+        )
+        self.assertEqual(handover.collected_by_name, "Aiman bin Hassan")
 
     def test_a_key_cannot_be_issued_twice(self):
         issue_key(self.booking, issued_by=self.clerk, collected_by_name="Aiman")
@@ -322,3 +329,25 @@ class AdministrationScreenTests(KeyFixtures):
             settings_html.index("<main") : settings_html.index("</main>")
         ]
         self.assertIn('method="post"', settings_body)
+
+
+class BlankCollectorViewTests(KeyFixtures):
+    def test_the_office_can_leave_the_collector_blank(self):
+        self.client.force_login(self.clerk)
+        response = self.client.post(
+            reverse("bookings:key_issue", args=[self.booking.pk]),
+            {"collected_by_name": "", "collected_by_contact": ""},
+        )
+        self.assertEqual(response.status_code, 302)
+        handover = KeyHandover.objects.get(booking=self.booking)
+        self.assertEqual(handover.collected_by_name, self.booking.user.full_name)
+
+    def test_the_form_does_not_mark_the_collector_required(self):
+        self.client.force_login(self.clerk)
+        html = self.client.get(
+            reverse("bookings:key_issue", args=[self.booking.pk])
+        ).content.decode()
+        field = html[html.index('name="collected_by_name"') - 200 : html.index('name="collected_by_name"') + 200]
+        self.assertNotIn("required", field)
+        self.assertIn("Telephone number", html)
+        self.assertNotIn("Their telephone number", html)

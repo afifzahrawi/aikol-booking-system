@@ -29,7 +29,7 @@ def issue_key(
     booking: Booking,
     *,
     issued_by,
-    collected_by_name: str,
+    collected_by_name: str = "",
     collected_by_contact: str = "",
 ) -> KeyHandover:
     """Record that the key has been handed over.
@@ -47,10 +47,6 @@ def issue_key(
             "The vehicle still needs Kulliyyah management approval and an assigned VMU driver "
             "before its key can be issued."
         )
-    if not collected_by_name.strip():
-        raise ValidationError(
-            "Record who is collecting the key. It is often not the person who booked."
-        )
 
     handover, _ = KeyHandover.objects.get_or_create(booking=booking)
     if handover.issued_at:
@@ -60,7 +56,9 @@ def issue_key(
         )
     handover.issued_at = timezone.now()
     handover.issued_by = issued_by
-    handover.collected_by_name = collected_by_name.strip()
+    # Blank means the person who booked came for it. The record keeps a name
+    # either way: "who has this key" must be answerable from the row alone.
+    handover.collected_by_name = collected_by_name.strip() or booking.user.full_name
     handover.collected_by_contact = collected_by_contact.strip()
     handover.save()
     return handover

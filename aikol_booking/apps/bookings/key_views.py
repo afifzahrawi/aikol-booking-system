@@ -65,7 +65,7 @@ def key_issue(request, pk: int):
     form = IssueKeyForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
-            issue_key(
+            handover = issue_key(
                 booking,
                 issued_by=request.user,
                 collected_by_name=form.cleaned_data["collected_by_name"],
@@ -83,7 +83,7 @@ def key_issue(request, pk: int):
                 # The collector's telephone number is personal data and stays
                 # out of the log's free text.
                 description=f"Key for {booking.booking_reference} issued to "
-                f"{form.cleaned_data['collected_by_name']}.",
+                f"{handover.collected_by_name}.",
                 request=request,
             )
             flash.success(request, f"Key issued for {booking.booking_reference}.")

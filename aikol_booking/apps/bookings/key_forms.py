@@ -8,22 +8,22 @@ from config.forms import StyledFormMixin
 
 
 class IssueKeyForm(StyledFormMixin, forms.Form):
-    """Who is collecting is asked for, not assumed.
+    """Who is collecting, when that is somebody else.
 
-    Defaulting this to the person who booked would be a guess dressed up as a
-    record, and the whole reason decision 17 exists is that the two are often
-    different people.
+    The name is optional and the record is never left empty: blank means the
+    person who booked came for the key, and the service writes their name.
+    Typing it out again for the common case was work for nothing.
     """
     layout = [["collected_by_name", "collected_by_contact"]]
 
-
     collected_by_name = forms.CharField(
         max_length=150,
+        required=False,
         label="Collected by",
-        help_text="The person actually taking the key. Often not the person who booked.",
+        help_text="Leave blank if the person who booked is collecting it themselves.",
     )
     collected_by_contact = forms.CharField(
-        max_length=20, required=False, label="Their telephone number"
+        max_length=20, required=False, label="Telephone number"
     )
 
 
