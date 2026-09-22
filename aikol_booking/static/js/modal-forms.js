@@ -9,6 +9,27 @@
 
     let sourceUrl = window.location.href;
 
+    // A popup that says only "it did not work" leaves somebody stuck: they
+    // cannot tell whether the decision was recorded, and the popup offers no
+    // way out. Say what happened, and always offer the full page.
+    function failureNotice(message, url) {
+        const link = url ? ` <a href="${url}">Open the full page</a>.` : "";
+        return `<p class="notice notice-error" role="alert">${message}${link}</p>`;
+    }
+
+    function describeStatus(status) {
+        if (status === 403) {
+            return "Your session has expired, so that was not saved. Reload the page and sign in again.";
+        }
+        if (status === 404) {
+            return "That record is no longer there. It may already have been decided.";
+        }
+        if (status >= 500) {
+            return "The server could not complete that. It may not have been saved.";
+        }
+        return "That could not be completed.";
+    }
+
     function setBusy(label) {
         title.textContent = label || 'Action';
         body.innerHTML = '<p class="action-dialog-loading" role="status">Loading form…</p>';
@@ -54,13 +75,24 @@
                     window.location.assign(form.id === 'bookingForm' ? response.url : sourceUrl);
                     return;
                 }
+                if (!response.ok) {
+                    body.insertAdjacentHTML(
+                        'afterbegin',
+                        failureNotice(describeStatus(response.status), actionUrl)
+                    );
+                    return;
+                }
                 const html = await response.text();
                 const parsed = new DOMParser().parseFromString(html, 'text/html');
                 render(parsed, actionUrl);
             } catch (error) {
+                console.error('Modal form submit failed', error);
                 body.insertAdjacentHTML(
                     'afterbegin',
-                    '<p class="notice notice-error" role="alert">The form could not be loaded. Close this popup and try again.</p>'
+                    failureNotice(
+                        'That did not reach the server, so it was not saved. Check your connection and try again.',
+                        actionUrl
+                    )
                 );
             } finally {
                 form.removeAttribute('aria-busy');
@@ -107,10 +139,18 @@
                 credentials: 'same-origin',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             });
+            if (!response.ok) {
+                body.innerHTML = failureNotice(describeStatus(response.status), link.href);
+                return;
+            }
             const html = await response.text();
             render(new DOMParser().parseFromString(html, 'text/html'), link.href);
         } catch (error) {
-            body.innerHTML = '<p class="notice notice-error" role="alert">The form could not be loaded. Close this popup and try again.</p>';
+            console.error('Modal form open failed', error);
+            body.innerHTML = failureNotice(
+                'That did not load. Check your connection and try again.',
+                link.href
+            );
         }
     }
 

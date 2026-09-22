@@ -6,7 +6,7 @@
 
 <section class="card">
     <div class="card-body">
-        {% if already_started %}<div class="notice notice-warn mb-sm">This booking's start time has already passed.</div>{% endif %}
+        {% if booking.status != 'PENDING' %}<div class="notice notice-warn mb-sm">{{ booking.booking_reference }} is already {{ booking.get_status_display|lower }}. Deciding it again is refused.</div>{% elif already_started %}<div class="notice notice-warn mb-sm">This booking's start time has already passed.</div>{% endif %}
         <dl class="kv">
             <dt>Resource</dt><dd>{{ booking.resource.name }}</dd>
             <dt>Requester</dt><dd>{{ booking.user.full_name }}</dd>
