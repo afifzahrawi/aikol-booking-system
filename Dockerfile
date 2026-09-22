@@ -6,22 +6,26 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends --yes ca-certificates curl gnupg \
+# apt has no terminal during a build, so it prints several lines about
+# frontends it cannot use before falling back to the noninteractive one.
+# Naming that frontend outright keeps the build log readable. pip's root
+# warning is about machines with system packages to damage; this has none.
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes ca-certificates curl gnupg \
     && install -d /usr/share/postgresql-common/pgdg \
     && curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc \
        | gpg --dearmor --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg \
     && . /etc/os-release \
     && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
        > /etc/apt/sources.list.d/pgdg.list \
-    && apt-get update \
-    && apt-get install --no-install-recommends --yes postgresql-client-18 \
-    && apt-get purge --auto-remove --yes curl gnupg \
+    && DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes postgresql-client-18 \
+    && DEBIAN_FRONTEND=noninteractive apt-get purge --auto-remove --yes curl gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY aikol_booking/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --root-user-action=ignore --upgrade pip \
+    && pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
 
 COPY aikol_booking/ ./
 
