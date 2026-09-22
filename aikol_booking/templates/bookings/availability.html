@@ -30,11 +30,17 @@
             </div>
             <div class="field">
                 <label for="start_time">From</label>
-                <input class="input input-narrow" type="time" id="start_time" name="start_time" value="{{ chosen_start }}" min="{{ open_at }}" max="{{ close_at }}" step="900">
+                <select class="select input-narrow" id="start_time" name="start_time">
+                    <option value="">Any time</option>
+                    {% for time in bookable_times %}<option value="{{ time }}"{% if time == chosen_start %} selected{% endif %}>{{ time }}</option>{% endfor %}
+                </select>
             </div>
             <div class="field">
                 <label for="end_time">To</label>
-                <input class="input input-narrow" type="time" id="end_time" name="end_time" value="{{ chosen_end }}" min="{{ open_at }}" max="{{ close_at }}" step="900">
+                <select class="select input-narrow" id="end_time" name="end_time">
+                    <option value="">Any time</option>
+                    {% for time in bookable_times %}<option value="{{ time }}"{% if time == chosen_end %} selected{% endif %}>{{ time }}</option>{% endfor %}
+                </select>
             </div>
             <div class="picked">
                 <span class="dow">{{ day|date:"l" }}</span>

@@ -65,13 +65,32 @@ class OnBehalfMixin:
 QUARTER_MINUTES = (0, 15, 30, 45)
 
 
+def bookable_times() -> list[str]:
+    """Every quarter hour the office allows, as "HH:MM".
+
+    Read at form construction, not at import: the window is a setting the
+    office can change without a release.
+    """
+    opens = dt.time.fromisoformat(SystemSetting.get("bookable_window_start"))
+    closes = dt.time.fromisoformat(SystemSetting.get("bookable_window_end"))
+    minute = opens.hour * 60 + opens.minute
+    last = closes.hour * 60 + closes.minute
+    minute -= minute % 15
+    times = []
+    while minute <= last:
+        times.append(f"{minute // 60:02d}:{minute % 60:02d}")
+        minute += 15
+    return times
+
+
 def quarter_hour(value):
     """Refuse a time that is not on the quarter.
 
-    `step="900"` drives the spinner arrows and nothing else: a typed 13:16 is
-    accepted by the browser, and the form is rendered with novalidate anyway.
-    The rule has to live here, where it cannot be bypassed, because a room
-    handed over at 13:16 is a room nobody can describe in a timetable.
+    The rule lives here because nothing in the browser can be trusted to keep
+    it: `step` drives a time field's arrows only, the native picker offers all
+    sixty minutes whatever the step says, and these forms render with
+    novalidate. A room handed over at 13:16 is a room nobody can put in a
+    timetable.
     """
     if value is None:
         return value
@@ -84,13 +103,32 @@ def quarter_hour(value):
     return value
 
 
-class TimeOnTheQuarterField(forms.TimeField):
-    """A time field that only accepts :00, :15, :30 and :45."""
+class QuarterHourSelect(forms.Select):
+    """A list of the times that may be chosen, rather than a clock.
 
-    def __init__(self, *args, **kwargs):
-        attrs = {"type": "time", "step": 900}
-        attrs.update(kwargs.pop("attrs", {}))
-        kwargs.setdefault("widget", forms.TimeInput(attrs=attrs))
+    Chrome's native picker lists all sixty minutes however the step is set, so
+    the only way to offer the quarters and nothing else is to stop using it.
+    A list also spells the times in 24 hours, as every other screen does,
+    instead of the browser's AM and PM.
+    """
+
+    def format_value(self, value):
+        if hasattr(value, "strftime"):
+            value = value.strftime("%H:%M")
+        return super().format_value(value)
+
+
+class TimeOnTheQuarterField(forms.TimeField):
+    """A time field offering, and accepting, only :00, :15, :30 and :45."""
+
+    def __init__(self, *args, blank_label="Choose a time", **kwargs):
+        choices = [(value, value) for value in bookable_times()]
+        if not kwargs.get("required", True):
+            choices.insert(0, ("", blank_label))
+        elif kwargs.get("initial") is None:
+            choices.insert(0, ("", blank_label))
+        kwargs.setdefault("widget", QuarterHourSelect(choices=choices))
+        kwargs.setdefault("input_formats", ["%H:%M", "%H:%M:%S"])
         super().__init__(*args, **kwargs)
 
     def clean(self, value):

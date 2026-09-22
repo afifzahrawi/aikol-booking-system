@@ -402,3 +402,15 @@ class QuarterHourTests(OperationalFixtures):
         booking = Booking.objects.get()
         self.assertEqual(timezone.localtime(booking.start_at).minute, 15)
         self.assertEqual(timezone.localtime(booking.end_at).minute, 45)
+
+    def test_the_form_offers_the_quarters_and_nothing_else(self):
+        """Chrome's native picker lists all sixty minutes however the step is
+        set, so the times are offered as a list instead of a clock."""
+        self.client.force_login(self.requester)
+        html = self.client.get(reverse("bookings:create", args=[self.room.pk])).content.decode()
+        field = html[html.index('name="start_time"') : html.index('name="end_time"')]
+        self.assertIn("<option", field)
+        self.assertIn('value="08:00"', field)
+        self.assertIn('value="14:45"', field)
+        self.assertNotIn('type="time"', field)
+        self.assertNotIn('value="14:07"', field)

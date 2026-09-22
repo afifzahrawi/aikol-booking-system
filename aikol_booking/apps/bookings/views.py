@@ -19,6 +19,7 @@ from apps.audit.services import log_action
 from apps.resources.models import Resource, ResourceStatus, ResourceType, Vehicle, Venue
 
 from .forms import (
+    bookable_times,
     AcademicTermForm,
     BookingForm,
     CancellationForm,
@@ -240,6 +241,7 @@ def availability(request, pk: int):
             "chosen_start": chosen_start,
             "chosen_end": chosen_end,
             "slot_query": slot_query,
+            "bookable_times": bookable_times(),
         },
     )
 
