@@ -680,9 +680,9 @@ Full detail: `docs/technical/security.md`.
   Administrator View switch, and no heading over either group: the rule is the separation. `shell_nav` distinguishes
   `home` (`/`) from `overview` (`/manage/`), and a resource page resolves to `venues` or
   `vehicles` by looking the resource up, because the path does not say which kind it is.
-- **A long form saves from every section**, not only from the bar at the foot: someone editing the
-  first section should not have to discover a button below the fold. Each button submits the whole
-  form, and the foot says so.
+- **A long form saves from every section.** Someone editing the first section should not have to
+  discover a button below the fold; each section's Save submits the whole form, and there is no
+  separate bar at the foot repeating it.
 - **Image fields use `config.forms.ImageInput`**, which shows the current image with a labelled
   "remove on save" choice instead of Django's bare "Clear" box. `FORM_RENDERER` is
   `TemplatesSetting` so widget templates live in `templates/widgets/`.

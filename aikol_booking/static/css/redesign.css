@@ -808,17 +808,6 @@ img, video, iframe { max-width: 100%; }
 .settings-fields { width: min(100%, 44rem); }
 .settings-fields .field-row { gap: 0.75rem 1.25rem; }
 .settings-fields .field { margin-bottom: 1.1rem; }
-.sticky-savebar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    background: var(--docket-paper-2);
-    border: 1px solid var(--docket-rule-dark);
-    border-radius: var(--radius-card);
-}
-.sticky-savebar p { margin: 0; color: var(--docket-muted); }
 
 .key-register .card-head h2 { margin: 0; font-size: clamp(1.15rem, 1.5vw, 1.4rem); }
 .key-register .card-head .help { font-size: 0.82rem; }
@@ -1190,8 +1179,7 @@ img, video, iframe { max-width: 100%; }
 
 @media (max-width: 39.99rem) {
     .main { padding: 1rem; }
-    .sticky-savebar { align-items: stretch; flex-direction: column; }
-    .sticky-savebar .btn { width: 100%; }
+    .section-save .btn { width: 100%; }
     .brand-marks .brand-aikol { height: 1.6rem; }
     .brand-marks .brand-iium { max-width: 5.5rem; height: 1.6rem; }
     .brand-name { font-size: 0.84rem; }
