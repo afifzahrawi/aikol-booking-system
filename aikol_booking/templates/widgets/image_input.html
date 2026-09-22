@@ -4,10 +4,7 @@
     <div class="image-current-text">
         <span class="help">Current image: <a href="{{ widget.value.url }}">{{ widget.value|cut:"site/" }}</a></span>
         {% if not widget.required %}
-        <label class="checkline" for="{{ widget.checkbox_id }}">
-            <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}>
-            <span>{{ widget.clear_checkbox_label }}</span>
-        </label>
+        <button class="btn btn-sm btn-danger" type="submit" name="{{ widget.checkbox_name }}" value="1"{% if widget.attrs.disabled %} disabled{% endif %}>Remove image</button>
         {% endif %}
     </div>
 </div>

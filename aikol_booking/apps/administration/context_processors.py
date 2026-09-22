@@ -2,9 +2,35 @@
 
 from __future__ import annotations
 
+import re
+
 from django.urls import reverse
 
 from .models import SiteContent
+
+#: /resource/19/, /resource/19/availability/, /resource/19/book/ and the weekly
+#: form all hang off one resource, but the path does not say whether it is a
+#: room or a car, so the rail highlighted neither. /series/<pk>/ is deliberately
+#: not here: that number is a series, not a resource.
+RESOURCE_PATH = re.compile(r"^/resource/(\d+)/")
+
+
+def _resource_nav(path: str) -> str:
+    match = RESOURCE_PATH.match(path)
+    if not match:
+        return ""
+    from apps.resources.models import Resource, ResourceType
+
+    kind = (
+        Resource.objects.filter(pk=match.group(1))
+        .values_list("resource_type", flat=True)
+        .first()
+    )
+    if kind == ResourceType.VENUE:
+        return "venues"
+    if kind == ResourceType.VEHICLE:
+        return "vehicles"
+    return ""
 
 
 def site_content(request):
@@ -34,7 +60,7 @@ def chrome(request):
         }
 
     if path == "/":
-        shell_nav = "dashboard"
+        shell_nav = "home"
     elif path.startswith("/bookings/"):
         shell_nav = "mine"
     elif path.startswith("/rooms/"):
@@ -42,7 +68,7 @@ def chrome(request):
     elif path.startswith("/cars/"):
         shell_nav = "vehicles"
     else:
-        shell_nav = ""
+        shell_nav = _resource_nav(path)
 
     requester_roots = {
         "accounts:dashboard",
@@ -65,13 +91,17 @@ def chrome(request):
 
     admin_paths = ("/manage/", "/approvals/")
     if path == "/manage/":
-        shell_nav = "dashboard"
+        shell_nav = "overview"
     elif path.startswith(("/manage/bookings/", "/approvals/")):
         shell_nav = "bookings" if user.is_administrator else "approvals"
     elif path.startswith("/manage/keys/"):
         shell_nav = "keys"
     elif path.startswith(("/manage/rooms/", "/manage/cars/", "/manage/facilities/", "/manage/resource/")):
         shell_nav = "resources"
+    elif path.startswith("/resource/"):
+        # An administrator looking at a room or car from the requester side
+        # sees the requester rail; keep the resource kind highlighted there.
+        shell_nav = shell_nav or _resource_nav(path)
     elif path.startswith("/manage/users/"):
         shell_nav = "users"
     elif path.startswith("/manage/reports/"):

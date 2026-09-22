@@ -41,6 +41,19 @@ class Affiliation(models.TextChoices):
     PUBLIC = "PUBLIC", "Member of the public"
 
 
+def describe_person(person) -> str:
+    """Email, what the person is, and their number when the office has one.
+
+    A missing matriculation number does NOT make somebody a member of the
+    public: the affiliation field says that, and an IIUM member registered
+    before the number was required has none. Reading one from the other is
+    how an IIUM address came to be labelled "Public account"."""
+    parts = [person.email, person.get_affiliation_display()]
+    if person.identification_number:
+        parts.append(person.identification_number)
+    return ", ".join(parts)
+
+
 phone_validator = RegexValidator(
     r"^[0-9+\-\s()]{7,20}$",
     "Enter a telephone number using digits, spaces, and + - ( ) only.",

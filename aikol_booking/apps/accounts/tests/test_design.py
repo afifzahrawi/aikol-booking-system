@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import re
 from pathlib import Path
 
 from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import User
 
@@ -243,3 +245,52 @@ class ProgressiveEnhancementTests(TestCase):
         )
         self.assertContains(response, "Already reserved")
         self.assertEqual(Booking.objects.count(), 1)
+
+
+class RailHighlightTests(TestCase):
+    """A resource page hangs off Venue or Vehicles. The rail is decided from
+    the path, and /resource/<pk>/ does not say which kind it is, so both were
+    left unhighlighted: the requester had no idea where in the system they
+    were."""
+
+    def setUp(self):
+        from apps.accounts.models import Affiliation, Role, User
+        from apps.resources.models import Vehicle, Venue
+
+        self.person = User.objects.create_user(
+            email="person@demo.aikol.test", password="prototype-password-1",
+            full_name="Person", phone="03-6196 4000", affiliation=Affiliation.STAFF,
+            role=Role.USER, email_verified=True,
+        )
+        self.room = Venue.objects.create(
+            code="ROOM-NAV", name="Nav Room", venue_type=Venue.VenueType.MEETING,
+            location="Level 1", capacity=8,
+        )
+        self.car = Vehicle.objects.create(
+            code="CAR-NAV", name="Nav Car", registration_number="WNV 1",
+            make="Proton", model="Saga", year=2024, seats=5,
+            road_tax_expiry=timezone.localdate() + dt.timedelta(days=200),
+        )
+        self.client.force_login(self.person)
+
+    def assert_current(self, url, label):
+        html = self.client.get(url).content.decode()
+        at = html.find(f">{label}</span>")
+        self.assertGreater(at, 0, f"{label} is in the rail")
+        link = html.rfind("<a ", 0, at)
+        self.assertIn('aria-current="page"', html[link:at], f"{label} is current on {url}")
+
+    def test_a_venue_page_highlights_venue(self):
+        for url in (
+            reverse("resources:detail", args=[self.room.pk]),
+            reverse("bookings:availability", args=[self.room.pk]),
+            reverse("bookings:create", args=[self.room.pk]),
+        ):
+            self.assert_current(url, "Venue")
+
+    def test_a_vehicle_page_highlights_vehicles(self):
+        for url in (
+            reverse("resources:detail", args=[self.car.pk]),
+            reverse("bookings:availability", args=[self.car.pk]),
+        ):
+            self.assert_current(url, "Vehicles")

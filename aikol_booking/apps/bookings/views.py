@@ -672,7 +672,7 @@ def admin_booking_start(request):
 @administrator_required
 def bookable_user_search(request):
     """Small JSON result set for the booking-for combobox."""
-    from apps.accounts.models import User
+    from apps.accounts.models import User, describe_person
 
     term = (request.GET.get("q") or "").strip()
     if len(term) < 2:
@@ -692,7 +692,7 @@ def bookable_user_search(request):
                 {
                     "id": person.pk,
                     "label": person.full_name,
-                    "meta": f"{person.email}, {person.identification_number or 'Public account'}",
+                    "meta": describe_person(person),
                 }
                 for person in people
             ]

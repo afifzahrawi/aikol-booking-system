@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260922-2">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260922-3">
 </head>
 <body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -59,23 +59,29 @@
         </svg>
         <span class="visually-hidden nav-toggle-label">Collapse</span>
     </button>
-    {% if admin_area and user.is_administrator %}
-        <a href="{% url 'administration:dashboard' %}" {% if shell_nav == 'dashboard' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"></path></svg><span class="nav-link-label">Overview</span></a>
-        <a href="{% url 'bookings:manage' %}" {% if shell_nav == 'bookings' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path><path d="m8 14 2 2 5-5"></path></svg><span class="nav-link-label">Bookings</span>{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
-        <a href="{% url 'bookings:keys' %}" {% if shell_nav == 'keys' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"></circle><path d="M12 12h8M17 12v3M20 12v2"></path></svg><span class="nav-link-label">Keys</span></a>
-        <a href="{% url 'resources:manage_venues' %}" {% if shell_nav == 'resources' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M8 20v-6h8v6M3 20h18"></path></svg><span class="nav-link-label">Resources</span></a>
-        <a href="{% url 'administration:users' %}" {% if shell_nav == 'users' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 11a3 3 0 0 0 0-6M18 14a5 5 0 0 1 3 4v2"></path></svg><span class="nav-link-label">People</span></a>
-        <a href="{% url 'reporting:reports' %}" {% if shell_nav == 'reports' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg><span class="nav-link-label">Insights</span></a>
-        <a href="{% url 'administration:settings' %}" {% if shell_nav == 'system' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L14.5 3h-5l-.4 3.1a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L5.1 11a7 7 0 0 0 0 2L3 14.5l2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 3.1h5l.4-3.1a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2.1-1.5a7 7 0 0 0 .1-1Z"></path></svg><span class="nav-link-label">System</span></a>
-    {% elif admin_area %}
-        <a href="{% url 'bookings:approvals' %}" {% if shell_nav == 'approvals' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4"></path></svg><span class="nav-link-label">Queue</span>{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
-        <a href="{% url 'reporting:reports' %}" {% if shell_nav == 'reports' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6M4 4v4.6h4.6M12 8v5l3 2"></path></svg><span class="nav-link-label">History</span></a>
-    {% else %}
-        <a href="{% url 'accounts:dashboard' %}" {% if shell_nav == 'dashboard' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9 20v-6h6v6"></path></svg><span class="nav-link-label">Home</span></a>
-        <a href="{% url 'bookings:mine' %}" {% if shell_nav == 'mine' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path><path d="m8 14 2 2 5-5"></path></svg><span class="nav-link-label">My Bookings</span></a>
-        <a href="{% url 'resources:venues' %}" {% if shell_nav == 'venues' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M8 20v-6h8v6M3 20h18"></path></svg><span class="nav-link-label">Venue</span></a>
-        <a href="{% url 'resources:vehicles' %}" {% if shell_nav == 'vehicles' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 16-1-4 2-5h12l2 5-1 4M6 16h12M7 16v3M17 16v3"></path><circle cx="7" cy="13" r="1"></circle><circle cx="17" cy="13" r="1"></circle></svg><span class="nav-link-label">Vehicles</span></a>
-    {% endif %}
+    {% comment %} One rail. A person who approves bookings also makes them, and
+       switching "views" hid half the system behind a menu item. Their own
+       bookings sit above the rule, the Kulliyyah's work below it. {% endcomment %}
+    <a href="{% url 'accounts:dashboard' %}" {% if shell_nav == 'home' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9 20v-6h6v6"></path></svg><span class="nav-link-label">Home</span></a>
+    <a href="{% url 'bookings:mine' %}" {% if shell_nav == 'mine' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path><path d="m8 14 2 2 5-5"></path></svg><span class="nav-link-label">My Bookings</span></a>
+    <a href="{% url 'resources:venues' %}" {% if shell_nav == 'venues' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M8 20v-6h8v6M3 20h18"></path></svg><span class="nav-link-label">Venue</span></a>
+    <a href="{% url 'resources:vehicles' %}" {% if shell_nav == 'vehicles' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 16-1-4 2-5h12l2 5-1 4M6 16h12M7 16v3M17 16v3"></path><circle cx="7" cy="13" r="1"></circle><circle cx="17" cy="13" r="1"></circle></svg><span class="nav-link-label">Vehicles</span></a>
+{% if user.is_approver %}
+    <span class="nav-divider" role="separator"></span>
+    <span class="rail-heading">Kulliyyah Office</span>
+{% endif %}
+{% if user.is_administrator %}
+    <a href="{% url 'administration:dashboard' %}" {% if shell_nav == 'overview' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"></path></svg><span class="nav-link-label">Overview</span></a>
+    <a href="{% url 'bookings:manage' %}" {% if shell_nav == 'bookings' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path><path d="m8 14 2 2 5-5"></path></svg><span class="nav-link-label">Bookings</span>{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
+    <a href="{% url 'bookings:keys' %}" {% if shell_nav == 'keys' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"></circle><path d="M12 12h8M17 12v3M20 12v2"></path></svg><span class="nav-link-label">Keys</span></a>
+    <a href="{% url 'resources:manage_venues' %}" {% if shell_nav == 'resources' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M8 20v-6h8v6M3 20h18"></path></svg><span class="nav-link-label">Resources</span></a>
+    <a href="{% url 'administration:users' %}" {% if shell_nav == 'users' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 11a3 3 0 0 0 0-6M18 14a5 5 0 0 1 3 4v2"></path></svg><span class="nav-link-label">People</span></a>
+    <a href="{% url 'reporting:reports' %}" {% if shell_nav == 'reports' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg><span class="nav-link-label">Insights</span></a>
+    <a href="{% url 'administration:settings' %}" {% if shell_nav == 'system' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L14.5 3h-5l-.4 3.1a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L5.1 11a7 7 0 0 0 0 2L3 14.5l2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 3.1h5l.4-3.1a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2.1-1.5a7 7 0 0 0 .1-1Z"></path></svg><span class="nav-link-label">System</span></a>
+{% elif user.is_approver %}
+    <a href="{% url 'bookings:approvals' %}" {% if shell_nav == 'approvals' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4"></path></svg><span class="nav-link-label">Queue</span>{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
+    <a href="{% url 'reporting:reports' %}" {% if shell_nav == 'reports' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6M4 4v4.6h4.6M12 8v5l3 2"></path></svg><span class="nav-link-label">History</span></a>
+{% endif %}
     <details class="nav-profile">
         <summary title="Account menu">
             <span class="nav-profile-icon" aria-hidden="true">
@@ -85,11 +91,6 @@
             <svg class="nav-profile-chevron" aria-hidden="true" viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"></path></svg>
         </summary>
         <div class="nav-profile-menu" aria-label="Account actions">
-            {% if user.is_approver %}
-                {% comment %} The two views are the same application, so this is a link and not
-                   a mode switch: what somebody may do is decided by their role. {% endcomment %}
-                <a href="{% if admin_area %}{% url 'accounts:dashboard' %}{% else %}{% url 'administration:dashboard' %}{% endif %}">{% if admin_area %}User View{% else %}Administrator View{% endif %}</a>
-            {% endif %}
             <a href="{% url 'accounts:profile' %}">Edit Profile</a>
             <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
                 <button type="submit">Sign Out</button>

@@ -106,7 +106,7 @@ p { max-width: 72ch; }
     border: 0;
 }
 .app-nav .rail-heading {
-    display: none;
+    padding: 0 0.7rem 0.35rem;
     color: #dac79e;
     font-size: 0.8rem;
     font-weight: 600;
@@ -1098,7 +1098,7 @@ img, video, iframe { max-width: 100%; }
         padding: 0;
         border-top: 1px solid #4b5b56;
     }
-    .is-authenticated .app-nav .rail-heading { display: none; }
+    .is-authenticated .app-nav .rail-heading, .is-authenticated .app-nav .nav-divider { display: none; }
     .is-authenticated .app-nav .nav-toggle {
         display: flex;
         flex-direction: column;
@@ -1287,3 +1287,11 @@ img, video, iframe { max-width: 100%; }
 .image-current-text { display: grid; gap: 0.3rem; min-width: 0; }
 .image-current .checkline { margin: 0; }
 .term-actions { flex-wrap: wrap; }
+
+/* Announcement rows: the badges are a line of their own above the title. */
+.announcement-admin-row > div > .badge { margin-bottom: 0.55rem; }
+.announcement-admin-row h3 { margin-top: 0.15rem; }
+.section-save { display: flex; justify-content: flex-end; margin-top: 1.25rem; }
+/* One rail for staff: their own bookings above, the Kulliyyah's work below. */
+.app-nav .nav-divider { height: 1px; margin: 0.8rem 0.5rem 0.6rem; background: rgba(255, 253, 247, 0.18); }
+.docket-shell.nav-collapsed .app-nav .rail-heading { visibility: hidden; }

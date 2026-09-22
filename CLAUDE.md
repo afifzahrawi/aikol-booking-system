@@ -675,6 +675,14 @@ Full detail: `docs/technical/security.md`.
   the same boolean; the SMTP encryption is one choice (STARTTLS, SSL, None) written back to
   `use_tls`/`use_ssl`. A tick box remains only where it is a declaration or a selection: the
   "not from IIUM" statement, partial-series consent, weekday pickers, facility grids.
+- **Staff have one rail, not two views.** A person who approves bookings also makes them, so the
+  requester's entries sit above a rule and the Kulliyyah's work below it, under a "Kulliyyah
+  Office" heading. There is no User View / Administrator View switch. `shell_nav` distinguishes
+  `home` (`/`) from `overview` (`/manage/`), and a resource page resolves to `venues` or
+  `vehicles` by looking the resource up, because the path does not say which kind it is.
+- **A long form saves from every section**, not only from the bar at the foot: someone editing the
+  first section should not have to discover a button below the fold. Each button submits the whole
+  form, and the foot says so.
 - **Image fields use `config.forms.ImageInput`**, which shows the current image with a labelled
   "remove on save" choice instead of Django's bare "Clear" box. `FORM_RENDERER` is
   `TemplatesSetting` so widget templates live in `templates/widgets/`.

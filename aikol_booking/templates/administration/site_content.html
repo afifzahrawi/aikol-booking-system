@@ -32,6 +32,9 @@
                 {% include "_field.html" with field=form.logo_alt %}
                 {% include "_field.html" with field=form.iium_logo_alt %}
             </div>
+            <div class="section-save">
+                <button class="btn btn-primary" type="submit">Save</button>
+            </div>
         </div>
     </section>
 
@@ -48,6 +51,9 @@
             {% include "_field.html" with field=form.login_intro_heading %}
             {% include "_field.html" with field=form.login_intro %}
             {% include "_field.html" with field=form.login_points %}
+            <div class="section-save">
+                <button class="btn btn-primary" type="submit">Save</button>
+            </div>
         </div>
     </section>
 
@@ -66,11 +72,14 @@
                 {% include "_field.html" with field=form.email %}
             </div>
             {% include "_field.html" with field=form.address %}
+            <div class="section-save">
+                <button class="btn btn-primary" type="submit">Save</button>
+            </div>
         </div>
     </section>
 
     <div class="sticky-savebar">
-        <p>JPEG, PNG and WebP only, up to 5 MB per image.</p>
+        <p>JPEG, PNG and WebP only, up to 5 MB per image. Any Save on this page saves the whole form.</p>
         <button class="btn btn-primary" type="submit">Save site content</button>
     </div>
 </form>

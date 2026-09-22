@@ -270,3 +270,32 @@ class AvailabilityHandoffTests(OperationalFixtures):
         self.assertEqual(page.status_code, 200)
         self.assertNotContains(page, "start_time=&lt;b")
         self.assertNotContains(page, "start_time=<b")
+
+
+class PersonDescriptionTests(OperationalFixtures):
+    def test_an_iium_member_without_a_number_is_not_called_public(self):
+        """A missing matriculation number once printed "Public account" beside
+        an @iium.edu.my address. Affiliation says what a person is; the number
+        is shown only when the office holds one."""
+        person = self.requester
+        person.identification_number = None
+        person.affiliation = Affiliation.STAFF
+        person.save(update_fields=["identification_number", "affiliation"])
+        self.client.force_login(self.admin)
+        results = self.client.get(
+            reverse("bookings:user_search"), {"q": person.full_name[:6]}
+        ).json()["results"]
+        meta = next(row["meta"] for row in results if row["id"] == person.pk)
+        self.assertEqual(meta, f"{person.email}, Staff")
+        self.assertNotIn("Public", meta)
+
+    def test_a_member_of_the_public_is_named_as_one(self):
+        person = self.requester
+        person.affiliation = Affiliation.PUBLIC
+        person.identification_number = None
+        person.save(update_fields=["affiliation", "identification_number"])
+        self.client.force_login(self.admin)
+        results = self.client.get(
+            reverse("bookings:user_search"), {"q": person.full_name[:6]}
+        ).json()["results"]
+        self.assertIn("Member of the public", next(row["meta"] for row in results if row["id"] == person.pk))

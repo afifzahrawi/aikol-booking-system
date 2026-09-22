@@ -49,6 +49,8 @@ class OnBehalfMixin:
 
     @property
     def booking_for_label(self) -> str:
+        from apps.accounts.models import describe_person
+
         if "on_behalf_of" not in self.fields:
             return ""
         raw = self["on_behalf_of"].value()
@@ -57,8 +59,7 @@ class OnBehalfMixin:
         person = self.fields["on_behalf_of"].queryset.filter(pk=raw).first()
         if not person:
             return ""
-        identifier = person.identification_number or "Public account"
-        return f"{person.full_name}, {person.email}, {identifier}"
+        return f"{person.full_name}, {describe_person(person)}"
 
 
 class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
