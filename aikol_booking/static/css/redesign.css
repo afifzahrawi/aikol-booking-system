@@ -1333,3 +1333,6 @@ img, video, iframe { max-width: 100%; }
 .thumb-button:focus-visible { outline: 2px solid var(--docket-green); outline-offset: 2px; }
 .gallery-caption { margin: 0.55rem 0 0; }
 .gallery-thumbs { margin-top: 0.75rem; }
+
+/* A form that follows a record's facts starts clear of the last one. */
+.card-body > .kv + form, .card-body > .record-facts + form { display: block; margin-top: 1.5rem; }

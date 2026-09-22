@@ -164,12 +164,28 @@ Retention cleanup is never scheduled because it requires administrator review an
    is blocked by a Windows PostgreSQL client crash. Never put the plaintext password in chat,
    a command argument, a committed file, or a Cloud Run job environment variable. Change the
    bootstrap password after first sign-in.
-3. Test registration, password reset and each booking-status email.
-4. Upload and retrieve a resource image from R2.
-5. Restore the latest R2 database dump into a separate PostgreSQL database.
-6. Confirm the PostgreSQL overlap constraint rejects conflicting pending and approved bookings.
-7. Verify all three Scheduler jobs show successful executions.
-8. Complete UAT before declaring production live.
+3. Give the office something to edit rather than an empty system: run
+   `seed_starter_resources` once as a Cloud Run job. It creates three venues (moot court,
+   seminar room, meeting room) and one car, each carrying a placeholder drawing rather than a
+   photograph, and marked in its description as an example to edit or deactivate. Running it
+   again never overwrites what the office has changed.
+
+   ```powershell
+   $project = "aikol-booking-system"; $region = "asia-southeast1"
+   $image = "$region-docker.pkg.dev/$project/aikol-booking/web:latest"
+   $runtime = "aikol-runtime@$project.iam.gserviceaccount.com"
+   $public = (gcloud run services describe aikol-booking --region $region --format "value(status.url)")
+   $env = "DJANGO_SETTINGS_MODULE=config.settings.production,R2_BUCKET_NAME=aikol-booking-media,R2_BACKUP_BUCKET_NAME=aikol-booking-backups,DJANGO_ALLOWED_HOSTS=$(([Uri]$public).Host)"
+   $secrets = "DJANGO_SECRET_KEY=django-secret-key:latest,DJANGO_CREDENTIAL_ENCRYPTION_KEY=credential-encryption-key:latest,DATABASE_URL=database-url:latest,R2_ACCESS_KEY_ID=r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=r2-secret-access-key:latest,R2_ENDPOINT_URL=r2-endpoint-url:latest"
+   gcloud run jobs deploy aikol-seed-resources --image $image --region $region --service-account $runtime --cpu 1 --memory 512Mi --max-retries 0 --task-timeout 10m --set-env-vars $env --set-secrets $secrets --command sh --args "-c,python manage.py seed_facilities && python manage.py seed_starter_resources"
+   gcloud run jobs execute aikol-seed-resources --region $region --wait
+   ```
+4. Test registration, password reset and each booking-status email.
+5. Upload and retrieve a resource image from R2.
+6. Restore the latest R2 database dump into a separate PostgreSQL database.
+7. Confirm the PostgreSQL overlap constraint rejects conflicting pending and approved bookings.
+8. Verify all three Scheduler jobs show successful executions.
+9. Complete UAT before declaring production live.
 
 ## Updating
 

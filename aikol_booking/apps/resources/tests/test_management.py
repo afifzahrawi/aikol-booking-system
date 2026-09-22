@@ -621,3 +621,37 @@ class GalleryTests(Fixtures):
             reverse("resources:detail", args=[self.venue.pk])
         ).content.decode()
         self.assertNotIn("data-gallery-thumb", html)
+
+
+class StarterResourceTests(TestCase):
+    """The four example resources an empty system starts with."""
+
+    def test_it_creates_three_venues_and_one_car_with_drawings(self):
+        from django.core.management import call_command
+
+        call_command("seed_facilities", verbosity=0)
+        call_command("seed_starter_resources", verbosity=0)
+        venues = Venue.objects.all()
+        cars = Vehicle.objects.all()
+        self.assertEqual(venues.count(), 3)
+        self.assertEqual(cars.count(), 1)
+        for resource in list(venues) + list(cars):
+            self.assertTrue(resource.placeholder.endswith(".svg"))
+            self.assertFalse(resource.images.exists())
+            self.assertIn("Example record", resource.description)
+            self.assertTrue(resource.facilities.exists())
+
+    def test_running_it_twice_changes_nothing(self):
+        from django.core.management import call_command
+
+        call_command("seed_facilities", verbosity=0)
+        call_command("seed_starter_resources", verbosity=0)
+        edited = Venue.objects.get(code="AIKOL-MC-01")
+        edited.name = "Tun Hussein Onn Moot Court"
+        edited.capacity = 120
+        edited.save()
+        call_command("seed_starter_resources", verbosity=0)
+        self.assertEqual(Venue.objects.count(), 3)
+        edited.refresh_from_db()
+        self.assertEqual(edited.name, "Tun Hussein Onn Moot Court")
+        self.assertEqual(edited.capacity, 120)
