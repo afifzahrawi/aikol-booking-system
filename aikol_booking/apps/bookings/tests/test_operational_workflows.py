@@ -316,3 +316,54 @@ class BookingFormLayoutTests(OperationalFixtures):
         html = self.client.get(reverse("bookings:create", args=[self.car.pk])).content.decode()
         self.assertIn(">Start Date</label>", html)
         self.assertIn('name="end_date"', html)
+
+
+class AvailabilityChartTests(OperationalFixtures):
+    def chart(self, days_ahead=1, hours=3, span_days=0):
+        start = timezone.make_aware(
+            dt.datetime.combine(self.day + dt.timedelta(days=days_ahead), dt.time(14))
+        )
+        Booking.objects.create(
+            resource=self.room, user=self.requester, created_by=self.requester,
+            start_at=start, end_at=start + dt.timedelta(days=span_days, hours=hours),
+            purpose="Chart", status=BookingStatus.APPROVED,
+        )
+        self.client.force_login(self.requester)
+        return self.client.get(
+            reverse("bookings:availability", args=[self.room.pk]),
+            {"date": self.day.isoformat()},
+        )
+
+    def test_a_days_label_describes_that_day_not_the_whole_booking(self):
+        """A booking running Wednesday to Friday said "All day" on Friday too,
+        although it ends at 17:00."""
+        response = self.chart(span_days=2)
+        labels = [b["label"] for row in response.context["rows"] for b in row["blocks"]]
+        self.assertEqual(labels[0], "From 14:00")
+        self.assertEqual(labels[1], "All day")
+        self.assertEqual(labels[2], "Until 17:00")
+
+    def test_a_single_day_booking_names_its_period(self):
+        response = self.chart()
+        labels = [b["label"] for row in response.context["rows"] for b in row["blocks"]]
+        self.assertEqual(labels, ["14:00 to 17:00"])
+
+    def test_free_time_opens_the_booking_form_for_that_day(self):
+        response = self.chart()
+        self.assertContains(response, "avail-free-link")
+        self.assertContains(
+            response,
+            f"{reverse('bookings:create', args=[self.room.pk])}?start_date={self.day.isoformat()}",
+        )
+
+    def test_the_booking_register_is_for_the_office_only(self):
+        """A requester needs to see when a room is taken, not a list of who
+        holds it and for how long."""
+        response = self.chart()
+        self.assertNotContains(response, "Bookings in This Period")
+        self.client.force_login(self.admin)
+        office = self.client.get(
+            reverse("bookings:availability", args=[self.room.pk]),
+            {"date": self.day.isoformat()},
+        )
+        self.assertContains(office, "Bookings in This Period")

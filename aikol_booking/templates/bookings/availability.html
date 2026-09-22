@@ -47,8 +47,8 @@
 </section>
 
 <div class="legend mb-xs">
-    <span><span class="swatch swatch-approved"></span>Approved</span>
-    <span><span class="swatch swatch-pending"></span>Pending, still holding the slot</span>
+    <span><span class="swatch swatch-approved"></span>Booked</span>
+    <span><span class="swatch swatch-pending"></span>Pending approval</span>
     <span><span class="swatch swatch-free"></span>Free</span>
 </div>
 
@@ -64,6 +64,11 @@
         <div class="avail-row">
             <span><a href="{% url 'bookings:create' resource.pk %}?start_date={{ row.date|date:'Y-m-d' }}{{ slot_query }}" data-modal-form data-modal-size="wide" class="avail-day" aria-label="Book {{ resource.name }} on {{ row.date|date:'l d F' }}">{{ row.date|date:"D d M" }}</a></span>
             <div class="avail-bar">
+                {% if resource.status == 'ACTIVE' %}
+                    <a class="avail-free-link" data-modal-form data-modal-size="wide"
+                       href="{% url 'bookings:create' resource.pk %}?start_date={{ row.date|date:'Y-m-d' }}{{ slot_query }}"
+                       aria-label="Book {{ resource.name }} on {{ row.date|date:'l d F' }}"></a>
+                {% endif %}
                 {% for block in row.blocks %}
                     <span class="avail-block{% if block.pending %} pending{% endif %}"
                           data-left="{{ block.left }}" data-width="{{ block.width }}"
@@ -84,7 +89,7 @@
     <a class="btn btn-sm" href="?date={{ next|date:'Y-m-d' }}">Next week &rarr;</a>
 </div>
 
-{% if taken %}
+{% if taken and user.is_approver %}
 <section class="card mt-md">
     <div class="card-head"><h2 class="label">Bookings in This Period</h2></div>
     <div class="table-wrap">

@@ -181,13 +181,27 @@ def availability(request, pk: int):
             )
             if to_minutes <= from_minutes:
                 continue
-            multi_day = local_start.date() != local_end.date()
+            # The label describes THIS day, not the booking: a trip that runs
+            # from Wednesday to Friday is all of Thursday, but only from 08:00
+            # on Wednesday and until 17:00 on Friday, and saying "All day" on
+            # each of them was simply wrong.
+            covers_day = from_minutes <= open_minutes and to_minutes >= close_minutes
+            starts_earlier = local_start.date() < current
+            ends_later = local_end.date() > current
+            if covers_day:
+                label = "All day"
+            elif starts_earlier:
+                label = f"Until {to_minutes // 60:02d}:{to_minutes % 60:02d}"
+            elif ends_later:
+                label = f"From {local_start:%H:%M}"
+            else:
+                label = f"{local_start:%H:%M} to {local_end:%H:%M}"
             blocks.append(
                 {
                     "left": round(max(0, (from_minutes - open_minutes) / span * 100), 2),
                     "width": round(min(100, (to_minutes - from_minutes) / span * 100), 2),
                     "pending": booking.status == BookingStatus.PENDING,
-                    "label": "All day" if multi_day else f"{local_start:%H:%M}",
+                    "label": label,
                     "title": (
                         f"{local_start:%d %b %H:%M} to {local_end:%d %b %H:%M}"
                         f", {booking.get_status_display().lower()}"

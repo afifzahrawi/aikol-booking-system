@@ -1283,8 +1283,44 @@ img, video, iframe { max-width: 100%; }
 
 /* Resource photographs: the caption and the Remove button sit inside the card,
    not against its edges. */
-.image-card { display: grid; }
-.image-card .framed { margin: 0; border-radius: 0; }
+/* Photographs arrive at every shape and size. Each frame is fixed and the
+   picture is cropped to fill it, so a row of cards lines up instead of
+   stepping up and down with whatever was uploaded. */
+.image-card { display: grid; grid-template-rows: auto 1fr; }
+.image-card .framed {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    margin: 0;
+    object-fit: cover;
+    border-radius: 0;
+}
+.gallery-main {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+.gallery-thumbs img { width: 7.4rem; height: 4.4rem; object-fit: cover; }
+
+/* Availability: the empty ground of a row IS the "Free" swatch. They were two
+   different colours, so the legend explained a colour the chart never used. */
+.swatch-free, .avail-bar { background: var(--docket-paper-2); border: 1px dashed var(--docket-rule); }
+.swatch-approved, .avail-block { background: var(--docket-green); }
+.swatch-pending, .avail-block.pending {
+    background: repeating-linear-gradient(45deg, #d99b28, #d99b28 6px, #b07d15 6px, #b07d15 12px);
+}
+/* Free time opens the booking form for that day. The whole row is the link,
+   and the blocks sit above it, so a click lands on free time only. */
+.avail-free-link {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: var(--radius-input);
+}
+.avail-free-link:focus-visible { outline: 2px solid var(--docket-green); outline-offset: 2px; }
+.avail-bar .avail-block { z-index: 1; }
+.avail-bar:hover .avail-free-link { background: rgba(20, 103, 91, 0.08); }
 .image-card-foot {
     display: flex;
     flex-wrap: wrap;

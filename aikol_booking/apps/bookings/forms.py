@@ -81,7 +81,7 @@ class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
         label="Start Date", widget=forms.DateInput(attrs={"type": "date"})
     )
     start_time = forms.TimeField(
-        label="Start Time", widget=forms.TimeInput(attrs={"type": "time"})
+        label="Start Time", widget=forms.TimeInput(attrs={"type": "time", "step": 900})
     )
     end_date = forms.DateField(
         required=False,
@@ -90,7 +90,7 @@ class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
         help_text="Vehicles only. Leave blank for a same-day trip.",
     )
     end_time = forms.TimeField(
-        label="End Time", widget=forms.TimeInput(attrs={"type": "time"})
+        label="End Time", widget=forms.TimeInput(attrs={"type": "time", "step": 900})
     )
     purpose = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 3}),
