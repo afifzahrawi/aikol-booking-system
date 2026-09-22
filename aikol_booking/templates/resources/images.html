@@ -1,39 +1,38 @@
 {% extends "base.html" %}
 {% block title %}Images: {{ resource.name }}{% endblock %}
+
 {% block content %}
 <h1>Images: {{ resource.name }}</h1>
 
 <div class="grid grid-2">
     {% for photo in resource.images.all %}
-        <figure class="card">
+        <figure class="card image-card">
             <img class="framed" src="{{ photo.image.url }}" alt="{{ photo.caption|default:resource.name }}">
-            <figcaption class="help">
-                {{ photo.caption|default:"No caption" }}{% if forloop.first %} (main image){% endif %}
-            </figcaption>
-            <form method="post" action="{% url 'resources:image_delete' resource.pk photo.pk %}">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-danger" type="submit">Remove</button>
-            </form>
+            <div class="image-card-foot">
+                <figcaption class="help">
+                    {{ photo.caption|default:"No caption" }}{% if forloop.first %} (main image){% endif %}
+                </figcaption>
+                <form method="post" action="{% url 'resources:image_delete' resource.pk photo.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-danger" type="submit">Remove</button>
+                </form>
+            </div>
         </figure>
     {% empty %}
         <div class="empty-state">No photographs yet.</div>
     {% endfor %}
 </div>
 
-<section class="card mt-md">
-    <div class="card-head"><h2 class="label">Add a Photograph</h2></div>
+<section class="card mt-md" data-image-drop>
+    <div class="card-head"><h2 class="label">Add Photographs</h2></div>
     <div class="card-body">
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
-            <div class="dropzone mb-sm">
-                Choose a photograph to upload: JPEG, PNG or WebP, up to 5&nbsp;MB
-            </div>
             {% include "_form_fields.html" %}
             <button class="btn btn-primary" type="submit">Upload</button>
         </form>
-        <p class="help mt-xs">
-            JPEG, PNG or WebP, up to 5&nbsp;MB.
-        </p>
     </div>
 </section>
 {% endblock %}
+
+{% block scripts %}{% load static %}<script src="{% static 'js/image-drop.js' %}?v=20260922-1" defer></script>{% endblock %}

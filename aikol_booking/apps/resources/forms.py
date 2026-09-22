@@ -153,15 +153,58 @@ class FacilityForm(StyledFormMixin, forms.ModelForm):
         return facility
 
 
-class ResourceImageForm(StyledFormMixin, forms.ModelForm):
-    class Meta:
-        model = ResourceImage
-        fields = ("image", "caption")
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
 
-    def clean_image(self):
-        upload = self.cleaned_data["image"]
-        validate_image_upload(upload)
-        return upload
+
+class MultipleFileField(forms.FileField):
+    """Django's file field takes one upload; its widget can offer several.
+
+    Without this the field receives a list and rejects it as "required",
+    because FileField.clean expects a single file object.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        one = super().clean
+        if isinstance(data, (list, tuple)):
+            return [one(item, initial) for item in data]
+        return [one(data, initial)]
+
+
+class ResourceImageForm(StyledFormMixin, forms.Form):
+    """One or several photographs at a time.
+
+    Django's own file field takes a single upload, so the list is read from
+    the raw files and each one validated separately: an administrator with a
+    folder of photographs should not have to add them one at a time, and one
+    bad file should say which it was rather than failing the batch silently.
+    """
+
+    images = MultipleFileField(
+        label="Photographs",
+        widget=MultipleFileInput(attrs={"multiple": True, "accept": "image/jpeg,image/png,image/webp"}),
+        help_text="JPEG, PNG or WebP, up to 5 MB each. Choose several, or drop them on the page.",
+    )
+    caption = forms.CharField(
+        max_length=120,
+        required=False,
+        help_text="Used for all of the photographs in this upload.",
+    )
+
+    def clean_images(self):
+        uploads = [upload for upload in self.cleaned_data["images"] if upload]
+        if not uploads:
+            raise forms.ValidationError("Choose at least one photograph.")
+        for upload in uploads:
+            try:
+                validate_image_upload(upload)
+            except forms.ValidationError as exc:
+                raise forms.ValidationError(f"{upload.name}: {' '.join(exc.messages)}") from exc
+        return uploads
 
 
 class ResourceSearchForm(StyledFormMixin, forms.Form):

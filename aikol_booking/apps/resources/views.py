@@ -302,20 +302,29 @@ def resource_images(request, pk: int):
     resource = get_object_or_404(Resource, pk=pk)
     form = ResourceImageForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
-        image = form.save(commit=False)
-        image.resource = resource
+        uploads = form.cleaned_data["images"]
+        caption = form.cleaned_data.get("caption", "")
         last = resource.images.order_by("-display_order").first()
-        image.display_order = (last.display_order + 1) if last else 0
-        image.save()
+        order = (last.display_order + 1) if last else 0
+        for offset, upload in enumerate(uploads):
+            ResourceImage.objects.create(
+                resource=resource,
+                image=upload,
+                caption=caption,
+                display_order=order + offset,
+            )
         log_action(
             actor=request.user,
             action="RESOURCE_IMAGE_ADDED",
             entity_type="Resource",
             entity_id=resource.pk,
-            description=f"Photograph added to {resource.name}.",
+            description=f"{len(uploads)} photograph(s) added to {resource.name}.",
             request=request,
         )
-        messages.success(request, "Photograph added.")
+        messages.success(
+            request,
+            "Photograph added." if len(uploads) == 1 else f"{len(uploads)} photographs added.",
+        )
         return redirect("resources:images", pk=pk)
     return render(
         request, "resources/images.html", {"resource": resource, "form": form}

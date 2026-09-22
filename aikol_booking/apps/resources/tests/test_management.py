@@ -292,7 +292,7 @@ class ImageUploadViewTests(Fixtures):
         upload = SimpleUploadedFile("../../evil name.png", png_bytes(), content_type="image/png")
         response = self.client.post(
             reverse("resources:images", args=[self.venue.pk]),
-            {"image": upload, "caption": "Front view"},
+            {"images": upload, "caption": "Front view"},
         )
         self.assertEqual(response.status_code, 302)
         image = ResourceImage.objects.get()
@@ -304,7 +304,7 @@ class ImageUploadViewTests(Fixtures):
         self.client.force_login(self.admin)
         bad = SimpleUploadedFile("x.png", b"not an image", content_type="image/png")
         response = self.client.post(
-            reverse("resources:images", args=[self.venue.pk]), {"image": bad}
+            reverse("resources:images", args=[self.venue.pk]), {"images": bad}
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ResourceImage.objects.count(), 0)
@@ -313,7 +313,7 @@ class ImageUploadViewTests(Fixtures):
         self.client.force_login(self.plain)
         upload = SimpleUploadedFile("photo.png", png_bytes(), content_type="image/png")
         response = self.client.post(
-            reverse("resources:images", args=[self.venue.pk]), {"image": upload}
+            reverse("resources:images", args=[self.venue.pk]), {"images": upload}
         )
         self.assertEqual(response.status_code, 403)
         self.assertEqual(ResourceImage.objects.count(), 0)
@@ -460,3 +460,36 @@ class ResourceEditTests(Fixtures):
         self.assertEqual(self.car.code, "CAR-1")
         self.assertEqual(self.car.name, "Renamed Car")
         self.assertEqual(self.car.status, ResourceStatus.MAINTENANCE)
+
+
+class MultipleImageUploadTests(Fixtures):
+    def test_several_photographs_arrive_in_one_upload(self):
+        self.client.force_login(self.admin)
+        uploads = [
+            SimpleUploadedFile("one.png", png_bytes(), content_type="image/png"),
+            SimpleUploadedFile("two.png", png_bytes(), content_type="image/png"),
+        ]
+        response = self.client.post(
+            reverse("resources:images", args=[self.venue.pk]),
+            {"images": uploads, "caption": "Interior"},
+        )
+        self.assertEqual(response.status_code, 302)
+        images = list(ResourceImage.objects.order_by("display_order"))
+        self.assertEqual(len(images), 2)
+        self.assertEqual([image.caption for image in images], ["Interior", "Interior"])
+        self.assertEqual([image.display_order for image in images], [0, 1])
+        for image in images:
+            image.image.delete(save=False)
+
+    def test_one_bad_file_names_itself_and_nothing_is_saved(self):
+        self.client.force_login(self.admin)
+        uploads = [
+            SimpleUploadedFile("good.png", png_bytes(), content_type="image/png"),
+            SimpleUploadedFile("broken.png", b"not an image", content_type="image/png"),
+        ]
+        response = self.client.post(
+            reverse("resources:images", args=[self.venue.pk]), {"images": uploads}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "broken.png")
+        self.assertEqual(ResourceImage.objects.count(), 0)
