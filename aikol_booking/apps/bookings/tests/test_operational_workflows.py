@@ -299,3 +299,20 @@ class PersonDescriptionTests(OperationalFixtures):
             reverse("bookings:user_search"), {"q": person.full_name[:6]}
         ).json()["results"]
         self.assertIn("Member of the public", next(row["meta"] for row in results if row["id"] == person.pk))
+
+
+class BookingFormLayoutTests(OperationalFixtures):
+    def test_a_room_asks_for_one_date_and_a_pair_of_times(self):
+        self.client.force_login(self.requester)
+        html = self.client.get(reverse("bookings:create", args=[self.room.pk])).content.decode()
+        self.assertIn(">Date</label>", html)
+        self.assertNotIn(">Start Date</label>", html)
+        self.assertNotIn('name="end_date"', html)
+        row = html[html.index('name="start_time"'):html.index('name="purpose"')]
+        self.assertIn('name="end_time"', row)
+
+    def test_a_vehicle_still_asks_for_both_dates(self):
+        self.client.force_login(self.requester)
+        html = self.client.get(reverse("bookings:create", args=[self.car.pk])).content.decode()
+        self.assertIn(">Start Date</label>", html)
+        self.assertIn('name="end_date"', html)

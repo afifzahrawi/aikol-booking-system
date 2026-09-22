@@ -123,6 +123,13 @@ class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
         ):
             self.fields.pop(name, None)
 
+        if not self.is_vehicle:
+            # A room is booked for one day, so there is one date and a pair of
+            # times. "Start Date" only makes sense beside an end date, which a
+            # room does not have, and the two times belong side by side.
+            self.fields["start_date"].label = "Date"
+            self.layout = [["start_date"], ["start_time", "end_time"]]
+
         if self.is_vehicle:
             self.fields["driver_arrangement"].required = True
             self.fields["location_from"].required = True

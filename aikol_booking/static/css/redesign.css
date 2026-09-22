@@ -786,6 +786,12 @@ img, video, iframe { max-width: 100%; }
 .booking-form { max-width: 44rem; }
 .booking-form .booking-for { max-width: 36rem; }
 .booking-form .field-row { gap: 0.75rem 1.25rem; }
+/* A pair of dates or times is narrow enough to stay side by side where a pair
+   of text fields would not: the general rule stacks every row below 940px,
+   which put a start time and an end time on separate lines on a laptop. */
+.booking-form .field-row:has(input[type="time"], input[type="date"]) {
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+}
 .booking-form .field { margin-bottom: 1.1rem; }
 .booking-form .field > .input,
 .booking-form .field > .select { max-width: 36rem; }
