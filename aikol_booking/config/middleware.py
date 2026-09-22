@@ -18,24 +18,26 @@ class SecurityPolicyMiddleware:
         if media_origin.startswith("https://"):
             parsed_media = urlsplit(media_origin)
             image_sources.append(f"{parsed_media.scheme}://{parsed_media.netloc}")
-        response.headers.setdefault(
-            "Content-Security-Policy",
-            "; ".join(
-                (
-                    "default-src 'self'",
-                    "base-uri 'self'",
-                    "connect-src 'self'",
-                    "font-src 'self'",
-                    f"img-src {' '.join(image_sources)}",
-                    "object-src 'none'",
-                    "script-src 'self'",
-                    "style-src 'self'",
-                    "form-action 'self'",
-                    "frame-ancestors 'none'",
-                    "upgrade-insecure-requests",
-                )
-            ),
-        )
+        directives = [
+            "default-src 'self'",
+            "base-uri 'self'",
+            "connect-src 'self'",
+            "font-src 'self'",
+            f"img-src {' '.join(image_sources)}",
+            "object-src 'none'",
+            "script-src 'self'",
+            "style-src 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'",
+        ]
+        # Only where the page itself arrived over TLS. Sent on a plain-HTTP
+        # development server it rewrites the browser's own requests to https,
+        # which nothing is listening for: a form posts, the server acts, and
+        # the redirect the browser follows dies with "Failed to fetch". The
+        # action has happened and the screen says it has not.
+        if request.is_secure():
+            directives.append("upgrade-insecure-requests")
+        response.headers.setdefault("Content-Security-Policy", "; ".join(directives))
         response.headers.setdefault(
             "Permissions-Policy",
             "camera=(), microphone=(), geolocation=(), payment=(), usb=()",

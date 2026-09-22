@@ -70,9 +70,17 @@
                 }
                 if (response.redirected) {
                     dialog.close();
-                    // A newly submitted booking should open its record, not
-                    // silently return to the list that launched the form.
-                    window.location.assign(form.id === 'bookingForm' ? response.url : sourceUrl);
+                    // Follow the server's own redirect. Returning to the page
+                    // that launched the dialog left a deleted record on screen
+                    // and, when that page was the record itself, would have
+                    // reloaded a 404. A same-URL assign can also come from the
+                    // cache, so that case reloads.
+                    const target = new URL(response.url, window.location.href);
+                    if (target.href === window.location.href) {
+                        window.location.reload();
+                    } else {
+                        window.location.assign(target.href);
+                    }
                     return;
                 }
                 if (!response.ok) {
@@ -90,7 +98,7 @@
                 body.insertAdjacentHTML(
                     'afterbegin',
                     failureNotice(
-                        'That did not reach the server, so it was not saved. Check your connection and try again.',
+                        'The connection broke before the reply arrived. It may still have been saved: reload the page and check before trying again.',
                         actionUrl
                     )
                 );

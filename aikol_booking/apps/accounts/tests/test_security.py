@@ -304,6 +304,13 @@ class TransportAndHeaderTests(TestCase):
         self.assertIn("default-src 'self'", policy)
         self.assertIn("object-src 'none'", policy)
         self.assertIn("frame-ancestors 'none'", policy)
+        # Only a page that arrived over TLS asks the browser to upgrade its own
+        # requests. On plain HTTP the directive rewrote them to https, nothing
+        # answered, and an action that had already been carried out reported a
+        # failure.
+        self.assertNotIn("upgrade-insecure-requests", policy)
+        secure = self.client.get("/sign-in/", secure=True)
+        self.assertIn("upgrade-insecure-requests", secure.headers["Content-Security-Policy"])
         self.assertEqual(response.headers["Cross-Origin-Opener-Policy"], "same-origin")
         self.assertIn("camera=()", response.headers["Permissions-Policy"])
 
