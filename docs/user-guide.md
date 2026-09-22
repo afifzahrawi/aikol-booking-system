@@ -4,7 +4,7 @@ A short guide for students, lecturers and staff using the Kulliyyah's booking sy
 first time. Ten minutes covers everything you need.
 
 Address: `https://aikol-booking-qn23bk3fqa-as.a.run.app`. It works on a phone as well as a
-laptop; there is nothing to install.
+laptop; there is nothing to install. Emails from the system arrive within about a minute.
 
 ---
 
@@ -60,20 +60,24 @@ The home page has a quicker route: choose a date and time there and it shows you
 
 On a room or car, choose **Check availability**. You see a week at a time, one row per day:
 
-- **Green** is approved and taken.
-- **Amber** is pending, which also holds the time.
+- **Green** is **booked**.
+- **Amber** is **pending approval**, which also holds the time.
 - **Empty** is free.
 
-Move between weeks with the buttons under the chart, or change the date. If you enter a **From**
-and **To** time above the chart, every day in the chart becomes a link that opens the booking
-form with that day and time already filled in.
+A block says what it covers on that day: "09:00 to 11:00", or "From 14:00", "All day" and
+"Until 17:00" for a booking that runs across several days.
+
+Move between weeks with the buttons under the chart, or change the date. **Click any free part
+of a day to open the booking form for that day.** Choosing a **From** and **To** time above the
+chart carries those times into the form as well.
 
 ## 5. Request a booking
 
 Choose **Book this** on the room or car, or a day in the availability chart.
 
-**For a room**, give the date, start and end time, what it is for, and how many people. The purpose
-matters: the office decides on it.
+**For a room**, give the date, the start and end time, what it is for, and how many people. The
+purpose matters: the office decides on it. Times are chosen from a list and run in quarter hours,
+so a booking starts and ends at :00, :15, :30 or :45.
 
 **For a car**, give the dates and times out and back, where you are going from and to, how many
 passengers, and what the trip is for. Trips can span more than one day.
@@ -121,9 +125,9 @@ dates together.
 ## 9. Keys
 
 For an approved room booking, collect the key from the Kulliyyah office at the start of your
-time and return it when you finish. The office records who collected it and when it came back,
-so please return it yourself or tell the office who will. A key that is not back after the
-booking ends is followed up.
+time and return it when you finish. The office records who collected it: if somebody else is
+fetching the key for you, tell the office their name. A key that is not back after the booking
+ends is followed up.
 
 ## 10. Your details
 
@@ -140,5 +144,7 @@ book again. Your matriculation or staff number is set by the office; if it is wr
 | Asked to wait after several sign-in attempts | Too many wrong passwords in a short time. Wait a quarter of an hour, or reset the password. |
 | "Inside the three-day notice" when cancelling | Too close to the booking to cancel yourself. Contact the office. |
 | A room or car is missing from the list | It is under maintenance or has been retired. Existing bookings on it are unaffected. |
+| "Set the time on the quarter hour" | Times run in quarter hours. Choose :00, :15, :30 or :45 from the list. |
+| A message that something did not reach the server | The reply was lost and the change may still have been saved. Reload the page and look before trying again. |
 
 Kulliyyah office contact details are at the foot of every page.

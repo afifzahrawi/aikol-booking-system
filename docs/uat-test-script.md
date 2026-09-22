@@ -35,6 +35,9 @@ are never deleted; cancelled UAT bookings stay in the history, and that is expec
 **Email.** Delivery runs every minute. If a message has not arrived in three minutes, check the
 spam folder, then note it as a Fail with the time.
 
+**Staff navigation.** An approver or administrator has one menu: their own bookings above the
+rule, the Kulliyyah's work below it. There is no "Administrator View" switch to find.
+
 **Devices.** Do each section once on a laptop. Sections 3, 4, 6 and 8 should also be done once on
 a phone; mark the phone runs with a P.
 
@@ -81,7 +84,9 @@ a phone; mark the phone runs with a P.
 | 3.6 | Open UAT Room. | Detail page: photograph, type, location, capacity, opening 08:00 to 22:00, facilities. No internal code is shown to you. **Book this** and **Check availability** are visible without scrolling on a laptop. | |
 | 3.7 | **Check availability.** | Week chart, one row per day, 08:00 to 22:00 axis. Legend: approved, pending, free. | |
 | 3.8 | Change the date; use Previous week and Next week. | The chart follows. The weekday is spelled out beside the date. | |
-| 3.9 | Enter From 10:00 and To 12:00 in the chart's toolbar. | The chart reloads. Each day label is now a link. | |
+| 3.9 | Choose From 10:00 and To 12:00 in the chart's toolbar. | Both are drop-down lists of quarter hours, not clocks. The chart reloads. | |
+| 3.9a | Look at the legend and a booked block. | Reads Booked, Pending approval, Free. The free colour is the same as the empty part of a row. A block says what it covers that day ("09:00 to 11:00", or From/All day/Until for a booking across days). | |
+| 3.9b | As T1, look below the chart. | There is no list of the room's bookings. A requester sees when it is taken, not who holds it. (T3 does see that list.) | |
 | 3.10 | **Vehicles** in the menu; repeat 3.2 to 3.7 for UAT Car. | Same behaviour. Seats shown instead of capacity. | |
 | 3.11P | On the phone: Venue list, detail, availability. | No sideways scrolling; the bottom tab bar has Home, My Bookings, Venue, Vehicles, Menu; the chart's hour labels do not overlap. | |
 
@@ -89,7 +94,8 @@ a phone; mark the phone runs with a P.
 
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
-| 4.1 | From the availability chart with 10:00 to 12:00 entered, click a weekday two weeks ahead. | The booking form opens with that date, 10:00 and 12:00 already filled. | |
+| 4.1 | With 10:00 to 12:00 chosen in the toolbar, click the empty part of a weekday row two weeks ahead. | The booking form opens with that date, 10:00 and 12:00 already filled. | |
+| 4.1a | Look at the form for a room. | One **Date** field (no "Start Date"), then Start Time and End Time beside each other. Both times are lists offering :00, :15, :30 and :45 only, from 08:00 to 22:00. | |
 | 4.2 | Submit without a purpose. | Refused with a message at the top naming the field, and under the field. | |
 | 4.3 | Purpose "UAT test 1", attendees 5. Submit. | "Request submitted" with a reference like BK-2026MM-NNNN. Email "Booking request received" within three minutes. | |
 | 4.4 | Book the **same** room, same date, 11:00 to 13:00. | Refused: already reserved, naming the clash. A pending request holds its time. | |
@@ -100,6 +106,7 @@ a phone; mark the phone runs with a P.
 | 4.9 | A Saturday or a public holiday, inside 90 days. | Accepted. Weekends and holidays are allowed. | |
 | 4.10 | End time before start time. | Refused. | |
 | 4.11 | Attendees 50 for a room of capacity 10. | Refused: the room seats 10. | |
+| 4.11a | Type a time by hand, such as 14:07, if your browser allows it. | Refused: "Set the time on the quarter hour". Nothing is created. | |
 | 4.12 | Open the form, then choose **Cancel** or press Escape. | The dialog closes; nothing is created. | |
 | 4.13P | On the phone, book UAT Room for a date next week. | Form usable one-handed; date and time pickers are the phone's own; submit reaches the confirmation. | |
 
@@ -177,7 +184,8 @@ a phone; mark the phone runs with a P.
 | 10.3 | T3 opens the booking → **Management decision**. Enter driver name and contact, approve. | Management status Approved; driver recorded. Email "Vehicle use approved" to T1. | |
 | 10.4 | For another vehicle booking, reject at the management step with a reason. | The booking becomes Rejected. Email "Vehicle use not approved". | |
 | 10.5 | Keys → **Awaiting Collection**. | Approved bookings whose keys are not yet out, including 4.3 and 10.3. | |
-| 10.6 | Issue the key for 4.3: collector's name. | Moves to **Keys Out** with time out, who collected, who issued. | |
+| 10.6 | Issue the key for 4.3, leaving **Collected by** blank. | Accepted. The record shows the person who booked as the collector. | |
+| 10.6a | Issue another key, this time typing a different collector's name and telephone number. | Recorded as typed. Moves to **Keys Out** with time out, who collected, who issued. | |
 | 10.7 | Issue the same key again. | Refused: already out. | |
 | 10.8 | Return the key with a note. | Moves out of Keys Out; time in and who received recorded on the booking. | |
 | 10.9 | Let a booking with a key out pass its end time (or use one from the demo data). | Appears under **Overdue**; the Overview shows "1 key still out after the booking ended". | |
@@ -189,8 +197,11 @@ a phone; mark the phone runs with a P.
 | --- | --- | --- | --- |
 | 11.1 | Resources → Venues → **Add venue**. Create UAT Room 2 with no photograph. | Created; shows a drawing as placeholder. | |
 | 11.2 | Edit it: change capacity and location. | Saved; the list updates. | |
-| 11.3 | Images: upload a JPEG under 5 MB. | Appears; the first image becomes the main image. Upload a second and reorder. | |
-| 11.4 | Upload an SVG file; then a 6 MB photograph; then a `.exe` renamed to `.jpg`. | Each refused with a plain reason. | |
+| 11.3 | Images: the screen opens as a full page, not a popup. Upload two photographs at once. | Both appear. The first is marked as the main image. | |
+| 11.3a | Drag a photograph from your desktop onto the page. | An overlay appears saying where to drop; letting go fills the upload field. | |
+| 11.3b | Use the arrows on a card to move a photograph to the front, then open the room as a requester. | The photograph you moved is the one shown on the room. | |
+| 11.3c | On the room, click the thumbnails under the large photograph. | Each one comes to the front; the counter reads "2 of 3". | |
+| 11.4 | Upload an SVG file; then a 6 MB photograph; then a `.exe` renamed to `.jpg`. | Each refused with a plain reason. The 6 MB one is refused **before** it uploads, naming the file and its size. | |
 | 11.5 | Set UAT Car to **Maintenance**. | Disappears from the Vehicles list for T1; T1 cannot open its booking form; existing bookings are untouched. Set it back to Available. | |
 | 11.6 | Try to **Delete** UAT Room 2 while it is active. | Refused: deactivate first. Deactivate, then delete: it is gone. | |
 | 11.7 | Try to delete UAT Room (which has bookings). | Refused: it has bookings. It can only be deactivated. | |
@@ -204,7 +215,8 @@ a phone; mark the phone runs with a P.
 | --- | --- | --- | --- |
 | 12.1 | People. Search T1 by name, by email, by number. Filter by role and state. | Found each way. | |
 | 12.2 | Edit T2: role Approver. Save. | Saved. T2 is now forced through authenticator setup at next sign-in (section 8). | |
-| 12.3 | The edit form. | No password field anywhere. Labels read "Active account" and "Email address verified", not field names. | |
+| 12.3 | The edit form. | No password field anywhere. "Active account" and "Email address verified" are Yes/No choices, not tick boxes. | |
+| 12.3a | Create a throwaway account, set Active account to No, then use **Delete account** at the foot of its page. | Deleted, and gone from the list straight away. Try the same on an account with bookings: refused, and it says why. | |
 | 12.4 | Untick **Active account** for a throwaway user; that user tries to sign in. | Refused as if the password were wrong. Their bookings remain in the history. | |
 | 12.5 | Tick **Email address verified** by hand for a user whose email failed. | They can book. The change appears in the Audit Log. | |
 | 12.6 | Edit dialog: the buttons and the Authenticator section. | Clear space between the Save row and the Authenticator heading. | |
@@ -214,8 +226,10 @@ a phone; mark the phone runs with a P.
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
 | 13.1 | System → Booking Rules. | Each rule has a plain name and a one-sentence description with the default explained. No decision numbers. | |
+| 13.1a | Look at the email section. | Encryption is one choice (STARTTLS / SSL / None), not two tick boxes. Email delivery is Yes or No. | |
 | 13.2 | Change **Cancellation notice** to 48 and save; ask T1 to cancel a booking 60 hours ahead. | Now allowed. Set it back to 72. | |
 | 13.3 | **Reason to cancel** is a Yes/No choice. Set No; T1 cancels without a reason; set Yes again. | Works both ways. | |
+| 13.3a | Change **Day starts** to 09:00, then open a booking form. | The time lists now begin at 09:00. Set it back to 08:00. | |
 | 13.4 | Enter "ninety" in **Book ahead limit**. | Refused. | |
 | 13.5 | Email delivery: untick Enable and save. T1 requests a password reset. | Nothing arrives; the yellow notice counts one queued message. Re-enable; it arrives within a minute or two. | |
 | 13.6 | Every change above. | Appears in System → Audit Log with who, when and old and new values. | |
@@ -229,6 +243,8 @@ a phone; mark the phone runs with a P.
 | 14.3 | Add an announcement "UAT notice" starting now with no end. | Appears on T1's home page. | |
 | 14.4 | Add one scheduled to start tomorrow. | Not shown today. | |
 | 14.5 | Deactivate the UAT notice. | Disappears; still listed under Site Content as inactive. | |
+| 14.6 | On Site Content, use the Save button inside one section. | Saves the whole page. There is no separate save bar at the foot. | |
+| 14.7 | Upload a logo, then use **Remove image** on it. | The current image is shown with its name; Remove takes it away and the default returns. | |
 
 ## 15. Reports and data (T3)
 
@@ -248,6 +264,8 @@ a phone; mark the phone runs with a P.
 | 16.1 | Sign out; press the browser Back button. | The previous page is not shown with your data; you are asked to sign in. | |
 | 16.2 | Sign in on the phone and the laptop at once. | Both work. | |
 | 16.3 | Leave a page open for a day and act on it. | Asked to sign in again; the action is not lost silently (the form comes back). | |
+| 16.4 | On a record page such as a room's photographs, press **Back**. | One click, and it goes to the list that record belongs to (Venues, not the Overview). | |
+| 16.5 | Academic Calendars: create a calendar, then delete it. | Deleted, with a confirmation first. Bookings already made are unaffected. | |
 
 ## 17. Things to notice everywhere
 
@@ -262,6 +280,8 @@ Tick each once you have seen it hold across the sections above.
 | 17.5 | Dates and times read the same way everywhere ("Fri 02 Oct 2026, 15:00 to 17:00"). | |
 | 17.6 | Every email arrived within about a minute and reads plainly. | |
 | 17.7 | Keyboard only: Tab reaches every control, the focused control is visible, Escape closes dialogs. | |
+| 17.8 | Photographs are all the same size in a row of cards, whatever was uploaded. | |
+| 17.9 | Nothing on screen offers a time that is not a quarter hour. | |
 
 ---
 
