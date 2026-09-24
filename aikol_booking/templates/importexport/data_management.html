@@ -2,7 +2,8 @@
 {% block title %}Data Management{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>Data Management</h1>
-    <p class="lede">Add many records at once from a spreadsheet, or download what is already in the system.</p></div></div>
+    <p class="lede">Add many records at once from a spreadsheet, or download what is already in the system.</p></div>
+    <div class="btn-group"><a class="btn" href="{% url 'administration:retention' %}">Old Records</a></div></div>
 {% include "administration/_nav.html" with tab='data' %}
 
 <div class="grid grid-2 grid-top">

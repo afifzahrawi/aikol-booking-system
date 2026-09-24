@@ -14,6 +14,8 @@ intended to be read in a browser and printed to PDF.
 | [technical/data-retention.md](technical/data-retention.md) | Retention policy, export and archiving, batched deletion, backup and restore |
 | [AIKOL Booking System - User Guide.docx](AIKOL%20Booking%20System%20-%20User%20Guide.docx) | The user guide as a Word file, for printing or circulating to the Kulliyyah |
 | [AIKOL Booking System - UAT Test Script.docx](AIKOL%20Booking%20System%20-%20UAT%20Test%20Script.docx) | The test script as a Word file, with a Result column to fill in |
+| [admin-guide.md](admin-guide.md) | Guide for the Kulliyyah office: authenticator, decisions, keys, resources, people, reports, rules and data, with screenshots |
+| [AIKOL Booking System - Admin Guide.docx](AIKOL%20Booking%20System%20-%20Admin%20Guide.docx) | The admin guide as a Word file |
 | [user-guide.md](user-guide.md) | First-time guide for requesters: account, finding a room or car, availability, booking, weekly bookings, cancelling, keys |
 | [uat-test-script.md](uat-test-script.md) | Acceptance test script for the office: 17 sections, every use case with expected results, phone runs marked |
 | [technical/managed-cloud-deployment.md](technical/managed-cloud-deployment.md) | Cloud Run, Neon and R2 deployment, scheduled jobs, cost controls and go-live checks |

@@ -344,3 +344,19 @@ class BackDestinationTests(TestCase):
             reverse("administration:user_edit", args=[self.admin.pk]),
             reverse("administration:users"),
         )
+
+
+class RetentionReachableTests(TestCase):
+    def test_the_old_records_screen_is_linked_from_the_data_page(self):
+        """The retention screen existed but nothing linked to it: the office
+        could reach it only by typing its address."""
+        from apps.accounts.models import Affiliation, Role, User
+
+        admin = User.objects.create_user(
+            email="office@demo.aikol.test", password="prototype-password-1",
+            full_name="Kulliyyah Office", phone="03-6196 4000",
+            affiliation=Affiliation.STAFF, role=Role.ADMINISTRATOR, email_verified=True,
+        )
+        self.client.force_login(admin)
+        page = self.client.get(reverse("importexport:data_management"))
+        self.assertContains(page, f'href="{reverse("administration:retention")}"')

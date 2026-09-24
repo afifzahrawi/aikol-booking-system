@@ -252,6 +252,8 @@ acceptance testing to find more of that kind.
 │   ├── README.md
 │   ├── ux-audit.md             # the end-to-end interface audit that drove the redesign
 │   ├── user-guide.md           # first-time guide for requesters
+│   ├── admin-guide.md          # guide for the office: approvers and administrators
+│   ├── images/                 # screenshots in the guides; retake when a pictured screen changes
 │   ├── uat-test-script.md      # the acceptance test script the office works through
 │   └── technical/              # architecture, schema, booking rules, retention, security,
 │                               # testing, bulk import, prototype guide, managed-cloud
