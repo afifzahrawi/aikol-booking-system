@@ -12,7 +12,8 @@ laptop; there is nothing to install. Emails from the system arrive within about 
 
 You can look up rooms and Kulliyyah cars, see when they are free, and ask to book one. The
 Kulliyyah office looks at every request and approves or declines it. You are emailed when a
-decision is made. Keys are collected from the office.
+decision is made. Keys are collected from the office. On screen the office is called
+**the Admin**: when a page says "contact the Admin", it means the Kulliyyah office.
 
 Three things to know before you start:
 
@@ -22,6 +23,34 @@ Three things to know before you start:
   months ahead. Weekends and holidays are fine.
 - **Cars** come with a Kulliyyah driver arranged by the office. You do not drive the car
   yourself. A car booking also needs Kulliyyah management approval, so allow more time.
+
+---
+
+## Finding your way around
+
+Once you are signed in, the menu is always in the same place. On a laptop it runs down the left
+side of every page; the small arrow at its top edge folds it away to give the page more room. On
+a phone it sits along the bottom of the screen, and **Menu** opens the rest.
+
+| Page | How to get there | What it is for | In this guide |
+| --- | --- | --- | --- |
+| **Sign In** | The system's address | Signing in, registering, a forgotten password | Sections 1 and 2 |
+| **Home** | **Home** in the menu | A quick search for what is free, notices from the Admin, your next booking | Section 3 |
+| **Venue** | **Venue** in the menu | Every room, with search and filters | Section 3 |
+| **A room or car** | Choose one from **Venue** or **Vehicles** | Photographs, location, seats, facilities, and the buttons to book | Section 3 |
+| **Availability** | **Check availability** on a room or car | A week at a time: what is booked and what is free | Section 4 |
+| **Booking form** | **Book this**, or a free part of the availability chart | Asking for a booking | Section 5 |
+| **Vehicles** | **Vehicles** in the menu | Every Kulliyyah car | Section 3 |
+| **My Bookings** | **My Bookings** in the menu | Everything you have asked for, and its status | Section 7 |
+| **A booking** | A reference such as `BK-202610-0004` in My Bookings | The details, and **Cancel booking** | Sections 7 and 8 |
+| **Edit Profile** | Your name at the foot of the menu, then **Edit Profile** | Your name, email address and phone number | Section 10 |
+
+Your name at the foot of the menu also holds **Sign Out**. Most pages have a **Back** link at the
+top that returns you to the list you came from.
+
+![On a phone the menu runs along the bottom of the screen.](images/guide/11-phone-home.png)
+
+*On a phone the menu runs along the bottom of the screen.*
 
 ---
 
@@ -37,6 +66,11 @@ Three things to know before you start:
 Members of the public without an IIUM address can register too; choose the public option on the
 form.
 
+![The registration form.](images/guide/01b-register.png)
+
+*The registration form.*
+
+
 If you already had an account and register again, nothing new is created. You will be emailed a
 reminder instead, and you can sign in with your existing password or reset it.
 
@@ -47,6 +81,11 @@ follow the link that arrives by email. The link lasts three days.
 
 You stay signed in on your device until you sign out from the menu under your name.
 
+![The Sign In page. Registration and the forgotten-password link are under the form.](images/guide/01-sign-in.png)
+
+*The Sign In page. Registration and the forgotten-password link are under the form.*
+
+
 ## 3. Find a room or a car
 
 - **Venue** in the menu lists every room: moot court, lecture rooms, seminar rooms, meeting rooms,
@@ -55,6 +94,23 @@ You stay signed in on your device until you sign out from the menu under your na
 - Open one to see its photographs, location, capacity and opening hours.
 
 The home page has a quicker route: choose a date and time there and it shows you what is free.
+
+![Home. The search at the top shows what is free at a date and time.](images/guide/02-home.png)
+
+*Home. The search at the top shows what is free at a date and time.*
+
+![Venue: every room, with search and filters.](images/guide/03-venues.png)
+
+*Venue: every room, with search and filters.*
+
+![A room. Check availability and Book this are at the top.](images/guide/04-venue-detail.png)
+
+*A room. Check availability and Book this are at the top.*
+
+![Vehicles: every Kulliyyah car.](images/guide/07-vehicles.png)
+
+*Vehicles: every Kulliyyah car.*
+
 
 ## 4. See when it is free
 
@@ -71,6 +127,11 @@ Move between weeks with the buttons under the chart, or change the date. **Click
 of a day to open the booking form for that day.** Choosing a **From** and **To** time above the
 chart carries those times into the form as well.
 
+![Availability. Green is booked, amber is pending approval, and the empty part of a row is free.](images/guide/05-availability.png)
+
+*Availability. Green is booked, amber is pending approval, and the empty part of a row is free.*
+
+
 ## 5. Request a booking
 
 Choose **Book this** on the room or car, or a day in the availability chart.
@@ -83,6 +144,11 @@ so a booking starts and ends at :00, :15, :30 or :45.
 passengers, and what the trip is for. Trips can span more than one day.
 
 Submit. You get a reference such as `BK-202610-0004` on screen and by email. Keep it.
+
+![The booking form for a room: one date, then the start and end times side by side.](images/guide/06-booking-form.png)
+
+*The booking form for a room: one date, then the start and end times side by side.*
+
 
 The form will tell you plainly if something is not allowed: the time clashes with another
 booking, it is outside opening hours, it is longer than nine hours, it is more than three months
@@ -111,6 +177,15 @@ The office is emailed about your request. When they decide, you are emailed:
 
 **My Bookings** in the menu shows everything you have requested with its current status.
 
+![My Bookings. Choose a reference to open that booking.](images/guide/08-my-bookings.png)
+
+*My Bookings. Choose a reference to open that booking.*
+
+![One booking. Cancel booking is at the top while cancelling is still allowed.](images/guide/09-booking-detail.png)
+
+*One booking. Cancel booking is at the top while cancelling is still allowed.*
+
+
 ## 8. Cancel a booking
 
 Open the booking under My Bookings and choose **Cancel booking**. Give a short reason.
@@ -135,6 +210,11 @@ Under your name at the top, **Edit Profile** lets you change your name, email ad
 number. If you change the email address you will be asked to confirm the new one before you can
 book again. Your matriculation or staff number is set by the office; if it is wrong, tell them.
 
+![Edit Profile.](images/guide/10-profile.png)
+
+*Edit Profile.*
+
+
 ## If something goes wrong
 
 | What you see | What it means |
@@ -148,3 +228,5 @@ book again. Your matriculation or staff number is set by the office; if it is wr
 | A message that something did not reach the server | The reply was lost and the change may still have been saved. Reload the page and look before trying again. |
 
 Kulliyyah office contact details are at the foot of every page.
+
+*The screenshots show fictional demonstration data.*

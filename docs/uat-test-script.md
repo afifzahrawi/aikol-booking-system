@@ -22,12 +22,22 @@ Address: `https://aikol-booking-qn23bk3fqa-as.a.run.app`
 | T2, approver | Approver | An account the administrator sets to Approver in section 12. Needs an authenticator app on their phone (Google Authenticator, Microsoft Authenticator or Authy). |
 | T3, administrator | Administrator | The office account. Authenticator app already enrolled. |
 
-**Test data.** T3 creates these in section 11 before T1 starts booking, or use the demo records
-if they are still present:
+**Test data.** Production has been reset for testing: there are no bookings, and three venues
+are ready, drawn with placeholder pictures:
 
-- A venue called **UAT Room** with capacity 10 and one photograph.
+| Venue | Seats |
+| --- | --- |
+| **UAT Moot Court** | 80 |
+| **UAT Seminar Room** | 40 |
+| **UAT Meeting Room** | 10 |
+
+T3 adds the rest in section 11 before T1 starts booking:
+
 - A vehicle called **UAT Car** with 5 seats.
 - An academic calendar covering the next two months with one week-long break in the middle.
+- One photograph on **UAT Meeting Room**.
+
+On screen the Kulliyyah office is called **the Admin**; "contact the Admin" is expected wording.
 
 Name every test record with **UAT** so it can be cancelled or deactivated afterwards. Bookings
 are never deleted; cancelled UAT bookings stay in the history, and that is expected.
@@ -77,11 +87,11 @@ a phone; mark the phone runs with a P.
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
 | 3.1 | Home page. | Greeting with your name, the quick availability search, announcements, your booking summary. Title left-aligned. | |
-| 3.2 | **Venue** in the menu. | Cards with photograph or drawing, name, type, location, seats. UAT Room is present. | |
-| 3.3 | Search for "UAT". | Only UAT Room remains. The address bar shows the search, so the page can be bookmarked. | |
-| 3.4 | Filter by minimum capacity 50. | UAT Room (capacity 10) disappears. Clear the filter; it returns. | |
+| 3.2 | **Venue** in the menu. | Cards with photograph or drawing, name, type, location, seats. The three UAT venues are present. | |
+| 3.3 | Search for "UAT". | Only the three UAT venues remain. The address bar shows the search, so the page can be bookmarked. | |
+| 3.4 | Filter by minimum capacity 50. | Only UAT Moot Court (80) remains. Clear the filter; the other two return. | |
 | 3.5 | Filter by a facility, then by availability. | Lists change accordingly. | |
-| 3.6 | Open UAT Room. | Detail page: photograph, type, location, capacity, opening 08:00 to 22:00, facilities. No internal code is shown to you. **Book this** and **Check availability** are visible without scrolling on a laptop. | |
+| 3.6 | Open UAT Meeting Room. | Detail page: photograph, type, location, capacity, opening 08:00 to 22:00, facilities. No internal code is shown to you. **Book this** and **Check availability** are visible without scrolling on a laptop. | |
 | 3.7 | **Check availability.** | Week chart, one row per day, 08:00 to 22:00 axis. Legend: approved, pending, free. | |
 | 3.8 | Change the date; use Previous week and Next week. | The chart follows. The weekday is spelled out beside the date. | |
 | 3.9 | Choose From 10:00 and To 12:00 in the chart's toolbar. | Both are drop-down lists of quarter hours, not clocks. The chart reloads. | |
@@ -108,7 +118,7 @@ a phone; mark the phone runs with a P.
 | 4.11 | Attendees 50 for a room of capacity 10. | Refused: the room seats 10. | |
 | 4.11a | Type a time by hand, such as 14:07, if your browser allows it. | Refused: "Set the time on the quarter hour". Nothing is created. | |
 | 4.12 | Open the form, then choose **Cancel** or press Escape. | The dialog closes; nothing is created. | |
-| 4.13P | On the phone, book UAT Room for a date next week. | Form usable one-handed; date and time pickers are the phone's own; submit reaches the confirmation. | |
+| 4.13P | On the phone, book UAT Meeting Room for a date next week. | Form usable one-handed; the date picker is the phone's own and the times are a list; submit reaches the confirmation. | |
 
 ## 5. Booking a vehicle (T1)
 
@@ -126,7 +136,7 @@ a phone; mark the phone runs with a P.
 
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
-| 6.1 | UAT Room → **Repeat weekly** (on the detail page). | Form with calendar, first date, repeat until, purpose, and a day-of-week grid where each day has its own times. | |
+| 6.1 | UAT Meeting Room → **Repeat weekly** (on the detail page). | Form with calendar, first date, repeat until, purpose, and a day-of-week grid where each day has its own times. | |
 | 6.2 | Choose the UAT calendar, Tuesday 09:00 to 11:00, from next week until the calendar's end. Continue. | A preview listing every Tuesday that would be created, and separately the Tuesday inside the break as "outside teaching". Nothing is booked yet. | |
 | 6.3 | Confirm. | The series is created. One email listing all the dates. Each date appears in My Bookings as its own booking. | |
 | 6.4 | Request the same series again. | The preview shows every date as already reserved. You can submit nothing, or leave out the clashes if any date is free. | |
@@ -195,7 +205,7 @@ a phone; mark the phone runs with a P.
 
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
-| 11.1 | Resources → Venues → **Add venue**. Create UAT Room 2 with no photograph. | Created; shows a drawing as placeholder. | |
+| 11.1 | Resources → Venues → **Add venue**. Create UAT Spare Room with no photograph. | Created; shows a drawing as placeholder. | |
 | 11.2 | Edit it: change capacity and location. | Saved; the list updates. | |
 | 11.3 | Images: the screen opens as a full page, not a popup. Upload two photographs at once. | Both appear. The first is marked as the main image. | |
 | 11.3a | Drag a photograph from your desktop onto the page. | An overlay appears saying where to drop; letting go fills the upload field. | |
@@ -203,8 +213,8 @@ a phone; mark the phone runs with a P.
 | 11.3c | On the room, click the thumbnails under the large photograph. | Each one comes to the front; the counter reads "2 of 3". | |
 | 11.4 | Upload an SVG file; then a 6 MB photograph; then a `.exe` renamed to `.jpg`. | Each refused with a plain reason. The 6 MB one is refused **before** it uploads, naming the file and its size. | |
 | 11.5 | Set UAT Car to **Maintenance**. | Disappears from the Vehicles list for T1; T1 cannot open its booking form; existing bookings are untouched. Set it back to Available. | |
-| 11.6 | Try to **Delete** UAT Room 2 while it is active. | Refused: deactivate first. Deactivate, then delete: it is gone. | |
-| 11.7 | Try to delete UAT Room (which has bookings). | Refused: it has bookings. It can only be deactivated. | |
+| 11.6 | Try to **Delete** UAT Spare Room while it is active. | Refused: deactivate first. Deactivate, then delete: it is gone. | |
+| 11.7 | Try to delete UAT Meeting Room (which has bookings). | Refused: it has bookings. It can only be deactivated. | |
 | 11.8 | Facilities: add "UAT Projector", rename it, drag it to the top, deactivate it. | Each step saves; the order persists after reload; a deactivated facility disappears from the venue form and the filter. | |
 | 11.9 | Academic Calendars: create the UAT calendar with a break; try a second calendar overlapping it. | The overlap is refused. | |
 | 11.10 | Numbers in every table (capacity, seats, bookings). | Left-aligned under their headings. | |
@@ -287,6 +297,6 @@ Tick each once you have seen it hold across the sections above.
 
 ## After testing
 
-T3 cancels the remaining UAT bookings with the reason "UAT", sets UAT Room and UAT Car to
+T3 cancels the remaining UAT bookings with the reason "UAT", sets the three UAT venues and UAT Car to
 inactive, deactivates the throwaway user, and removes the UAT announcement. Send the completed
 script, with screenshots of every Fail, to the developer.
