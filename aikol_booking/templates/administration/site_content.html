@@ -4,7 +4,7 @@
 <div class="page-head">
     <div>
         <h1>Site Content</h1>
-        <p class="lede">Manage the public identity, page photography and office notices.</p>
+        <p class="lede">Change the name, logos, photos and notices.</p>
     </div>
 </div>
 {% include "administration/_nav.html" with tab='content' %}
@@ -16,7 +16,7 @@
     <section class="settings-section">
         <div class="settings-intro">
             <h2>Identity</h2>
-            <p>The name and logos shown in the header, the footer and the sign-in page. Logos are JPEG, PNG or WebP, up to 5 MB.</p>
+            <p>The name and logos shown at the top of every page. Logos can be JPEG, PNG or WebP, up to 5 MB.</p>
         </div>
         <div class="settings-fields">
             <div class="field-row">
@@ -25,12 +25,12 @@
             </div>
             {% include "_field.html" with field=form.organisation %}
             <div class="field-row">
-                {% include "_field.html" with field=form.logo %}
                 {% include "_field.html" with field=form.iium_logo %}
+                {% include "_field.html" with field=form.logo %}
             </div>
             <div class="field-row">
-                {% include "_field.html" with field=form.logo_alt %}
                 {% include "_field.html" with field=form.iium_logo_alt %}
+                {% include "_field.html" with field=form.logo_alt %}
             </div>
             <div class="section-save">
                 <button class="btn btn-primary" type="submit">Save</button>
@@ -41,7 +41,7 @@
     <section class="settings-section">
         <div class="settings-intro">
             <h2>Page Photography</h2>
-            <p>The photographs and welcome wording on the sign-in page and the home page. Photographs are JPEG, PNG or WebP, up to 5 MB.</p>
+            <p>The photos and welcome text on the sign-in and home pages. Photos can be JPEG, PNG or WebP, up to 5 MB.</p>
         </div>
         <div class="settings-fields">
             <div class="field-row">
@@ -84,7 +84,7 @@
     <div class="section-heading-row">
         <div>
             <h2 id="manage-announcements">Announcements</h2>
-            <p>Active notices appear directly below the booking search on the user home page.</p>
+            <p>Notices show on the home page.</p>
         </div>
         <a class="btn btn-primary" data-modal-form href="{% url 'administration:announcement_new' %}">New announcement</a>
     </div>
@@ -104,7 +104,7 @@
                 <a class="btn btn-sm" data-modal-form href="{% url 'administration:announcement_edit' item.pk %}">Edit</a>
             </article>
         {% empty %}
-            <div class="empty-state">No announcements yet. Create one when the office has a notice for bookers.</div>
+            <div class="empty-state">No notices yet.</div>
         {% endfor %}
     </div>
 </section>

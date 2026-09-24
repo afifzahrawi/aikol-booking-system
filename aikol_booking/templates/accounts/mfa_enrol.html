@@ -4,7 +4,7 @@
 <div class="page-head">
     <div>
         <h1>Set Up Your Authenticator</h1>
-        <p class="lede">Your account has extra responsibilities, so signing in needs a password and a code from your phone.</p>
+        <p class="lede">For your account, signing in needs your password and a code from your phone.</p>
     </div>
 </div>
 
@@ -12,8 +12,8 @@
     <section class="form-sheet mfa-sheet" aria-labelledby="mfa-scan-heading">
         <div class="docket-section-heading">
             <h2 id="mfa-scan-heading">Scan This Code</h2>
-            <p>Open Google Authenticator, Microsoft Authenticator, Aegis or any app that supports
-               time-based codes, choose <em>Add account</em>, and point the camera here.</p>
+            <p>Open an authenticator app such as Google Authenticator or Microsoft Authenticator,
+               choose <em>Add account</em>, and scan this code.</p>
         </div>
         <figure class="mfa-qr" aria-label="QR code for {{ issuer }}">{{ qr_svg|safe }}</figure>
         <details class="mfa-manual">
@@ -27,7 +27,7 @@
     <section class="form-sheet mfa-sheet" aria-labelledby="mfa-confirm-heading">
         <div class="docket-section-heading">
             <h2 id="mfa-confirm-heading">Enter the Code the App Shows</h2>
-            <p>This confirms the app is set up correctly.</p>
+            <p>Enter the code from the app to finish.</p>
         </div>
         <form method="post" novalidate>
             {% csrf_token %}

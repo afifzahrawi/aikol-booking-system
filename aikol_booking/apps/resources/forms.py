@@ -105,7 +105,7 @@ class FacilityForm(StyledFormMixin, forms.ModelForm):
     """Display order is absent deliberately: it is set by dragging rows, not
     typed. A number field here would let two facilities claim the same position
     and would need the rest of the list renumbered by hand to insert anything."""
-    is_active = yes_no_field("Offered", help_text="No hides it from venue forms and filters; venues that have it keep it.")
+    is_active = yes_no_field("Offered", help_text="Choose No to stop offering it. Venues that already have it keep it.")
     layout = [["name", "code"], ["applies_to", "is_active"]]
 
     class Meta:

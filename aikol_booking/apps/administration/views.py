@@ -231,7 +231,11 @@ def settings_list(request):
     """Business rules live here, not in the code, so AIKOL can change a limit
     without a software release."""
     SystemSetting.seed()
-    rows = sorted(SystemSetting.objects.all(), key=lambda row: row.label)
+    # Alphabetical by label, except that the day's start reads before its end.
+    rows = sorted(
+        SystemSetting.objects.all(),
+        key=lambda row: (row.label.replace("Day ends", "Day starts~"), row.key),
+    )
     email_configuration = EmailConfiguration.load()
     queued_email_count = EmailOutbox.objects.filter(
         status__in=(EmailStatus.PENDING, EmailStatus.FAILED), attempts__lt=5
@@ -364,6 +368,14 @@ def announcement_edit(request, pk: int):
     )
 
 
+def _parse_date(raw):
+    """A date from the query string, or None when it is missing or malformed."""
+    try:
+        return dt.date.fromisoformat((raw or "").strip())
+    except ValueError:
+        return None
+
+
 @administrator_required
 def audit_log(request):
     """Append-only. This screen reads it and offers nothing that writes."""
@@ -380,17 +392,29 @@ def audit_log(request):
     action = request.GET.get("action")
     if action:
         entries = entries.filter(action=action)
+    date_from = _parse_date(request.GET.get("from"))
+    date_to = _parse_date(request.GET.get("to"))
+    if date_from:
+        entries = entries.filter(created_at__date__gte=date_from)
+    if date_to:
+        entries = entries.filter(created_at__date__lte=date_to)
     page = Paginator(entries.order_by("-created_at", "-pk"), PAGE_SIZE).get_page(
         request.GET.get("page")
     )
-    actions = (
-        AuditLog.objects.values_list("action", flat=True).distinct().order_by("action")
-    )
+    # BOOKING_APPROVED reads as "Booking approved" in the filter.
+    actions = [
+        (code, code.replace("_", " ").capitalize())
+        for code in AuditLog.objects.values_list("action", flat=True)
+        .distinct()
+        .order_by("action")
+    ]
     context = {
         "page": page,
         "q": term,
         "action": action or "",
         "actions": actions,
+        "date_from": date_from,
+        "date_to": date_to,
     }
     context.update(_pagination_context(request, page))
     return render(

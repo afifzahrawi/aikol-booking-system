@@ -55,7 +55,7 @@
         {% if booking.series_id %}
             <p class="help">Part of a weekly series.
                <a data-modal-form href="{% url 'bookings:series_cancel' booking.series_id %}">Cancel the whole series</a>
-               Only future occurrences are affected.</p>
+               Only future dates are cancelled.</p>
         {% endif %}
     </div>
 </section>

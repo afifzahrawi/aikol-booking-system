@@ -42,7 +42,7 @@
     </div>
     <div class="card-body">
         <p class="help m-0 mb-xs">
-           Approved room hours by hour of day. A 09:00 to 12:00 booking counts one hour in each of three cells. Vehicles are not included.</p>
+           How busy venues are at each hour of the day. Vehicles are not included.</p>
 
         <div class="heat-wrap">
         <table class="heat" id="heat">
@@ -98,7 +98,7 @@
     <section class="card">
         <div class="card-head"><h2 class="label">Utilisation by Resource</h2></div>
         <div class="card-body">
-            <p class="help m-0 mb-xs">Share of the 08:00 to 22:00 window held.</p>
+            <p class="help m-0 mb-xs">How much of the day each one is booked.</p>
             <div class="hbars">
             {% for row in utilisation %}
                 <div class="hbar"><span>{{ row.resource.name }}</span>

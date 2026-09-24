@@ -259,7 +259,7 @@ def decide_vehicle_management(
         messages.vehicle_management_decided(locked, approved=True)
     else:
         if len(reason.strip()) < 5:
-            raise ValidationError("Give a usable reason for not approving the trip.")
+            raise ValidationError("Please give a reason for not approving the trip.")
         locked.management_status = ManagementDecision.REJECTED
         locked.status = BookingStatus.REJECTED
         locked.save(
@@ -353,8 +353,8 @@ def approve_booking(booking, *, decided_by, reason: str = ""):
     ).filter(status=BookingStatus.APPROVED)
     if clashes.exists():
         raise ValidationError(
-            "That period has been approved for another booking since this request was "
-            "made. Reject this one, or ask the requester for another time."
+            "This time has already been approved for someone else. Reject this "
+            "request, or ask the requester to pick another time."
         )
 
     locked.status = BookingStatus.APPROVED
@@ -374,7 +374,7 @@ def reject_booking(booking, *, decided_by, reason: str):
     from apps.notifications import messages
 
     if not reason.strip():
-        raise ValidationError("Give a reason. The requester is told what it is.")
+        raise ValidationError("Please give a reason. The requester will see it.")
     if booking.status != BookingStatus.PENDING:
         raise ValidationError(
             f"{booking.booking_reference} is already {booking.get_status_display().lower()}."
@@ -399,12 +399,12 @@ def cancel_booking(booking, *, cancelled_by, reason: str):
     from apps.notifications import messages
 
     if not reason.strip():
-        raise ValidationError("A reason is required (confirmed follow-up decision).")
+        raise ValidationError("Please give a reason.")
     if not booking.can_be_cancelled_by(cancelled_by):
         hours = SystemSetting.get_int("cancellation_cutoff_hours")
         raise ValidationError(
-            f"This booking can no longer be cancelled. A user must give {hours // 24} "
-            "days' notice; ask the Kulliyyah office."
+            f"This booking can no longer be cancelled. Bookings must be cancelled at least "
+            f"{hours // 24} days ahead; please contact the Admin."
         )
     booking.status = BookingStatus.CANCELLED
     booking.cancelled_at = timezone.now()
@@ -513,8 +513,8 @@ def create_series(
         )
     if not plan["bookable"]:
         raise ValidationError(
-            "No date in that range is both inside teaching and free. Check the start "
-            "date and the repeat-until date against the semester."
+            "None of these dates are free during the semester. Check your start and "
+            "end dates."
         )
 
     cap = SystemSetting.get_int("maximum_series_occurrences")

@@ -48,15 +48,26 @@
 .docket-masthead { view-transition-name: masthead; }
 .app-nav { view-transition-name: rail; }
 .docket-workspace { view-transition-name: workspace; }
-::view-transition-old(workspace) { animation: page-out var(--dur-fast) ease-in both; }
-::view-transition-new(workspace) { animation: page-in 280ms var(--ease-out) both; }
-::view-transition-group(rail), ::view-transition-group(masthead), ::view-transition-group(workspace) {
-    animation-duration: 280ms;
+::view-transition-old(workspace) { animation: page-out 160ms linear both; }
+::view-transition-new(workspace) { animation: page-in 260ms var(--ease-out) both; }
+/* Pages differ in height. Morphing the workspace box between them stretched
+   both snapshots like a rubber sheet; instead the box takes its new size at
+   once and each snapshot is drawn at its natural size from the top. */
+::view-transition-group(workspace) { animation: none; }
+::view-transition-old(workspace), ::view-transition-new(workspace) {
+    width: 100%;
+    height: 100%;
+    object-fit: none;
+    object-position: top left;
+}
+/* The shell does not move between pages; only a highlighted link may change. */
+::view-transition-group(rail), ::view-transition-group(masthead) {
+    animation-duration: 160ms;
     animation-timing-function: var(--ease-out);
 }
 @keyframes page-out { to { opacity: 0; } }
 @keyframes page-in {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: none; }
 }
 
@@ -227,6 +238,12 @@ a.record-reference { color: var(--docket-green-deep); text-decoration: underline
 .record-layout { display: grid; gap: 1.25rem; align-items: start; }
 .record-action-sheet { box-shadow: none; animation: none; }
 .card-head { padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--docket-rule); }
+/* A card's title reads as a heading, not as a field label. */
+.card-head h2, .card-head h2.label {
+    margin: 0;
+    color: var(--docket-ink);
+    font-size: clamp(1.15rem, 1.5vw, 1.4rem);
+}
 .card-body { padding: clamp(1rem, 2.5vw, 1.6rem); }
 .card-foot { border-top: 1px solid var(--docket-rule); }
 /* A card's action row wraps rather than running under the card's edge. */
@@ -976,29 +993,33 @@ img, video, iframe { max-width: 100%; }
     .nav-link-label, .nav-profile-name, .nav-profile-chevron {
         transition: opacity var(--dur) var(--ease-out);
     }
-    .docket-shell.nav-collapsed { --docket-rail: 4.25rem; }
-    .docket-shell.nav-collapsed .app-nav { padding-inline: 0.55rem; }
-    .docket-shell.nav-collapsed .app-nav > a {
+    /* Labels never wrap while the rail widens or narrows; a label breaking onto
+       a second line and back mid-animation is what made the rail look jagged. */
+    .nav-link-label, .nav-profile-name { white-space: nowrap; overflow: hidden; }
+    .nav-collapsed .docket-shell { --docket-rail: 4.25rem; }
+    .nav-collapsed .docket-shell .app-nav { padding-inline: 0.55rem; }
+    .nav-collapsed .docket-shell .app-nav > a {
         display: flex;
         justify-content: center;
         gap: 0;
         padding-inline: 0;
     }
-    .docket-shell.nav-collapsed .nav-link-label,
-    .docket-shell.nav-collapsed .nav-profile-name,
-    .docket-shell.nav-collapsed .nav-profile-chevron {
+    .nav-collapsed .docket-shell .nav-link-label,
+    .nav-collapsed .docket-shell .nav-profile-name,
+    .nav-collapsed .docket-shell .nav-profile-chevron {
         width: 0;
         opacity: 0;
         overflow: hidden;
         white-space: nowrap;
         pointer-events: none;
     }
-    .docket-shell.nav-collapsed .nav-profile-icon { display: grid; margin-left: 0; }
-    .docket-shell.nav-collapsed .nav-profile summary { justify-content: center; padding-inline: 0; }
-    .docket-shell.nav-collapsed .nav-profile-menu { inset: auto auto 0 calc(100% + 0.55rem); width: 10rem; }
+    .nav-collapsed .docket-shell .nav-profile-icon { display: grid; margin-left: 0; }
+    .nav-collapsed .docket-shell .nav-profile summary { justify-content: center; gap: 0; padding-inline: 0; }
+    .nav-collapsed .docket-shell .nav-profile-chevron { margin: 0; }
+    .nav-collapsed .docket-shell .nav-profile-menu { inset: auto auto 0 calc(100% + 0.55rem); width: 10rem; }
     .is-authenticated .app-nav .nav-toggle svg { transition: transform var(--dur-slow) var(--ease-out); }
-    .docket-shell.nav-collapsed .nav-toggle svg { transform: rotate(180deg); }
-    .docket-shell.nav-collapsed .nav-badge { position: absolute; transform: translate(0.7rem, -0.65rem); }
+    .nav-collapsed .docket-shell .nav-toggle svg { transform: rotate(180deg); }
+    .nav-collapsed .docket-shell .nav-badge { position: absolute; transform: translate(0.7rem, -0.65rem); }
 }
 
 @media (min-width: 48rem) and (max-width: 63.99rem) {
@@ -1372,3 +1393,7 @@ img, video, iframe { max-width: 100%; }
 
 /* A form that follows a record's facts starts clear of the last one. */
 .card-body > .kv + form, .card-body > .record-facts + form { display: block; margin-top: 1.5rem; }
+
+/* Numbered instructions inside a card (Data: Add Records). */
+.howto-steps { margin: 0 0 1rem; padding-left: 1.3rem; display: grid; gap: 0.7rem; }
+.howto-steps li { padding-left: 0.2rem; }

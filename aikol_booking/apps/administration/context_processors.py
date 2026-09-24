@@ -157,6 +157,9 @@ def chrome(request):
         "administration:settings",
         "administration:site_content",
         "administration:audit",
+        # The System tabs are one level: none of them is deeper than another.
+        "bookings:academic_terms",
+        "importexport:data_management",
     }
     return {
         "admin_area": is_admin_area,

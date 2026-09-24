@@ -2,7 +2,7 @@
 {% block title %}Retention{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>Retention</h1>
-    <p class="lede">Booking records are kept for {{ years }} years, for audit.</p></div></div>
+    <p class="lede">Booking records are kept for {{ years }} years.</p></div></div>
 {% include "administration/_nav.html" with tab='settings' %}
 
 <div class="notice notice-info">
@@ -29,8 +29,7 @@
             <strong>Take a database backup first and store it off this server.</strong> The export from this run is read back and counted before anything is deleted.
         </div>
 
-        <p class="help">Exports are written to <span class="mono">{{ export_dir }}</span>, outside
-           the web root. </p>
+        <p class="help">Old records are saved to a file before they are removed.</p>
 
         <form method="post" novalidate>
             {% csrf_token %}
@@ -55,7 +54,7 @@
             <button class="btn btn-danger" type="submit">Run the cleanup</button>
         </form>
         {% else %}
-            <div class="empty-state">Nothing is old enough to be eligible.</div>
+            <div class="empty-state">No records are old enough to remove.</div>
         {% endif %}
     </div>
 </section>

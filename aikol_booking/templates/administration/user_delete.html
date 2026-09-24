@@ -15,8 +15,8 @@
         <strong>{{ history }} booking record{{ history|pluralize }}</strong>
         refer{{ history|pluralize:"s," }} to this person, so the account cannot be deleted.
     </div>
-    <p>Booking history is kept for seven years. The account stays retired: it cannot sign in and
-       does not appear in the booking screens.</p>
+    <p>This person has bookings, so the account cannot be deleted. It stays
+       deactivated and cannot sign in.</p>
     <a class="btn" href="{% url 'administration:users' %}">Back</a>
 {% else %}
     <p>No booking refers to this person, so the account can be removed permanently. Their

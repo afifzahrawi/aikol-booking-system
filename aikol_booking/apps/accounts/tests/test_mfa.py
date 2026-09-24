@@ -318,7 +318,7 @@ class ResetTests(Fixtures):
         html = self.client.get(reverse("administration:user_edit", args=[self.approver.pk])).content.decode()
         self.assertIn("Reset authenticator", html)
         html = self.client.get(reverse("administration:user_edit", args=[self.user.pk])).content.decode()
-        self.assertIn("Only approvers and administrators", html)
+        self.assertIn("Only approvers and admins", html)
 
     def test_the_command_resets_the_last_administrator(self):
         self.enrol(self.admin)

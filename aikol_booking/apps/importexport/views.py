@@ -34,8 +34,12 @@ def administrator_required(view):
 
 
 class UploadForm(StyledFormMixin, forms.Form):
-    kind = forms.ChoiceField(choices=[(k, k.title()) for k in TEMPLATES])
-    csv_file = forms.FileField(label="CSV file")
+    kind = forms.ChoiceField(
+        label="What are you adding?", choices=[(k, k.title()) for k in TEMPLATES]
+    )
+    csv_file = forms.FileField(
+        label="Your filled-in file", help_text="Save it from Excel as CSV before uploading."
+    )
 
 
 @administrator_required

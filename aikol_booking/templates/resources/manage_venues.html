@@ -2,7 +2,7 @@
 {% block title %}Manage Venues{% endblock %}
 {% block content %}
 <div class="page-head">
-    <div><h1>Venues</h1><p class="lede">Venue records available for booking.</p></div>
+    <div><h1>Venues</h1><p class="lede">All venues that can be booked.</p></div>
     <div class="btn-group"><a class="btn btn-primary" data-modal-form href="{% url 'resources:venue_new' %}">Add venue</a></div>
 </div>
 {% include "resources/_tabs.html" with tab='venues' %}

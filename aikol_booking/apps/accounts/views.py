@@ -210,7 +210,7 @@ def profile_edit(request):
         if email_changed:
             messages.success(
                 request,
-                "Profile updated. Confirm the link sent to your new email address "
+                "Profile updated. Click the link sent to your new email address "
                 "before making another booking.",
             )
         elif changed:
@@ -446,8 +446,8 @@ def mfa_verify(request):
             )
             messages.warning(
                 request,
-                f"You signed in with a recovery code. {remaining} remain. If your phone is gone, "
-                "ask the Kulliyyah office to reset your authenticator so you can enrol a new one.",
+                f"You signed in with a recovery code. {remaining} left. If you lost your phone, "
+                "ask the Admin to reset your authenticator.",
             )
         else:
             form.add_error("code", "That code did not match.")

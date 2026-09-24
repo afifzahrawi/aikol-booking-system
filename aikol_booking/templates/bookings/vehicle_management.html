@@ -19,7 +19,7 @@
     </section>
     <section class="record-sheet record-action-sheet">
         <h2>Assign and Decide</h2>
-        <p>Approving confirms the VMU driver and makes the vehicle eligible for key collection.</p>
+        <p>Approve once the driver is confirmed. The key can then be collected.</p>
         <form method="post" novalidate>{% csrf_token %}
             {{ form.non_field_errors }}{% include "_form_fields.html" %}
             <div class="form-actions">

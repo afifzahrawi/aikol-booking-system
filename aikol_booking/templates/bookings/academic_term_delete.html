@@ -4,8 +4,7 @@
 <h1>Delete {{ term.name }}</h1>
 <p>{{ term.start_date|date:"d M Y" }} to {{ term.end_date|date:"d M Y" }}, with
    {{ term.breaks.count }} break{{ term.breaks.count|pluralize }}.</p>
-<p>Bookings already made are not affected. Weekly requests that used this calendar keep their
-   dates. New weekly requests will no longer be able to choose it.</p>
+<p>Existing bookings are not affected. It just cannot be chosen for new weekly bookings.</p>
 <form method="post">{% csrf_token %}
     <div class="btn-group">
         <a class="btn" href="{% url 'bookings:academic_terms' %}">Cancel</a>

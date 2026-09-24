@@ -44,8 +44,8 @@ def issue_key(
         )
     if not booking.is_fully_approved:
         raise ValidationError(
-            "The vehicle still needs Kulliyyah management approval and an assigned VMU driver "
-            "before its key can be issued."
+            "The key can be issued once management has approved the trip and a driver "
+            "is assigned."
         )
 
     handover, _ = KeyHandover.objects.get_or_create(booking=booking)

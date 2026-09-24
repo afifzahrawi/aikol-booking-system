@@ -24,22 +24,21 @@ class SystemSetting(models.Model):
             "90", "How many days ahead a booking may be made. 90 is three months."
         ),
         "maximum_booking_minutes": (
-            "540", "Longest single booking, in minutes. 540 is nine hours."
+            "540", "Longest single booking, in minutes."
         ),
         "bookable_window_start": ("08:00", "Earliest time a booking may start."),
         "bookable_window_end": ("22:00", "Latest time a booking may end."),
         "cancellation_cutoff_hours": (
             "72",
-            "How many hours before the start a user may still cancel. 72 is three days. "
-            "The office is not bound by this.",
+            "How many hours before the start a user may still cancel.",
         ),
         "cancellation_reason_required": (
-            "1", "1 means a reason must be given when cancelling. 0 makes it optional."
+            "1", "Yes means a reason must be given when cancelling. No makes it optional."
         ),
         "allow_user_cancel_approved": (
             "1",
-            "1 lets a user cancel their own booking after it is approved. "
-            "0 limits them to bookings still awaiting a decision.",
+            "Yes lets a user cancel their own booking after it is approved. "
+            "No limits them to bookings still awaiting a decision.",
         ),
         "booking_retention_years": (
             "7", "How many years booking records are kept before they can be exported and removed."
@@ -50,7 +49,9 @@ class SystemSetting(models.Model):
         ),
         "maximum_vehicle_trip_days": ("7", "Longest vehicle trip, in days."),
         "maximum_series_occurrences": (
-            "60", "Most bookings one weekly request may create. A semester is about 14 to 20."
+            "60",
+            "The most dates one repeating weekly booking can cover. "
+            "A full semester usually needs 14 to 20.",
         ),
     }
 

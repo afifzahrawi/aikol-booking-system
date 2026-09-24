@@ -4,8 +4,7 @@
 <div class="page-head">
     <div>
         <h1>Enter Your Code</h1>
-        <p class="lede">Open your authenticator app and type the six digits it shows for
-           {{ user.email }}.</p>
+        <p class="lede">Enter the six-digit code from your authenticator app.</p>
     </div>
 </div>
 
@@ -20,7 +19,7 @@
             <button class="btn btn-primary" type="submit">Continue</button>
         </div>
     </form>
-    <p class="help">Lost your phone? Enter a recovery code instead. If you have none left, ask the Kulliyyah office to reset your authenticator.</p>
+    <p class="help">Lost your phone? Enter a recovery code instead. If you have none left, ask the Admin to reset your authenticator.</p>
     <form method="post" action="{% url 'accounts:logout' %}" class="mfa-signout">
         {% csrf_token %}
         <button class="btn btn-link" type="submit">Sign out instead</button>

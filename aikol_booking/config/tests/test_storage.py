@@ -30,3 +30,12 @@ class CappedR2StorageTests(SimpleTestCase):
         storage._connections.connection = mock.Mock(meta=mock.Mock(client=client))
 
         self.assertEqual(storage._stored_bytes(), 35)
+
+    def test_signed_url_is_reused_so_the_browser_can_cache_it(self):
+        storage = CappedR2Storage(bucket_name="media", querystring_expire=3600)
+        with mock.patch(
+            "storages.backends.s3.S3Storage.url", side_effect=["signed-1", "signed-2"]
+        ) as sign:
+            self.assertEqual(storage.url("site/logo.jpg"), "signed-1")
+            self.assertEqual(storage.url("site/logo.jpg"), "signed-1")
+        sign.assert_called_once()

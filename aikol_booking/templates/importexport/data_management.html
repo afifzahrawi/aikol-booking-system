@@ -2,34 +2,40 @@
 {% block title %}Data Management{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>Data Management</h1>
-    <p class="lede">Import and export in bulk. Nothing is saved until you review and confirm.</p></div></div>
+    <p class="lede">Add many records at once from a spreadsheet, or download what is already in the system.</p></div></div>
 {% include "administration/_nav.html" with tab='data' %}
 
 <div class="grid grid-2 grid-top">
 <section class="card">
-    <div class="card-head"><h2 class="label">Import</h2></div>
+    <div class="card-head"><h2 class="label">Add Records</h2></div>
     <div class="card-body">
-        <p class="help">Download the template, fill it in and upload it. Import facilities before the venues or vehicles that use them.</p>
-        <p>
-        {% for kind in kinds %}
-            <a class="btn btn-sm" href="{% url 'importexport:template' kind %}">{{ kind|title }} template</a>
-        {% endfor %}
-        </p>
+        <ol class="howto-steps">
+            <li>Download the blank spreadsheet for what you want to add.
+                <div class="btn-group mt-xs">
+                {% for kind in kinds %}
+                    <a class="btn btn-sm" href="{% url 'importexport:template' kind %}">{{ kind|title }}</a>
+                {% endfor %}
+                </div>
+            </li>
+            <li>Fill it in, one record per row.</li>
+            <li>Upload it below and press <strong>Check file</strong>. You will see the result before anything is saved.</li>
+        </ol>
+        <p class="help">Adding venues or vehicles with new facilities? Add the facilities first.</p>
 
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             {% for field in form %}
-                <div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
+                <div class="field">{{ field.label_tag }}{{ field }}{% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}{{ field.errors }}</div>
             {% endfor %}
-            <button class="btn btn-primary" type="submit">Validate</button>
+            <button class="btn btn-primary" type="submit">Check file</button>
         </form>
     </div>
 </section>
 
 <section class="card">
-    <div class="card-head"><h2 class="label">Export</h2></div>
+    <div class="card-head"><h2 class="label">Download Records</h2></div>
     <div class="card-body">
-        <p class="help">Exports use the same format as the import template, so a file can be edited and imported again. Every export is recorded in the audit log.</p>
+        <p class="help">Get a spreadsheet of what is in the system. It opens in Excel.</p>
         <div class="btn-group">
             <a class="btn" href="{% url 'importexport:export_users' %}">Users</a>
             <a class="btn" href="{% url 'importexport:export_venues' %}">Venues</a>
@@ -37,19 +43,19 @@
             <a class="btn" href="{% url 'importexport:export_facilities' %}">Facilities</a>
             <a class="btn" href="{% url 'importexport:export_bookings' %}">Bookings</a>
         </div>
-        <p class="help mt-xs">Passwords are never exported. Matriculation and telephone numbers appear only in the user export.</p>
+        <p class="help mt-xs">Passwords are never included.</p>
     </div>
 </section>
 </div>
 
 {% if plan %}
 <section class="card mt-md">
-    <div class="card-head"><h2 class="label">Preview</h2>
-        <span class="help">Nothing has been written yet</span></div>
+    <div class="card-head"><h2 class="label">Check Before Adding</h2>
+        <span class="help">Nothing has been saved yet</span></div>
     <div class="card-body">
         {% if plan.file_errors %}
             <div class="notice notice-danger">
-                <strong>The file was rejected.</strong>
+                <strong>This file could not be read.</strong>
                 <ul class="plain-list">
                 {% for problem in plan.file_errors %}<li>{{ problem }}</li>{% endfor %}
                 </ul>
@@ -58,15 +64,14 @@
             <div class="notice {% if plan.invalid %}notice-warn{% else %}notice-info{% endif %}">
                 <strong>{{ plan.valid|length }} row{{ plan.valid|length|pluralize }} ready.</strong>
                 {% if plan.invalid %}{{ plan.invalid|length }}
-                    row{{ plan.invalid|length|pluralize }} cannot be imported and
-                    {{ plan.invalid|length|pluralize:"is,are" }} listed below with every reason,
-                    so the spreadsheet can be corrected in one pass.{% endif %}
+                    row{{ plan.invalid|length|pluralize }} {{ plan.invalid|length|pluralize:"has a problem,have problems" }}.
+                    Fix {{ plan.invalid|length|pluralize:"it,them" }} in your file and upload it again.{% endif %}
             </div>
 
             {% if plan.invalid %}
             <div class="table-wrap">
             <table class="data" data-client-paginate data-pagination-label="Import errors pagination">
-                <thead><tr><th scope="col">Line</th><th scope="col">Problems</th></tr></thead>
+                <thead><tr><th scope="col">Row</th><th scope="col">Problem</th></tr></thead>
                 <tbody>
                 {% for row in plan.invalid %}
                     <tr><td class="num">{{ row.line }}</td>
@@ -81,7 +86,7 @@
 
             {% for row in plan.valid %}{% if row.warnings %}
                 {% if forloop.first %}<p class="label mt-sm">Warnings</p><ul class="activity">{% endif %}
-                {% for warning in row.warnings %}<li>Line {{ row.line }}: {{ warning }}</li>{% endfor %}
+                {% for warning in row.warnings %}<li>Row {{ row.line }}: {{ warning }}</li>{% endfor %}
                 {% if forloop.last %}</ul>{% endif %}
             {% endif %}{% endfor %}
 
@@ -89,9 +94,9 @@
             <form method="post" action="{% url 'importexport:confirm' %}" class="mt-sm">
                 {% csrf_token %}
                 <button class="btn btn-primary" type="submit">
-                    Import {{ plan.valid|length }} row{{ plan.valid|length|pluralize }}
+                    Add {{ plan.valid|length }} record{{ plan.valid|length|pluralize }}
                 </button>
-                <p class="help mt-xs">All rows are saved together or not at all, and are checked again before saving.</p>
+                <p class="help mt-xs">All rows are saved together, or none are.</p>
             </form>
             {% endif %}
         {% endif %}

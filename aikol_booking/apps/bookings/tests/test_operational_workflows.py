@@ -118,7 +118,7 @@ class VehicleManagementWorkflowTests(OperationalFixtures):
 
     def test_a_vehicle_key_waits_for_the_second_approval(self):
         booking = self.vehicle_booking(status=BookingStatus.APPROVED)
-        with self.assertRaisesMessage(ValidationError, "still needs Kulliyyah management"):
+        with self.assertRaisesMessage(ValidationError, "once management has approved the trip"):
             issue_key(booking, issued_by=self.admin, collected_by_name="Collector")
 
     def test_only_an_administrator_records_the_management_decision(self):

@@ -28,7 +28,7 @@
         {% if totp_device and totp_device.confirmed %}
             <p>Enrolled on {{ totp_device.confirmed_at|date:"j F Y" }}.</p>
             {% if person.pk != user.pk %}
-                <p class="help">Use this when someone has lost both their phone and their recovery codes. They will set up a new authenticator at their next sign-in.</p>
+                <p class="help">Use this if they lost their phone and their recovery codes. They will set it up again at next sign-in.</p>
                 <form method="post" action="{% url 'administration:user_mfa_reset' person.pk %}">
                     {% csrf_token %}
                     <button class="btn btn-danger" type="submit">Reset authenticator</button>
@@ -41,7 +41,7 @@
             <p>Not yet enrolled. {{ person.full_name }} will be asked to set one up at their next
                sign-in.</p>
         {% else %}
-            <p class="help">Only approvers and administrators use an authenticator.</p>
+            <p class="help">Only approvers and admins need an authenticator.</p>
         {% endif %}
     </div>
 </section>
@@ -50,8 +50,8 @@
 <section class="card" aria-labelledby="delete-account-heading">
     <div class="card-body">
         <h2 id="delete-account-heading">Delete Account</h2>
-        <p class="help">Only for an account created in error. An account with any booking history
-           is retired (Active account set to No), never deleted.</p>
+        <p class="help">Only for an account created by mistake. Accounts with bookings
+           cannot be deleted; set Active account to No instead.</p>
         <a class="btn btn-danger" data-modal-form href="{% url 'administration:user_delete' person.pk %}">Delete account</a>
     </div>
 </section>

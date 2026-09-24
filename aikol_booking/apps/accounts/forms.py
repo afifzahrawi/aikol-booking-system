@@ -30,7 +30,7 @@ class RegistrationForm(StyledFormMixin, UserCreationForm):
     not_iium = forms.BooleanField(
         required=False,
         label="I am not an IIUM student, lecturer or member of staff",
-        help_text="Tick this and the matriculation or staff number is not required.",
+        help_text="Tick this if you do not have a matriculation or staff number.",
     )
 
     class Meta:

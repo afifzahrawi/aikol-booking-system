@@ -211,7 +211,7 @@ class Booking(models.Model):
     status = models.CharField(
         max_length=10, choices=BookingStatus.choices, default=BookingStatus.PENDING
     )
-    purpose = models.TextField(help_text="Visible to the requester and on the record.")
+    purpose = models.TextField(help_text="Tell us what the booking is for.")
 
     # Venue-only
     attendees = models.PositiveIntegerField(null=True, blank=True)

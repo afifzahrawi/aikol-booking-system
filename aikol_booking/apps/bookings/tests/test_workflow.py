@@ -183,7 +183,7 @@ class ApprovalTests(Fixtures):
 
         with self.assertRaises(ValidationError) as ctx:
             approve_booking(self.booking, decided_by=self.approver)
-        self.assertIn("approved for another booking since", str(ctx.exception))
+        self.assertIn("already been approved for someone else", str(ctx.exception))
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, BookingStatus.PENDING, "and it is not overwritten")
 
@@ -235,7 +235,7 @@ class CancellationTests(Fixtures):
         )
         with self.assertRaises(ValidationError) as ctx:
             cancel_booking(soon, cancelled_by=self.requester, reason="Changed my mind")
-        self.assertIn("3 days' notice", str(ctx.exception))
+        self.assertIn("at least 3 days ahead", str(ctx.exception))
 
     def test_an_approver_is_not_bound_by_the_cutoff(self):
         soon = Booking.objects.create(
@@ -349,7 +349,7 @@ class SeriesTests(Fixtures):
     def test_a_series_with_no_bookable_date_is_refused(self):
         with self.assertRaises(ValidationError) as ctx:
             self.weekly(weekday_times={"5": ["09:00", "11:00"]}, repeat_until=self.monday)
-        self.assertIn("No date in that range", str(ctx.exception))
+        self.assertIn("None of these dates are free", str(ctx.exception))
         self.assertEqual(BookingSeries.objects.count(), 0)
 
     def test_expansion_is_atomic_so_a_failure_leaves_nothing(self):
@@ -555,5 +555,5 @@ class BookingViewTests(Fixtures):
         response = self.client.get(
             reverse("bookings:availability", args=[self.room.pk]), {"date": self.day.isoformat()}
         )
-        self.assertContains(response, "Approved")
+        self.assertContains(response, "10:00")
         self.assertContains(response, self.day.strftime("%A"))

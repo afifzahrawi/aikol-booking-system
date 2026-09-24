@@ -5,8 +5,7 @@
 {% block content %}
 <div class="page-head">
     <div><h1>Book {{ resource.name }}</h1>
-        <p class="lede">Every booking is decided by the Kulliyyah office. You will be emailed
-           when it is.</p></div>
+        <p class="lede">Every booking needs approval. We will email you once it is approved or rejected.</p></div>
     <div class="btn-group">
         <a class="btn" href="{% url 'bookings:availability' resource.pk %}">Check availability</a>
         {% if not is_vehicle %}

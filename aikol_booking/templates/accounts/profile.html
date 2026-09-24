@@ -4,7 +4,7 @@
 <div class="page-head">
     <div>
         <h1>Edit Profile</h1>
-        <p class="lede">Keep your contact details accurate for booking and key enquiries.</p>
+        <p class="lede">Keep your contact details up to date.</p>
     </div>
 </div>
 
@@ -12,7 +12,7 @@
     <section class="form-sheet profile-form" aria-labelledby="profile-details-heading">
         <div class="docket-section-heading">
             <h2 id="profile-details-heading">Contact Details</h2>
-            <p>These details appear on new booking records.</p>
+            <p>These details are shown on your bookings.</p>
         </div>
         <form method="post" novalidate>
             {% csrf_token %}
@@ -37,7 +37,7 @@
             <dt>Account role</dt>
             <dd>{{ user.get_role_display }}</dd>
         </dl>
-        <p class="help">Affiliation, identification number and account role are governed by the Kulliyyah office.</p>
+        <p class="help">To change your affiliation, ID number or role, contact the Admin.</p>
         <a href="{% url 'accounts:password_reset' %}">Change password by email</a>
     </aside>
 </div>

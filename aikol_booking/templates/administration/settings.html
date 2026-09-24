@@ -24,11 +24,10 @@
     <section class="settings-section" aria-labelledby="email-delivery-heading">
         <div class="settings-intro">
             <h2 id="email-delivery-heading">Email Delivery</h2>
-            <p>Account and booking emails are sent through the SMTP server entered here. Your
-               mail provider can give you the host, port and sign-in details.</p>
-            <p class="help">Enabling delivery also sends the messages already waiting.</p>
+            <p>The email account used to send sign-up and booking emails. Your email provider can give you these details.</p>
+            <p class="help">When turned on, any waiting emails are sent too.</p>
             <p class="help">
-                {% if email_configuration.has_password %}A password is stored securely. Leave the password field blank to keep it.{% else %}No SMTP password is stored yet.{% endif %}
+                {% if email_configuration.has_password %}A password is saved. Leave it blank to keep it.{% else %}No password saved yet.{% endif %}
             </p>
         </div>
         <div class="settings-fields">

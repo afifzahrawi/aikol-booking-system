@@ -5,7 +5,7 @@
     <div>
         <p class="breadcrumb"><a href="{% url 'administration:site_content' %}">Site content</a> <span>/</span> Announcement</p>
         <h1>{% if announcement %}Edit Announcement{% else %}New Announcement{% endif %}</h1>
-        <p class="lede">Notices appear below the booking search while active and within their schedule.</p>
+        <p class="lede">Notices show on the home page during the dates you set.</p>
     </div>
 </div>
 {% include "administration/_nav.html" with tab='content' %}

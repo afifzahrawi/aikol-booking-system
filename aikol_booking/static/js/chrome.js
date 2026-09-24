@@ -11,6 +11,9 @@
     var toggle = nav.querySelector('.nav-toggle');
     if (!toggle) return;
     var shell = document.querySelector('.docket-shell');
+    // The collapsed state lives on <html> so nav-state.js can set it before the
+    // first paint; setting it here, after paint, animated the rail on every page.
+    var root = document.documentElement;
     var desktop = window.matchMedia('(min-width: 64rem)');
     var label = toggle.querySelector('.nav-toggle-label');
     var masthead = document.querySelector('.docket-masthead');
@@ -22,7 +25,7 @@
 
 
     function setDesktopState(collapsed) {
-        shell.classList.toggle('nav-collapsed', collapsed);
+        root.classList.toggle('nav-collapsed', collapsed);
         nav.classList.remove('open');
         toggle.setAttribute('aria-expanded', String(!collapsed));
         toggle.setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
@@ -33,7 +36,7 @@
         if (desktop.matches) {
             setDesktopState(sessionStorage.getItem('aikol-nav-collapsed') === 'true');
         } else {
-            shell.classList.remove('nav-collapsed');
+            root.classList.remove('nav-collapsed');
             nav.classList.remove('open');
             toggle.setAttribute('aria-expanded', 'false');
             toggle.setAttribute('aria-label', 'Open navigation menu');
@@ -43,7 +46,7 @@
 
     toggle.addEventListener('click', function () {
         if (desktop.matches) {
-            var collapsed = !shell.classList.contains('nav-collapsed');
+            var collapsed = !root.classList.contains('nav-collapsed');
             sessionStorage.setItem('aikol-nav-collapsed', String(collapsed));
             setDesktopState(collapsed);
             return;

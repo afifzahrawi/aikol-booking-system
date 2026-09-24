@@ -163,7 +163,7 @@ class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
     end_time = TimeOnTheQuarterField(label="End Time")
     purpose = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 3}),
-        help_text="Visible to the requester and on the record.",
+        help_text="Tell us what the booking is for.",
     )
 
     # Venue only
@@ -262,7 +262,7 @@ class RecurrenceForm(OnBehalfMixin, StyledFormMixin, forms.Form):
 
     term = forms.ModelChoiceField(
         queryset=AcademicTerm.objects.all(),
-        help_text="Which calendar the series is generated against.",
+        help_text="The semester to book across.",
     )
     starts_on = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
     repeat_until = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
@@ -336,7 +336,7 @@ class DecisionForm(StyledFormMixin, forms.Form):
     reason = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={"rows": 2}),
-        help_text="Required when rejecting. Sent to the requester.",
+        help_text="Needed when rejecting. The requester will see it.",
     )
 
 
@@ -454,5 +454,5 @@ class CancellationForm(StyledFormMixin, forms.Form):
     def clean_reason(self) -> str:
         reason = self.cleaned_data["reason"].strip()
         if len(reason) < 5:
-            raise forms.ValidationError("Give a usable reason, not a placeholder.")
+            raise forms.ValidationError("Please give a proper reason.")
         return reason

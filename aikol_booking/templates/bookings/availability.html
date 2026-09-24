@@ -6,7 +6,7 @@
     <div>
         <h1>{{ resource.name }}</h1>
         <p class="lede">
-            Approved and pending bookings, week by week. Pick a free time to book it.
+            See what is already booked. Pick a free time to book it.
         </p>
     </div>
     <div class="btn-group">
@@ -46,7 +46,7 @@
                 <span class="dow">{{ day|date:"l" }}</span>
                 <span class="full">{{ day|date:"d F Y" }}</span>
             </div>
-            <p class="help datepick-help">Enter a time and every Book link below carries it to the form.</p>
+            <p class="help datepick-help">Pick a time, then press Book.</p>
             <noscript><button class="btn" type="submit">Update chart</button></noscript>
         </form>
     </div>
@@ -118,7 +118,7 @@
         {% include "_pagination.html" with page=bookings_page querystring=booking_querystring page_range=booking_page_range %}
     </div>
     <div class="card-body">
-        <p class="help m-0">A pending request holds its time until it is decided.</p>
+        <p class="help m-0">Times waiting for approval are also taken.</p>
     </div>
 </section>
 {% endif %}

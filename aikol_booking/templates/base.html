@@ -11,7 +11,8 @@
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260922-12">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260924-3">
+<script src="{% static 'js/nav-state.js' %}?v=20260924-1"></script>
 </head>
 <body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -144,7 +145,7 @@
 </dialog>
 </div>
 
-<script src="{% static 'js/chrome.js' %}?v=20260922-2" defer></script>
+<script src="{% static 'js/chrome.js' %}?v=20260924-1" defer></script>
 <script src="{% static 'js/upload-limit.js' %}?v=20260922-1" defer></script>
 <script src="{% static 'js/modal-forms.js' %}?v=20260922-4" defer></script>
 <script src="{% static 'js/availability.js' %}?v=20260916-2" defer></script>

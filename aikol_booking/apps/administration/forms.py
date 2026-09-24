@@ -35,11 +35,11 @@ class UserAdminForm(StyledFormMixin, forms.ModelForm):
     who can read or choose someone else's password is a liability, and the
     reset flow already exists."""
     is_active = yes_no_field(
-        "Active account", help_text="No retires the account. Its booking history is kept."
+        "Active account", help_text="Choose No to stop this person signing in."
     )
     email_verified = yes_no_field(
         "Email address verified",
-        help_text="Set Yes yourself only when the verification email cannot reach them.",
+        help_text="Choose Yes only if they cannot receive the confirmation email.",
         initial=False,
     )
     layout = [
@@ -94,7 +94,7 @@ class EmailConfigurationForm(StyledFormMixin, forms.ModelForm):
         required=False,
         strip=False,
         widget=forms.PasswordInput(render_value=False),
-        help_text="Leave blank to keep the stored password.",
+        help_text="Leave blank to keep the saved password.",
     )
     ENCRYPTION_CHOICES = (
         ("tls", "STARTTLS, usually port 587"),
@@ -108,7 +108,7 @@ class EmailConfigurationForm(StyledFormMixin, forms.ModelForm):
     )
     is_active = yes_no_field(
         "Email delivery",
-        help_text="Yes sends the messages waiting in the outbox and every new one.",
+        help_text="Choose Yes to start sending emails.",
         initial=False,
     )
     layout = [
@@ -168,7 +168,7 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
     layout = [
         ["site_name", "subtitle"],
         ["organisation", "logo_alt"],
-        ["logo", "iium_logo"],
+        ["iium_logo", "logo"],
         ["login_image", "home_image"],
         ["login_intro_heading", "login_intro"],
         ["contact_heading", "office_hours"],
@@ -192,6 +192,10 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
             "iium_logo": ImageInput,
             "login_image": ImageInput,
             "home_image": ImageInput,
+        }
+        labels = {
+            "logo": "AIKOL logo",
+            "logo_alt": "AIKOL logo description",
         }
 
     def _clean_image(self, field_name):
@@ -218,7 +222,7 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
 
 
 class AnnouncementForm(StyledFormMixin, forms.ModelForm):
-    is_active = yes_no_field("Published", help_text="No keeps it on file without showing it.")
+    is_active = yes_no_field("Published", help_text="Choose No to hide it without deleting it.")
     layout = [["tone", "is_active"], ["starts_at", "ends_at"]]
 
     class Meta:

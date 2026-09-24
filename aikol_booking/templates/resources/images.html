@@ -4,8 +4,7 @@
 {% block content %}
 <h1>Images: {{ resource.name }}</h1>
 
-<p class="lede">The first photograph represents the resource everywhere else. Move one to the front to
-   make it the main image.</p>
+<p class="lede">The first photo is the main one. Move a photo to the front to make it the main photo.</p>
 
 <div class="grid grid-2">
     {% for photo in resource.images.all %}

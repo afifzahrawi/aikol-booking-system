@@ -84,6 +84,8 @@ AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = True
 AWS_QUERYSTRING_EXPIRE = 3600
 AWS_S3_FILE_OVERWRITE = False
+# Uploads never change under a name (no overwrite), so a browser may keep them.
+AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "private, max-age=86400"}
 # Keep uploaded images private. Django generates a one-hour signed R2 URL when
 # rendering an image; unlike a public development URL, this does not expose the
 # entire bucket or require another public hostname.

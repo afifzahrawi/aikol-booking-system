@@ -6,13 +6,13 @@
 {% if not allowed %}
     <div class="notice notice-warn">
         <strong>It is too late to cancel this booking yourself.</strong>
-        Cancellations need three days' notice. Contact the Kulliyyah office.
+        Bookings can only be cancelled at least three days ahead. Please contact the Admin.
     </div>
     <a class="btn" href="{% url 'bookings:detail' booking.pk %}">Back</a>
 {% else %}
     <p>{{ booking.resource.name }}, {{ booking.start_at|date:"l d F Y, H:i" }} to
        {{ booking.end_at|date:"H:i" }}.</p>
-    <p class="help">The booking stays on your record as cancelled, and the time becomes free for others.</p>
+    <p class="help">The time will be free for others to book.</p>
 
     <form method="post" novalidate>
         {% csrf_token %}

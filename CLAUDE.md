@@ -69,6 +69,24 @@ Two operational items remain open (section 5, *Still open*).
   middleware so no screen can forget: enrolment is forced at first sign-in, a code is required every
   session, ten single-use recovery codes are issued once, and an administrator can reset a
   colleague's device (never their own). `docs/technical/security.md` has the design. **373 tests.**
+- **`prepare_uat`** resets production for acceptance testing: deletes every booking, series, key
+  handover, archive row, the audit log and sent/failed email; deletes venues whose name or code
+  contains "test"; adds three UAT venues (`UAT-VEN-01..03`) drawn with the `moot-court`,
+  `seminar-a` and `meeting-a` placeholders. Users, settings, site content, terms, facilities and
+  vehicles are untouched. Reports only unless `--confirm`; refuses once a UAT venue has a booking.
+  Run it as a Cloud Run job after `backup_database`. **429 tests.**
+- **Plain wording pass before UAT.** Interface copy was rewritten for a first-time user across
+  templates, form hints and error messages: on/off settings are described as Yes/No, arithmetic
+  asides are gone, and users are told to contact "the Admin". Setting descriptions live in
+  `SystemSetting.DEFAULTS` and are copied into existing rows by a data migration
+  (`administration.0007`), as `0005` did before it.
+- **Signed R2 image URLs are reused** for most of their hour (`CappedR2Storage.url`, cached), so
+  the browser caches uploaded images instead of re-fetching them on every page. The uploaded IIUM
+  logo, identical to the static default, is cleared by `administration.0008`.
+- **The collapsed rail is restored before first paint** by `static/js/nav-state.js`, loaded
+  blocking in `<head>`; the `nav-collapsed` class now sits on `<html>`, not on `.docket-shell`.
+  Restoring it from the deferred `chrome.js` animated the rail shut on every page load. Page
+  transitions no longer morph the workspace box between pages of different heights.
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed

@@ -43,7 +43,7 @@ class EmailSettingsTests(TestCase):
 
         page = self.client.get(reverse("administration:settings"))
         self.assertNotContains(page, "smtp-secret-value")
-        self.assertContains(page, "A password is stored securely")
+        self.assertContains(page, "A password is saved")
 
     def test_blank_password_keeps_the_existing_secret(self):
         configuration = EmailConfiguration.load()
