@@ -16,7 +16,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.generic import CreateView
 
 from apps.audit.services import log_action
-from apps.notifications.services import queue_email
+from apps.notifications.wording import send as send_email
 
 from .forms import EmailAuthenticationForm, ProfileForm, RegistrationForm, SecondFactorForm
 from .models import User
@@ -43,19 +43,7 @@ class RegisterView(CreateView):
         """
         if form.email_already_registered:
             existing = User.objects.get(email__iexact=form.cleaned_data["email"])
-            queue_email(
-                to=existing.email,
-                subject="Somebody tried to register your AIKOL Booking address",
-                body=(
-                    f"Assalamualaikum {existing.full_name},\n\n"
-                    "Somebody submitted the registration form using this address. You already "
-                    "have an account, so no new one was created and nothing has changed.\n\n"
-                    "If that was you, simply sign in. If you have forgotten your password, use "
-                    "the 'Forgotten your password?' link on the sign-in page.\n\n"
-                    "If it was not you, you can ignore this message.\n"
-                ),
-                kind="ACCOUNT_DUPLICATE_ATTEMPT",
-            )
+            send_email("ACCOUNT_DUPLICATE_ATTEMPT", to=existing.email, values={"name": existing.full_name})
             log_action(
                 actor=None,
                 action="ACCOUNT_REGISTER_DUPLICATE",
@@ -95,19 +83,10 @@ def _queue_verification(request, user: User) -> None:
         )
     )
     days = settings.PASSWORD_RESET_TIMEOUT // 86400
-    queue_email(
+    send_email(
+        "ACCOUNT_VERIFY",
         to=user.email,
-        subject="Confirm your AIKOL Booking account",
-        body=(
-            f"Assalamualaikum {user.full_name},\n\n"
-            "An account has been created for you on the AIKOL Venue and Vehicle Booking "
-            "System. Confirm this address to activate it:\n\n"
-            f"{link}\n\n"
-            f"The link is valid for {days} days. Until it is used, the account cannot "
-            "make bookings.\n\n"
-            "If you did not request this account, ignore this message.\n"
-        ),
-        kind="ACCOUNT_VERIFY",
+        values={"name": user.full_name, "link": link, "days": str(days)},
     )
 
 

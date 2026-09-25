@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ spec.label }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ spec.label }}</h1>
+    <p class="lede">Sent when: {{ spec.sent_when }}</p></div></div>
+{% include "administration/_nav.html" with tab='emails' %}
+
+{% if errors %}
+<div class="notice notice-error" role="alert">
+    {% for problem in errors %}<p class="m-0">{{ problem }}</p>{% endfor %}
+</div>
+{% endif %}
+
+<div class="email-editor">
+<section class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="field">
+                <div class="field-label"><label for="email-subject">Subject</label><span class="req" aria-hidden="true">*</span></div>
+                <input class="input" type="text" id="email-subject" name="subject" value="{{ subject }}" maxlength="200">
+            </div>
+            <div class="field">
+                <div class="field-label"><label for="email-body">Message</label><span class="req" aria-hidden="true">*</span></div>
+                <textarea class="textarea email-body" id="email-body" name="body" rows="16">{{ body }}</textarea>
+                <p class="help">Words in braces are filled in for each person. Use only those listed beside this form.</p>
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="{% url 'administration:email_list' %}">Back</a>
+                <button class="btn" type="submit" name="action" value="preview">Preview</button>
+                <button class="btn btn-primary" type="submit" name="action" value="save">Save</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<aside class="card">
+    <div class="card-head"><h2 class="label">Fields You Can Use</h2></div>
+    <div class="card-body">
+        <dl class="kv">
+            {% for placeholder, text in fields %}
+                <dt><code>{{ placeholder }}</code></dt><dd>{{ text }}{% if placeholder in required %} <strong>Must stay in.</strong>{% endif %}</dd>
+            {% endfor %}
+        </dl>
+    </div>
+</aside>
+</div>
+
+{% if preview %}
+<section class="card" aria-labelledby="preview-heading">
+    <div class="card-head"><h2 class="label" id="preview-heading">Preview With Sample Details</h2></div>
+    <div class="card-body">
+        <p><strong>Subject:</strong> {{ preview.subject }}</p>
+        <pre class="email-preview">{{ preview.body }}</pre>
+        <p class="help m-0">Nothing has been saved yet.</p>
+    </div>
+</section>
+{% endif %}
+
+<section class="card">
+    <div class="card-body">
+        {% if edited %}
+            <p class="m-0">This email uses the office's own wording, last changed {{ edited.updated_at|date:"d M Y, H:i" }}{% if edited.updated_by %} by {{ edited.updated_by.full_name }}{% endif %}.</p>
+            <form method="post" class="mt-sm">{% csrf_token %}
+                <button class="btn btn-danger" type="submit" name="action" value="reset">Put back the default wording</button>
+            </form>
+        {% else %}
+            <p class="m-0">This email uses the default wording.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

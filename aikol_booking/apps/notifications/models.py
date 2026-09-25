@@ -14,6 +14,7 @@ message queue and does not reopen that decision.
 from __future__ import annotations
 
 from django.core.exceptions import ImproperlyConfigured
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -126,3 +127,23 @@ class EmailOutbox(models.Model):
         self.attempts += 1
         self.last_error = error[:2000]
         self.save(update_fields=["status", "attempts", "last_error"])
+
+
+class EmailWording(models.Model):
+    """The office's own wording for one email, replacing the default in
+    `wording.EMAILS`. No row means the default is in use; deleting the row
+    restores it."""
+
+    key = models.CharField(max_length=40, unique=True)
+    subject = models.CharField(max_length=200)
+    body = models.TextField()
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        ordering = ("key",)
+
+    def __str__(self) -> str:
+        return self.key

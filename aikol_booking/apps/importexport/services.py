@@ -438,7 +438,7 @@ def _import_users(rows: list[RowResult]) -> tuple[int, int]:
     user follows the same proof-of-mailbox path as somebody who registered
     themselves. There is no password column in the template for the same reason.
     """
-    from apps.notifications.services import queue_email
+    from apps.notifications.wording import send as send_email
 
     people = []
     for row in rows:
@@ -457,18 +457,7 @@ def _import_users(rows: list[RowResult]) -> tuple[int, int]:
     User.objects.bulk_create(people, batch_size=500)
 
     for person in people:
-        queue_email(
-            to=person.email,
-            subject="An AIKOL Booking account has been created for you",
-            body=(
-                f"Assalamualaikum {person.full_name},\n\n"
-                "The Kulliyyah office has created an account for you on the AIKOL Room and "
-                "Vehicle Booking System.\n\n"
-                "Set your password using the 'Forgotten your password?' link on the sign-in "
-                "page. Doing so also confirms this address, after which you can make bookings.\n"
-            ),
-            kind="ACCOUNT_IMPORTED",
-        )
+        send_email("ACCOUNT_IMPORTED", to=person.email, values={"name": person.full_name})
     return len(people), 0
 
 

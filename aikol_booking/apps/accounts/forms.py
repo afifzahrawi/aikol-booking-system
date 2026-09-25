@@ -11,9 +11,9 @@ from django import forms
 from config.forms import StyledFormMixin
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
-from django.template import loader
+from django.urls import reverse
 
-from apps.notifications.services import queue_email
+from apps.notifications.wording import send as send_email
 
 from .models import Affiliation, User
 
@@ -160,10 +160,21 @@ class OutboxPasswordResetForm(StyledFormMixin, PasswordResetForm):
         to_email,
         html_email_template_name=None,
     ):
-        subject = loader.render_to_string(subject_template_name, context)
-        subject = "".join(subject.splitlines())
-        body = loader.render_to_string(email_template_name, context)
-        queue_email(to=to_email, subject=subject, body=body, kind="PASSWORD_RESET")
+        # The wording is the office's to edit (System, Emails); Django's own
+        # template names are ignored. The link is built exactly as Django's
+        # template would have built it.
+        path = reverse(
+            "accounts:password_reset_confirm",
+            kwargs={"uidb64": context["uid"], "token": context["token"]},
+        )
+        send_email(
+            "PASSWORD_RESET",
+            to=to_email,
+            values={
+                "name": context["user"].full_name,
+                "link": f"{context['protocol']}://{context['domain']}{path}",
+            },
+        )
 
 
 class EmailAuthenticationForm(StyledFormMixin, AuthenticationForm):

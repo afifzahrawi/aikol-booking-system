@@ -422,3 +422,100 @@ def audit_log(request):
         "administration/audit.html",
         context,
     )
+
+
+@administrator_required
+def email_list(request):
+    """Every email the system sends, and whether the office has changed it."""
+    from apps.notifications.models import EmailWording
+    from apps.notifications.wording import EMAILS
+
+    edited = {row.key: row for row in EmailWording.objects.select_related("updated_by")}
+    rows = [
+        {"key": key, "spec": spec, "edited": edited.get(key)}
+        for key, spec in EMAILS.items()
+    ]
+    return render(request, "administration/email_list.html", {"rows": rows})
+
+
+@administrator_required
+def email_edit(request, key: str):
+    """Change one email's wording, preview it with sample details, or put the
+    default back. Only the fields listed for that email can be used, and a
+    field the person needs to act on (a link, a reason) cannot be removed."""
+    from django.http import Http404
+
+    from apps.notifications.models import EmailWording
+    from apps.notifications.wording import EMAILS, fill, problems
+
+    spec = EMAILS.get(key)
+    if spec is None:
+        raise Http404("No such email.")
+    edited = EmailWording.objects.filter(key=key).first()
+    subject = edited.subject if edited else spec.subject
+    body = edited.body if edited else spec.body
+    errors: list[str] = []
+    preview = None
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "reset":
+            if edited:
+                edited.delete()
+                log_action(
+                    actor=request.user,
+                    action="EMAIL_WORDING_RESET",
+                    entity_type="EmailWording",
+                    entity_id=key,
+                    description=f"{spec.label}: default wording restored.",
+                    request=request,
+                )
+            flash.success(request, f"{spec.label}: the default wording is back in use.")
+            return redirect("administration:email_edit", key=key)
+
+        subject = " ".join((request.POST.get("subject") or "").split())
+        body = (request.POST.get("body") or "").replace("\r\n", "\n").strip() + "\n"
+        if not subject:
+            errors.append("Write a subject.")
+        if not body.strip():
+            errors.append("Write the message.")
+        if len(subject) > 200:
+            errors.append("Keep the subject under 200 characters.")
+        errors += problems(key, subject, body)
+
+        if not errors and action == "save":
+            EmailWording.objects.update_or_create(
+                key=key,
+                defaults={"subject": subject, "body": body, "updated_by": request.user},
+            )
+            log_action(
+                actor=request.user,
+                action="EMAIL_WORDING_CHANGED",
+                entity_type="EmailWording",
+                entity_id=key,
+                description=f"{spec.label}: wording changed.",
+                request=request,
+            )
+            flash.success(request, f"{spec.label}: saved. It is used from the next email.")
+            return redirect("administration:email_list")
+        if not errors:
+            preview = {
+                "subject": " ".join(fill(subject, spec.sample).split()),
+                "body": fill(body, spec.sample),
+            }
+
+    return render(
+        request,
+        "administration/email_edit.html",
+        {
+            "key": key,
+            "spec": spec,
+            "subject": subject,
+            "body": body,
+            "edited": edited,
+            "errors": errors,
+            "preview": preview,
+            "fields": [("{" + name + "}", text) for name, text in spec.fields.items()],
+            "required": ["{" + name + "}" for name in spec.required],
+        },
+    )

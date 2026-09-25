@@ -58,7 +58,7 @@ Vehicles); below it is the office's work.
 | **Resources** | Venues, vehicles and facilities, with photographs | 7 |
 | **People** | Every account, roles and authenticators | 8 |
 | **Insights** | Reports and the bookings export | 9 |
-| **System** | Booking rules, email, academic calendars, site wording, data and the audit log | 10 |
+| **System** | Booking rules, email delivery, academic calendars, site wording, the wording of each email, data and the audit log | 10 |
 
 An **approver** sees two entries instead: **Queue** (requests to decide) and **History**.
 
@@ -251,7 +251,7 @@ bookings per month, how much each resource is used, keys, and the most frequent 
 
 ## 10. System
 
-The tabs across the top are **Booking Rules**, **Academic Calendars**, **Site Content**, **Data**
+The tabs across the top are **Booking Rules**, **Academic Calendars**, **Site Content**, **Emails**, **Data**
 and **Audit Log**.
 
 ### Booking rules and email
@@ -292,6 +292,29 @@ and the home page. **Remove image** on a logo or photograph returns the built-in
 
 **Announcements** appear on every requester's home page. Set a start and end time to schedule one,
 or set **Published: No** to take it down while keeping it on file.
+
+### Emails
+
+Every email the system sends is listed here with when it goes out: booking received, approved,
+not approved, cancelled, the car's management decision, weekly bookings, confirming an email
+address, resetting a password, and accounts the office creates. **Edited** means the office has
+changed it; **Default** means it reads as it was installed.
+
+![The list of emails.](images/admin/22-emails.png)
+
+*Emails: each email, when it is sent, and whether its wording has been changed.*
+
+Choose **Edit** to change an email's subject and message. Words in braces, such as `{name}` or
+`{reference}`, are filled in for each person; the list beside the form says what each one
+contains. Only those can be used, and a few must stay in: an email that asks someone to confirm
+their address or reset a password must keep `{link}`, and a rejection must keep `{reason}`.
+**Preview** shows the email with sample details without saving it. **Save** uses the new wording
+from the next email onwards, and the change is written to the audit log. **Put back the default
+wording** undoes every change to that email.
+
+![Editing an email, with the preview below.](images/admin/23-email-edit.png)
+
+*Editing an email: the fields it can use are listed beside the form.*
 
 ### Data
 

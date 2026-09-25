@@ -12,6 +12,8 @@ urlpatterns = [
     path("manage/users/<int:pk>/delete/", views.user_delete, name="user_delete"),
     path("manage/settings/", views.settings_list, name="settings"),
     path("manage/site-content/", views.site_content, name="site_content"),
+    path("manage/emails/", views.email_list, name="email_list"),
+    path("manage/emails/<str:key>/", views.email_edit, name="email_edit"),
     path(
         "manage/site-content/announcements/new/",
         views.announcement_new,

@@ -1,20 +1,22 @@
-"""The wording of every booking email, in one place.
+"""When each booking email goes, and what its fields contain.
 
-Two rules apply to every body here, and both are tested:
+The wording itself lives in `wording.py`, where the office can change it from
+System, Emails. Two rules apply to every message here, and both are tested:
 
   - It is addressed to `booking.user`, never to `created_by`. When an
     administrator books on someone's behalf, the person the booking is FOR is
     the one who needs to know.
-  - It carries no matriculation number, no telephone number and no driving
+  - No field carries a matriculation number, a telephone number or a driving
     licence number. Those are personal data, and a confirmation message has no
-    use for any of them.
+    use for any of them; an edited wording cannot add them, because the only
+    fields it can use are the ones filled in here.
 """
 
 from __future__ import annotations
 
 from django.utils import timezone
 
-from .services import queue_email
+from .wording import send
 
 
 def _when(booking) -> str:
@@ -25,10 +27,6 @@ def _when(booking) -> str:
     return f"{start:%a %d %b %Y, %H:%M} to {end:%a %d %b %Y, %H:%M}"
 
 
-def _greeting(booking) -> str:
-    return f"Assalamualaikum {booking.user.full_name},\n\n"
-
-
 def _details(booking) -> str:
     lines = [
         f"Reference: {booking.booking_reference}",
@@ -37,100 +35,87 @@ def _details(booking) -> str:
         f"Purpose:   {booking.purpose}",
     ]
     if booking.created_by_id != booking.user_id:
-        lines.append(f"Requested by the Kulliyyah office on your behalf.")
-    return "\n".join(lines) + "\n"
+        lines.append("Requested by the Kulliyyah office on your behalf.")
+    return "\n".join(lines)
+
+
+def _booking(booking, **extra) -> dict:
+    return {
+        "name": booking.user.full_name,
+        "reference": booking.booking_reference,
+        "resource": booking.resource.name,
+        "when": _when(booking),
+        "purpose": booking.purpose,
+        "details": _details(booking),
+        **extra,
+    }
+
+
+def _dates(bookings, *, with_end: bool = True) -> str:
+    lines = []
+    for b in bookings:
+        start = timezone.localtime(b.start_at)
+        period = f"{start:%a %d %b %Y, %H:%M}"
+        if with_end:
+            period += f" to {timezone.localtime(b.end_at):%H:%M}"
+        lines.append(f"  {period}  {b.booking_reference}")
+    return "\n".join(lines)
+
+
+def _series(series, bookings, **extra) -> dict:
+    return {
+        "name": series.user.full_name,
+        "resource": series.resource.name,
+        "purpose": series.purpose,
+        "count": str(len(bookings)),
+        **extra,
+    }
 
 
 def booking_submitted(booking) -> None:
-    queue_email(
-        to=booking.user.email,
-        subject=f"Booking request received: {booking.booking_reference}",
-        body=(
-            _greeting(booking)
-            + "Your booking request has been received and is awaiting a decision "
-            "by the Kulliyyah office.\n\n"
-            + _details(booking)
-            + "\nYou will be emailed again once it is decided. The resource is held "
-            "for you in the meantime, so nobody else can book the same period.\n"
-        ),
-        kind="BOOKING_SUBMITTED",
-    )
+    send("BOOKING_SUBMITTED", to=booking.user.email, values=_booking(booking))
 
 
 def booking_approved(booking) -> None:
-    vehicle_wait = booking.resource.resource_type == "VEHICLE"
-    queue_email(
-        to=booking.user.email,
-        subject=f"Booking approved: {booking.booking_reference}",
-        body=(
-            _greeting(booking)
-            + (
-                "The booking request has passed its first approval. Kulliyyah management must "
-                "still approve the vehicle use and the office must assign the VMU driver.\n\n"
-                if vehicle_wait
-                else "Your booking has been approved.\n\n"
-            )
-            + _details(booking)
-            + (
-                "\nYou will receive another email when the management decision is recorded.\n"
-                if vehicle_wait
-                else "\nCollect the key from the Kulliyyah office. If you can no longer use "
-                "the booking, cancel it so that somebody else can.\n"
-            )
-        ),
-        kind="BOOKING_APPROVED",
+    # A car's first approval is not the end of it: management still decides.
+    # The outbox kind stays BOOKING_APPROVED for both, so a failure is traced
+    # to the same action whichever wording went out.
+    key = (
+        "BOOKING_APPROVED_VEHICLE"
+        if booking.resource.resource_type == "VEHICLE"
+        else "BOOKING_APPROVED"
     )
+    send(key, to=booking.user.email, values=_booking(booking), kind="BOOKING_APPROVED")
 
 
 def vehicle_management_decided(booking, *, approved: bool) -> None:
     if approved:
-        subject = f"Vehicle use approved: {booking.booking_reference}"
-        outcome = (
-            "Kulliyyah management has approved the vehicle use and the VMU driver has been "
-            "assigned. Your vehicle booking is now fully approved."
+        send(
+            "VEHICLE_MANAGEMENT_APPROVED",
+            to=booking.user.email,
+            values=_booking(booking, driver=booking.driver_name),
         )
-        tail = f"\nAssigned driver: {booking.driver_name}\n"
-        kind = "VEHICLE_MANAGEMENT_APPROVED"
     else:
-        subject = f"Vehicle use not approved: {booking.booking_reference}"
-        outcome = "Kulliyyah management did not approve the vehicle use. The booking is released."
-        tail = f"\nReason given: {booking.management_decision_reason}\n"
-        kind = "VEHICLE_MANAGEMENT_REJECTED"
-    queue_email(
-        to=booking.user.email,
-        subject=subject,
-        body=_greeting(booking) + outcome + "\n\n" + _details(booking) + tail,
-        kind=kind,
-    )
+        send(
+            "VEHICLE_MANAGEMENT_REJECTED",
+            to=booking.user.email,
+            values=_booking(booking, reason=booking.management_decision_reason),
+        )
 
 
 def booking_rejected(booking) -> None:
-    queue_email(
+    send(
+        "BOOKING_REJECTED",
         to=booking.user.email,
-        subject=f"Booking not approved: {booking.booking_reference}",
-        body=(
-            _greeting(booking)
-            + "Your booking request was not approved.\n\n"
-            + _details(booking)
-            + f"\nReason given: {booking.decision_reason}\n"
-            "\nYou are welcome to submit another request for a different period.\n"
-        ),
-        kind="BOOKING_REJECTED",
+        values=_booking(booking, reason=booking.decision_reason),
     )
 
 
 def booking_cancelled(booking) -> None:
-    queue_email(
+    send(
+        "BOOKING_CANCELLED",
         to=booking.user.email,
-        subject=f"Booking cancelled: {booking.booking_reference}",
-        body=(
-            _greeting(booking)
-            + "This booking has been cancelled.\n\n"
-            + _details(booking)
-            + f"\nReason given: {booking.cancellation_reason}\n"
-            "\nThe period is now free for anyone else to book.\n"
-        ),
-        kind="BOOKING_CANCELLED",
+        values=_booking(booking, reason=booking.cancellation_reason),
     )
 
 
@@ -141,26 +126,10 @@ def series_decided(series, bookings: list, *, approved: bool, reason: str = "") 
     emails would be indistinguishable from a fault, and the recipient would stop
     reading all of them.
     """
-    dates = "\n".join(
-        f"  {timezone.localtime(b.start_at):%a %d %b %Y, %H:%M} to "
-        f"{timezone.localtime(b.end_at):%H:%M}  {b.booking_reference}"
-        for b in bookings
-    )
-    verb = "approved" if approved else "not approved"
-    body = (
-        f"Assalamualaikum {series.user.full_name},\n\n"
-        f"Your recurring booking for {series.resource.name} has been {verb}.\n\n"
-        f"Purpose: {series.purpose}\n"
-        f"Occurrences: {len(bookings)}\n\n"
-        f"{dates}\n"
-    )
-    if reason:
-        body += f"\nReason given: {reason}\n"
-    queue_email(
+    send(
+        "SERIES_APPROVED" if approved else "SERIES_REJECTED",
         to=series.user.email,
-        subject=f"Recurring booking {verb}: {series.resource.name}",
-        body=body,
-        kind="SERIES_APPROVED" if approved else "SERIES_REJECTED",
+        values=_series(series, bookings, dates=_dates(bookings), reason=reason),
     )
 
 
@@ -170,53 +139,23 @@ def series_submitted(series, bookings: list, *, skipped: list) -> None:
     Dates left out are the part people need to see. A silent gap in a semester
     is discovered in week seven, by a class standing outside a locked room.
     """
-    dates = "\n".join(
-        f"  {timezone.localtime(b.start_at):%a %d %b %Y, %H:%M} to "
-        f"{timezone.localtime(b.end_at):%H:%M}  {b.booking_reference}"
-        for b in bookings
-    )
-    body = (
-        f"Assalamualaikum {series.user.full_name},\n\n"
-        f"Your recurring booking request for {series.resource.name} has been received "
-        "and is awaiting a decision by the Kulliyyah office.\n\n"
-        f"Purpose: {series.purpose}\n"
-        f"Occurrences requested: {len(bookings)}\n\n"
-        f"{dates}\n"
-    )
+    not_included = ""
     if skipped:
         left_out = "\n".join(
             f"  {occ['date']:%a %d %b %Y}: {occ.get('skip_reason') or 'already reserved'}"
             for occ in skipped
         )
-        body += (
-            f"\nNot included ({len(skipped)}):\n{left_out}\n"
-            "\nThese dates are listed rather than quietly dropped, so you can decide "
-            "what to do about them.\n"
-        )
-    queue_email(
+        not_included = f"Not included ({len(skipped)}):\n{left_out}"
+    send(
+        "SERIES_SUBMITTED",
         to=series.user.email,
-        subject=f"Recurring booking request received: {series.resource.name}",
-        body=body,
-        kind="SERIES_SUBMITTED",
+        values=_series(series, bookings, dates=_dates(bookings), not_included=not_included),
     )
 
 
 def series_cancelled(series, bookings: list, *, reason: str) -> None:
-    dates = "\n".join(
-        f"  {timezone.localtime(b.start_at):%a %d %b %Y, %H:%M}  {b.booking_reference}"
-        for b in bookings
-    )
-    queue_email(
+    send(
+        "SERIES_CANCELLED",
         to=series.user.email,
-        subject=f"Recurring booking cancelled: {series.resource.name}",
-        body=(
-            f"Assalamualaikum {series.user.full_name},\n\n"
-            f"{len(bookings)} future occurrence{'' if len(bookings) == 1 else 's'} of your "
-            f"recurring booking for {series.resource.name} "
-            f"{'has' if len(bookings) == 1 else 'have'} been cancelled.\n\n"
-            f"{dates}\n\n"
-            f"Reason given: {reason}\n\n"
-            "Occurrences that have already taken place are unaffected.\n"
-        ),
-        kind="SERIES_CANCELLED",
+        values=_series(series, bookings, dates=_dates(bookings, with_end=False), reason=reason),
     )

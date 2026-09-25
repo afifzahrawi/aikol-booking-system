@@ -447,7 +447,7 @@ Full detail in `docs/technical/database-schema.md`. Summary:
 
 `users` · `resources` · `venues` · `vehicles` · `resource_images` · `bookings` ·
 `booking_series` · `key_handovers` · `booking_archive` · `audit_logs` · `system_settings` ·
-`site_content` · `announcements` · `totp_devices` · `recovery_codes`
+`site_content` · `announcements` · `totp_devices` · `recovery_codes` · `email_wording`
 
 Key decisions:
 
@@ -709,6 +709,14 @@ Full detail: `docs/technical/security.md`.
 - **Accounts and academic calendars can be deleted through the same two gates as a resource**
   (retired first; no booking history, which PROTECT enforces). A person with history is retired,
   never deleted; a calendar carries no booking and may go at any time.
+- **Email wording belongs to the office.** Every email's default subject and body live in
+  `apps/notifications/wording.py` as `EMAILS`, with fill-in fields in braces; an edit from System,
+  Emails is an `EmailWording` row, and deleting the row restores the default. Code decides when an
+  email goes and what each field contains, so an edit cannot add personal data the code does not
+  supply. Fields are filled by one regex pass, never `str.format` (no attribute access, no
+  re-expansion of braces inside a value). Emails a person must act on keep their field: `{link}`
+  for confirmation and reset, `{reason}` for a rejection. Send through `wording.send`, never by
+  composing a body inline.
 - **Counts are a ruled figures strip, not a row of cards.** `.grid-4 > .stat` and `.booking-stats`
   render as one strip with hairlines between figures (`redesign.css`, *Figures*); do not put the
   card border back or add a fifth identical box.

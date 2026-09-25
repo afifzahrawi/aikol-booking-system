@@ -1397,3 +1397,17 @@ img, video, iframe { max-width: 100%; }
 /* Numbered instructions inside a card (Data: Add Records). */
 .howto-steps { margin: 0 0 1rem; padding-left: 1.3rem; display: grid; gap: 0.7rem; }
 .howto-steps li { padding-left: 0.2rem; }
+
+/* Emails: the form beside the fields it may use; the preview reads as mail. */
+.email-editor { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(16rem, 1fr); gap: var(--space-md); align-items: start; }
+@media (max-width: 63.99rem) { .email-editor { grid-template-columns: minmax(0, 1fr); } }
+.email-body, .email-preview { font-family: var(--font-mono); font-size: 0.9rem; line-height: 1.55; }
+.email-preview {
+    margin: 0 0 0.75rem;
+    padding: 1rem 1.2rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: var(--docket-paper-2);
+    border: 1px solid var(--docket-rule);
+    border-radius: var(--radius-input);
+}

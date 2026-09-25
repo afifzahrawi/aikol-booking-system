@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Emails{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Emails</h1>
+    <p class="lede">The wording of every email the system sends. Change any of them; the default can always be put back.</p></div></div>
+{% include "administration/_nav.html" with tab='emails' %}
+
+<section class="card">
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr><th scope="col">Email</th><th scope="col">Sent when</th>
+            <th scope="col" class="status-column">Wording</th><th scope="col" class="actions-column">Actions</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td><strong>{{ row.spec.label }}</strong></td>
+                <td>{{ row.spec.sent_when }}</td>
+                <td class="status-column">{% if row.edited %}<span class="badge badge-pending">Edited</span>{% else %}<span class="badge badge-active">Default</span>{% endif %}</td>
+                <td class="row-actions"><a class="btn btn-sm" href="{% url 'administration:email_edit' row.key %}">Edit</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endblock %}
