@@ -105,3 +105,7 @@ class EmailScreenTests(TestCase):
     def test_an_approver_cannot_edit_emails(self):
         self.client.force_login(make_user("approver@demo.aikol.test", Role.APPROVER))
         self.assertEqual(self.client.get(reverse("administration:email_list")).status_code, 403)
+
+    def test_the_emails_tab_has_no_back_link_like_the_other_system_tabs(self):
+        page = self.client.get(reverse("administration:email_list")).content.decode()
+        self.assertNotIn('class="back-navigation"', page)
