@@ -42,14 +42,19 @@
     initial-value: 248px; /* 15.5rem; a registered initial value may not use rem */
 }
 
-/* One page transition: the shell stays, the workspace cross-fades and rises
-   a little. The old page fades out fully and quickly so the two never fight. */
+/* One page transition: the shell stays still and the new page settles in
+   over the old one. The old page does not fade out. A cross-fade of two
+   half-transparent pages dims the screen between them (the vellum behind
+   shows through), and the browser's default plus-lighter blend brightens it
+   instead; either reads as a blink on every click. With the old page held
+   opaque underneath and the new one drawn over it with ordinary blending,
+   nothing behind the page is ever visible. */
 @view-transition { navigation: auto; }
 .docket-masthead { view-transition-name: masthead; }
 .app-nav { view-transition-name: rail; }
 .docket-workspace { view-transition-name: workspace; }
-::view-transition-old(workspace) { animation: page-out 160ms linear both; }
-::view-transition-new(workspace) { animation: page-in 260ms var(--ease-out) both; }
+::view-transition-old(workspace) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(workspace) { animation: page-in var(--dur) var(--ease-out) both; mix-blend-mode: normal; }
 /* Pages differ in height. Morphing the workspace box between them stretched
    both snapshots like a rubber sheet; instead the box takes its new size at
    once and each snapshot is drawn at its natural size from the top. */
@@ -65,9 +70,8 @@
     animation-duration: 160ms;
     animation-timing-function: var(--ease-out);
 }
-@keyframes page-out { to { opacity: 0; } }
 @keyframes page-in {
-    from { opacity: 0; transform: translateY(4px); }
+    from { opacity: 0; transform: translateY(3px); }
     to { opacity: 1; transform: none; }
 }
 
@@ -221,6 +225,13 @@ a.record-reference { color: var(--docket-green-deep); text-decoration: underline
     box-shadow: none;
 }
 .card { overflow: hidden; border-color: var(--docket-rule-dark); }
+/* A rounded container whose first and last children have square, shaded
+   backgrounds (a toolbar on top, a page footer underneath) has those corners
+   painted over, and the border line disappears exactly where it curves. The
+   docket clips its contents as a card does; nothing inside it opens outward. */
+.docket-index { overflow: hidden; border-color: var(--docket-rule-dark); }
+.form-sheet > :first-child, .summary-box > :first-child { border-top-left-radius: inherit; border-top-right-radius: inherit; }
+.form-sheet > :last-child, .summary-box > :last-child { border-bottom-left-radius: inherit; border-bottom-right-radius: inherit; }
 .record-sheet > .card-body { padding: 0; }
 .record-sheet {
     padding: clamp(1.2rem, 3vw, 2.2rem);

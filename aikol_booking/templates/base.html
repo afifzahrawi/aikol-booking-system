@@ -8,10 +8,19 @@
    application has to work on a restricted institutional network. {% endcomment %}
 <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32.png' %}">
 <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicon-180.png' %}">
+{% comment %} The Latin faces every page uses, fetched with the stylesheet rather
+   than discovered after layout: a face that arrives late swaps in under the
+   reader and the text shifts, which reads as a flicker on navigation. {% endcomment %}
+<link rel="preload" href="{% static 'fonts/ibm-plex-sans-400-11.woff2' %}" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{% static 'fonts/ibm-plex-sans-600-23.woff2' %}" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{% static 'fonts/amiri-400-02.woff2' %}" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+{% comment %} Hold the first paint until the main content has been parsed, so the page
+   transition never captures a half-built page. Ignored where unsupported. {% endcomment %}
+<link rel="expect" href="#main" blocking="render">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260924-3">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260926-1">
 <script src="{% static 'js/nav-state.js' %}?v=20260924-1"></script>
 </head>
 <body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
