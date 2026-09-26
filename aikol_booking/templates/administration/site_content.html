@@ -69,9 +69,13 @@
             </div>
             <div class="field-row">
                 {% include "_field.html" with field=form.phone %}
-                {% include "_field.html" with field=form.email %}
+                {% include "_field.html" with field=form.fax %}
             </div>
-            {% include "_field.html" with field=form.address %}
+            <div class="field-row">
+                {% include "_field.html" with field=form.email %}
+                {% include "_field.html" with field=form.address %}
+            </div>
+            {% include "_field.html" with field=form.copyright_notice %}
             <div class="section-save">
                 <button class="btn btn-primary" type="submit">Save</button>
             </div>

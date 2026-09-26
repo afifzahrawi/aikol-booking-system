@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from django import forms
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
 from config.forms import ImageInput, StyledFormMixin, yes_no_field
 
@@ -182,12 +184,14 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
             "site_name", "subtitle", "organisation", "logo", "logo_alt",
             "iium_logo", "iium_logo_alt", "login_image", "home_image",
             "login_intro_heading", "login_intro", "login_points", "address",
-            "contact_heading", "phone", "email", "office_hours",
+            "contact_heading", "phone", "fax", "email", "office_hours",
+            "copyright_notice",
         )
         widgets = {
             "login_intro": forms.Textarea(attrs={"rows": 4}),
             "login_points": forms.Textarea(attrs={"rows": 4}),
             "address": forms.Textarea(attrs={"rows": 3}),
+            "email": forms.Textarea(attrs={"rows": 3}),
             "logo": ImageInput,
             "iium_logo": ImageInput,
             "login_image": ImageInput,
@@ -207,6 +211,21 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
 
             validate_image_upload(image)
         return image
+
+    def clean_email(self):
+        addresses = [line.strip() for line in self.cleaned_data["email"].splitlines()]
+        addresses = [address for address in addresses if address]
+        wrong = []
+        for address in addresses:
+            try:
+                validate_email(address)
+            except ValidationError:
+                wrong.append(address)
+        if wrong:
+            raise ValidationError(
+                "These are not email addresses: %(wrong)s", params={"wrong": ", ".join(wrong)}
+            )
+        return "\n".join(addresses)
 
     def clean_logo(self):
         return self._clean_image("logo")

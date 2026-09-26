@@ -196,8 +196,19 @@ class SiteContent(models.Model):
     address = models.TextField(blank=True)
     contact_heading = models.CharField(max_length=60, default="Booking enquiries")
     phone = models.CharField(max_length=30, blank=True)
-    email = models.EmailField(blank=True)
+    fax = models.CharField("fax", max_length=30, blank=True)
+    # Several offices answer booking questions, so the footer can list more than
+    # one address. Kept one per line in a text field: the list is short, is only
+    # ever shown, and needs no table of its own.
+    email = models.TextField(
+        "email addresses", blank=True, help_text="One address per line."
+    )
     office_hours = models.CharField(max_length=80, blank=True)
+    copyright_notice = models.CharField(
+        max_length=160,
+        default="International Islamic University Malaysia. All rights reserved.",
+        help_text="Shown after the copyright sign and the current year.",
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -209,6 +220,10 @@ class SiteContent(models.Model):
     def save(self, *args, **kwargs):
         self.pk = 1
         super().save(*args, **kwargs)
+
+    @property
+    def email_list(self) -> list[str]:
+        return [address.strip() for address in self.email.splitlines() if address.strip()]
 
     @property
     def login_point_list(self) -> list[str]:

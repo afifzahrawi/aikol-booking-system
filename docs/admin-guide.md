@@ -290,6 +290,10 @@ touch bookings already made.
 The name, logos, photographs and wording that appear in the header, the footer, the sign-in page
 and the home page. **Remove image** on a logo or photograph returns the built-in one.
 
+Under **Contact and Footer**, enter the telephone and fax numbers, and one email address per line
+if more than one office answers booking questions. The copyright line at the very bottom of every
+page starts with the current year, which changes by itself; only the wording after it is edited here.
+
 **Announcements** appear on every requester's home page. Set a start and end time to schedule one,
 or set **Published: No** to take it down while keeping it on file.
 

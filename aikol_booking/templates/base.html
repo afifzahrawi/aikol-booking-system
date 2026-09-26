@@ -20,7 +20,7 @@
 <link rel="expect" href="#main" blocking="render">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260926-1">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20260926-2">
 <script src="{% static 'js/nav-state.js' %}?v=20260924-1"></script>
 </head>
 <body class="{% if user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">
@@ -131,14 +131,14 @@
     </div>
     <div>
         <div class="foot-label">{{ site_content.contact_heading }}</div>
-        {% if site_content.phone %}<a href="tel:{{ site_content.phone }}">{{ site_content.phone }}</a>{% endif %}
-        {% if site_content.email %}<br><a href="mailto:{{ site_content.email }}">{{ site_content.email }}</a>{% endif %}
-        {% if site_content.office_hours %}<br>{{ site_content.office_hours }}{% endif %}
+        <ul class="footer-contact">
+            {% if site_content.phone %}<li>Tel: <a href="tel:{{ site_content.phone }}">{{ site_content.phone }}</a></li>{% endif %}
+            {% if site_content.fax %}<li>Fax: {{ site_content.fax }}</li>{% endif %}
+            {% for address in site_content.email_list %}<li><a href="mailto:{{ address }}">{{ address }}</a></li>{% endfor %}
+            {% if site_content.office_hours %}<li>{{ site_content.office_hours }}</li>{% endif %}
+        </ul>
     </div>
-    <div>
-        <div class="foot-label">Institution</div>
-        <a href="https://www.iium.edu.my">International Islamic University Malaysia</a>
-    </div>
+    <p class="footer-copyright">&copy; {% now "Y" %} {{ site_content.copyright_notice }}</p>
 </footer>
 
 <dialog class="action-dialog" id="actionDialog" aria-labelledby="actionDialogTitle">

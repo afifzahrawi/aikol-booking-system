@@ -160,6 +160,19 @@ p { max-width: 72ch; }
     border-top: 1px solid #095e59;
 }
 .app-footer h4, .app-footer a { color: #fffdf7; }
+/* Two columns, the Kulliyyah and how to reach it, with the copyright across
+   the very bottom under a hairline. */
+.app-footer { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.footer-contact { list-style: none; margin: 0; padding: 0; }
+.footer-copyright {
+    grid-column: 1 / -1;
+    margin: 0;
+    max-width: none;
+    padding-top: 0.9rem;
+    border-top: 1px solid rgba(255, 253, 247, 0.18);
+    color: #c3ccc8;
+}
+@media (max-width: 940px) { .app-footer { grid-template-columns: minmax(0, 1fr); } }
 .app-footer .foot-label { color: #dac79e; }
 
 .page-head, .record-head {

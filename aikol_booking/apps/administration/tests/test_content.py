@@ -43,6 +43,37 @@ class SiteContentTests(TestCase):
         self.assertContains(response, "First point")
         self.assertContains(response, "iium_logo_uploaded.jpg")
 
+    def test_footer_lists_fax_every_email_and_the_copyright_last(self):
+        content = SiteContent.load()
+        content.fax = "03-6196 4001"
+        content.email = "booking@iium.edu.my\nkeys@iium.edu.my"
+        content.save()
+        self.client.force_login(self.user)
+
+        page = self.client.get(reverse("resources:venues")).content.decode()
+        footer = page[page.index('<footer class="app-footer">'):page.index("</footer>")]
+
+        self.assertIn("Fax: 03-6196 4001", footer)
+        self.assertIn('href="mailto:booking@iium.edu.my"', footer)
+        self.assertIn('href="mailto:keys@iium.edu.my"', footer)
+        self.assertNotIn("Institution", footer)
+        self.assertIn(f"&copy; {timezone.localdate().year} International Islamic", footer)
+        self.assertGreater(footer.index("footer-copyright"), footer.index("mailto:keys"))
+
+    def test_site_content_form_refuses_an_address_that_is_not_one(self):
+        from ..forms import SiteContentForm
+
+        data = {name: getattr(SiteContent.load(), name) for name in SiteContentForm.Meta.fields
+                if not name.endswith(("logo", "image"))}
+        data["email"] = "booking@iium.edu.my\n\n  not an address  "
+        form = SiteContentForm(data, instance=SiteContent.load())
+        self.assertFalse(form.is_valid())
+        self.assertIn("not an address", str(form.errors["email"]))
+        data["email"] = " booking@iium.edu.my \n\nkeys@iium.edu.my"
+        form = SiteContentForm(data, instance=SiteContent.load())
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["email"], "booking@iium.edu.my\nkeys@iium.edu.my")
+
     def test_only_administrators_can_manage_announcements(self):
         self.client.force_login(self.user)
         self.assertEqual(

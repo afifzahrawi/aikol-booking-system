@@ -113,6 +113,7 @@ class Command(BaseCommand):
             "International Islamic University Malaysia, 53100 Gombak, Selangor"
         )
         content.phone = "03-6196 4000"
+        content.fax = "03-6196 4001"
         content.email = "booking-aikol@iium.edu.my"
         content.office_hours = "Monday to Friday, 08:30 to 17:00"
         content.save()
