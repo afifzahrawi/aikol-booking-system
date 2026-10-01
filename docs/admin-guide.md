@@ -22,26 +22,10 @@ the same way as anyone else.
 
 ---
 
-## 1. Signing in with the authenticator
+## 1. Signing in
 
-Approvers and administrators sign in with a password **and** a six-digit code from an
-authenticator app on their phone (Google Authenticator, Microsoft Authenticator or Authy). Ordinary
-users are not asked for a code.
-
-**The first time**, after your password you are shown a QR code. Scan it with the app, type the
-six digits the app shows, and continue. You are then shown **ten recovery codes, once only**. Write
-them down or print them and keep them somewhere that is not your phone. Each works a single time,
-in place of the app's code, if your phone is lost.
-
-**Every time after that**, type the six digits the app shows at that moment.
-
-![Enter the six-digit code from your authenticator app.](images/admin/00-enter-code.png)
-
-*After the password, the code from the authenticator app.*
-
-If a colleague loses both their phone and their recovery codes, open their record under **People**
-and choose **Reset authenticator**. They set up a new one at their next sign-in. You cannot reset
-your own; ask another administrator.
+Approvers and administrators sign in on the same page as everyone else, with their email address
+and password. No code from a phone is needed.
 
 ---
 
@@ -56,7 +40,7 @@ Vehicles); below it is the office's work.
 | **Bookings** | Every booking, the Awaiting Decision queue, and booking for someone else. The number beside it is how many requests are waiting | 4, 5 |
 | **Keys** | Keys to hand out, keys out, keys overdue | 6 |
 | **Resources** | Venues, vehicles and facilities, with photographs | 7 |
-| **People** | Every account, roles and authenticators | 8 |
+| **People** | Every account and its role | 8 |
 | **Insights** | Reports and the bookings export | 9 |
 | **System** | Booking rules, email delivery, academic calendars, site wording, the wording of each email, data and the audit log | 10 |
 
@@ -222,10 +206,9 @@ Open a person to change their details, affiliation or role.
 
 ![A person's record.](images/admin/15-person.png)
 
-*A person's record, with the authenticator section below.*
+*A person's record.*
 
-- **Role.** User, Approver or Administrator. A person made an approver or administrator is asked to
-  set up the authenticator at their next sign-in.
+- **Role.** User, Approver or Administrator.
 - **Active account.** Set to **No** to retire an account. The person cannot sign in; their booking
   history is kept.
 - **Email address verified.** Set to **Yes** yourself only when the verification email cannot
@@ -365,8 +348,6 @@ removed, and nothing goes without you typing a confirmation.
 | Emails are not arriving | System, Booking Rules: check Email delivery is Yes and the App Password is right. The yellow notice counts the messages waiting. |
 | "Set the time on the quarter hour" | Times run in quarter hours: :00, :15, :30 or :45. |
 | A venue or car cannot be deleted | It is still active, or it has bookings. Make it inactive; that keeps its history. |
-| A colleague is locked out of the authenticator | People, open their record, **Reset authenticator**. |
-| You are locked out of your own authenticator | Use a recovery code, or ask another administrator to reset it. |
 | A message that something did not reach the server | The reply was lost and the change may still have been saved. Reload the page and look before trying again. |
 
 *The screenshots show fictional demonstration data.*

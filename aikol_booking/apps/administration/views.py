@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 
+from django.conf import settings
 from django.contrib import messages as flash
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
@@ -155,6 +156,7 @@ def user_edit(request, pk: int):
             "form": form,
             "bookings": person.bookings.count(),
             "totp_device": getattr(person, "totp_device", None),
+            "mfa_enforced": settings.MFA_ENFORCED,
         },
     )
 

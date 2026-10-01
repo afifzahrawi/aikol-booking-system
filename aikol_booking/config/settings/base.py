@@ -128,11 +128,11 @@ IIUM_EMAIL_DOMAINS = ("iium.edu.my", "live.iium.edu.my")
 # How long a verification or password-reset link stays usable.
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3  # three days
 
-# Approvers and administrators must enrol an authenticator app and present a
-# code every session. Enforced by MfaRequiredMiddleware. The test runner turns
-# this off so the several hundred tests that sign an administrator in with
-# `force_login` keep testing what they are about; the MFA tests turn it back on.
-MFA_ENFORCED = True
+# Off at the office's request (1 October 2026): approvers and administrators
+# sign in with a password only. The authenticator code, MfaRequiredMiddleware and
+# the enrolment screens are kept intact, so setting this back to True restores
+# the second factor without a code change. The MFA tests force it on.
+MFA_ENFORCED = False
 MFA_ISSUER = "AIKOL Booking"
 
 # The stylesheet's class is `.notice-warn`; Django's tag is "warning".

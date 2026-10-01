@@ -22,6 +22,7 @@
     </div>
 </section>
 
+{% if mfa_enforced %}
 <section class="card" aria-labelledby="mfa-status-heading">
     <div class="card-body">
         <h2 id="mfa-status-heading">Authenticator</h2>
@@ -45,6 +46,7 @@
         {% endif %}
     </div>
 </section>
+{% endif %}
 
 {% if person.pk != user.pk %}
 <section class="card" aria-labelledby="delete-account-heading">

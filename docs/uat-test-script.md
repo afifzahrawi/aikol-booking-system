@@ -19,8 +19,8 @@ Address: `https://aikol-booking-qn23bk3fqa-as.a.run.app`
 | Tester | Role | Uses |
 | --- | --- | --- |
 | T1, requester | Ordinary user | A real IIUM address you can read mail for, and a phone. Registers fresh in section 1. |
-| T2, approver | Approver | An account the administrator sets to Approver in section 12. Needs an authenticator app on their phone (Google Authenticator, Microsoft Authenticator or Authy). |
-| T3, administrator | Administrator | The office account. Authenticator app already enrolled. |
+| T2, approver | Approver | An account the administrator sets to Approver in section 12. |
+| T3, administrator | Administrator | The office account. |
 
 **Test data.** Production has been reset for testing: there are no bookings, and three venues
 are ready, drawn with placeholder pictures:
@@ -156,19 +156,13 @@ a phone; mark the phone runs with a P.
 | 7.6 | Try to open another person's booking by changing the number in the address bar. | Refused (403), not shown. | |
 | 7.7P | My Bookings on the phone. | Each booking is a stacked record with labels; the full time range is visible. | |
 
-## 8. Second factor for staff (T2, T3)
+## 8. Staff sign-in (T2, T3)
 
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
-| 8.1 | T2 signs in for the first time after being made Approver. | Forced to the authenticator setup: a QR code, a manual key, a field for the first code. Nothing else in the system is reachable until this is done. | |
-| 8.2 | Scan with the app; enter the code. | Ten recovery codes shown once. Save them. Continue. | |
-| 8.3 | Go back to the setup page. | Not available again; the QR code is not shown twice. | |
-| 8.4 | Sign out, sign in again. | Password, then a six-digit code, then the dashboard. | |
-| 8.5 | Enter a wrong code; enter a code from 8.4 again. | Both refused. After ten wrong codes in a quarter-hour, asked to wait. | |
-| 8.6 | Sign in with a recovery code. | Accepted; that code will not work a second time. | |
-| 8.7 | T1 (ordinary user) signs in. | No code is asked for. | |
-| 8.8 | T3: People → T2 → **Reset authenticator**. | T2's next sign-in is forced through setup again. T3 cannot reset their own. | |
-| 8.9 | T3 opens `/admin/login/`. | Sent to the ordinary sign-in page. | |
+| 8.1 | T2 signs in after being made Approver. | Email and password only, straight to the dashboard. No code is asked for. | |
+| 8.2 | T3 signs in. | The same: no code is asked for. | |
+| 8.3 | T3 opens `/admin/login/`. | Sent to the ordinary sign-in page. | |
 
 ## 9. Deciding requests (T2)
 
@@ -224,12 +218,12 @@ a phone; mark the phone runs with a P.
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
 | 12.1 | People. Search T1 by name, by email, by number. Filter by role and state. | Found each way. | |
-| 12.2 | Edit T2: role Approver. Save. | Saved. T2 is now forced through authenticator setup at next sign-in (section 8). | |
+| 12.2 | Edit T2: role Approver. Save. | Saved. At their next sign-in T2 sees the Approvals screens (section 8). | |
 | 12.3 | The edit form. | No password field anywhere. "Active account" and "Email address verified" are Yes/No choices, not tick boxes. | |
 | 12.3a | Create a throwaway account, set Active account to No, then use **Delete account** at the foot of its page. | Deleted, and gone from the list straight away. Try the same on an account with bookings: refused, and it says why. | |
 | 12.4 | Untick **Active account** for a throwaway user; that user tries to sign in. | Refused as if the password were wrong. Their bookings remain in the history. | |
 | 12.5 | Tick **Email address verified** by hand for a user whose email failed. | They can book. The change appears in the Audit Log. | |
-| 12.6 | Edit dialog: the buttons and the Authenticator section. | Clear space between the Save row and the Authenticator heading. | |
+| 12.6 | Edit dialog. | No Authenticator section. | |
 
 ## 13. Settings and email (T3)
 

@@ -69,6 +69,10 @@ Two operational items remain open (section 5, *Still open*).
   middleware so no screen can forget: enrolment is forced at first sign-in, a code is required every
   session, ten single-use recovery codes are issued once, and an administrator can reset a
   colleague's device (never their own). `docs/technical/security.md` has the design. **373 tests.**
+  **Switched off on 1 October 2026 at the office's request:** `MFA_ENFORCED = False` in
+  `config/settings/base.py`, so staff sign in with a password only and the Authenticator card is
+  hidden on a person's record. Nothing was removed; setting it back to `True` restores the second
+  factor, and the MFA tests still run with it forced on.
 - **`prepare_uat`** resets production for acceptance testing: deletes every booking, series, key
   handover, archive row, the audit log and sent/failed email; deletes venues whose name or code
   contains "test"; adds three UAT venues (`UAT-VEN-01..03`) drawn with the `moot-court`,
@@ -429,9 +433,9 @@ owner:
    registration is a recurring fee and raises the question of institutional versus personal
    ownership; neither has been decided. The procedure, once decided, is
    `docs/technical/custom-domain.md`; `deploy.ps1 -PublicDomain` carries the name.
-2. **Authenticator enrolment by every approver and administrator** at their next sign-in. The
-   system forces it; the office should expect the step and keep the recovery codes it prints
-   somewhere that is not the phone.
+2. **The second factor for staff is switched off** at the office's request. Approvers and
+   administrators are protected by their password alone; switch `MFA_ENFORCED` back on if the
+   office reconsiders.
 
 The free-tier cost analysis is an estimate: it needs real booking volume and a load test before
 "RM 0" can be stated as fact.
@@ -595,6 +599,8 @@ response either way and emails the existing account instead. A matriculation num
 reported, because a number cannot be probed for a list of people the way an address can, and a
 silent merge would corrupt the booking record.
 
+**Currently switched off** (`MFA_ENFORCED = False`, at the office's request on 1 October 2026);
+the design below is kept so it can be switched back on.
 **Approvers and administrators present a second factor** — a code from an authenticator app —
 at every sign-in, enforced by `MfaRequiredMiddleware` for every request rather than by a decorator a
 screen could omit. Enrolment is forced the first time; recovery codes are single-use and hashed; an
