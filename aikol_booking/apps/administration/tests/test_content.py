@@ -40,7 +40,8 @@ class SiteContentTests(TestCase):
 
         self.assertContains(response, "Reserve AIKOL spaces")
         self.assertContains(response, "A factual introduction from the office.")
-        self.assertContains(response, "First point")
+        # The bullet points are no longer shown on the simplified sign-in page.
+        self.assertNotContains(response, "First point")
         self.assertContains(response, "iium_logo_uploaded.jpg")
 
     def test_footer_lists_fax_every_email_and_the_copyright_last(self):
@@ -104,7 +105,7 @@ class SiteContentTests(TestCase):
 
         self.assertContains(response, "Current notice")
         html = response.content.decode()
-        self.assertLess(html.index("search-hero"), html.index("announcement-stack"))
+        self.assertLess(html.index("capsule-search"), html.index("announcement-stack"))
 
     def test_inactive_expired_and_future_announcements_are_hidden(self):
         now = timezone.now()

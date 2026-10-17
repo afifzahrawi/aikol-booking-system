@@ -81,9 +81,11 @@ class KioskLookupForm(StyledFormMixin, forms.Form):
     reference = forms.CharField(
         max_length=20,
         label="Booking number",
-        help_text="It starts with BK, for example BK-20261017-0001. It is in your "
-        "confirmation email and under My Bookings.",
-        widget=forms.TextInput(attrs={"autocomplete": "off", "autofocus": True}),
+        help_text="The last four digits are enough for a booking today. The full number is "
+        "in your confirmation email.",
+        widget=forms.TextInput(
+            attrs={"autocomplete": "off", "autofocus": True, "inputmode": "numeric"}
+        ),
     )
 
 

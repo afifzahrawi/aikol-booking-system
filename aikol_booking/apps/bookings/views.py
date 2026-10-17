@@ -14,6 +14,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from apps.audit.services import log_action
 from apps.resources.models import Resource, ResourceStatus, ResourceType, Vehicle, Venue
@@ -730,6 +731,94 @@ def approvals(request):
 
 
 @administrator_required
+def booking_calendar(request):
+    """The office's bookings as a calendar: a week of days, or one day by room."""
+    from . import calendar as cal
+
+    today = timezone.localdate()
+    try:
+        anchor = dt.date.fromisoformat(request.GET.get("week", ""))
+    except ValueError:
+        anchor = today
+    monday = cal.monday_of(anchor)
+    view = request.GET.get("view", "week")
+    if view not in {"week", "rooms"}:
+        view = "week"
+    try:
+        day = dt.date.fromisoformat(request.GET.get("day", ""))
+    except ValueError:
+        day = today if monday <= today < monday + dt.timedelta(days=7) else monday
+    # The filter form always sends `f`, so unticking both boxes is honoured
+    # rather than read as "never filtered".
+    if request.GET.get("f"):
+        kinds = {k for k in request.GET.getlist("show") if k in cal.KINDS}
+    else:
+        kinds = set(cal.KINDS)
+    term = (request.GET.get("q") or "").strip()
+
+    if view == "week":
+        board = cal.week(monday, kinds=kinds, term=term) if kinds else {
+            "days": [], "bookings": [], "hours": [], "span_hours": 14, "now_top": None
+        }
+    else:
+        board = cal.by_room(day, kinds=kinds, term=term) if kinds else {
+            "rooms": [], "bookings": [], "hours": [], "span_hours": 14
+        }
+    waiting, waiting_count = cal.waiting_for_decision()
+
+    def link(**changes) -> str:
+        params = {"week": monday.isoformat(), "view": view, "day": day.isoformat()}
+        if term:
+            params["q"] = term
+        if request.GET.get("f"):
+            params["f"] = "1"
+        params.update({k: v for k, v in changes.items()})
+        query = "&".join(f"{k}={v}" for k, v in params.items() if v != "")
+        shows = "".join(f"&show={k}" for k in sorted(kinds)) if request.GET.get("f") else ""
+        return f"?{query}{shows}"
+
+    selected = request.GET.get("selected", "")
+    return render(
+        request,
+        "bookings/calendar.html",
+        {
+            "view": view,
+            "monday": monday,
+            "sunday": monday + dt.timedelta(days=6),
+            "day": day,
+            "board": board,
+            "kinds": kinds,
+            "q": term,
+            "month": cal.mini_month(day if view == "rooms" else monday, week_start=monday),
+            "waiting": waiting,
+            "waiting_count": waiting_count,
+            "selected": selected if selected.isdigit() else "",
+            "prev_link": link(
+                week=(monday - dt.timedelta(days=7)).isoformat(),
+                day=(day - dt.timedelta(days=7 if view == "week" else 1)).isoformat(),
+            ) if view == "week" else link(
+                day=(day - dt.timedelta(days=1)).isoformat(),
+                week=cal.monday_of(day - dt.timedelta(days=1)).isoformat(),
+            ),
+            "next_link": link(
+                week=(monday + dt.timedelta(days=7)).isoformat(),
+                day=(day + dt.timedelta(days=7)).isoformat(),
+            ) if view == "week" else link(
+                day=(day + dt.timedelta(days=1)).isoformat(),
+                week=cal.monday_of(day + dt.timedelta(days=1)).isoformat(),
+            ),
+            "today_link": link(week=cal.monday_of(today).isoformat(), day=today.isoformat()),
+            "week_link": link(view="week"),
+            "rooms_link": link(view="rooms"),
+            "now": timezone.now(),
+            "booking_tab": "calendar",
+            "venue_kind": ResourceType.VENUE,
+            "vehicle_kind": ResourceType.VEHICLE,
+        },
+    )
+
+
+@administrator_required
 def manage_bookings(request):
     """The administrator's complete booking register, separate from approvals."""
     kind = request.GET.get("kind", ResourceType.VENUE)
@@ -960,6 +1049,11 @@ def decide(request, pk: int):
                 description=f"{booking.booking_reference} {action}d.",
                 request=request,
             )
+            back = request.POST.get("next", "")
+            if back.startswith(reverse("bookings:calendar")) and url_has_allowed_host_and_scheme(
+                back, allowed_hosts={request.get_host()}
+            ):
+                return redirect(back)
             return redirect("bookings:approvals")
 
     # Shown alongside the decision: what else is already approved for this

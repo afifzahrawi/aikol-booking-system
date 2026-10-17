@@ -48,7 +48,7 @@ ACTION_ROUTES = {
     "bookings": {
         "mine", "detail", "cancel", "series_cancel", "series_change", "availability", "create",
         "slot_check", "series_create", "approvals", "decide", "decide_series",
-        "manage", "admin_start", "admin_create", "admin_series_create", "user_search",
+        "manage", "calendar", "admin_start", "admin_create", "admin_series_create", "user_search",
         "vehicle_management", "academic_terms", "academic_term_new",
         "academic_term_edit", "academic_term_delete", "keys", "key_issue", "key_return",
         "key_confirm", "fuel_receipt", "kiosk", "kiosk_exit", "kiosk_booking",

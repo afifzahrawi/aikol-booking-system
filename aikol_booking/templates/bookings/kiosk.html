@@ -1,71 +1,100 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Key Kiosk{% endblock %}
 {% block content %}
-{% comment %} The office PC. Everything here is written for someone who has never
-   used the system: one question at a time, and the office confirms afterwards. {% endcomment %}
+{% comment %} The office PC. One question at a time, large targets, and the office
+   confirms every record afterwards. No names are shown: the screen faces the
+   room. {% endcomment %}
 <div class="kiosk">
-{% if step == 'lookup' %}
-    <h1>Collect or Return a Key</h1>
-    <p class="lede">Type your booking number to record that you have collected a key,
-        or that you are giving it back. The Admin confirms every record.</p>
-    <section class="card">
-        <div class="card-body">
-            <form method="post" novalidate>
-                {% csrf_token %}
-                {% include "_form_fields.html" %}
-                <div class="btn-group"><button class="btn btn-primary" type="submit">Continue</button></div>
-            </form>
-        </div>
+{% if step == 'lookup' and done %}
+    <section class="kiosk-done" aria-live="polite" data-kiosk-reset>
+        <span class="bubble" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <h1>{% if done == 'return' %}Thank you. Return recorded.{% else %}Key collection recorded.{% endif %}</h1>
+        <p class="lede">The Admin will confirm it shortly.</p>
+        <a class="btn btn-primary" href="{% url 'bookings:kiosk' %}">Start again</a>
     </section>
-{% elif step == 'exit' %}
-    <h1>Close the Kiosk</h1>
-    <p class="lede">For the Admin only. Enter your password to return to the Key Register.</p>
-    <section class="card">
-        <div class="card-body">
-            <form method="post" novalidate>
+{% elif step == 'lookup' %}
+    <div class="kiosk-grid rf-rise">
+        <section class="kiosk-panel" aria-labelledby="kiosk-h">
+            <div>
+                <h1 id="kiosk-h">Collect or Return a Key</h1>
+                <p class="lede">Type your booking number, or tap your booking.</p>
+            </div>
+            <form method="post" novalidate data-kiosk-form>
                 {% csrf_token %}
-                {% include "_form_fields.html" %}
-                <div class="btn-group">
-                    <a class="btn" href="{% url 'bookings:kiosk' %}">Back</a>
-                    <button class="btn btn-primary" type="submit">Close the kiosk</button>
+                <label class="visually-hidden" for="{{ form.reference.id_for_label }}">Booking number</label>
+                <div class="kiosk-number{% if form.reference.errors %} is-wrong{% endif %}">
+                    <input type="text" name="reference" id="{{ form.reference.id_for_label }}" value="{{ form.reference.value|default:'' }}"
+                           maxlength="20" autocomplete="off" inputmode="numeric" autofocus placeholder="Last 4 digits" aria-describedby="kiosk-help">
                 </div>
+                <p class="help" id="kiosk-help">{% if form.reference.errors %}{{ form.reference.errors.0 }}{% else %}{{ form.reference.help_text }}{% endif %}</p>
+                <div class="keypad" role="group" aria-label="Number pad" data-keypad hidden>
+                    {% for k in "123456789" %}<button type="button" data-key="{{ k }}">{{ k }}</button>{% endfor %}
+                    <button type="button" class="word" data-key="clear">Clear</button>
+                    <button type="button" data-key="0">0</button>
+                    <button type="button" class="word" data-key="back" aria-label="Delete last digit">Delete</button>
+                </div>
+                <button class="btn btn-primary kiosk-go" type="submit">Continue</button>
             </form>
-        </div>
+        </section>
+
+        <section class="kiosk-tiles" aria-labelledby="today-h">
+            <h2 id="today-h">Today</h2>
+            {% for row in today %}
+                <a class="kiosk-tile" href="{% url 'bookings:kiosk_booking' row.booking.booking_reference %}">
+                    <span>
+                        <b>{{ row.booking.resource.name }}</b>
+                        <small>{% if row.booking.start_at.date == row.booking.end_at.date %}{{ row.booking.start_at|date:"H:i" }} to {{ row.booking.end_at|date:"H:i" }}{% else %}{{ row.booking.start_at|date:"D j M" }} to {{ row.booking.end_at|date:"D j M" }}{% endif %}, number ending <span class="mono">{{ row.booking.booking_reference|slice:"-4:" }}</span></small>
+                    </span>
+                    <span class="act {{ row.mode }}">{% if row.mode == 'collect' %}Collect{% else %}Return{% endif %}</span>
+                </a>
+            {% empty %}
+                <p class="help">No keys to collect or return today.</p>
+            {% endfor %}
+        </section>
+    </div>
+{% elif step == 'exit' %}
+    <section class="kiosk-panel rf-rise">
+        <h1>Close the Kiosk</h1>
+        <p class="lede">For the Admin only. Enter your password to return to the Key Register.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% include "_form_fields.html" %}
+            <div class="btn-group">
+                <a class="btn" href="{% url 'bookings:kiosk' %}">Back</a>
+                <button class="btn btn-primary" type="submit">Close the kiosk</button>
+            </div>
+        </form>
     </section>
 {% else %}
-    <h1>{% if step == 'issue' %}Collect the Key{% elif step == 'return' %}Return the Key{% else %}Key Already Returned{% endif %}</h1>
-    <section class="card">
-        <div class="card-body">
-            <dl class="kv">
-                <dt>Booking number</dt><dd class="mono">{{ booking.booking_reference }}</dd>
-                <dt>{% if booking.is_vehicle %}Vehicle{% else %}Venue{% endif %}</dt><dd>{{ booking.resource.name }}</dd>
-                <dt>Booked by</dt><dd>{{ booking.user.full_name }}</dd>
-                <dt>Period</dt><dd>{{ booking.start_at|date:"D d M Y, H:i" }} to {{ booking.end_at|date:"D d M Y, H:i" }}</dd>
-                {% if handover and handover.issued_at %}
-                    <dt>Collected</dt><dd>{{ handover.issued_at|date:"d M Y, H:i" }} by {{ handover.collected_by_name }}</dd>
-                {% endif %}
-            </dl>
-
-            {% if step == 'done' %}
-                <p>The key for this booking has already been given back. If that is wrong, please speak to the office.</p>
-                <div class="btn-group"><a class="btn btn-primary" href="{% url 'bookings:kiosk' %}">Start again</a></div>
-            {% else %}
-                <form method="post" enctype="multipart/form-data" novalidate>
-                    {% csrf_token %}
-                    {{ form.non_field_errors }}
-                    {% include "_form_fields.html" %}
-                    <div class="btn-group">
-                        <a class="btn" href="{% url 'bookings:kiosk' %}">Cancel</a>
-                        <button class="btn btn-primary" type="submit">
-                            {% if step == 'issue' %}I have collected the key{% else %}I am returning the key{% endif %}</button>
-                    </div>
-                </form>
-            {% endif %}
-        </div>
+    <section class="kiosk-panel rf-rise">
+        <span class="badge {% if step == 'issue' %}badge-approved{% elif step == 'return' %}badge-pending{% else %}badge-muted{% endif %}">{% if step == 'issue' %}Collecting the key{% elif step == 'return' %}Returning the key{% else %}Already returned{% endif %}</span>
+        <h1>{{ booking.resource.name }}</h1>
+        <dl class="kv">
+            <dt>Time</dt><dd>{{ booking.start_at|date:"D j M, H:i" }} to {% if booking.start_at.date == booking.end_at.date %}{{ booking.end_at|date:"H:i" }}{% else %}{{ booking.end_at|date:"D j M, H:i" }}{% endif %}</dd>
+            <dt>Booking number</dt><dd class="mono">{{ booking.booking_reference }}</dd>
+            {% if handover and handover.issued_at %}<dt>Collected</dt><dd>{{ handover.issued_at|date:"D j M, H:i" }}</dd>{% endif %}
+        </dl>
+        {% if step == 'done' %}
+            <p>The key for this booking has already been given back. If that is wrong, please speak to the office.</p>
+            <a class="btn btn-primary" href="{% url 'bookings:kiosk' %}">Start again</a>
+        {% else %}
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                {% include "_form_fields.html" %}
+                <div class="btn-group kiosk-actions">
+                    <a class="btn" href="{% url 'bookings:kiosk' %}">Back</a>
+                    <button class="btn btn-primary" type="submit">
+                        {% if step == 'issue' %}I have the key{% else %}I am handing it back{% endif %}</button>
+                </div>
+            </form>
+        {% endif %}
     </section>
 {% endif %}
 {% if step != 'exit' %}
-    <p class="kiosk-exit"><a href="{% url 'bookings:kiosk_exit' %}">Admin: close the kiosk</a></p>
+    <p class="kiosk-exit"><a href="{% url 'bookings:kiosk_exit' %}">Admin</a></p>
 {% endif %}
 </div>
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/kiosk.js' %}?v=20261018-1" defer></script>{% endblock %}

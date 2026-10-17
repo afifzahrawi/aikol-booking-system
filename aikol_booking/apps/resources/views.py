@@ -206,8 +206,56 @@ def resource_detail(request, pk: int):
             ),
             # The expiry date itself is administrator-facing only.
             "show_road_tax": request.user.is_administrator,
+            "picker": _slot_picker(specific) if resource.resource_type == ResourceType.VENUE else None,
         },
     )
+
+
+def _slot_picker(venue, days: int = 7) -> list[dict]:
+    """Half-hour slots for the next week, each marked free or taken.
+
+    For the room page's time picker. One query for the whole week; a slot is
+    taken when any pending or approved booking overlaps it (the same rule as
+    the conflict check) or when it has already started. It only suggests:
+    the booking form checks the period again when it is submitted.
+    """
+    import datetime as dt
+
+    from django.utils import timezone
+
+    from apps.administration.models import SystemSetting
+    from apps.bookings.models import BLOCKING_STATUSES, Booking
+
+    window_open = dt.time.fromisoformat(SystemSetting.get("bookable_window_start"))
+    window_close = dt.time.fromisoformat(SystemSetting.get("bookable_window_end"))
+    opens = max(venue.opens_at, window_open)
+    closes = min(venue.closes_at, window_close)
+    today = timezone.localdate()
+    now = timezone.now()
+    tz = timezone.get_current_timezone()
+    first = dt.datetime.combine(today, opens, tzinfo=tz)
+    last = dt.datetime.combine(today + dt.timedelta(days=days), closes, tzinfo=tz)
+    taken = list(
+        Booking.objects.filter(
+            resource_id=venue.pk,
+            status__in=BLOCKING_STATUSES,
+            start_at__lt=last,
+            end_at__gt=first,
+        ).values_list("start_at", "end_at")
+    )
+    out = []
+    for offset in range(days):
+        day = today + dt.timedelta(days=offset)
+        slots = []
+        cursor = dt.datetime.combine(day, opens, tzinfo=tz)
+        end_of_day = dt.datetime.combine(day, closes, tzinfo=tz)
+        while cursor < end_of_day:
+            nxt = cursor + dt.timedelta(minutes=30)
+            busy = cursor < now or any(s < nxt and e > cursor for s, e in taken)
+            slots.append({"time": f"{cursor:%H:%M}", "end": f"{nxt:%H:%M}", "taken": busy})
+            cursor = nxt
+        out.append({"date": day, "slots": slots, "free": sum(not x["taken"] for x in slots)})
+    return out
 
 
 # ------------------------------------------------------------- management

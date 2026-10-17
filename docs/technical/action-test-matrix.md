@@ -6,7 +6,7 @@ Run from the repository root:
 .\.venv\Scripts\python.exe tools\test_action_matrix.py
 ```
 
-The script refuses production settings, inventories all 88 named application routes, and runs the
+The script refuses production settings, inventories all 89 named application routes, and runs the
 complete Django regression suite in a disposable SQLite test database. It does **not** seed or
 alter production. The route inventory detects newly added screens/actions that have not been
 classified; it does not by itself prove that every input combination works. The tests supply
@@ -20,6 +20,7 @@ the behaviour checks below.
 | Resource administration | Create/edit/deactivate/delete through the history gates; manage facility and venue order; add, rename, withdraw and delete venue types; manage, move and delete images; crop venue photographs to 4:3; reject bad uploads and unauthorized access | `apps.resources.tests` |
 | Booking | Prefill a selected slot; submit room and car requests; reject missing/invalid fields, conflicts, rule violations and unverified accounts; view, search, paginate and cancel own requests | `apps.bookings.tests`, `apps.accounts.tests.test_design` |
 | Recurring booking | Preview/submit full or partial series with up to three times a day; handle breaks/clashes; approve or cancel series and occurrences; change the timetable from a date (room or times), roll back on a clash; audit every series | `apps.bookings.tests.test_workflow`, `test_rules`, `test_operational_workflows`, `test_series_changes` |
+| Calendar and refresh | Week and By Room calendar, filters, search, lanes for overlaps, approve from the drawer back to the calendar, outside `next` ignored; kiosk short numbers and tiles without names; room time picker; home Up Next | `apps.bookings.tests.test_calendar_refresh` |
 | Keys and kiosk | Venue and vehicle keys apart; search by booking number; optional mileage and petrol receipt; kiosk collection and return awaiting confirmation; Admin confirms or rejects; kiosk session locked until the Admin password; requesters refused | `apps.bookings.tests.test_keys`, `test_kiosk_keys` |
 | Decisions and keys | Approve/reject requests; record vehicle management decision and driver; issue and return keys; reject duplicate or unauthorized handovers | `apps.bookings.tests.test_workflow`, `test_operational_workflows`, `test_keys` |
 | Settings and communications | Update governed settings and SMTP configuration; manage email wording; encrypt password; queue and send mail with a mocked SMTP connection; verify disabled delivery leaves mail queued | `apps.administration.tests`, `apps.notifications.tests`, `config.tests.test_maintenance` |

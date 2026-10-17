@@ -63,6 +63,20 @@ this month's requests. A yellow notice appears when a key is still out after its
 
 ## 4. Deciding bookings
 
+### The calendar
+
+**Bookings** opens on a calendar of the week, like Google Calendar or Teams. Each day is a
+column; venues are shaded green and vehicles orange, and a booking still waiting for a decision has
+a dashed outline. Bookings at the same time sit side by side. The red line is the time now.
+
+- Use the arrows or **Today** to move through the weeks, or pick a day in the small month.
+- **By Room** shows one day with a row for each venue and car: the quickest way to see what is free.
+- Untick **Venues** or **Vehicles** to hide them, or search by booking number, name or room.
+- Choose a booking to open its details on the right. **Approve** decides it at once; **Decline**
+  asks for the reason the requester will see. **Waiting for You** lists what still needs a decision.
+
+The other tabs, **Venues** and **Vehicles**, are the full list of bookings, with filters and export.
+
 ### The booking register
 
 **Bookings** lists every booking. The tabs switch between **Venues**, **Vehicles** and **Awaiting

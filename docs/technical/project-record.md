@@ -128,6 +128,26 @@ Two operational items remain open (section 5, *Still open*).
     window under 35rem high scrolls the rail.
   - **The Admin's home screen has no personal booking summary**; requesters keep it. **505 tests.**
 
+- **Interface refresh, 18 October 2026** (office request): an Apple-like visual language replaces
+  the docket look (`design.md`, first section; `static/css/refresh.css`). New and rebuilt screens:
+  - **Bookings calendar** for the Admin (`bookings:calendar`, `apps/bookings/calendar.py`): a
+    week grid after Google Calendar and Teams, with overlapping bookings in lanes, a red "now"
+    line, a By Room day view, Venues and Vehicles filters, search, a month picker and a "Waiting
+    for You" list. Choosing a booking opens a details drawer with Approve and Decline; an
+    approval from the drawer returns to the calendar (`next`, checked to be the calendar's own
+    URL). The rail's Bookings item now opens the calendar; the register is "All Bookings".
+  - **Home** for requesters: one search capsule with a Venue/Vehicle segmented control, an Up
+    Next card with Requested, Approved, Key collected, Key returned progress, and Coming Up.
+  - **Room page**: photo, facts as pills, and a booking card with a 7-day, half-hour time picker
+    (taken and past slots crossed out) that pre-fills the booking form. It only suggests; the
+    form checks the period again.
+  - **Kiosk**: a number pad, the last four digits of a booking number are enough for a booking in
+    play today, and today's keys to collect or return can be tapped. No names are shown on it.
+  - Positions are written as `data-top/left/width/height` and `data-vars` (custom properties
+    only) and applied by `chrome.js`, because the CSP refuses inline styles.
+  - The type is the device's own system font with IBM Plex Sans as fallback: SF and Segoe UI
+    are already on the machines, so nothing new is downloaded or served.
+
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
 facility list were all added; several of them were previously listed as out of scope. Read section 5

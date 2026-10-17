@@ -3,6 +3,42 @@
 This is the locked visual and interaction system for the Django application. It replaces the
 prototype-derived header/card/table world while preserving every business rule and route.
 
+## October 2026 refresh (supersedes colour, type and motion below)
+
+Asked for by the office: the docket look read as heavy and over-worded. The refresh takes Apple's
+interface language as its model and lives in `static/css/refresh.css`, loaded after every other
+stylesheet. It restates the tokens the older layers read, so most screens change through the
+tokens alone. The reference designs are the canvas "AIKOL Booking Redesign".
+
+- **Ground and surfaces:** light grey `#f5f5f7` ground; white surfaces with no outline and a soft
+  shadow; 18 px card radius, 12 px controls, pills at 980 px. Frosted, hairline masthead and rail.
+- **Colour:** ink `#1d1d1f`, secondary `#6e6e73`, one accent, AIKOL teal `#0f6b5e`. Vehicles use
+  orange `#b4580f` beside teal venues. Waiting states are amber; red `#d73a2c` is for "now" and
+  counts only. Status keeps its word as well as its colour.
+- **Type:** one family, the device's own (SF on Apple, Segoe UI on Windows) with IBM Plex Sans as
+  the served fallback. Amiri is no longer used for headings. Tight negative tracking on large
+  titles.
+- **Controls:** tabs are a segmented control (grey track, white thumb that slides); buttons are
+  filled, borderless, primary in teal; inputs gain a soft focus halo instead of an outline.
+- **Wording:** a page title does not get a subtitle that repeats it. Only text that tells a person
+  what to do, or a rule they must know, stays.
+- **Motion:** one curve, `cubic-bezier(0.32, 0.72, 0, 1)`, at 160, 260 and 420 ms; a spring curve
+  for confirmations only. Content rises in on arrival (staggered by 80 ms), calendar blocks pop in,
+  the details drawer slides from the right, the kiosk's check mark draws itself, a wrong number
+  shakes. `prefers-reduced-motion` turns all of it off.
+- **Everything else follows the same rules:** badges are sentence-case pills (no stamps, no
+  uppercase), pagination is round with the current page in ink, row menus and dialogs are white
+  with a large radius and a soft shadow, report tiles are white cards, the heat map and bars use a
+  teal ramp from the accent, waiting bookings are a white block with a dashed or inset teal edge
+  everywhere they appear. A page-wide audit (every background, border and corner checked on 38
+  screens against this palette) found nothing left from the docket look.
+- **Sign in:** one centred column on the light ground: the two crests, the office's heading and
+  sentence from Site content, the form. The bullet points and the large photograph are no longer
+  shown; their Site content fields remain.
+- **Screens rebuilt on it:** the requester home (search capsule, Up Next with progress, Coming Up),
+  the Admin's Bookings calendar (week grid and By Room, after Google Calendar and Teams), the room
+  page with its time picker, and the office kiosk (number pad, today's bookings to tap).
+
 ## World
 
 Contemporary legal chambers and docket books, interpreted as an operational interface rather than

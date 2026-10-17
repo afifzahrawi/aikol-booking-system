@@ -28,6 +28,8 @@ from .keys import (
     awaiting_confirmation,
     confirm_key_entry,
     find_by_reference,
+    find_for_kiosk,
+    kiosk_today,
     issue_key,
     keys_awaiting_collection,
     outstanding_keys,
@@ -289,12 +291,16 @@ def kiosk_home(request):
         )
     form = KioskLookupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        booking = find_by_reference(form.cleaned_data["reference"])
+        booking = find_for_kiosk(form.cleaned_data["reference"])
         if booking is None:
             form.add_error("reference", "No booking has that number. Check it and try again.")
         else:
             return redirect("bookings:kiosk_booking", reference=booking.booking_reference)
-    return render(request, "bookings/kiosk.html", {"form": form, "step": "lookup"})
+    return render(
+        request,
+        "bookings/kiosk.html",
+        {"form": form, "step": "lookup", "today": kiosk_today(), "done": request.GET.get("done")},
+    )
 
 
 @administrator_required
@@ -323,12 +329,7 @@ def kiosk_booking(request, reference: str):
             request, booking, form, Via.KIOSK
         )
         if done:
-            flash.success(
-                request,
-                f"Thank you. Your key {'collection' if action == 'issue' else 'return'} for "
-                f"{booking.booking_reference} is recorded. The Admin will confirm it.",
-            )
-            return redirect("bookings:kiosk")
+            return redirect(f"{reverse('bookings:kiosk')}?done={action}")
     return render(
         request,
         "bookings/kiosk.html",

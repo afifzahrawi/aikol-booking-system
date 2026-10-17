@@ -190,8 +190,8 @@ class SmokeTests(TestCase):
                 "to": "11:00",
             },
         )
-        self.assertContains(response, "Collection date")
-        self.assertContains(response, "Return Date")
+        self.assertContains(response, "Leaving")
+        self.assertContains(response, "Back on")
         self.assertContains(response, self.car.name)
         self.assertContains(response, f"end_date={returned.isoformat()}")
 

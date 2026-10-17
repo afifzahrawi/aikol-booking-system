@@ -231,7 +231,7 @@ class KioskTests(VehicleFixtures):
             reverse("bookings:kiosk_booking", args=[self.booking.booking_reference]),
             {"collected_by_name": "", "collected_by_contact": ""},
         )
-        self.assertRedirects(response, reverse("bookings:kiosk"))
+        self.assertRedirects(response, reverse("bookings:kiosk") + "?done=issue")
         handover = KeyHandover.objects.get(booking=self.booking)
         self.assertTrue(handover.issue_pending)
         self.assertEqual(handover.issue_via, Via.KIOSK)
@@ -242,7 +242,7 @@ class KioskTests(VehicleFixtures):
         page = self.client.get(
             reverse("bookings:kiosk_booking", args=[self.trip.booking_reference])
         )
-        self.assertContains(page, "I am returning the key")
+        self.assertContains(page, "I am handing it back")
         self.client.post(
             reverse("bookings:kiosk_booking", args=[self.trip.booking_reference]),
             {"returned_by_name": "Driver", "mileage_in": "650"},

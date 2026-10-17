@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Keys{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Key Register</h1>
-    <p class="lede">Keys are held by the Kulliyyah office. Every issue and return
-       is recorded against the booking.</p></div>
+<div class="page-head"><div><h1>Key Register</h1></div>
     <div class="btn-group"><a class="btn" href="{% url 'bookings:kiosk' %}">Open the office kiosk</a></div>
 </div>
 {% include "administration/_nav.html" with tab='keys' %}

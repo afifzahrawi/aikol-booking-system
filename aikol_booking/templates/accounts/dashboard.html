@@ -1,188 +1,154 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Home{% endblock %}
 {% block content %}
 
-{% comment %} The greeting and search over the Kulliyyah photograph, as the design
-   specifies. The search is a real GET form: it answers on the server, so it
-   works with JavaScript off. {% endcomment %}
-<section class="search-hero dashboard-hero" aria-labelledby="greeting">
-    <img src="{% if site_content.home_image %}{{ site_content.home_image.url }}{% else %}{% static 'images/aikol-building.jpg' %}{% endif %}"
-         alt="" aria-hidden="true">
+{% comment %} One question and one form. The search is a real GET form that answers on
+   the server, so it works with JavaScript off; the Venue and Vehicle switch
+   is a segmented control over a hidden field. {% endcomment %}
+<section class="home-hero rf-rise" aria-labelledby="greeting">
+    <p class="home-greeting">Assalamualaikum, {{ user.full_name }}</p>
+    <h1 id="greeting">Book a room or a car.</h1>
+    {% if not user.email_verified %}
+        <p class="notice notice-warn">Confirm your email address before you can book.</p>
+    {% endif %}
 
-    <div class="inner">
-        <div class="hero-line">
-            <div class="arabic" lang="ar" dir="rtl">السلام عليكم</div>
-            <h1 id="greeting">Assalamualaikum, {{ user.full_name }}</h1>
-            <div class="sub">
-                {% if not user.email_verified %}
-                    Confirm your email address before you can book.
-                {% else %}
-                    {{ today|date:"l, d F Y" }}. Booking hours: {{ window_start }} to {{ window_end }}
-                {% endif %}
-            </div>
+    <form class="capsule-search" method="get" action="{% url 'accounts:dashboard' %}">
+        <input type="hidden" name="kind" id="resourceKind" value="{{ kind }}">
+        <div class="rf-seg" data-seg role="group" aria-label="What to book">
+            <span class="rf-seg-thumb" aria-hidden="true"></span>
+            <button type="button" data-kind="VENUE" aria-pressed="{% if kind != 'VEHICLE' %}true{% else %}false{% endif %}">Venue</button>
+            <button type="button" data-kind="VEHICLE" aria-pressed="{% if kind == 'VEHICLE' %}true{% else %}false{% endif %}">Vehicle</button>
         </div>
-
-        <form class="searchbar" method="get" action="{% url 'accounts:dashboard' %}">
-            <label>
-                <span class="k">Resource</span>
-                <select class="v" id="resourceKind" name="kind">
-                    <option value="VENUE" {% if kind == 'VENUE' %}selected{% endif %}>Venues</option>
-                    <option value="VEHICLE" {% if kind == 'VEHICLE' %}selected{% endif %}>Vehicles</option>
-                </select>
-            </label>
-            <label>
-                <span class="k" data-search-label="date">{% if kind == 'VEHICLE' %}Collection date{% else %}Date{% endif %}</span>
-                <input class="v" type="date" name="date" value="{{ search_date|date:'Y-m-d' }}">
-            </label>
-            <label>
-                <span class="k" data-search-label="from">{% if kind == 'VEHICLE' %}Collection time{% else %}From{% endif %}</span>
-                <select class="v" name="from">
-                    {% for slot in slots %}
-                        <option value="{{ slot }}" {% if slot == from_time %}selected{% endif %}>{{ slot }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label data-vehicle-search-field {% if kind != 'VEHICLE' %}hidden{% endif %}>
-                <span class="k">Return Date</span>
-                <input class="v" type="date" name="end_date" value="{{ return_date|date:'Y-m-d' }}">
-            </label>
-            <label>
-                <span class="k" data-search-label="to">{% if kind == 'VEHICLE' %}Return time{% else %}To{% endif %}</span>
-                <select class="v" name="to">
-                    {% for slot in slots %}
-                        <option value="{{ slot }}" {% if slot == to_time %}selected{% endif %}>{{ slot }}</option>
-                    {% endfor %}
-                </select>
-            </label>
+        <div class="capsule">
             <label data-venue-search-field {% if kind == 'VEHICLE' %}hidden{% endif %}>
-                <span class="k">Building</span>
-                <select class="v" name="building">
-                    <option value="">Any AIKOL building</option>
+                <span>Building</span>
+                <select name="building">
+                    <option value="">Any building</option>
                     {% for place in buildings %}
                         <option value="{{ place }}" {% if building == place %}selected{% endif %}>{{ place }}</option>
                     {% endfor %}
                 </select>
             </label>
-            <button type="submit">Check availability</button>
-        </form>
-    </div>
-
-    <div class="caption">Choose a time to see what is free, then continue directly to the booking form.</div>
+            <label>
+                <span data-search-label="date">{% if kind == 'VEHICLE' %}Leaving{% else %}Date{% endif %}</span>
+                <input type="date" name="date" value="{{ search_date|date:'Y-m-d' }}">
+            </label>
+            <label>
+                <span data-search-label="from">{% if kind == 'VEHICLE' %}At{% else %}From{% endif %}</span>
+                <select name="from">
+                    {% for slot in slots %}<option value="{{ slot }}" {% if slot == from_time %}selected{% endif %}>{{ slot }}</option>{% endfor %}
+                </select>
+            </label>
+            <label data-vehicle-search-field {% if kind != 'VEHICLE' %}hidden{% endif %}>
+                <span>Back on</span>
+                <input type="date" name="end_date" value="{{ return_date|date:'Y-m-d' }}">
+            </label>
+            <label>
+                <span data-search-label="to">{% if kind == 'VEHICLE' %}Back by{% else %}Until{% endif %}</span>
+                <select name="to">
+                    {% for slot in slots %}<option value="{{ slot }}" {% if slot == to_time %}selected{% endif %}>{{ slot }}</option>{% endfor %}
+                </select>
+            </label>
+            <button class="rf-press" type="submit">Find</button>
+        </div>
+    </form>
 </section>
 
 {% if announcements %}
-<section class="announcement-stack" aria-labelledby="announcements-heading">
-    <div class="section-heading-row">
-        <div>
-            <h2 id="announcements-heading">Announcements</h2>
-            <p>Latest notices.</p>
-        </div>
-    </div>
+<section class="announcement-stack rf-rise-2" aria-label="Announcements">
     {% for announcement in announcements %}
         <article class="announcement announcement-{{ announcement.tone|lower }}">
-            <div>
-                <h3>{{ announcement.title }}</h3>
-                <p>{{ announcement.message|linebreaksbr }}</p>
-            </div>
+            <h3>{{ announcement.title }}</h3>
+            <p>{{ announcement.message|linebreaksbr }}</p>
         </article>
     {% endfor %}
 </section>
 {% endif %}
 
 {% if searched %}
-<section class="card dashboard-section">
-    <div class="card-head">
-        <h2 class="label">
-            {{ free|length }} Free {% if kind == 'VEHICLE' %}Vehicle{% else %}Venue{% endif %}{{ free|length|pluralize }}
-        </h2>
-        <span class="help">
-            {% if kind == 'VEHICLE' %}
-                {{ search_date|date:"D d M Y" }}, {{ from_time }} to {{ return_date|date:"D d M Y" }}, {{ to_time }}
-            {% else %}
-                {{ search_date|date:"D d M Y" }}, {{ from_time }} to {{ to_time }}
-            {% endif %}
-        </span>
+<section class="home-results rf-rise" aria-labelledby="free-h">
+    <div class="home-card-head">
+        <h2 id="free-h">{% if free %}Free {% if kind == 'VEHICLE' %}Vehicles{% else %}Venues{% endif %}{% else %}Nothing Free{% endif %}</h2>
+        <span>{% if kind == 'VEHICLE' %}{{ search_date|date:"D j M" }}, {{ from_time }} to {{ return_date|date:"D j M" }}, {{ to_time }}{% else %}{{ search_date|date:"D j M" }}, {{ from_time }} to {{ to_time }}{% endif %}</span>
     </div>
-    <div class="card-body">
-        {% if problems %}
-            <div class="notice notice-warn">
-                {% for problem in problems %}{{ problem }} {% endfor %}
-            </div>
-        {% endif %}
-        {% if free %}
-            <div class="grid grid-3">
-            {% for resource in free %}
-                <article class="card venue-card">
-                    <h3 class="m-0"><a href="{% url 'resources:detail' resource.pk %}">{{ resource.name }}</a></h3>
-                    <p class="help m-0 mb-xs">
-                        {% if kind == 'VEHICLE' %}{{ resource.seats }} seats{% else %}{{ resource.location }}, seats {{ resource.capacity }}{% endif %}
-                    </p>
-                    <a class="btn btn-sm btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}?start_date={{ search_date|date:'Y-m-d' }}&amp;start_time={{ from_time }}&amp;end_date={% if kind == 'VEHICLE' %}{{ return_date|date:'Y-m-d' }}{% else %}{{ search_date|date:'Y-m-d' }}{% endif %}&amp;end_time={{ to_time }}">Book this</a>
-                </article>
-            {% endfor %}
-            </div>
-        {% elif not problems %}
-            <div class="empty-state">
-                Nothing is free for that period. Try another time, or
-                <a href="{% url 'resources:venues' %}">browse everything</a>.
-            </div>
-        {% endif %}
-    </div>
+    {% if problems %}
+        <div class="notice notice-warn">{% for problem in problems %}{{ problem }} {% endfor %}</div>
+    {% endif %}
+    {% if free %}
+        <div class="result-grid">
+        {% for resource in free %}
+            <article class="result-card rf-lift">
+                <a class="result-photo" href="{% url 'resources:detail' resource.pk %}" tabindex="-1" aria-hidden="true">
+                    {% with photo=resource.images.all.0 %}
+                    {% if photo %}<img src="{{ photo.image.url }}" alt="" loading="lazy">
+                    {% else %}<img src="{% static resource.placeholder %}" alt="" loading="lazy">{% endif %}
+                    {% endwith %}
+                </a>
+                <div class="result-body">
+                    <h3><a href="{% url 'resources:detail' resource.pk %}">{{ resource.name }}</a></h3>
+                    <p>{% if kind == 'VEHICLE' %}{{ resource.seats }} seats, with a VMU driver{% else %}{{ resource.location }}, seats {{ resource.capacity }}{% endif %}</p>
+                    <a class="btn btn-sm btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}?start_date={{ search_date|date:'Y-m-d' }}&amp;start_time={{ from_time }}&amp;end_date={% if kind == 'VEHICLE' %}{{ return_date|date:'Y-m-d' }}{% else %}{{ search_date|date:'Y-m-d' }}{% endif %}&amp;end_time={{ to_time }}">Book</a>
+                </div>
+            </article>
+        {% endfor %}
+        </div>
+    {% elif not problems %}
+        <div class="empty-state">Try another time, or <a href="{% url 'resources:venues' %}">browse every venue</a>.</div>
+    {% endif %}
 </section>
 {% endif %}
 
-{% comment %} The Admin works from the Overview and the Bookings register; a personal
-   summary on their home screen only repeated those, so it is shown to everyone else. {% endcomment %}
+<div class="home-cards">
+{% comment %} The Admin works from the calendar; Up Next is for people who book. {% endcomment %}
 {% if not user.is_administrator %}
-<section class="activity-band" aria-label="Your booking summary">
-    <h2 class="activity-band-heading">Your Booking Summary</h2>
-    <div class="activity-band-item">
-        <div class="activity-band-label">Your next booking</div>
-        <div class="activity-band-value{% if not next_booking %} is-muted{% endif %}">
-            {% if next_booking %}
-                <a href="{% url 'bookings:detail' next_booking.pk %}">{{ next_booking.resource.name }}</a>
-                <span>{{ next_booking.start_at|date:"d M Y, H:i" }}</span>
-            {% else %}Nothing booked yet{% endif %}
-        </div>
+<section class="home-card rf-rise-2" aria-labelledby="next-h">
+    <div class="home-card-head">
+        <h2 id="next-h">Up Next</h2>
+        {% if next_booking %}<span>{{ next_booking.start_at|date:"D j M, H:i" }} to {% if next_booking.start_at.date == next_booking.end_at.date %}{{ next_booking.end_at|date:"H:i" }}{% else %}{{ next_booking.end_at|date:"D j M, H:i" }}{% endif %}</span>{% endif %}
     </div>
-    <div class="activity-band-item">
-        <div class="activity-band-label">Awaiting approval</div>
-        <div class="activity-band-value{% if not counts.pending %} is-muted{% endif %}">
-            {% if counts.pending %}
-                <a href="{% url 'bookings:mine' %}?status=PENDING">{{ counts.pending }} request{{ counts.pending|pluralize }}</a>
-                {% if first_pending %}<span>{{ first_pending.resource.name }}</span>{% endif %}
-            {% else %}None{% endif %}
+    {% if next_booking %}
+        <div>
+            <a class="next-name" href="{% url 'bookings:detail' next_booking.pk %}">{{ next_booking.resource.name }}</a>
+            <p class="next-purpose">{{ next_booking.purpose|truncatechars:80 }}</p>
         </div>
-    </div>
+        <div class="progress" aria-label="Progress">
+            <div class="progress-track"><span class="progress-fill" data-width="{% widthratio next_step 4 100 %}"></span></div>
+            <div class="progress-steps">
+                <span class="done">Requested</span>
+                <span {% if next_step >= 2 %}class="done"{% endif %}>Approved</span>
+                <span {% if next_step >= 3 %}class="done"{% endif %}>Key collected</span>
+                <span {% if next_step >= 4 %}class="done"{% endif %}>Key returned</span>
+            </div>
+        </div>
+        <p class="next-help">{% if next_step == 1 %}The office will email you when it decides.{% elif next_step == 2 %}Collect the key at the AIKOL office. Your booking number is <strong class="mono">{{ next_booking.booking_reference }}</strong>.{% else %}Return the key to the office when you finish.{% endif %}</p>
+    {% else %}
+        <p class="next-help">Nothing booked yet. Choose a time above to see what is free.</p>
+    {% endif %}
 </section>
 {% endif %}
 
-{% if upcoming %}
-<section class="card dashboard-section">
-    <div class="card-head"><h2 class="label">Your Next Bookings</h2></div>
-    <div class="table-wrap">
-        <table class="data">
-            <thead><tr>
-                <th scope="col">Reference</th><th scope="col">Resource</th>
-                <th scope="col">When</th><th scope="col">Status</th><th scope="col">Actions</th>
-            </tr></thead>
-            <tbody>
-            {% for b in upcoming %}
-                <tr>
-                    <td class="mono nowrap">{{ b.booking_reference }}</td>
-                    <td>{{ b.resource.name }}</td>
-                    <td class="nowrap">{{ b.start_at|date:"D d M Y, H:i" }} to {{ b.end_at|date:"H:i" }}</td>
-                    <td>{% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>
-                        {% else %}<span class="badge badge-pending">Pending</span>{% endif %}</td>
-                    <td class="nowrap row-actions"><a class="btn-link" href="{% url 'bookings:detail' b.pk %}">View</a></td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+<section class="home-card rf-rise-3" aria-labelledby="week-h">
+    <div class="home-card-head">
+        <h2 id="week-h">Coming Up</h2>
+        <a href="{% url 'bookings:mine' %}">See all</a>
     </div>
+    {% if upcoming %}
+    <ul class="agenda">
+        {% for b in upcoming %}
+            <li>
+                <span class="date"><small>{{ b.start_at|date:"D" }}</small><b>{{ b.start_at|date:"j" }}</b></span>
+                <span class="what"><a href="{% url 'bookings:detail' b.pk %}">{{ b.resource.name }}</a>
+                    <small>{{ b.start_at|date:"H:i" }} to {{ b.end_at|date:"H:i" }}{% if b.series_id %}, weekly{% endif %}</small></span>
+                {% if b.status == 'APPROVED' %}<span class="badge badge-approved">Approved</span>{% else %}<span class="badge badge-pending">Waiting</span>{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+        <p class="next-help">No bookings coming up.</p>
+    {% endif %}
 </section>
-{% endif %}
+</div>
 
 {% endblock %}
-{% block scripts %}<script src="{% static 'js/dashboard.js' %}?v=20260915-1" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/dashboard.js' %}?v=20261018-1" defer></script>{% endblock %}

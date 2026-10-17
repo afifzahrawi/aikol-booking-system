@@ -208,6 +208,20 @@ def profile_edit(request):
     return render(request, "accounts/profile.html", {"form": form})
 
 
+def _progress_step(booking) -> int:
+    """Where a booking is on Requested, Approved, Key collected, Key returned."""
+    if booking is None:
+        return 0
+    handover = getattr(booking, "key_handover", None)
+    if handover and handover.returned_at:
+        return 4
+    if handover and handover.issued_at:
+        return 3
+    from apps.bookings.models import BookingStatus
+
+    return 2 if booking.status == BookingStatus.APPROVED else 1
+
+
 @login_required
 def dashboard(request):
     """The landing page: a greeting, a search that answers in place, and the
@@ -271,7 +285,8 @@ def dashboard(request):
                 problems = ["The finish time must be after the start time."]
             else:
                 model = Vehicle if kind == ResourceType.VEHICLE else Venue
-                pool = model.objects.filter(status=ResourceStatus.ACTIVE)
+                # Photos are shown on each result card; one query, not one each.
+                pool = model.objects.filter(status=ResourceStatus.ACTIVE).prefetch_related("images")
                 if kind == ResourceType.VEHICLE:
                     pool = pool.filter(road_tax_expiry__gte=today)
                 for resource in pool:
@@ -285,6 +300,14 @@ def dashboard(request):
         free = [r for r in free if getattr(r, "location", "") == building]
 
     mine = Booking.objects.filter(user=request.user)
+    # The booking to show under Up Next: the soonest one still running or to
+    # come, decided or not, because a pending request is the one people check.
+    next_booking = (
+        mine.filter(status__in=BLOCKING_STATUSES, end_at__gte=timezone.now())
+        .select_related("resource", "key_handover")
+        .order_by("start_at")
+        .first()
+    )
 
     return render(
         request,
@@ -307,9 +330,8 @@ def dashboard(request):
                 {v for v in Venue.objects.values_list("location", flat=True) if v}
             ),
             "building": building,
-            "next_booking": mine.filter(
-                status=BookingStatus.APPROVED, start_at__gte=timezone.now()
-            ).select_related("resource").order_by("start_at").first(),
+            "next_booking": next_booking,
+            "next_step": _progress_step(next_booking),
             "first_pending": mine.filter(status=BookingStatus.PENDING)
             .select_related("resource").order_by("start_at").first(),
             "counts": {

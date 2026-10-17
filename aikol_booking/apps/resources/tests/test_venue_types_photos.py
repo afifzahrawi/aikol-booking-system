@@ -109,9 +109,9 @@ class DashboardSummaryTests(Fixtures):
     def test_the_admin_has_no_booking_summary(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("accounts:dashboard"))
-        self.assertNotContains(response, "Your Booking Summary")
+        self.assertNotContains(response, "Up Next")
 
     def test_a_requester_keeps_it(self):
         self.client.force_login(self.plain)
         response = self.client.get(reverse("accounts:dashboard"))
-        self.assertContains(response, "Your Booking Summary")
+        self.assertContains(response, "Up Next")

@@ -173,6 +173,16 @@
         document.querySelectorAll('[data-width]').forEach(function (el) { el.style.width = el.getAttribute('data-width') + '%'; });
         document.querySelectorAll('[data-height]').forEach(function (el) { el.style.height = el.getAttribute('data-height') + '%'; });
         document.querySelectorAll('[data-left]').forEach(function (el) { el.style.left = el.getAttribute('data-left') + '%'; });
+        document.querySelectorAll('[data-top]').forEach(function (el) { el.style.top = el.getAttribute('data-top') + '%'; });
+        // Custom properties only ("--name:value; ..."), so a template can size
+        // a whole component without being able to write arbitrary styles.
+        document.querySelectorAll('[data-vars]').forEach(function (el) {
+            el.getAttribute('data-vars').split(';').forEach(function (pair) {
+                var at = pair.indexOf(':');
+                var name = pair.slice(0, at).trim();
+                if (at > 0 && name.indexOf('--') === 0) el.style.setProperty(name, pair.slice(at + 1).trim());
+            });
+        });
     }
     if (window.requestAnimationFrame) requestAnimationFrame(function () { requestAnimationFrame(apply); });
     else apply();
@@ -213,4 +223,26 @@
     'use strict';
     var summary = document.querySelector('.form-error-summary');
     if (summary) summary.focus({ preventScroll: false });
+})();
+
+/* Segmented controls: a white thumb slides under the chosen segment. The
+   markup works without this (the chosen segment is filled by CSS); the
+   script adds the sliding thumb and keeps it under the segment marked
+   aria-current or aria-pressed. */
+(function () {
+    'use strict';
+    function place(seg) {
+        const thumb = seg.querySelector('.rf-seg-thumb');
+        const chosen = seg.querySelector('[aria-current="page"], [aria-pressed="true"]');
+        if (!thumb || !chosen) return;
+        thumb.style.width = chosen.offsetWidth + 'px';
+        thumb.style.transform = 'translateX(' + (chosen.offsetLeft - 3) + 'px)';
+    }
+    document.querySelectorAll('.rf-seg[data-seg]').forEach(function (seg) {
+        place(seg);
+        seg.classList.add('rf-seg-ready');
+        new MutationObserver(function () { place(seg); })
+            .observe(seg, {subtree: true, attributes: true, attributeFilter: ['aria-pressed', 'aria-current']});
+        window.addEventListener('resize', function () { place(seg); });
+    });
 })();

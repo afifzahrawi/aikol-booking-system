@@ -22,6 +22,7 @@ urlpatterns = [
     # The full booking register is an administrator workspace, not the
     # approver's pending queue.
     path("manage/bookings/", views.manage_bookings, name="manage"),
+    path("manage/bookings/calendar/", views.booking_calendar, name="calendar"),
     path("manage/bookings/new/", views.admin_booking_start, name="admin_start"),
     path("manage/bookings/new/<int:pk>/", views.admin_booking_create, name="admin_create"),
     path(

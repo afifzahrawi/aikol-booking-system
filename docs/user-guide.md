@@ -114,7 +114,12 @@ The home page has a quicker route: choose a date and time there and it shows you
 
 ## 4. See when it is free
 
-On a room or car, choose **Check availability**. You see a week at a time, one row per day:
+On a room's page, the card on the right shows the next seven days. Pick a day, then tap a start
+time: an hour is chosen for you. Tap a later time to make it longer. Times that are taken or already
+past are crossed out. **Request booking** opens the form with that time filled in.
+
+For the whole week at once, choose **See the whole week** (on a car, **See when it is free**). You
+see a week at a time, one row per day:
 
 - **Green** is **booked**.
 - **Amber** is **pending approval**, which also holds the time.
@@ -209,7 +214,7 @@ dates together.
 
 For an approved room booking, collect the key from the Kulliyyah office at the start of your
 time and return it when you finish. Keys are only collected and returned at the office. You can record
-it yourself on the office kiosk PC: type your booking number, then confirm you have collected or are
+it yourself on the office kiosk PC: type the last four digits of your booking number (or tap your booking in the list), then confirm you have collected or are
 returning the key. For a car, add the mileage and a photo of the petrol receipt if you have them.
 The office confirms every record. The office records who collected it: if somebody else is
 fetching the key for you, tell the office their name. A key that is not back after the booking

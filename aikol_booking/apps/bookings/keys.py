@@ -14,6 +14,8 @@ that assumes they are the same person is not a custody record.
 
 from __future__ import annotations
 
+import datetime as dt
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q, QuerySet
@@ -229,3 +231,30 @@ def keys_awaiting_collection() -> QuerySet[Booking]:
         .select_related("resource", "user")
         .order_by("start_at")
     )
+
+
+def kiosk_today() -> list[dict]:
+    """What the kiosk offers to tap: today's keys to collect, and keys out.
+
+    Only the room, the time and the last four digits of the booking number are
+    shown; the kiosk stands in a public office, so no names.
+    """
+    today = timezone.localdate()
+    tz = timezone.get_current_timezone()
+    start = dt.datetime.combine(today, dt.time.min, tzinfo=tz)
+    end = start + dt.timedelta(days=1)
+    collect = keys_awaiting_collection().filter(start_at__lt=end)
+    out = outstanding_keys()
+    rows = [{"booking": b, "mode": "collect"} for b in collect[:8]]
+    rows += [{"booking": h.booking, "mode": "return"} for h in out[:8]]
+    rows.sort(key=lambda r: r["booking"].start_at)
+    return rows
+
+
+def find_for_kiosk(entry: str) -> Booking | None:
+    """A full booking number, or its last four digits for a booking in play today."""
+    entry = (entry or "").strip().upper()
+    if entry.isdigit() and len(entry) == 4:
+        matches = [r["booking"] for r in kiosk_today() if r["booking"].booking_reference.endswith(entry)]
+        return matches[0] if len(matches) == 1 else None
+    return find_by_reference(entry)

@@ -16,45 +16,32 @@
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
 <link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20261017-1">
+<link rel="stylesheet" href="{% static 'css/refresh.css' %}?v=20261018-5">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
 
-{% comment %} The split hero, as the design specifies. This page deliberately does NOT
-   extend base.html: it has no navigation bar, because there is nowhere to
-   navigate to before signing in. {% endcomment %}
-<div class="login-page">
-
-    <section class="login-hero">
-        <img class="login-photo"
-             src="{% if site_content.login_image %}{{ site_content.login_image.url }}{% else %}{% static 'images/aikol-building.jpg' %}{% endif %}"
-             alt="" aria-hidden="true">
-        <div class="login-brand-lockup">
-            <span class="login-iium-crop">
-                <img class="login-iium"
-                     src="{% if site_content.iium_logo %}{{ site_content.iium_logo.url }}{% else %}{% static 'images/iium_logo_uploaded.jpg' %}{% endif %}"
-                     alt="{{ site_content.iium_logo_alt }}" width="1109" height="329">
-            </span>
+{% comment %} One centred column on the light ground: the two crests, the office's own
+   heading and sentence (Site content), and the form. This page deliberately
+   does NOT extend base.html: there is nowhere to navigate before signing in.
+   The bullet points and the large photograph were dropped in the October 2026
+   refresh; their Site content fields are kept but no longer shown here. {% endcomment %}
+<div class="login-page login-simple">
+    <header class="login-top rf-rise">
+        <div class="login-crests">
+            <img class="login-iium"
+                 src="{% if site_content.iium_logo %}{{ site_content.iium_logo.url }}{% else %}{% static 'images/iium_logo_uploaded.jpg' %}{% endif %}"
+                 alt="{{ site_content.iium_logo_alt }}" width="1109" height="329">
             <img class="login-aikol"
                  src="{% if site_content.logo %}{{ site_content.logo.url }}{% else %}{% static 'images/aikol_logo.png' %}{% endif %}"
                  alt="{% if site_content.logo_alt %}{{ site_content.logo_alt }}{% else %}Ahmad Ibrahim Kulliyyah of Laws{% endif %}"
                  width="2092" height="512">
         </div>
+        <h1>{{ site_content.login_intro_heading }}</h1>
+        <p>{{ site_content.login_intro }}</p>
+    </header>
 
-        <div class="login-introduction">
-            <h1>{{ site_content.login_intro_heading }}</h1>
-            <p>{{ site_content.login_intro }}</p>
-            <ul>
-                {% for point in site_content.login_point_list %}<li>{{ point }}</li>{% endfor %}
-            </ul>
-        </div>
-
-        <p class="foot">
-            {{ site_content.organisation }}{% if site_content.phone %}<br>{{ site_content.phone }}{% endif %}
-        </p>
-    </section>
-
-    <section class="login-panel">
+    <section class="login-panel rf-rise-2">
         <main class="login-card" id="main">
             <div class="card-body">
                 <h2>Sign In</h2>
@@ -95,6 +82,7 @@
         </main>
     </section>
 
+    <p class="login-foot">{{ site_content.organisation }}{% if site_content.phone %}, {{ site_content.phone }}{% endif %}</p>
 </div>
 </body>
 </html>

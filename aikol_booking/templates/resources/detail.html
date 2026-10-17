@@ -2,110 +2,128 @@
 {% load static %}{% comment %}not inherited from base.html{% endcomment %}
 {% block title %}{{ resource.name }}{% endblock %}
 {% block content %}
-<div class="page-head">
-    <div>
-        <h1>{{ resource.name }}</h1>
-        {% if user.is_approver %}<p class="lede mono">{{ resource.code }}</p>{% endif %}
-    </div>
-    {% if user.is_administrator %}
-    <div class="btn-group">
-        {% if is_vehicle %}
-            <a class="btn" data-modal-form href="{% url 'resources:vehicle_edit' resource.pk %}">Edit</a>
-        {% else %}
-            <a class="btn" data-modal-form href="{% url 'resources:venue_edit' resource.pk %}">Edit</a>
+<div class="room-layout">
+<section class="room-info rf-rise" aria-labelledby="room-h">
+    <div class="room-head">
+        <div>
+            <h1 id="room-h">{{ resource.name }}</h1>
+            <p class="room-sub">{% if is_vehicle %}{{ resource.make }} {{ resource.model }} {{ resource.year }}, {{ resource.registration_number }}{% else %}{{ resource.get_venue_type_display }}, {{ resource.location }}{% if resource.floor %}, {{ resource.floor }}{% endif %}{% endif %}</p>
+            {% if user.is_approver %}<p class="help mono">{{ resource.code }}</p>{% endif %}
+        </div>
+        {% if user.is_administrator %}
+        <div class="btn-group">
+            {% if is_vehicle %}
+                <a class="btn btn-sm" data-modal-form href="{% url 'resources:vehicle_edit' resource.pk %}">Edit</a>
+            {% else %}
+                <a class="btn btn-sm" data-modal-form href="{% url 'resources:venue_edit' resource.pk %}">Edit</a>
+            {% endif %}
+            <a class="btn btn-sm" href="{% url 'resources:images' resource.pk %}">Photos</a>
+        </div>
         {% endif %}
-        <a class="btn" href="{% url 'resources:images' resource.pk %}">Images</a>
     </div>
-    {% endif %}
-</div>
 
-{% comment %} The thumbnails are buttons, so a photograph can be brought to the
-   front by pointer or keyboard. Without the script every photograph is still
-   reachable: the list simply does not swap in place. {% endcomment %}
-{% if not resource.images.all and resource.placeholder %}
-<div class="gallery mb-md" data-gallery>
-    <img class="gallery-main framed" data-gallery-main src="{% static resource.placeholder %}"
-         alt="Placeholder drawing of {{ resource.name }}">
-    <div class="gallery-thumbs">
-        {% for view in views %}
-            <button class="thumb-button" type="button" data-gallery-thumb
-                    data-full="{% static view %}" aria-current="{% if forloop.first %}true{% else %}false{% endif %}">
-                <img class="thumb framed" src="{% static view %}" alt="Placeholder view {{ forloop.counter }} of {{ resource.name }}">
-            </button>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-
-{% if resource.images.all %}
-<div class="gallery mb-md" data-gallery>
-    {% with resource.images.all|first as main %}
-        <img class="gallery-main framed" data-gallery-main src="{{ main.image.url }}"
-             alt="{{ main.caption|default:resource.name }}">
-    {% endwith %}
-    {% if resource.images.all|length > 1 %}
-        <p class="help gallery-caption" data-gallery-caption>
-            {% with resource.images.all|first as main %}1 of {{ resource.images.all|length }}{% if main.caption %}. {{ main.caption }}{% endif %}{% endwith %}
-        </p>
+    {% comment %} The thumbnails are buttons, so a photograph can be brought to the
+       front by pointer or keyboard. Without the script every photograph is still
+       reachable: the list simply does not swap in place. {% endcomment %}
+    {% if not resource.images.all and resource.placeholder %}
+    <div class="gallery" data-gallery>
+        <img class="gallery-main" data-gallery-main src="{% static resource.placeholder %}"
+             alt="Drawing of {{ resource.name }}">
         <div class="gallery-thumbs">
-            {% for photo in resource.images.all %}
+            {% for view in views %}
                 <button class="thumb-button" type="button" data-gallery-thumb
-                        data-full="{{ photo.image.url }}"
-                        data-caption="{{ photo.caption }}"
-                        data-position="{{ forloop.counter }} of {{ resource.images.all|length }}"
-                        aria-current="{% if forloop.first %}true{% else %}false{% endif %}"
-                        aria-label="Show photograph {{ forloop.counter }}{% if photo.caption %}, {{ photo.caption }}{% endif %}">
-                    <img class="thumb framed" src="{{ photo.image.url }}"
-                         alt="{{ photo.caption|default:resource.name }}">
+                        data-full="{% static view %}" aria-current="{% if forloop.first %}true{% else %}false{% endif %}">
+                    <img class="thumb" src="{% static view %}" alt="View {{ forloop.counter }} of {{ resource.name }}">
                 </button>
             {% endfor %}
         </div>
+    </div>
     {% endif %}
-</div>
-{% endif %}
 
-<section class="card">
-    <div class="card-body">
-        <dl class="kv">
-            {% if is_vehicle %}
-                <dt>Registration</dt><dd class="mono">{{ resource.registration_number }}</dd>
-                <dt>Vehicle</dt><dd>{{ resource.make }} {{ resource.model }} {{ resource.year }}</dd>
-                <dt>Seats</dt><dd>{{ resource.seats }}</dd>
-                <dt>Transmission</dt><dd>{{ resource.get_transmission_display }}</dd>
-                {% if show_road_tax %}
-                    {% comment %} Administrator-facing only. A requester sees the car as
-                       unavailable, never the reason. {% endcomment %}
-                    <dt>Road tax expiry</dt><dd>{{ resource.road_tax_expiry }}</dd>
-                {% endif %}
-            {% else %}
-                <dt>Type</dt><dd>{{ resource.get_venue_type_display }}</dd>
-                <dt>Location</dt><dd>{{ resource.location }}</dd>
-                <dt>Capacity</dt><dd>{{ resource.capacity }}</dd>
-                <dt>Open</dt><dd>{{ resource.opens_at|time:"H:i" }} to {{ resource.closes_at|time:"H:i" }}</dd>
-            {% endif %}
-            <dt>Approval</dt><dd>{% if resource.approval_required %}Required{% else %}Not required{% endif %}</dd>
-        </dl>
-
-        {% if not is_vehicle and resource.facilities.all %}
-        <p class="label detail-facilities-heading">Facilities</p>
-        <ul class="pill-list facilities">
-            {% for f in resource.facilities.all %}<li><span class="pill">{{ f.name }}</span></li>{% endfor %}
-        </ul>
+    {% if resource.images.all %}
+    <div class="gallery" data-gallery>
+        {% with resource.images.all|first as main %}
+            <img class="gallery-main" data-gallery-main src="{{ main.image.url }}"
+                 alt="{{ main.caption|default:resource.name }}">
+        {% endwith %}
+        {% if resource.images.all|length > 1 %}
+            <p class="help gallery-caption" data-gallery-caption>
+                {% with resource.images.all|first as main %}1 of {{ resource.images.all|length }}{% if main.caption %}. {{ main.caption }}{% endif %}{% endwith %}
+            </p>
+            <div class="gallery-thumbs">
+                {% for photo in resource.images.all %}
+                    <button class="thumb-button" type="button" data-gallery-thumb
+                            data-full="{{ photo.image.url }}"
+                            data-caption="{{ photo.caption }}"
+                            data-position="{{ forloop.counter }} of {{ resource.images.all|length }}"
+                            aria-current="{% if forloop.first %}true{% else %}false{% endif %}"
+                            aria-label="Show photograph {{ forloop.counter }}{% if photo.caption %}, {{ photo.caption }}{% endif %}">
+                        <img class="thumb" src="{{ photo.image.url }}" alt="{{ photo.caption|default:resource.name }}">
+                    </button>
+                {% endfor %}
+            </div>
         {% endif %}
     </div>
+    {% endif %}
+
+    <ul class="fact-pills" aria-label="Details">
+        {% if is_vehicle %}
+            <li>{{ resource.seats }} seats</li>
+            <li>{{ resource.get_transmission_display }}</li>
+            <li>With a VMU driver</li>
+            {% if show_road_tax %}<li>Road tax expiry {{ resource.road_tax_expiry|date:"j M Y" }}</li>{% endif %}
+        {% else %}
+            <li>Seats {{ resource.capacity }}</li>
+            <li>Open {{ resource.opens_at|time:"H:i" }} to {{ resource.closes_at|time:"H:i" }}</li>
+            {% for f in resource.facilities.all %}<li>{{ f.name }}</li>{% endfor %}
+        {% endif %}
+    </ul>
+    {% if resource.description %}<p class="room-desc">{{ resource.description }}</p>{% endif %}
 </section>
 
-<div class="btn-group detail-actions">
-    <a class="btn" href="{% url 'bookings:availability' resource.pk %}">Check availability</a>
-    {% if resource.status == 'ACTIVE' %}
-    <a class="btn btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Book this</a>
-    {% if not is_vehicle %}
-        <a class="btn" href="{% url 'bookings:series_create' resource.pk %}">Repeat weekly</a>
-    {% endif %}
+<aside class="book-card rf-rise-2" aria-labelledby="book-h">
+    <h2 id="book-h">{% if is_vehicle %}Book This Car{% else %}Book This Room{% endif %}</h2>
+    {% if resource.status != 'ACTIVE' %}
+        <p class="status-stamp status-maintenance">Not available for booking</p>
+    {% elif picker %}
+        <div class="picker" data-picker>
+            <div class="picker-days" role="group" aria-label="Day">
+                {% for d in picker %}
+                    <button type="button" data-day="{{ forloop.counter0 }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
+                            aria-label="{{ d.date|date:'l j F' }}, {{ d.free }} free half hours">
+                        <small>{{ d.date|date:"D" }}</small><b>{{ d.date.day }}</b>
+                    </button>
+                {% endfor %}
+            </div>
+            <div>
+                <p class="help picker-hint" data-picker-hint>Tap a start time. Crossed out times are taken.</p>
+                {% for d in picker %}
+                    <div class="picker-slots" role="group" aria-label="Times on {{ d.date|date:'l j F' }}" data-slots="{{ forloop.counter0 }}" data-date="{{ d.date|date:'Y-m-d' }}" {% if not forloop.first %}hidden{% endif %}>
+                        {% for s in d.slots %}
+                            <button type="button" data-time="{{ s.time }}" data-end="{{ s.end }}" {% if s.taken %}disabled aria-label="{{ s.time }}, taken"{% endif %}>{{ s.time }}</button>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="picker-summary" aria-live="polite">
+                <b data-picker-summary>Choose a free time</b><small data-picker-length></small>
+            </div>
+            <a class="btn btn-primary" data-modal-form data-modal-size="wide" data-picker-book
+               href="{% url 'bookings:create' resource.pk %}">Request booking</a>
+            <div class="picker-more">
+                <a href="{% url 'bookings:series_create' resource.pk %}">Book every week</a>
+                <a href="{% url 'bookings:availability' resource.pk %}">See the whole week</a>
+            </div>
+            <p class="help">Every booking is approved by the office.</p>
+        </div>
     {% else %}
-    <span class="status-stamp status-maintenance">Not available for booking</span>
+        <p class="room-desc">A car can be booked for one day or several. The office assigns a VMU driver; you never drive.</p>
+        <a class="btn btn-primary" data-modal-form data-modal-size="wide" href="{% url 'bookings:create' resource.pk %}">Request booking</a>
+        <div class="picker-more"><a href="{% url 'bookings:availability' resource.pk %}">See when it is free</a></div>
     {% endif %}
+</aside>
 </div>
 {% endblock %}
 
-{% block scripts %}{% load static %}<script src="{% static 'js/gallery.js' %}?v=20260922-1" defer></script>{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/gallery.js' %}?v=20260922-1" defer></script>
+<script src="{% static 'js/slot-picker.js' %}?v=20261018-1" defer></script>{% endblock %}

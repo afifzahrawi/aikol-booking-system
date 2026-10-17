@@ -23,7 +23,7 @@ SECTION_ROOTS = {
     "venues": "resources:venues",
     "vehicles": "resources:vehicles",
     "overview": "administration:dashboard",
-    "bookings": "bookings:manage",
+    "bookings": "bookings:calendar",
     "approvals": "bookings:approvals",
     "keys": "bookings:keys",
     "resources": "resources:manage_venues",
@@ -131,7 +131,10 @@ def chrome(request):
         shell_nav = "bookings" if user.is_administrator else "approvals"
     elif path.startswith("/manage/keys/"):
         shell_nav = "keys"
-    elif path.startswith(("/manage/rooms/", "/manage/cars/", "/manage/facilities/", "/manage/resource/")):
+    elif path.startswith(
+        ("/manage/rooms/", "/manage/cars/", "/manage/facilities/", "/manage/venue-types/",
+         "/manage/resource/")
+    ):
         shell_nav = "resources"
     elif path.startswith("/resource/"):
         # An administrator looking at a room or car from the requester side
@@ -147,11 +150,13 @@ def chrome(request):
     admin_roots = {
         "administration:dashboard",
         "bookings:manage",
+        "bookings:calendar",
         "bookings:approvals",
         "bookings:keys",
         "resources:manage_venues",
         "resources:manage_vehicles",
         "resources:manage_facilities",
+        "resources:manage_venue_types",
         "administration:users",
         "reporting:reports",
         "administration:settings",
