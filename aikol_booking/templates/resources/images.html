@@ -39,9 +39,10 @@
     {% endfor %}
 </div>
 
-<section class="card mt-md" data-image-drop>
+<section class="card mt-md" data-image-drop{% if crop_to_ratio %} data-crop-ratio="4:3"{% endif %}>
     <div class="card-head"><h2 class="label">Add Photographs</h2></div>
     <div class="card-body">
+        {% if crop_to_ratio %}<p class="help">Venue photographs are 4:3. You can crop each one after choosing it; anything another shape is cropped from the centre.</p>{% endif %}
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             {% include "_form_fields.html" %}
@@ -51,4 +52,5 @@
 </section>
 {% endblock %}
 
-{% block scripts %}{% load static %}<script src="{% static 'js/image-drop.js' %}?v=20260922-1" defer></script>{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/image-drop.js' %}?v=20260922-1" defer></script>
+{% if crop_to_ratio %}<script src="{% static 'js/image-crop.js' %}?v=20261017-1" defer></script>{% endif %}{% endblock %}

@@ -13,6 +13,7 @@ urlpatterns = [
     path("manage/rooms/", views.manage_venues, name="manage_venues"),
     path("manage/rooms/new/", views.venue_edit, name="venue_new"),
     path("manage/rooms/<int:pk>/", views.venue_edit, name="venue_edit"),
+    path("manage/rooms/reorder/", views.venue_reorder, name="venue_reorder"),
     path("manage/cars/", views.manage_vehicles, name="manage_vehicles"),
     path("manage/cars/new/", views.vehicle_edit, name="vehicle_new"),
     path("manage/cars/<int:pk>/", views.vehicle_edit, name="vehicle_edit"),
@@ -33,4 +34,12 @@ urlpatterns = [
     path("manage/facilities/<int:pk>/", views.facility_edit, name="facility_edit"),
     path("manage/facilities/reorder/", views.facility_reorder, name="facility_reorder"),
     path("manage/facilities/<int:pk>/delete/", views.facility_delete, name="facility_delete"),
+    path("manage/venue-types/", views.manage_venue_types, name="manage_venue_types"),
+    path("manage/venue-types/new/", views.venue_type_edit, name="venue_type_new"),
+    path("manage/venue-types/<int:pk>/", views.venue_type_edit, name="venue_type_edit"),
+    path(
+        "manage/venue-types/<int:pk>/delete/",
+        views.venue_type_delete,
+        name="venue_type_delete",
+    ),
 ]

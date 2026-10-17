@@ -6,7 +6,7 @@
 <section class="card">
     <div class="card-body">
         <dl class="kv">
-            <dt>Reference</dt><dd class="mono">{{ booking.booking_reference }}</dd>
+            <dt>Booking number</dt><dd class="mono">{{ booking.booking_reference }}</dd>
             <dt>Resource</dt><dd>{{ booking.resource.name }}</dd>
             <dt>Booked by</dt><dd>{{ booking.user.full_name }}</dd>
             <dt>Period</dt><dd>{{ booking.start_at|date:"D d M Y, H:i" }} to
@@ -14,17 +14,18 @@
             {% if handover and handover.issued_at %}
                 <dt>Issued</dt><dd>{{ handover.issued_at|date:"d M Y, H:i" }} by
                     {{ handover.issued_by.full_name }}, to {{ handover.collected_by_name }}</dd>
+                {% if handover.mileage_out is not None %}<dt>Mileage out</dt><dd>{{ handover.mileage_out }} km</dd>{% endif %}
             {% endif %}
         </dl>
 
         {% if action != 'issue' %}<p class="help">The person returning it may not be the person who collected it.</p>{% endif %}
 
-        <form method="post" novalidate>
+        <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             {{ form.non_field_errors }}
             {% include "_form_fields.html" %}
             <div class="btn-group">
-                <a class="btn" href="{% url 'bookings:keys' %}">Back</a>
+                <a class="btn" href="{% url 'bookings:keys' %}?kind={% if booking.is_vehicle %}vehicle{% else %}venue{% endif %}">Back</a>
                 <button class="btn btn-primary" type="submit">
                     {% if action == 'issue' %}Record the issue{% else %}Record the return{% endif %}
                 </button>

@@ -16,7 +16,7 @@ from apps.accounts.models import Affiliation, Role, User
 from apps.audit.models import AuditLog
 from apps.bookings.models import Booking
 from apps.resources.models import Facility, ResourceImage, ResourceStatus, Vehicle, Venue
-from apps.resources.services import DeletionRefused, delete_resource, reorder_facilities
+from apps.resources.services import DeletionRefused, delete_resource, reorder_facilities, reorder_venues
 from apps.resources.validators import validate_image_upload
 
 
@@ -46,7 +46,7 @@ class Fixtures(TestCase):
         self.approver = make_user("approver@demo.aikol.test", Role.APPROVER)
         self.plain = make_user("plain@demo.aikol.test", Role.USER)
         self.venue = Venue.objects.create(
-            code="VEN-1", name="Moot Court", venue_type=Venue.VenueType.MOOT_COURT,
+            code="VEN-1", name="Moot Court", venue_type_id=Venue.VenueType.MOOT_COURT,
             location="Level 2", capacity=80,
         )
         self.car = Vehicle.objects.create(
@@ -161,7 +161,7 @@ class BrowsingTests(Fixtures):
 
     def test_search_is_applied_in_the_query(self):
         Venue.objects.create(
-            code="VEN-2", name="Seminar Room 1", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-2", name="Seminar Room 1", venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1", capacity=30,
         )
         self.client.force_login(self.plain)
@@ -187,7 +187,7 @@ class BrowsingTests(Fixtures):
         for i in range(21):
             Venue.objects.create(
                 code=f"VEN-P{i}", name=f"Tutorial Room {i}",
-                venue_type=Venue.VenueType.DISCUSSION, location="Level 3", capacity=10,
+                venue_type_id=Venue.VenueType.DISCUSSION, location="Level 3", capacity=10,
             )
         self.client.force_login(self.plain)
         response = self.client.get(reverse("resources:venues"), {"q": "tutorial"})
@@ -416,6 +416,67 @@ class FacilityTests(Fixtures):
         self.assertNotIn("old", venue_codes, "a deactivated facility is hidden from the forms")
 
 
+class VenueOrderingTests(Fixtures):
+    def setUp(self) -> None:
+        super().setUp()
+        self.venues = [
+            self.venue,
+            Venue.objects.create(
+                code="VEN-2",
+                name="Seminar Room",
+                venue_type_id=Venue.VenueType.SEMINAR,
+                location="Level 1",
+                capacity=30,
+            ),
+            Venue.objects.create(
+                code="VEN-3",
+                name="Lecture Hall",
+                venue_type_id=Venue.VenueType.LECTURE,
+                location="Level 3",
+                capacity=100,
+            ),
+        ]
+
+    def order(self) -> list[str]:
+        return list(
+            Venue.objects.order_by("display_order", "name").values_list("code", flat=True)
+        )
+
+    def test_reordering_places_requested_venues_first_without_gaps(self):
+        reorder_venues([self.venues[2].pk, self.venues[0].pk])
+        self.assertEqual(self.order()[:2], ["VEN-3", "VEN-1"])
+        self.assertEqual(
+            list(Venue.objects.order_by("display_order").values_list("display_order", flat=True)),
+            [1, 2, 3],
+        )
+
+    def test_an_unknown_venue_is_refused(self):
+        with self.assertRaises(ValidationError):
+            reorder_venues([999999])
+
+    def test_the_reorder_endpoint_needs_an_administrator(self):
+        self.client.force_login(self.plain)
+        response = self.client.post(
+            reverse("resources:venue_reorder"), {"order": str(self.venues[1].pk)}
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_an_administrator_can_reorder_venues_and_the_public_list_uses_it(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("resources:venue_reorder"),
+            {"order": ",".join(str(venue.pk) for venue in reversed(self.venues))},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.order(), ["VEN-3", "VEN-2", "VEN-1"])
+        self.assertTrue(AuditLog.objects.filter(action="VENUE_REORDERED").exists())
+
+        self.client.force_login(self.plain)
+        response = self.client.get(reverse("resources:venues"))
+        names = [venue.name for venue in response.context["page"].object_list]
+        self.assertEqual(names[:3], ["Lecture Hall", "Seminar Room", "Moot Court"])
+
+
 class ResourceEditTests(Fixtures):
     def test_creating_a_venue_writes_to_the_audit_log(self):
         self.client.force_login(self.admin)
@@ -429,7 +490,8 @@ class ResourceEditTests(Fixtures):
             },
         )
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(Venue.objects.filter(code="VEN-NEW").exists())
+        venue = Venue.objects.get(code="VEN-NEW")
+        self.assertEqual(venue.display_order, self.venue.display_order + 1)
         self.assertTrue(AuditLog.objects.filter(action="VENUE_CREATED").exists())
 
     def test_a_room_that_closes_before_it_opens_is_refused(self):

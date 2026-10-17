@@ -1,7 +1,7 @@
 """Resource management rules that are not the booking rules.
 
 Two things live here because they are easy to get subtly wrong in a view:
-deleting a resource, and reordering facilities.
+deleting a resource, and reordering facilities or venues.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from __future__ import annotations
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from .models import Facility, Resource, ResourceStatus
+from .models import Facility, Resource, ResourceStatus, Venue
 
 
 class DeletionRefused(ValidationError):
@@ -65,3 +65,54 @@ def reorder_facilities(ordered_ids: list[int]) -> None:
     for position, pk in enumerate(ordered + rest, start=1):
         known[pk].display_order = position
     Facility.objects.bulk_update(known.values(), ["display_order"])
+
+
+@transaction.atomic
+def reorder_venues(ordered_ids: list[int]) -> None:
+    """Move venues into the given order and keep unlisted venues after them.
+
+    The interface only enables this on the complete venue list, but preserving
+    unlisted rows makes a forged or stale filtered request safe as well.
+    """
+    ordered = list(dict.fromkeys(int(i) for i in ordered_ids))
+    known = {venue.pk: venue for venue in Venue.objects.select_for_update()}
+    missing = [pk for pk in ordered if pk not in known]
+    if missing:
+        raise ValidationError(f"No venue with id {missing[0]}.")
+
+    rest = [
+        venue.pk
+        for venue in Venue.objects.select_for_update()
+        .exclude(pk__in=ordered)
+        .order_by("display_order", "name", "pk")
+    ]
+    for position, pk in enumerate(ordered + rest, start=1):
+        known[pk].display_order = position
+    Venue.objects.bulk_update(known.values(), ["display_order"])
+
+
+# Venue photographs are shown side by side on cards and in the gallery, so they
+# are all one shape. The browser offers a crop before upload; this is the rule
+# itself, applied to every venue upload whether or not the crop step ran.
+VENUE_PHOTO_SIZE = (1600, 1200)
+
+
+def fit_venue_photo(upload):
+    """Return a 1600 x 1200 JPEG of `upload`, centre-cropped to 4:3.
+
+    Re-encoding also drops the camera's EXIF block, which can carry the
+    location a photograph was taken.
+    """
+    import io
+
+    from django.core.files.base import ContentFile
+    from PIL import Image, ImageOps
+
+    upload.seek(0)
+    with Image.open(upload) as source:
+        image = ImageOps.exif_transpose(source).convert("RGB")
+        fitted = ImageOps.fit(image, VENUE_PHOTO_SIZE, Image.Resampling.LANCZOS)
+    buffer = io.BytesIO()
+    fitted.save(buffer, format="JPEG", quality=85, optimize=True)
+    stem = (upload.name or "photo").rsplit(".", 1)[0]
+    return ContentFile(buffer.getvalue(), name=f"{stem}.jpg")

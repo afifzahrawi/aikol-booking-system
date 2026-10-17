@@ -13,6 +13,14 @@ class SecurityPolicyMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
+        # A back-button history entry must never reveal a signed-in person's
+        # booking or contact details after they sign out. Browser back/forward
+        # caches can bypass a new request entirely unless dynamic authenticated
+        # responses explicitly opt out.
+        user = getattr(request, "user", None)
+        if user is not None and user.is_authenticated:
+            response.headers.setdefault("Cache-Control", "no-store, max-age=0, private")
+            response.headers.setdefault("Pragma", "no-cache")
         media_origin = getattr(settings, "MEDIA_URL", "")
         image_sources = ["'self'", "data:"]
         if media_origin.startswith("https://"):
@@ -110,3 +118,34 @@ class MfaRequiredMiddleware:
             settings.MEDIA_URL,
         )
         return any(prefix and path.startswith(prefix) for prefix in exempt)
+
+
+class KioskLockMiddleware:
+    """A session turned into the office key kiosk reaches the kiosk and nothing else.
+
+    The kiosk runs signed in as an Admin, because the office wanted no extra
+    account to look after. The PC stands where anyone can use it, so the
+    session is locked here, for every URL, rather than by hiding links: typing
+    an address into the bar must not reach the Admin's screens. Leaving needs
+    the Admin's password (`bookings:kiosk_exit`).
+    """
+
+    SESSION_KEY = "kiosk_mode"
+    ALLOWED_PREFIXES = ("/kiosk/", "/static/", "/media/")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        session = getattr(request, "session", None)
+        if session is not None and session.get(self.SESSION_KEY):
+            from django.shortcuts import redirect
+            from django.urls import reverse
+
+            allowed = request.path.startswith(self.ALLOWED_PREFIXES) or request.path in {
+                reverse("accounts:logout"),
+                reverse("accounts:login"),
+            }
+            if not allowed:
+                return redirect("bookings:kiosk")
+        return self.get_response(request)

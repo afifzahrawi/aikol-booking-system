@@ -25,6 +25,7 @@ from .forms import (
     CancellationForm,
     DecisionForm,
     RecurrenceForm,
+    SeriesChangeForm,
     TermBreakFormSet,
     VehicleManagementDecisionForm,
 )
@@ -41,6 +42,7 @@ from .services import (
     approve_series,
     cancel_booking,
     cancel_series,
+    change_series,
     create_booking,
     create_series,
     decide_vehicle_management,
@@ -205,7 +207,8 @@ def availability(request, pk: int):
                     "label": label,
                     "title": (
                         f"{local_start:%d %b %H:%M} to {local_end:%d %b %H:%M}"
-                        f", {booking.get_status_display().lower()}"
+                        f", {booking.get_status_display().lower()}. "
+                        f"Purpose: {booking.purpose or 'No purpose supplied.'}"
                     ),
                 }
             )
@@ -423,15 +426,25 @@ def series_create(request, pk: int):
                     for problem in exc.messages:
                         form.add_error(None, problem)
                 else:
-                    if subject != request.user:
-                        log_action(
-                            actor=request.user,
-                            action="SERIES_ON_BEHALF",
-                            entity_type="BookingSeries",
-                            entity_id=series.pk,
-                            description=f"Recurring booking created for {subject.full_name}.",
-                            request=request,
-                        )
+                    # Every weekly booking is logged, not only those made on
+                    # someone's behalf: a semester of rows appearing at once
+                    # is exactly what an audit should be able to explain.
+                    on_behalf = subject != request.user
+                    log_action(
+                        actor=request.user,
+                        action="SERIES_ON_BEHALF" if on_behalf else "SERIES_CREATED",
+                        entity_type="BookingSeries",
+                        entity_id=series.pk,
+                        description=(
+                            f"Weekly booking of {resource.name}"
+                            + (f" for {subject.full_name}" if on_behalf else "")
+                            + f": {series.describe_times()}, "
+                            f"{series.starts_on:%d %b %Y} to {series.repeat_until:%d %b %Y}. "
+                            f"{len(created)} requested, "
+                            f"{len(plan['clashing']) + len(plan['outside'])} left out."
+                        ),
+                        request=request,
+                    )
                     flash.success(
                         request,
                         f"{len(created)} bookings requested for {resource.name}"
@@ -511,6 +524,15 @@ def booking_detail(request, pk: int):
         {
             "booking": booking,
             "can_cancel": booking.can_be_cancelled_by(request.user),
+            # Keep the cancellation route visible for an active booking even
+            # when the cutoff has passed. The route explains the restriction,
+            # while the service remains the authority that refuses a late
+            # requester cancellation. Hiding the action made it look as if a
+            # booking could not be cancelled at all.
+            "can_open_cancellation": (
+                booking.status in BLOCKING_STATUSES
+                and (booking.user == request.user or request.user.is_approver)
+            ),
             "is_vehicle": booking.resource.resource_type == ResourceType.VEHICLE,
         },
     )
@@ -572,7 +594,8 @@ def series_cancel(request, pk: int):
             action="SERIES_CANCELLED",
             entity_type="BookingSeries",
             entity_id=series.pk,
-            description=f"{count} future occurrences cancelled.",
+            description=f"Weekly booking of {series.resource.name} "
+            f"({series.describe_times()}): {count} future occurrences cancelled.",
             request=request,
         )
         flash.success(request, f"{count} future bookings cancelled. Past ones are unchanged.")
@@ -582,6 +605,95 @@ def series_cancel(request, pk: int):
         request,
         "bookings/series_cancel.html",
         {"series": series, "form": form, "future": future},
+    )
+
+
+@login_required
+def series_change(request, pk: int):
+    """Move a weekly class to another room or time from a date onwards.
+
+    Same two passes as a new series: the first shows what would be created and
+    what left out, and nothing changes until the requester confirms. The old
+    dates from the change onwards are cancelled only in the same transaction
+    that creates the new ones.
+    """
+    from .models import BookingSeries
+
+    series = get_object_or_404(BookingSeries.objects.select_related("resource", "term"), pk=pk)
+    if series.user != request.user and not request.user.is_administrator:
+        raise PermissionDenied("That series is not yours.")
+
+    form = SeriesChangeForm(request.POST or None, series=series)
+    plan = None
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        venue = data["venue"]
+        try:
+            plan = plan_series(
+                resource=venue,
+                term=series.term,
+                weekday_times=data["weekday_times"],
+                starts_on=data["starts_on"],
+                repeat_until=data["repeat_until"],
+                ignore_series=series,
+            )
+        except ValidationError as exc:
+            for problem in exc.messages:
+                form.add_error(None, problem)
+        else:
+            left_out = len(plan["clashing"]) + len(plan["outside"])
+            if left_out and not data["accept_partial"]:
+                flash.warning(
+                    request,
+                    f"{left_out} of the new dates would be left out. "
+                    "They are listed below. Tick the box to go ahead with the rest.",
+                )
+            else:
+                try:
+                    new_series, created, plan, cancelled = change_series(
+                        series,
+                        changed_by=request.user,
+                        from_date=data["starts_on"],
+                        resource=venue,
+                        weekday_times=data["weekday_times"],
+                        repeat_until=data["repeat_until"],
+                        purpose=data["purpose"],
+                        reason=data["reason"],
+                        accept_partial=data["accept_partial"],
+                    )
+                except ValidationError as exc:
+                    for problem in exc.messages:
+                        form.add_error(None, problem)
+                else:
+                    log_action(
+                        actor=request.user,
+                        action="SERIES_CHANGED",
+                        entity_type="BookingSeries",
+                        entity_id=new_series.pk,
+                        description=(
+                            f"Weekly booking {series.pk} ({series.resource.name}, "
+                            f"{series.describe_times()}) changed from "
+                            f"{data['starts_on']:%d %b %Y} to {venue.name}, "
+                            f"{new_series.describe_times()}: {cancelled} old dates cancelled, "
+                            # The reason is free text and stays on the
+                            # cancelled bookings, not in the log.
+                            f"{len(created)} new dates requested."
+                        ),
+                        request=request,
+                    )
+                    flash.success(
+                        request,
+                        f"Timetable changed. {cancelled} old dates cancelled and "
+                        f"{len(created)} new dates sent for approval.",
+                    )
+                    return redirect(
+                        "bookings:manage" if request.user.is_administrator else "bookings:mine"
+                    )
+
+    return render(
+        request,
+        "bookings/series_change.html",
+        {"series": series, "form": form, "plan": plan},
     )
 
 
@@ -888,7 +1000,8 @@ def decide_series(request, pk: int):
             action="SERIES_APPROVED",
             entity_type="BookingSeries",
             entity_id=series.pk,
-            description=f"{len(approved)} approved, {len(refused)} refused.",
+            description=f"Weekly booking of {series.resource.name} "
+            f"({series.describe_times()}): {len(approved)} approved, {len(refused)} refused.",
             request=request,
         )
         if refused:

@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime as dt
 
 from django.core.cache import cache
+from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -36,6 +37,22 @@ REGISTRATION = {
     "affiliation": Affiliation.STUDENT,
     "password1": "kulliyyah-booking-42", "password2": "kulliyyah-booking-42",
 }
+
+
+class SessionSecurityTests(TestCase):
+    def setUp(self) -> None:
+        self.user = make_user("session@demo.aikol.test")
+        self.client.force_login(self.user)
+
+    def test_authenticated_pages_are_not_kept_in_browser_history(self):
+        response = self.client.get(reverse("accounts:profile"))
+
+        self.assertEqual(response["Cache-Control"], "no-store, max-age=0, private")
+        self.assertEqual(response["Pragma"], "no-cache")
+
+    def test_idle_session_expires_within_half_a_day(self):
+        self.assertEqual(settings.SESSION_COOKIE_AGE, 60 * 60 * 12)
+        self.assertTrue(settings.SESSION_SAVE_EVERY_REQUEST)
 
 
 class EnumerationTests(TestCase):
@@ -215,7 +232,7 @@ class AuthorisationMatrixTests(TestCase):
         cls.approver = make_user("approver@demo.aikol.test", role=Role.APPROVER)
         cls.admin = make_user("admin@demo.aikol.test", role=Role.ADMINISTRATOR)
         cls.venue = Venue.objects.create(
-            code="VEN-1", name="Room", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Room", venue_type_id=Venue.VenueType.SEMINAR,
             location="L1", capacity=10,
         )
 
@@ -270,7 +287,7 @@ class OwnershipTests(TestCase):
         self.owner = make_user("owner@demo.aikol.test")
         self.other = make_user("other@demo.aikol.test")
         venue = Venue.objects.create(
-            code="VEN-1", name="Room", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Room", venue_type_id=Venue.VenueType.SEMINAR,
             location="L1", capacity=10,
         )
         self.booking = Booking.objects.create(
@@ -328,7 +345,7 @@ class TransportAndHeaderTests(TestCase):
         person = make_user("xss@demo.aikol.test")
         venue = Venue.objects.create(
             code="VEN-X", name="<script>alert(1)</script>",
-            venue_type=Venue.VenueType.SEMINAR, location="L1", capacity=10,
+            venue_type_id=Venue.VenueType.SEMINAR, location="L1", capacity=10,
         )
         Booking.objects.create(
             resource=venue, user=person, created_by=person,

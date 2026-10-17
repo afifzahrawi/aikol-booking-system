@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 
 from apps.audit.services import log_action
 
-from .forms import FacilityForm, ResourceImageForm, VehicleForm, VenueForm
+from .forms import FacilityForm, ResourceImageForm, VehicleForm, VenueForm, VenueTypeForm
 from .models import (
     Facility,
     Resource,
@@ -26,8 +26,15 @@ from .models import (
     ResourceType,
     Vehicle,
     Venue,
+    VenueType,
 )
-from .services import DeletionRefused, delete_resource, reorder_facilities
+from .services import (
+    DeletionRefused,
+    delete_resource,
+    fit_venue_photo,
+    reorder_facilities,
+    reorder_venues,
+)
 
 PAGE_SIZE = 20
 
@@ -72,7 +79,7 @@ def _filtered(
 
     kind = request.GET.get("type")
     if kind:
-        queryset = queryset.filter(venue_type=kind)
+        queryset = queryset.filter(venue_type_id=kind)
 
     capacity = request.GET.get("capacity")
     if capacity and capacity.isdigit():
@@ -89,7 +96,12 @@ def _paginated(request, queryset, template: str, extra: dict | None = None):
     # `annotate()` drops a model's default ordering, so this is not merely
     # belt-and-braces — it is what keeps the annotated management lists correct.
     if not queryset.ordered:
-        queryset = queryset.order_by("name", "pk")
+        order = (
+            ("display_order", "name", "pk")
+            if queryset.model is Venue
+            else ("name", "pk")
+        )
+        queryset = queryset.order_by(*order)
     page = Paginator(queryset, PAGE_SIZE).get_page(request.GET.get("page"))
     # Carry the filters into the pager links. Without this, page 2 of a
     # filtered list is page 2 of the whole table.
@@ -126,7 +138,9 @@ def venue_list(request):
     # vanishes looks deleted; one marked "under maintenance" tells somebody why
     # they cannot book it, which is the question they actually have.
     venues = _filtered(
-        Venue.objects.all().prefetch_related(_bookable_images(), "facilities"),
+        Venue.objects.select_related("venue_type").prefetch_related(
+            _bookable_images(), "facilities"
+        ),
         request,
         search_fields=("name", "code", "location"),
     )
@@ -134,7 +148,8 @@ def venue_list(request):
         request,
         venues,
         "resources/venue_list.html",
-        {"nav": "venues", "types": Venue.VenueType.choices,
+        {"nav": "venues",
+         "types": VenueType.objects.filter(is_active=True).values_list("code", "name"),
          "capacities": [10, 20, 40, 60, 100]},
     )
 
@@ -201,11 +216,26 @@ def resource_detail(request, pk: int):
 @administrator_required
 def manage_venues(request):
     venues = _filtered(
-        Venue.objects.annotate(booking_count=Count("bookings")),
+        Venue.objects.select_related("venue_type").annotate(booking_count=Count("bookings")),
         request,
         search_fields=("name", "code", "location"),
     )
-    return _paginated(request, venues, "resources/manage_venues.html", {"nav": "resources"})
+    filtered = any(
+        (request.GET.get(key) or "").strip()
+        for key in ("q", "status", "facility", "type", "capacity")
+    )
+    return _paginated(
+        request,
+        venues,
+        "resources/manage_venues.html",
+        {
+            "nav": "resources",
+            # Changing a subset would create an order nobody saw. Limit the
+            # interaction to the full, single-page list just as facilities do.
+            "filtered": filtered,
+            "can_reorder": not filtered and venues.count() <= PAGE_SIZE,
+        },
+    )
 
 
 @administrator_required
@@ -250,6 +280,27 @@ def _edit_resource(request, form_class, instance, kind: str, redirect_to: str):
 def venue_edit(request, pk: int | None = None):
     instance = get_object_or_404(Venue, pk=pk) if pk else None
     return _edit_resource(request, VenueForm, instance, "venue", "resources:manage_venues")
+
+
+@administrator_required
+@require_POST
+def venue_reorder(request):
+    """Accept the visible venue order and record it as consecutive positions."""
+    ids = request.POST.getlist("order[]") or request.POST.get("order", "").split(",")
+    try:
+        reorder_venues([i for i in ids if str(i).strip()])
+    except (ValidationError, ValueError) as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+    log_action(
+        actor=request.user,
+        action="VENUE_REORDERED",
+        entity_type="Venue",
+        description="Venue display order changed.",
+        request=request,
+    )
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ok": True})
+    return redirect("resources:manage_venues")
 
 
 @administrator_required
@@ -306,10 +357,11 @@ def resource_images(request, pk: int):
         caption = form.cleaned_data.get("caption", "")
         last = resource.images.order_by("-display_order").first()
         order = (last.display_order + 1) if last else 0
+        is_venue = resource.resource_type == ResourceType.VENUE
         for offset, upload in enumerate(uploads):
             ResourceImage.objects.create(
                 resource=resource,
-                image=upload,
+                image=fit_venue_photo(upload) if is_venue else upload,
                 caption=caption,
                 display_order=order + offset,
             )
@@ -327,7 +379,13 @@ def resource_images(request, pk: int):
         )
         return redirect("resources:images", pk=pk)
     return render(
-        request, "resources/images.html", {"resource": resource, "form": form}
+        request,
+        "resources/images.html",
+        {
+            "resource": resource,
+            "form": form,
+            "crop_to_ratio": resource.resource_type == ResourceType.VENUE,
+        },
     )
 
 
@@ -491,3 +549,83 @@ def facility_delete(request, pk: int):
     )
     messages.success(request, f"{name} deleted.")
     return redirect("resources:manage_facilities")
+
+
+# ------------------------------------------------------------- venue types
+
+
+@administrator_required
+def manage_venue_types(request):
+    from django.core.paginator import Paginator
+
+    types = VenueType.objects.annotate(usage=Count("venues")).order_by("name")
+    page = Paginator(types, PAGE_SIZE).get_page(request.GET.get("page"))
+    return render(
+        request,
+        "resources/manage_venue_types.html",
+        {
+            "types": page,
+            "page": page,
+            "querystring": "",
+            "page_range": page.paginator.get_elided_page_range(
+                page.number, on_each_side=2, on_ends=1
+            ),
+            "nav": "resources",
+        },
+    )
+
+
+@administrator_required
+def venue_type_edit(request, pk: int | None = None):
+    instance = get_object_or_404(VenueType, pk=pk) if pk else None
+    form = VenueTypeForm(request.POST or None, instance=instance)
+    if request.method == "POST" and form.is_valid():
+        created = instance is None
+        kind = form.save()
+        log_action(
+            actor=request.user,
+            action=f"VENUE_TYPE_{'CREATED' if created else 'UPDATED'}",
+            entity_type="VenueType",
+            entity_id=kind.pk,
+            description=f"{kind.name} ({kind.code}).",
+            request=request,
+        )
+        messages.success(request, f"{kind.name} {'created' if created else 'saved'}.")
+        return redirect("resources:manage_venue_types")
+    return render(
+        request,
+        "resources/edit.html",
+        {
+            "form": form,
+            "kind": "venue type",
+            "instance": instance,
+            "cancel_to": "resources:manage_venue_types",
+        },
+    )
+
+
+@administrator_required
+@require_POST
+def venue_type_delete(request, pk: int):
+    """A type in use is deactivated, never deleted; PROTECT on the venue enforces it."""
+    kind = get_object_or_404(VenueType, pk=pk)
+    used = kind.venues.count()
+    if used:
+        messages.error(
+            request,
+            f'"{kind.name}" is used by {used} venue{"" if used == 1 else "s"} '
+            "and cannot be deleted. Set Offered to No instead.",
+        )
+        return redirect("resources:manage_venue_types")
+    name = kind.name
+    kind.delete()
+    log_action(
+        actor=request.user,
+        action="VENUE_TYPE_DELETED",
+        entity_type="VenueType",
+        entity_id=pk,
+        description=f"{name} deleted; no venue used it.",
+        request=request,
+    )
+    messages.success(request, f"{name} deleted.")
+    return redirect("resources:manage_venue_types")

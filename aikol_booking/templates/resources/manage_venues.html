@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Manage Venues{% endblock %}
 {% block content %}
 <div class="page-head">
@@ -7,18 +8,36 @@
 </div>
 {% include "resources/_tabs.html" with tab='venues' %}
 
+<div class="notice notice-info">
+    {% if can_reorder %}Drag a venue by its handle, or use the up and down arrow keys, to set the order shown to users.
+    {% else %}Venue order is set from the complete, unfiltered list so each move is predictable.{% endif %}
+</div>
+
 <section class="card">
     {% include "resources/_filters.html" with placeholder="Venue name, code or location" show_status=1 %}
     <div class="table-wrap">
     <table class="data">
         <thead><tr>
+            <th scope="col" class="drag-col">Order</th>
             <th scope="col">Venue</th><th scope="col">Code</th><th scope="col">Location</th>
             <th scope="col">Capacity</th><th scope="col">Bookings</th>
             <th class="status-column" scope="col">Status</th><th class="actions-column" scope="col">Actions</th>
         </tr></thead>
-        <tbody>
+        <tbody id="rows">
         {% for venue in page %}
-            <tr>
+            <tr data-id="{{ venue.pk }}" {% if can_reorder %}draggable="true"{% endif %}>
+                <td class="drag-cell">
+                    <button class="draghandle" type="button" data-handle="{{ venue.pk }}"
+                            {% if not can_reorder %}disabled{% endif %}
+                            aria-label="Reorder {{ venue.name }}. Use the up and down arrow keys to move it."
+                            title="Drag to reorder, or use the arrow keys">
+                        <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+                            <circle cx="6" cy="3" r="1.4"></circle><circle cx="10" cy="3" r="1.4"></circle>
+                            <circle cx="6" cy="8" r="1.4"></circle><circle cx="10" cy="8" r="1.4"></circle>
+                            <circle cx="6" cy="13" r="1.4"></circle><circle cx="10" cy="13" r="1.4"></circle>
+                        </svg>
+                    </button>
+                </td>
                 <td><strong>{{ venue.name }}</strong><br><span class="help">{{ venue.get_venue_type_display }}</span></td>
                 <td class="mono nowrap">{{ venue.code }}</td>
                 <td>{{ venue.location }}</td>
@@ -39,11 +58,28 @@
                 </details></td>
             </tr>
         {% empty %}
-            <tr><td colspan="7"><div class="empty-state">No venue matches the current filters.</div></td></tr>
+            <tr><td colspan="8"><div class="empty-state">No venue matches the current filters.</div></td></tr>
         {% endfor %}
         </tbody>
     </table>
     </div>
-    {% include "resources/_pager.html" %}
+    <div class="card-foot">
+        <p class="help reorder-note m-0">
+            {% if filtered %}Clear the search and filters to change the venue order.
+            {% elif not can_reorder %}Keep the list to 20 or fewer venues before changing the order.
+            {% else %}Drag a handle, or press the up and down arrow keys, to change the venue order.{% endif %}
+        </p>
+        {% include "_pagination.html" %}
+    </div>
 </section>
+
+<form method="post" action="{% url 'resources:venue_reorder' %}" id="reorderForm" hidden>
+    {% csrf_token %}<input type="hidden" name="order" id="orderField">
+</form>
+{% endblock %}
+
+{% block scripts %}
+{% if can_reorder %}
+<script src="{% static 'js/reorder.js' %}" defer></script>
+{% endif %}
 {% endblock %}

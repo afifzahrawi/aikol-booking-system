@@ -3,8 +3,15 @@
 {% block content %}
 <div class="page-head"><div><h1>Key Register</h1>
     <p class="lede">Keys are held by the Kulliyyah office. Every issue and return
-       is recorded against the booking.</p></div></div>
+       is recorded against the booking.</p></div>
+    <div class="btn-group"><a class="btn" href="{% url 'bookings:kiosk' %}">Open the office kiosk</a></div>
+</div>
 {% include "administration/_nav.html" with tab='keys' %}
+
+<nav class="workspace-tabs" aria-label="Kind of key">
+    <a href="?kind=venue" {% if kind == 'venue' %}aria-current="page"{% endif %}>Venue Keys{% if confirm_by_kind.venue %} <span class="nav-badge">{{ confirm_by_kind.venue }}</span>{% endif %}</a>
+    <a href="?kind=vehicle" {% if kind == 'vehicle' %}aria-current="page"{% endif %}>Vehicle Keys{% if confirm_by_kind.vehicle %} <span class="nav-badge">{{ confirm_by_kind.vehicle }}</span>{% endif %}</a>
+</nav>
 
 {% if overdue_count %}
 <div class="notice notice-warn">
@@ -14,18 +21,28 @@
 {% endif %}
 
 <nav class="workspace-tabs" aria-label="Key register view">
-    <a href="?tab=awaiting" {% if tab == 'awaiting' %}aria-current="page"{% endif %}>Awaiting Collection</a>
-    <a href="?tab=out" {% if tab == 'out' %}aria-current="page"{% endif %}>Out Now</a>
+    <a href="?kind={{ kind }}&amp;tab=awaiting{% if q %}&amp;q={{ q|urlencode }}{% endif %}" {% if tab == 'awaiting' %}aria-current="page"{% endif %}>Awaiting Collection</a>
+    <a href="?kind={{ kind }}&amp;tab=out{% if q %}&amp;q={{ q|urlencode }}{% endif %}" {% if tab == 'out' %}aria-current="page"{% endif %}>Out Now</a>
+    <a href="?kind={{ kind }}&amp;tab=confirm{% if q %}&amp;q={{ q|urlencode }}{% endif %}" {% if tab == 'confirm' %}aria-current="page"{% endif %}>To Confirm{% if confirm_count %} <span class="nav-badge">{{ confirm_count }}</span>{% endif %}</a>
 </nav>
 
 <section class="card key-register">
+    <form method="get" class="toolbar">
+        <input type="hidden" name="kind" value="{{ kind }}">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <div class="field grow">
+            <label for="q">Search</label>
+            <input class="input" type="search" id="q" name="q" value="{{ q }}" placeholder="Booking number or name">
+        </div>
+        <div class="field"><button class="btn" type="submit">Search</button></div>
+    </form>
 {% if tab == 'awaiting' %}
     <div class="card-head"><h2>Awaiting Collection</h2>
         <span class="help">{{ awaiting_count }} total</span></div>
     <div class="table-wrap">
     <table class="data">
         <thead><tr>
-            <th scope="col">Reference</th><th scope="col">Resource</th><th scope="col">Booked by</th>
+            <th scope="col">Booking number</th><th scope="col">{% if kind == 'vehicle' %}Vehicle{% else %}Venue{% endif %}</th><th scope="col">Booked by</th>
             <th scope="col">Starts</th><th scope="col">Actions</th>
         </tr></thead>
         <tbody>
@@ -39,19 +56,20 @@
                        href="{% url 'bookings:key_issue' b.pk %}">Issue key</a></td>
             </tr>
         {% empty %}
-            <tr><td colspan="5"><div class="empty-state">Nothing waiting.</div></td></tr>
+            <tr><td colspan="5"><div class="empty-state">{% if q %}No booking matches "{{ q }}".{% else %}Nothing waiting.{% endif %}</div></td></tr>
         {% endfor %}
         </tbody>
     </table>
     </div>
-{% else %}
+{% elif tab == 'out' %}
     <div class="card-head"><h2>Out Now</h2>
         <span class="help">{{ outstanding_count }} total</span></div>
     <div class="table-wrap">
     <table class="data">
         <thead><tr>
-            <th scope="col">Reference</th><th scope="col">Resource</th><th scope="col">Booked by</th>
+            <th scope="col">Booking number</th><th scope="col">{% if kind == 'vehicle' %}Vehicle{% else %}Venue{% endif %}</th><th scope="col">Booked by</th>
             <th scope="col">Collected by</th><th scope="col">Issued</th>
+            {% if kind == 'vehicle' %}<th scope="col">Mileage out</th>{% endif %}
             <th scope="col">Booking ends</th><th scope="col" class="status-column">Status</th>
             <th scope="col" class="actions-column">Actions</th>
         </tr></thead>
@@ -62,16 +80,60 @@
                 <td>{{ h.booking.resource.name }}</td>
                 <td>{{ h.booking.user.full_name }}</td>
                 <td>{{ h.collected_by_name }}<br>
-                    <span class="help">issued by {{ h.issued_by.full_name }}</span></td>
+                    <span class="help">{% if h.issue_pending %}recorded at the kiosk{% else %}issued by {{ h.issued_by.full_name }}{% endif %}</span></td>
                 <td class="nowrap">{{ h.issued_at|date:"d M Y, H:i" }}</td>
+                {% if kind == 'vehicle' %}<td class="nowrap">{% if h.mileage_out is not None %}{{ h.mileage_out }} km{% else %}<span class="help">Not recorded</span>{% endif %}</td>{% endif %}
                 <td class="nowrap">{{ h.booking.end_at|date:"d M Y, H:i" }}</td>
                 <td class="status-column">{% if h.booking.end_at < now %}<span class="badge badge-rejected">Overdue</span>
+                    {% elif h.issue_pending %}<span class="badge badge-pending">To confirm</span>
                     {% else %}<span class="badge badge-pending">Out</span>{% endif %}</td>
                 <td class="actions-column"><a class="btn btn-sm btn-primary" data-modal-form
                        href="{% url 'bookings:key_return' h.booking.pk %}">Record return</a></td>
             </tr>
         {% empty %}
-            <tr><td colspan="8"><div class="empty-state">No key is currently out.</div></td></tr>
+            <tr><td colspan="9"><div class="empty-state">{% if q %}No key out matches "{{ q }}".{% else %}No key is currently out.{% endif %}</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% else %}
+    <div class="card-head"><h2>To Confirm</h2>
+        <span class="help">Recorded at the office kiosk. Confirm each one once you have checked the key.</span></div>
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr>
+            <th scope="col">Booking number</th><th scope="col">{% if kind == 'vehicle' %}Vehicle{% else %}Venue{% endif %}</th>
+            <th scope="col">What was recorded</th><th scope="col">By</th><th scope="col">When</th>
+            {% if kind == 'vehicle' %}<th scope="col">Mileage and receipt</th>{% endif %}
+            <th scope="col" class="actions-column">Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for h in page %}
+            {% if h.issue_pending %}
+            <tr>
+                <td class="mono nowrap">{{ h.booking.booking_reference }}</td>
+                <td>{{ h.booking.resource.name }}</td>
+                <td>Key collected</td>
+                <td>{{ h.collected_by_name }}</td>
+                <td class="nowrap">{{ h.issued_at|date:"d M Y, H:i" }}</td>
+                {% if kind == 'vehicle' %}<td class="nowrap">{% if h.mileage_out is not None %}{{ h.mileage_out }} km out{% else %}<span class="help">No mileage</span>{% endif %}</td>{% endif %}
+                <td class="actions-column">{% include "bookings/_key_confirm.html" with step="issue" %}</td>
+            </tr>
+            {% endif %}
+            {% if h.return_pending %}
+            <tr>
+                <td class="mono nowrap">{{ h.booking.booking_reference }}</td>
+                <td>{{ h.booking.resource.name }}</td>
+                <td>Key returned</td>
+                <td>{{ h.returned_by_name }}{% if h.condition_notes %}<br><span class="help">{{ h.condition_notes }}</span>{% endif %}</td>
+                <td class="nowrap">{{ h.returned_at|date:"d M Y, H:i" }}</td>
+                {% if kind == 'vehicle' %}<td>{% if h.mileage_in is not None %}{{ h.mileage_in }} km in{% else %}<span class="help">No mileage</span>{% endif %}
+                    {% if h.fuel_receipt %}<br><a href="{% url 'bookings:fuel_receipt' h.pk %}" target="_blank" rel="noopener">View receipt</a>{% endif %}</td>{% endif %}
+                <td class="actions-column">{% include "bookings/_key_confirm.html" with step="return" %}</td>
+            </tr>
+            {% endif %}
+        {% empty %}
+            <tr><td colspan="7"><div class="empty-state">{% if q %}Nothing to confirm matches "{{ q }}".{% else %}Nothing to confirm.{% endif %}</div></td></tr>
         {% endfor %}
         </tbody>
     </table>

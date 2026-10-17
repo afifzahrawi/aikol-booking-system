@@ -32,7 +32,7 @@ VENUES = [
     {
         "code": "AIKOL-MC-01",
         "name": "Moot Court Room",
-        "venue_type": Venue.VenueType.MOOT_COURT,
+        "venue_type_id": Venue.VenueType.MOOT_COURT,
         "location": "AIKOL Main Building",
         "floor": "Level 1",
         "capacity": 80,
@@ -41,7 +41,7 @@ VENUES = [
     {
         "code": "AIKOL-SR-01",
         "name": "Seminar Room 1",
-        "venue_type": Venue.VenueType.SEMINAR,
+        "venue_type_id": Venue.VenueType.SEMINAR,
         "location": "AIKOL Main Building",
         "floor": "Level 2",
         "capacity": 40,
@@ -50,7 +50,7 @@ VENUES = [
     {
         "code": "AIKOL-MR-01",
         "name": "Meeting Room A",
-        "venue_type": Venue.VenueType.MEETING,
+        "venue_type_id": Venue.VenueType.MEETING,
         "location": "AIKOL Main Building",
         "floor": "Level 3",
         "capacity": 16,

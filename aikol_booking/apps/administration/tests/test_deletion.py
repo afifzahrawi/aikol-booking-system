@@ -32,7 +32,7 @@ class AccountDeletionTests(TestCase):
 
     def test_a_retired_account_with_history_stays(self):
         person = make_user("booked@demo.aikol.test", active=False)
-        room = Venue.objects.create(code="R1", name="Room", venue_type=Venue.VenueType.MEETING,
+        room = Venue.objects.create(code="R1", name="Room", venue_type_id=Venue.VenueType.MEETING,
                                     location="L1", capacity=5)
         start = timezone.now() + dt.timedelta(days=3)
         Booking.objects.create(resource=room, user=person, created_by=person, start_at=start,

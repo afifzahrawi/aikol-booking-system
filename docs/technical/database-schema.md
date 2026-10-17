@@ -97,7 +97,7 @@ Administrators create and maintain this list themselves; it is not fixed in code
 | `code` | varchar(40) | **Unique.** Slug used by CSV import. Generated from the name, then immutable |
 | `name` | varchar(80) | Display label. Editable — renaming "Smart TV" to "Smart Television" must not break existing links |
 | `applies_to` | varchar(10) | `VENUE`, `VEHICLE`, `BOTH`. Controls which options the resource form offers |
-| `display_order` | integer | Ordering on venue pages and filter lists. Set by dragging rows on the Facilities screen, not typed: the server rewrites the whole column as `1..n` in one transaction, so there are never gaps or ties |
+| `display_order` | integer | Ordering on facility selection and filter lists. Set by dragging rows on the Facilities screen, not typed: the server rewrites the whole column as `1..n` in one transaction, so there are never gaps or ties |
 | `status` | varchar(10) | `ACTIVE`, `INACTIVE` |
 | `created_at`, `updated_at` | timestamptz | |
 
@@ -132,9 +132,25 @@ Primary key is also the foreign key to `resources` (Django MTI).
 | Field | Type | Notes |
 | --- | --- | --- |
 | `resource_ptr_id` | bigint PK / FK → resources | |
+| `display_order` | integer | Set by dragging rows on the venue management screen. Public and office venue lists sort by this, then by name. New venues join the end. |
 | `building`, `floor`, `location` | varchar | `location` is the display string |
 | `capacity` | integer | Validates `attendee_count` |
-| `venue_type` | varchar(50) | Moot Court, Seminar Room, … |
+| `venue_type` | varchar(20), FK → venue_types.code | `on_delete=PROTECT`. The column kept its name and values when types became a table (`resources.0005`) |
+
+### `venue_types`
+The kinds of room, maintained by the Admin on Resources, Venue Types (October 2026). Same pattern as
+`facilities`: `code` is the stable key used by CSV import and filter links, `name` is the editable
+label. The six original types are seeded by migration with `is_seeded = true`.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | bigint PK | |
+| `code` | varchar(20) | **Unique.** Generated from the name (`COMPUTER_LAB`), then immutable |
+| `name` | varchar(60) | Display label, editable |
+| `is_active` | boolean | No means it is no longer offered on the venue form or the filter; venues that have it keep it |
+| `is_seeded` | boolean | Created by the migration rather than by the Admin |
+
+A type in use cannot be deleted (PROTECT); it is set to not offered instead.
 
 ### `vehicles`
 
@@ -175,6 +191,14 @@ The recurrence definition (decision 15). It is a template only — it never rese
 | `start_time`, `end_time` | time | Applied to every occurrence |
 | `purpose` | text | Copied to each occurrence |
 | `created_at` | timestamptz | |
+
+**As built**, the series stores `weekday_times` (JSON), `starts_on`, `repeat_until`, `term_id` and
+`purpose` rather than the columns above. `weekday_times` maps a weekday index to a list of time
+slots, `{"0": [["09:00", "11:00"], ["14:00", "16:00"]]}`, so one day can hold up to three times (a
+lecture and a tutorial). Series saved before October 2026 hold a single pair, `["09:00", "11:00"]`;
+`BookingSeries.slots_for` reads both shapes. `replaces_id` (FK → booking_series, null,
+`SET_NULL`) links a series created by a mid-semester timetable change to the series it took over
+from.
 
 **Every occurrence is a real row in `bookings`** carrying `series_id`. Occurrences are never computed
 on the fly at read time. A booking that does not exist as a row cannot be covered by the exclusion
@@ -258,7 +282,16 @@ Decision 17: key collection and return are recorded in the system. One row per b
 | `returned_by_id` | FK → users, null | The **person who brought it back**, who may be someone else again |
 | `returned_by_name` | varchar(150), null | Their name as recorded |
 | `condition_notes` | text | Damage or fault noted at return |
+| `mileage_out`, `mileage_in` | integer, null | Vehicles only, optional. Odometer in km at collection and return; return may not be lower |
+| `fuel_receipt` | image, null | Vehicles only, optional. Petrol receipt photo at return, stored under `fuel-receipts/<booking>/`, served to the Admin through a signed URL |
+| `issue_via`, `return_via` | varchar(10) | `OFFICE` (Key Register) or `KIOSK` (the office PC kiosk) |
+| `issue_confirmed_at`, `return_confirmed_at` | timestamptz, null | Null on a kiosk entry until the Admin confirms it. An office entry is confirmed as it is made. `bookings.0006` set these for every earlier row |
+| `issue_confirmed_by_id`, `return_confirmed_by_id` | FK → users, null | Who confirmed |
 | `created_at`, `updated_at` | timestamptz | |
+
+**Kiosk entries are claims until confirmed.** People record their own collection and return at the
+office PC; the Admin confirms or rejects each on the Key Register, To Confirm tab. Rejecting clears
+the entry back to its earlier state (the row stays; the audit log keeps what was claimed).
 
 An outstanding key — `returned_at IS NULL` on a booking whose `end_at` has passed — is the single
 most useful operational report in the system. Index accordingly.

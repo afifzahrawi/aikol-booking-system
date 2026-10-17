@@ -158,12 +158,20 @@ away, or the room is too small for the number of people.
 
 For a class or a regular meeting, open the room and choose **Repeat weekly**. Pick the academic
 calendar, the first date, how long to repeat, and the days of the week with their times. Each day
-can have different times.
+can have different times, and a day can have up to three: choose **Add another time** under the
+day, for example for a lecture in the morning and a tutorial in the afternoon.
 
 Before anything is booked you are shown every date that would be created, and separately any
 dates that fall in a semester break or are already taken. You choose whether to go ahead with the
 rest. Each date then becomes its own booking under My Bookings, and the office approves them
 together.
+
+**If the class moves partway through the semester.** Open any booking in the series and choose
+**change the timetable**. Pick the date the change starts, the new room and the new days and times,
+and say why. Dates before the change stay as they are. From that date the old bookings are
+cancelled and the new ones are sent for approval, in one step: if the new dates cannot be booked,
+nothing changes. The change must start at least 3 days ahead; for anything sooner, contact the
+Admin.
 
 ## 7. What happens next
 
@@ -200,7 +208,10 @@ dates together.
 ## 9. Keys
 
 For an approved room booking, collect the key from the Kulliyyah office at the start of your
-time and return it when you finish. The office records who collected it: if somebody else is
+time and return it when you finish. Keys are only collected and returned at the office. You can record
+it yourself on the office kiosk PC: type your booking number, then confirm you have collected or are
+returning the key. For a car, add the mileage and a photo of the petrol receipt if you have them.
+The office confirms every record. The office records who collected it: if somebody else is
 fetching the key for you, tell the office their name. A key that is not back after the booking
 ends is followed up.
 

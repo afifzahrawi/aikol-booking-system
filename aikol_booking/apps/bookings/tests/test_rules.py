@@ -39,7 +39,7 @@ class PeriodRuleTests(TestCase):
         SystemSetting.seed()
         self.day = timezone.localdate() + dt.timedelta(days=10)
         self.venue = Venue.objects.create(
-            code="VEN-1", name="Moot Court", venue_type=Venue.VenueType.MOOT_COURT,
+            code="VEN-1", name="Moot Court", venue_type_id=Venue.VenueType.MOOT_COURT,
             location="Level 2", capacity=80,
         )
         self.car = Vehicle.objects.create(
@@ -127,7 +127,7 @@ class DriverRouteTests(TestCase):
 
     def test_a_venue_has_no_driver_question_at_all(self):
         venue = Venue.objects.create(
-            code="VEN-2", name="Meeting Room", venue_type=Venue.VenueType.MEETING,
+            code="VEN-2", name="Meeting Room", venue_type_id=Venue.VenueType.MEETING,
             location="Level 1", capacity=12,
         )
         self.assertEqual(check_driver_arrangement(make_user("x@demo.aikol.test", Affiliation.STUDENT),

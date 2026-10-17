@@ -61,7 +61,7 @@ class Fixtures(TestCase):
         self.approver = make_user("approver@demo.aikol.test", role=Role.APPROVER)
         self.admin = make_user("admin@demo.aikol.test", role=Role.ADMINISTRATOR)
         self.room = Venue.objects.create(
-            code="VEN-1", name="Seminar Room 1", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Seminar Room 1", venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1", capacity=30,
         )
         self.day = timezone.localdate() + dt.timedelta(days=14)

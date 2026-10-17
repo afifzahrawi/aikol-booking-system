@@ -311,7 +311,7 @@ class ExportTests(Fixtures):
     def setUp(self) -> None:
         super().setUp()
         self.venue = Venue.objects.create(
-            code="VEN-1", name="Seminar Room 1", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Seminar Room 1", venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1", capacity=30,
         )
         self.venue.facilities.add(Facility.objects.get(code="projector"))
@@ -373,7 +373,7 @@ class ReportingTests(Fixtures):
     def setUp(self) -> None:
         super().setUp()
         self.venue = Venue.objects.create(
-            code="VEN-1", name="Seminar Room 1", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Seminar Room 1", venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1", capacity=30,
         )
         self.car = Vehicle.objects.create(
@@ -467,7 +467,7 @@ class RetentionTests(Fixtures):
     def setUp(self) -> None:
         super().setUp()
         self.venue = Venue.objects.create(
-            code="VEN-1", name="Seminar Room 1", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Seminar Room 1", venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1", capacity=30,
         )
         self.old = []

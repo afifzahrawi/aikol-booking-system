@@ -43,7 +43,7 @@ class KeyFixtures(TestCase):
         self.owner = make_user("owner@demo.aikol.test", affiliation=Affiliation.LECTURER)
         self.plain = make_user("plain@demo.aikol.test")
         self.room = Venue.objects.create(
-            code="VEN-1", name="Seminar Room 1", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Seminar Room 1", venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1", capacity=30,
         )
         self.day = timezone.localdate() + dt.timedelta(days=7)

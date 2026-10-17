@@ -978,7 +978,10 @@ img, video, iframe { max-width: 100%; }
         align-self: start;
         width: var(--docket-rail);
         height: calc(100dvh - var(--masthead-h));
-        min-height: 32rem;
+        /* No min-height: on a short laptop screen it pushed System and the
+           account menu below the window, out of reach. The rail now fits the
+           window it has: links tighten with the height (below), and only a
+           very short window makes it scroll. */
         padding: 0.75rem 0.8rem 0.8rem;
     }
     .is-authenticated .app-nav .nav-toggle {
@@ -1000,9 +1003,9 @@ img, video, iframe { max-width: 100%; }
     .is-authenticated .app-nav .nav-toggle svg { width: 0.9rem; height: 0.9rem; fill: none; stroke: currentColor; stroke-width: 1.8; }
     .is-authenticated .app-nav a {
         display: flex;
-        min-height: 2.8rem;
+        min-height: clamp(2.1rem, 5.6dvh, 2.8rem);
         height: auto;
-        padding: 0.7rem;
+        padding: clamp(0.4rem, 1.4dvh, 0.7rem) 0.7rem;
         border-radius: 0.7rem;
     }
     .is-authenticated .docket-workspace { grid-column: 2; grid-row: 2; }
@@ -1434,4 +1437,91 @@ img, video, iframe { max-width: 100%; }
     background: var(--docket-paper-2);
     border: 1px solid var(--docket-rule);
     border-radius: var(--radius-input);
+}
+
+
+/* ---------- Additions, October 2026 ---------------------------------------- */
+
+/* The rail fits any window down to about 35rem high by spacing alone. Below
+   that it scrolls; the collapse button, which sits half outside the rail, is
+   then clipped, which is the lesser loss on a window that short. */
+@media (min-width: 48rem) and (max-height: 35rem) {
+    .is-authenticated .app-nav { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+}
+@media (min-width: 48rem) {
+    .is-authenticated .app-nav .nav-divider { margin-block: clamp(0.3rem, 1.2dvh, 0.8rem) clamp(0.25rem, 1dvh, 0.6rem); }
+}
+
+/* Schedule: the purpose appears at once on hover or keyboard focus. */
+.avail-bar .avail-block { overflow: visible; cursor: default; }
+.avail-block .avail-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.avail-block:focus-visible { outline: 2px solid var(--docket-ink); outline-offset: 1px; }
+.avail-block[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 0.4rem);
+    z-index: 5;
+    width: max-content;
+    max-width: min(20rem, 70vw);
+    padding: 0.45rem 0.6rem;
+    color: var(--docket-paper);
+    background: var(--docket-ink);
+    border-radius: 0.4rem;
+    box-shadow: 0 6px 18px rgba(18, 37, 33, 0.22);
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.35;
+    white-space: normal;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.avail-block[data-tip]:hover::after,
+.avail-block[data-tip]:focus-visible::after { opacity: 1; transform: none; }
+.avail-block:hover, .avail-block:focus-visible { z-index: 4; }
+
+/* Weekly booking: extra times under a day. */
+.dowday + .dowday { border-top: 1px solid var(--line-soft); }
+.dowday .dowrow + .dowrow { border-top: 0; }
+.dowrow-label { font-size: 0.8rem; }
+.dow-add { margin: 0 0 0.4rem 108px; font-size: 0.85rem; }
+
+/* Office kiosk: one task, large targets, no chrome to wander into. */
+.is-kiosk .kiosk { max-width: 40rem; margin: 2rem auto; }
+.is-kiosk .kiosk .input, .is-kiosk .kiosk .select { font-size: 1.15rem; min-height: 3rem; }
+.is-kiosk .kiosk .btn { min-height: 3rem; padding-inline: 1.4rem; font-size: 1rem; }
+.kiosk-exit { margin-top: 2.5rem; text-align: center; font-size: 0.85rem; }
+.kiosk-exit a { color: var(--docket-muted); }
+
+/* Venue photograph crop. */
+.crop-dialog {
+    width: min(52rem, calc(100vw - 2rem));
+    padding: 1.25rem;
+    border: 1px solid var(--docket-rule);
+    border-radius: 0.8rem;
+    background: var(--docket-paper);
+    color: var(--docket-ink);
+}
+.crop-dialog::backdrop { background: rgba(18, 37, 33, 0.55); }
+.crop-title { margin: 0 0 0.25rem; font-size: 1.3rem; }
+.crop-canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: 60dvh;
+    object-fit: contain;
+    background: var(--docket-paper-2);
+    border-radius: 0.4rem;
+    cursor: grab;
+    touch-action: none;
+}
+.crop-canvas:active { cursor: grabbing; }
+.crop-canvas:focus-visible { outline: 2px solid var(--docket-green); outline-offset: 2px; }
+.crop-zoom { display: flex; align-items: center; gap: 0.75rem; margin: 0.75rem 0 0.25rem; }
+.crop-zoom input { flex: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .avail-block[data-tip]::after { transition: none; transform: none; }
 }

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Weekly Booking: {{ resource.name }}{% endblock %}
+{% block scripts %}<script src="{% static 'js/series-slots.js' %}?v=20261017-1" defer></script>{% endblock %}
 {% block content %}
 <h1>Repeat Weekly: {{ resource.name }}</h1>
 <p class="lede">Book the same slot every week for a semester.</p>
@@ -20,56 +21,11 @@
                 <div class="field">{{ form.repeat_until.label_tag }}{{ form.repeat_until }}{{ form.repeat_until.errors }}</div>
             </div>
 
-            <p class="label">Repeat on these days, each with its own times</p>
-            <div class="dowgrid">
-            {% for row in form.weekday_rows %}
-                <div class="dowrow">
-                    <label class="checkline">{{ row.day }} {{ row.label }}</label>
-                    <span class="field">{{ row.start }}</span>
-                    <span class="sep">to</span>
-                    <span class="field">{{ row.end }}</span>
-                    {{ row.start.errors }}{{ row.end.errors }}
-                </div>
-            {% endfor %}
-            </div>
+            {% include "bookings/_series_days.html" %}
 
             <div class="field">{{ form.purpose.label_tag }}{{ form.purpose }}{{ form.purpose.errors }}</div>
 
-            {% if plan %}
-                <div class="notice {% if plan.clashing %}notice-warn{% else %}notice-info{% endif %}">
-                    <strong>{{ plan.bookable|length }} booking{{ plan.bookable|length|pluralize }}
-                    would be created.</strong>
-                    {% if plan.outside %}{{ plan.outside|length }} date{{ plan.outside|length|pluralize }}
-                        fall outside teaching weeks and are left out.{% endif %}
-                    {% if plan.clashing %}{{ plan.clashing|length }}
-                        date{{ plan.clashing|length|pluralize }} are already reserved.
-                    {% endif %}
-                </div>
-
-                {% if plan.clashing or plan.outside %}
-                <div class="table-wrap">
-                <table class="data" data-client-paginate data-pagination-label="Series conflicts pagination">
-                    <thead><tr><th scope="col">Date</th><th scope="col">Time</th><th scope="col">Why it is left out</th></tr></thead>
-                    <tbody>
-                    {% for occ in plan.clashing %}
-                        <tr><td>{{ occ.date|date:"D d M Y" }}</td>
-                            <td>{{ occ.start_time }} to {{ occ.end_time }}</td>
-                            <td>Already reserved</td></tr>
-                    {% endfor %}
-                    {% for occ in plan.outside %}
-                        <tr><td>{{ occ.date|date:"D d M Y" }}</td>
-                            <td>{{ occ.start_time }} to {{ occ.end_time }}</td>
-                            <td>{{ occ.skip_reason }}</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-</div>
-                <div class="field mt-sm">
-                    <label class="checkline">{{ form.accept_partial }} {{ form.accept_partial.label }}</label>
-                    <p class="help">{{ form.accept_partial.help_text }}</p>
-                </div>
-                {% endif %}
-            {% endif %}
+            {% include "bookings/_series_plan.html" %}
 
             <div class="btn-group">
                 <a class="btn" href="{% if office_mode %}{% url 'bookings:manage' %}{% else %}{% url 'resources:detail' resource.pk %}{% endif %}">Cancel</a>

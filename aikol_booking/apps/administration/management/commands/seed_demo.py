@@ -183,7 +183,7 @@ class Command(BaseCommand):
             venue, created = Venue.objects.get_or_create(
                 code=code,
                 defaults={
-                    "name": name, "venue_type": kind, "location": location,
+                    "name": name, "venue_type_id": kind, "location": location,
                     "floor": floor, "capacity": capacity, "image_slug": slug,
                     "description": (
                         f"{name} at the Ahmad Ibrahim Kulliyyah of Laws. "

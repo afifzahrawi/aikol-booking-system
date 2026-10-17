@@ -8,7 +8,7 @@
         <p class="lede">{{ booking.resource.name }}</p>
     </div>
     <div class="btn-group">
-        {% if can_cancel %}
+        {% if can_open_cancellation %}
             <a class="btn btn-danger" data-modal-form href="{% url 'bookings:cancel' booking.pk %}">Cancel booking</a>
         {% endif %}
         {% if user.is_approver and booking.status == 'PENDING' %}
@@ -55,7 +55,10 @@
         {% if booking.series_id %}
             <p class="help">Part of a weekly series.
                <a data-modal-form href="{% url 'bookings:series_cancel' booking.series_id %}">Cancel the whole series</a>
-               Only future dates are cancelled.</p>
+               Only future dates are cancelled.
+               {% if booking.user_id == user.pk or user.is_administrator %}
+               If the room or time changes partway through the semester,
+               <a href="{% url 'bookings:series_change' booking.series_id %}">change the timetable</a>.{% endif %}</p>
         {% endif %}
     </div>
 </section>

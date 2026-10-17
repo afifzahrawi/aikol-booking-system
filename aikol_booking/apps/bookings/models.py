@@ -164,13 +164,22 @@ class BookingSeries(models.Model):
     resource = models.ForeignKey(Resource, on_delete=models.PROTECT)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     term = models.ForeignKey(AcademicTerm, on_delete=models.SET_NULL, null=True, blank=True)
-    # {"0": ["09:00", "11:00"], "3": ["14:00", "16:00"]} — weekday index to
-    # times. Each day keeps its own times: a course may meet Monday morning and
-    # Thursday afternoon, and forcing one pair of times on both would be wrong.
+    # {"0": [["09:00", "11:00"], ["14:00", "16:00"]], "3": [["14:00", "16:00"]]}
+    # — weekday index to a list of time slots. Each day keeps its own times: a
+    # course may meet Monday morning and Thursday afternoon, and a day may hold
+    # a lecture and a tutorial. Series saved before several slots were allowed
+    # hold a single pair, ["09:00", "11:00"]; `slots_for` reads both shapes.
     weekday_times = models.JSONField(default=dict)
     starts_on = models.DateField()
     repeat_until = models.DateField()
     purpose = models.TextField()
+    # When a class moves room or time partway through a semester, the rest of
+    # the old series is cancelled and a new series takes over from that date.
+    # The link keeps the history readable: the timetable changed, it was not
+    # booked twice.
+    replaces = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="replaced_by"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -178,6 +187,24 @@ class BookingSeries(models.Model):
 
     def __str__(self) -> str:
         return f"Series {self.pk}, {self.resource}"
+
+    @staticmethod
+    def slots_for(weekday_times: dict, weekday: int) -> list[list[str]]:
+        """The time slots for one weekday, in either stored shape."""
+        times = weekday_times.get(str(weekday)) or []
+        if times and isinstance(times[0], str):
+            return [list(times)]
+        return [list(pair) for pair in times]
+
+    def describe_times(self) -> str:
+        """"Mon 09:00 to 11:00 and 14:00 to 16:00; Thu 14:00 to 16:00"."""
+        names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        parts = []
+        for index, name in enumerate(names):
+            slots = self.slots_for(self.weekday_times, index)
+            if slots:
+                parts.append(name + " " + " and ".join(f"{a} to {b}" for a, b in slots))
+        return "; ".join(parts)
 
 
 class Booking(models.Model):
@@ -336,6 +363,19 @@ class Booking(models.Model):
         return f"{prefix}{nxt:04d}"
 
 
+def fuel_receipt_path(instance: "KeyHandover", filename: str) -> str:
+    """Renamed on save, as every upload is; the original filename is never trusted."""
+    import uuid
+
+    suffix = filename.rsplit(".", 1)[-1].lower() if "." in filename else "jpg"
+    return f"fuel-receipts/{instance.booking_id}/{uuid.uuid4().hex}.{suffix}"
+
+
+class Via(models.TextChoices):
+    OFFICE = "OFFICE", "Key Register"
+    KIOSK = "KIOSK", "Office kiosk"
+
+
 class KeyHandover(models.Model):
     """Key issue and return, per booking (decision 17).
 
@@ -371,13 +411,54 @@ class KeyHandover(models.Model):
     returned_by_name = models.CharField(max_length=150, blank=True)
     condition_notes = models.TextField(blank=True)
 
+    # Vehicles only, and optional: the office asked for the odometer to be
+    # recorded when it is read, not for a trip to be blocked when it is not.
+    mileage_out = models.PositiveIntegerField(null=True, blank=True)
+    mileage_in = models.PositiveIntegerField(null=True, blank=True)
+    fuel_receipt = models.ImageField(upload_to=fuel_receipt_path, null=True, blank=True)
+
+    # The office PC runs a kiosk where people record their own collection and
+    # return. Those entries are claims until the Admin confirms them: the key is
+    # physically in the office, so only the office can say it changed hands.
+    # An entry the Admin makes on the Key Register is confirmed as it is made.
+    issue_via = models.CharField(max_length=10, choices=Via.choices, default=Via.OFFICE)
+    issue_confirmed_at = models.DateTimeField(null=True, blank=True)
+    issue_confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="key_issues_confirmed",
+    )
+    return_via = models.CharField(max_length=10, choices=Via.choices, default=Via.OFFICE)
+    return_confirmed_at = models.DateTimeField(null=True, blank=True)
+    return_confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="key_returns_confirmed",
+    )
+
     def __str__(self) -> str:
         return f"Key for {self.booking.booking_reference}"
 
     @property
+    def issue_pending(self) -> bool:
+        return bool(self.issued_at and not self.issue_confirmed_at)
+
+    @property
+    def return_pending(self) -> bool:
+        return bool(self.returned_at and not self.return_confirmed_at)
+
+    @property
     def state(self) -> str:
+        if self.return_pending:
+            return "Return awaiting confirmation"
         if self.returned_at:
             return "Returned"
+        if self.issue_pending:
+            return "Collection awaiting confirmation"
         if self.issued_at:
             overdue = timezone.now() > self.booking.end_at
             return "Overdue" if overdue else "Issued"

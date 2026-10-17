@@ -1,0 +1,20 @@
+            <p class="label">Repeat on these days, each with its own times</p>
+            <p class="help">A day can have up to three times, for example a lecture and a tutorial.</p>
+            <div class="dowgrid">
+            {% for row in form.weekday_rows %}
+                <div class="dowday" data-dow-day>
+                {% for slot in row.slots %}
+                    <div class="dowrow{% if slot.number > 1 %} dowrow-extra{% endif %}"{% if slot.number > 1 %} data-dow-extra{% if slot.start.value or slot.end.value or slot.start.errors or slot.end.errors %} data-filled{% endif %}{% endif %}>
+                        {% if slot.number == 1 %}<label class="checkline">{{ row.day }} {{ row.label }}</label>
+                        {% else %}<span class="dowrow-label help">{{ row.label }}, time {{ slot.number }}</span>{% endif %}
+                        <span class="field">{{ slot.start }}</span>
+                        <span class="sep">to</span>
+                        <span class="field">{{ slot.end }}</span>
+                        {{ slot.start.errors }}{{ slot.end.errors }}
+                    </div>
+                {% endfor %}
+                    <button class="btn-link dow-add" type="button" data-dow-add hidden>Add another time on {{ row.label }}</button>
+                </div>
+            {% endfor %}
+            </div>
+

@@ -27,6 +27,7 @@ from apps.resources.models import Resource, ResourceType, Vehicle
 from .models import (
     BLOCKING_STATUSES,
     Booking,
+    BookingSeries,
     BookingStatus,
     DriverArrangement,
     ManagementDecision,
@@ -294,14 +295,18 @@ def expand_series(
     out: list[dict] = []
     day = starts_on
     while day <= repeat_until and len(out) < cap:
-        times = weekday_times.get(str(day.weekday()))
-        if times:
+        skip_reason = None
+        for start, end in BookingSeries.slots_for(weekday_times, day.weekday()):
+            if len(out) >= cap:
+                break
+            if skip_reason is None:
+                skip_reason = term.exclusion_for(day) if term else ""
             out.append(
                 {
                     "date": day,
-                    "start_time": _parse_time(times[0]),
-                    "end_time": _parse_time(times[1]),
-                    "skip_reason": term.exclusion_for(day) if term else "",
+                    "start_time": _parse_time(start),
+                    "end_time": _parse_time(end),
+                    "skip_reason": skip_reason,
                 }
             )
         day += dt.timedelta(days=1)
@@ -415,15 +420,20 @@ def cancel_booking(booking, *, cancelled_by, reason: str):
 
 
 @transaction.atomic
-def cancel_series(series, *, cancelled_by, reason: str) -> int:
-    """Cancel every FUTURE occurrence. Past ones are history and stay put."""
+def cancel_series(series, *, cancelled_by, reason: str, from_date=None) -> int:
+    """Cancel every FUTURE occurrence. Past ones are history and stay put.
+
+    `from_date` narrows that to occurrences on or after a date, for a class
+    whose timetable changes partway through the semester.
+    """
     from apps.notifications import messages
 
     if not reason.strip():
         raise ValidationError("A reason is required.")
-    affected = list(
-        series.bookings.filter(status__in=BLOCKING_STATUSES, start_at__gt=timezone.now())
-    )
+    future = series.bookings.filter(status__in=BLOCKING_STATUSES, start_at__gt=timezone.now())
+    if from_date is not None:
+        future = future.filter(start_at__gte=_start_of(from_date))
+    affected = list(future)
     if not affected:
         return 0
     Booking.objects.filter(pk__in=[b.pk for b in affected]).update(
@@ -435,7 +445,13 @@ def cancel_series(series, *, cancelled_by, reason: str) -> int:
     return len(affected)
 
 
-def plan_series(*, resource, term, weekday_times: dict, starts_on, repeat_until) -> dict:
+def _start_of(day: dt.date) -> dt.datetime:
+    return timezone.make_aware(dt.datetime.combine(day, dt.time.min))
+
+
+def plan_series(
+    *, resource, term, weekday_times: dict, starts_on, repeat_until, ignore_series=None
+) -> dict:
     """Work out what a series WOULD create, without creating anything.
 
     Returns three separate lists, because they are three different outcomes and
@@ -466,7 +482,15 @@ def plan_series(*, resource, term, weekday_times: dict, starts_on, repeat_until)
         start = timezone.make_aware(dt.datetime.combine(occ["date"], occ["start_time"]))
         end = timezone.make_aware(dt.datetime.combine(occ["date"], occ["end_time"]))
         occ = dict(occ, start_at=start, end_at=end)
-        (clashing if find_conflicts(resource, start, end).exists() else bookable).append(occ)
+        conflicts = find_conflicts(resource, start, end)
+        if ignore_series is not None:
+            # A preview of a timetable change: the old series' own dates from
+            # the change onwards are about to be cancelled, so they are not a
+            # clash with the new ones.
+            conflicts = conflicts.exclude(
+                series=ignore_series, start_at__gte=_start_of(starts_on)
+            )
+        (clashing if conflicts.exists() else bookable).append(occ)
     return {"bookable": bookable, "outside": outside, "clashing": clashing}
 
 
@@ -482,6 +506,7 @@ def create_series(
     repeat_until,
     purpose: str,
     accept_partial: bool = False,
+    replaces=None,
 ):
     """Create the series and every bookable occurrence, or create nothing.
 
@@ -493,7 +518,7 @@ def create_series(
     interface only sets after showing the requester exactly which dates would be
     dropped and asking. Never decide that for them.
     """
-    from apps.bookings.models import BookingSeries
+
     from apps.notifications import messages
 
     plan = plan_series(
@@ -529,6 +554,7 @@ def create_series(
         starts_on=starts_on,
         repeat_until=repeat_until,
         purpose=purpose,
+        replaces=replaces,
     )
     created = [
         create_booking(
@@ -566,3 +592,61 @@ def approve_series(series, *, decided_by, reason: str = ""):
     if approved:
         messages.series_decided(series, approved, approved=True, reason=reason)
     return approved, refused
+
+
+@transaction.atomic
+def change_series(
+    series,
+    *,
+    changed_by,
+    from_date: dt.date,
+    resource,
+    weekday_times: dict,
+    repeat_until: dt.date,
+    purpose: str,
+    reason: str,
+    accept_partial: bool = False,
+):
+    """Move a weekly class to a new room or time from a date onwards.
+
+    The old series keeps everything before `from_date`, and its occurrences
+    from that date are cancelled with the reason. A new series, linked back
+    through `replaces`, takes over from the same date. Both happen in one
+    transaction: if the new dates cannot be booked, the old ones are not
+    cancelled, so a class is never left with no room.
+
+    The new occurrences are PENDING like any other request: every booking
+    needs approval, a changed one included.
+    """
+    if not reason.strip():
+        raise ValidationError("Say why the timetable changed. The office will see it.")
+    if from_date > repeat_until:
+        raise ValidationError("The change starts after the new end date.")
+    if not changed_by.is_administrator:
+        hours = SystemSetting.get_int("cancellation_cutoff_hours")
+        earliest = (timezone.localtime() + dt.timedelta(hours=hours)).date()
+        if from_date < earliest:
+            raise ValidationError(
+                f"A change must start at least {hours // 24} days ahead, on or after "
+                f"{earliest:%d %b %Y}. Please contact the Admin for anything sooner."
+            )
+
+    cancelled = cancel_series(
+        series,
+        cancelled_by=changed_by,
+        reason=f"Timetable changed from {from_date:%d %b %Y}: {reason.strip()}",
+        from_date=from_date,
+    )
+    new_series, created, plan = create_series(
+        resource=resource,
+        user=series.user,
+        created_by=changed_by,
+        term=series.term,
+        weekday_times=weekday_times,
+        starts_on=from_date,
+        repeat_until=repeat_until,
+        purpose=purpose,
+        accept_partial=accept_partial,
+        replaces=series,
+    )
+    return new_series, created, plan, cancelled

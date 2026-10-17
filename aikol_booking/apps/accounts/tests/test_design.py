@@ -136,7 +136,7 @@ class FormPresentationTests(TestCase):
         from apps.resources.models import Venue
 
         venue = Venue.objects.create(
-            code="VEN-L", name="Room", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-L", name="Room", venue_type_id=Venue.VenueType.SEMINAR,
             location="L1", capacity=10,
         )
         form = BookingForm(resource=venue, user=self.admin)
@@ -158,7 +158,7 @@ class ProgressiveEnhancementTests(TestCase):
             full_name="User", phone="03-6196 4000", email_verified=True,
         )
         self.venue = Venue.objects.create(
-            code="VEN-1", name="Room", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Room", venue_type_id=Venue.VenueType.SEMINAR,
             location="L1", capacity=10,
         )
         self.client.force_login(self.user)
@@ -263,7 +263,7 @@ class RailHighlightTests(TestCase):
             role=Role.USER, email_verified=True,
         )
         self.room = Venue.objects.create(
-            code="ROOM-NAV", name="Nav Room", venue_type=Venue.VenueType.MEETING,
+            code="ROOM-NAV", name="Nav Room", venue_type_id=Venue.VenueType.MEETING,
             location="Level 1", capacity=8,
         )
         self.car = Vehicle.objects.create(
@@ -310,7 +310,7 @@ class BackDestinationTests(TestCase):
             affiliation=Affiliation.STAFF, role=Role.ADMINISTRATOR, email_verified=True,
         )
         self.room = Venue.objects.create(
-            code="ROOM-BACK", name="Back Room", venue_type=Venue.VenueType.MEETING,
+            code="ROOM-BACK", name="Back Room", venue_type_id=Venue.VenueType.MEETING,
             location="Level 1", capacity=8,
         )
         self.car = Vehicle.objects.create(

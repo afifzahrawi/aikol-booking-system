@@ -132,6 +132,9 @@
 </section>
 {% endif %}
 
+{% comment %} The Admin works from the Overview and the Bookings register; a personal
+   summary on their home screen only repeated those, so it is shown to everyone else. {% endcomment %}
+{% if not user.is_administrator %}
 <section class="activity-band" aria-label="Your booking summary">
     <h2 class="activity-band-heading">Your Booking Summary</h2>
     <div class="activity-band-item">
@@ -153,6 +156,7 @@
         </div>
     </div>
 </section>
+{% endif %}
 
 {% if upcoming %}
 <section class="card dashboard-section">

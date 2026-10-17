@@ -9,6 +9,7 @@ urlpatterns = [
     path("bookings/<int:pk>/", views.booking_detail, name="detail"),
     path("bookings/<int:pk>/cancel/", views.booking_cancel, name="cancel"),
     path("series/<int:pk>/cancel/", views.series_cancel, name="series_cancel"),
+    path("series/<int:pk>/change/", views.series_change, name="series_change"),
     path("resource/<int:pk>/availability/", views.availability, name="availability"),
     path("resource/<int:pk>/book/", views.booking_create, name="create"),
     # Read-only, for the form's live check. Never the decision.
@@ -50,4 +51,14 @@ urlpatterns = [
     path("manage/keys/", key_views.key_register, name="keys"),
     path("manage/keys/<int:pk>/issue/", key_views.key_issue, name="key_issue"),
     path("manage/keys/<int:pk>/return/", key_views.key_return, name="key_return"),
+    path(
+        "manage/keys/entry/<int:pk>/<str:step>/",
+        key_views.key_confirm,
+        name="key_confirm",
+    ),
+    path("manage/keys/receipt/<int:pk>/", key_views.fuel_receipt, name="fuel_receipt"),
+    # The office PC kiosk. Opening it locks the session to these three URLs.
+    path("kiosk/", key_views.kiosk_home, name="kiosk"),
+    path("kiosk/exit/", key_views.kiosk_exit, name="kiosk_exit"),
+    path("kiosk/<str:reference>/", key_views.kiosk_booking, name="kiosk_booking"),
 ]

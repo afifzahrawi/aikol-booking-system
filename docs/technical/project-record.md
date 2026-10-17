@@ -89,6 +89,44 @@ Two operational items remain open (section 5, *Still open*).
   blocking in `<head>`; the `nav-collapsed` class now sits on `<html>`, not on `.docket-shell`.
   Restoring it from the deferred `chrome.js` animated the rail shut on every page load. Page
   transitions no longer morph the workspace box between pages of different heights.
+- **Office requests, 17 October 2026** (asked by the system owner; not section 24 decisions):
+  - **Venue order** is set by the Admin by dragging rows on Resources, Venues (`Venue.display_order`,
+    `resources.0004`); public and office lists sort by it.
+  - **Venue types are a table** the Admin maintains (Resources, Venue Types), like facilities:
+    stable `code`, editable `name`, deactivate rather than delete. `Venue.venue_type` became a
+    foreign key to `VenueType.code` in the same column (`resources.0005`), so no row changed.
+  - **Venue photographs are 4:3.** The upload screen offers a crop (`static/js/image-crop.js`, no
+    library); the server centre-crops every venue upload to a 1600 x 1200 JPEG regardless
+    (`fit_venue_photo`), which also strips EXIF. Vehicles are unchanged.
+  - **Keys: venue and vehicle kept apart** on the Key Register, with search by booking number or
+    name and a To Confirm tab. **Vehicle mileage** out and in, and a **petrol receipt** photo on
+    return, all optional (`bookings.0006`).
+  - **Office kiosk.** The office wanted a PC that people use to record their own key collection
+    and return, signed in as the Admin rather than a separate account. Because that PC is in
+    reach of anyone, `KioskLockMiddleware` locks the whole session to `/kiosk/` once the kiosk is
+    opened, and leaving needs the Admin's password (throttled like sign-in). A dedicated kiosk
+    role was offered and declined; it remains the safer option if the office reconsiders. The
+    12-hour sliding session means an idle kiosk must be signed in again the next morning.
+  - **Kiosk records need Admin confirmation**; Key Register records are confirmed as made.
+    Rejecting clears the claim, the row stays, the audit log keeps both.
+  - **Weekly bookings take up to three times per day** (`weekday_times` holds slot lists; old
+    single-pair rows still read). Every weekly booking is now in the audit log
+    (`SERIES_CREATED`, with room, times, dates and counts), not only those made on behalf.
+  - **Mid-semester timetable change** (Change the Timetable, `change_series`): from a chosen
+    date, the rest of the old series is cancelled with the reason and a new series, linked by
+    `BookingSeries.replaces`, is created for the new room or times, in one transaction, so a
+    clash leaves the old series untouched. The preview ignores the old series' own dates from
+    that date. New dates are PENDING (every booking needs approval). The owner needs the usual
+    3 days' notice; the Admin does not. The free-text reason is kept on the cancelled bookings,
+    not in the audit text. Options considered and not taken: editing occurrences in place
+    (would bypass the conflict re-check and lose history) and cancel-then-rebook by hand (loses
+    the link and risks a gap if the new room is taken in between).
+  - **Schedule** blocks show time, status and purpose at once on hover or keyboard focus (CSS
+    tooltip from `data-tip`; the old `title` appeared late and never on touch).
+  - **The side rail fits short windows.** Its 32rem minimum height pushed System and the account
+    menu off a 620px-high laptop window; link spacing now scales with window height, and only a
+    window under 35rem high scrolls the rail.
+  - **The Admin's home screen has no personal booking summary**; requesters keep it. **505 tests.**
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed

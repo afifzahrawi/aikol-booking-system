@@ -44,7 +44,7 @@ class ConcurrentSubmissionTests(TransactionTestCase):
         self.venue = Venue.objects.create(
             code="VEN-RACE",
             name="Contended Room",
-            venue_type=Venue.VenueType.SEMINAR,
+            venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1",
             capacity=20,
         )

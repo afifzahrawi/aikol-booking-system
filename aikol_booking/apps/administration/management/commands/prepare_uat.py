@@ -35,7 +35,7 @@ UAT_VENUES = [
     {
         "code": "UAT-VEN-01",
         "name": "UAT Moot Court",
-        "venue_type": Venue.VenueType.MOOT_COURT,
+        "venue_type_id": Venue.VenueType.MOOT_COURT,
         "location": "AIKOL Main Building (UAT)",
         "floor": "Level 1",
         "capacity": 80,
@@ -45,7 +45,7 @@ UAT_VENUES = [
     {
         "code": "UAT-VEN-02",
         "name": "UAT Seminar Room",
-        "venue_type": Venue.VenueType.SEMINAR,
+        "venue_type_id": Venue.VenueType.SEMINAR,
         "location": "AIKOL Main Building (UAT)",
         "floor": "Level 2",
         "capacity": 40,
@@ -55,7 +55,7 @@ UAT_VENUES = [
     {
         "code": "UAT-VEN-03",
         "name": "UAT Meeting Room",
-        "venue_type": Venue.VenueType.MEETING,
+        "venue_type_id": Venue.VenueType.MEETING,
         "location": "AIKOL Main Building (UAT)",
         "floor": "Level 3",
         "capacity": 10,

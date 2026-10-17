@@ -27,8 +27,9 @@ intended to be read in a browser and printed to PDF.
 
 ## Project status
 
-Phase 1 (discovery, management report, prototype) is complete, and **AIKOL has answered all 26
-decisions** in section 24 of the management report. Phase 3 is authorised.
+Phases 1 to 8 are complete, including the Django application, security review, deployment design
+and automated tests. The production stack is deployed to Cloud Run, Neon and Cloudflare R2. UAT has
+been run and its recorded results are being remediated before public launch.
 
 The answers changed the scope: vehicle booking, recurring bookings, key custody tracking, a separate
 Approver role, self-registration, booking confirmation email and an administrator-managed facility
@@ -43,4 +44,4 @@ decision and is the thing to read before writing any code. Update it whenever ar
 requirements, schema or major features change.
 
 AIKOL's own answers are kept verbatim in `Section 24.docx` at the repository root. That file is
-never edited; clarifications are recorded in `CLAUDE.md` instead.
+never edited; clarifications are recorded in `AGENTS.md` instead.

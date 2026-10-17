@@ -74,7 +74,6 @@ TEMPLATES: dict[str, list[str]] = {
     ],
 }
 
-VENUE_TYPES = {label.lower(): value for value, label in Venue.VenueType.choices}
 AFFILIATIONS = {label.lower(): value for value, label in Affiliation.choices}
 ROLES = {label.lower(): value for value, label in Role.choices}
 
@@ -307,19 +306,35 @@ def _validate_resource_code(result: RowResult, seen: dict, code: str) -> None:
         )
 
 
+def _venue_types() -> tuple[dict[str, str], list[str]]:
+    from apps.resources.models import VenueType
+
+    lookup: dict[str, str] = {}
+    names: list[str] = []
+    for code, name in VenueType.objects.filter(is_active=True).values_list("code", "name"):
+        lookup[name.lower()] = code
+        lookup[code.lower()] = code
+        names.append(name.lower())
+    return lookup, sorted(names)
+
+
 def _validate_venue(result: RowResult, seen: dict) -> None:
     data = result.data
     _validate_resource_code(result, seen, data.get("code", ""))
     if not data.get("name"):
         result.errors.append("name is required.")
 
+    # Read from the table the Admin maintains. A type is matched by its name
+    # or its code, so an export can be edited and imported again.
+    # `seen` lives for one import, so the table is read once, not once a row.
+    if "_venue_types" not in seen:
+        seen["_venue_types"] = _venue_types()
+    venue_types, names = seen["_venue_types"]
     venue_type = data.get("venue_type", "").strip().lower()
-    if venue_type not in VENUE_TYPES:
-        result.errors.append(
-            "venue_type must be one of: " + ", ".join(sorted(VENUE_TYPES))
-        )
+    if venue_type not in venue_types:
+        result.errors.append("venue_type must be one of: " + ", ".join(names))
     else:
-        result.data["_venue_type"] = VENUE_TYPES[venue_type]
+        result.data["_venue_type"] = venue_types[venue_type]
 
     result.data["_capacity"] = _positive_int(result, data.get("capacity", ""), "capacity")
 
@@ -526,7 +541,7 @@ def _import_venues(rows: list[RowResult]) -> tuple[int, int]:
     def build(row, parent):
         return Venue(
             resource_ptr_id=parent.pk,
-            venue_type=row.data["_venue_type"],
+            venue_type_id=row.data["_venue_type"],
             location=row.data.get("building", ""),
             floor=row.data.get("floor", ""),
             capacity=row.data["_capacity"],

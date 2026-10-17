@@ -153,7 +153,14 @@ class LoginView(auth_views.LoginView):
         # Somebody who finally remembers their password should not stay locked
         # out by their own earlier typos.
         reset_throttle("login", form.cleaned_data.get("username", ""))
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if not form.get_user().email_verified:
+            messages.warning(
+                self.request,
+                "Confirm your email address before making a booking. "
+                "Use the link we sent you, or ask the Admin for help.",
+            )
+        return response
 
 
 @login_required

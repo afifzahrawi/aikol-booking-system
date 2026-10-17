@@ -49,6 +49,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middleware.MfaRequiredMiddleware",
+    "config.middleware.KioskLockMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -76,6 +77,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 # The custom user model. This is set here, before the first migration, because
 # it cannot be changed afterwards without recreating the database.
 AUTH_USER_MODEL = "accounts.User"
+
+# A day-old unattended browser must not retain access to a booking account.
+# Sliding expiry keeps an active office shift usable, while an open tab left
+# overnight must authenticate again before it can submit an action.
+SESSION_COOKIE_AGE = 60 * 60 * 12
+SESSION_SAVE_EVERY_REQUEST = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

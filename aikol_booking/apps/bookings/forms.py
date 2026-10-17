@@ -16,7 +16,7 @@ from config.forms import StyledFormMixin
 from django.utils import timezone
 
 from apps.administration.models import SystemSetting
-from apps.resources.models import ResourceType
+from apps.resources.models import ResourceStatus, ResourceType, Venue
 
 from .models import AcademicTerm, DriverArrangement, TermBreak
 from .services import validate_period
@@ -251,6 +251,11 @@ class BookingForm(OnBehalfMixin, StyledFormMixin, forms.Form):
         return cleaned
 
 
+# A lecture and a tutorial on the same day is common; more than three slots a
+# day for one room is a timetable, which is the office's job, not a form's.
+SLOTS_PER_DAY = 3
+
+
 class RecurrenceForm(OnBehalfMixin, StyledFormMixin, forms.Form):
     """A weekly series, generated against one semester.
 
@@ -280,35 +285,66 @@ class RecurrenceForm(OnBehalfMixin, StyledFormMixin, forms.Form):
         self.fields["term"].initial = AcademicTerm.current()
         for index, label in WEEKDAYS:
             self.fields[f"day_{index}"] = forms.BooleanField(required=False, label=label)
-            self.fields[f"from_{index}"] = TimeOnTheQuarterField(required=False)
-            self.fields[f"to_{index}"] = TimeOnTheQuarterField(required=False)
+            for start, end in self._slot_names(index):
+                self.fields[start] = TimeOnTheQuarterField(required=False)
+                self.fields[end] = TimeOnTheQuarterField(required=False)
+
+    @staticmethod
+    def _slot_names(index: int) -> list[tuple[str, str]]:
+        # The first slot keeps its original field names, so a saved link or an
+        # older form still posts the times it always did.
+        names = [(f"from_{index}", f"to_{index}")]
+        names += [(f"from_{index}_{n}", f"to_{index}_{n}") for n in range(2, SLOTS_PER_DAY + 1)]
+        return names
 
     def weekday_rows(self):
-        """The three fields for each weekday, grouped, so the template renders a
-        row rather than reconstructing the grouping from field names."""
+        """The fields for each weekday, grouped, so the template renders a row
+        rather than reconstructing the grouping from field names."""
         for index, label in WEEKDAYS:
+            slots = [
+                {"start": self[start], "end": self[end], "number": number}
+                for number, (start, end) in enumerate(self._slot_names(index), start=1)
+            ]
             yield {
                 "label": label,
                 "day": self[f"day_{index}"],
-                "start": self[f"from_{index}"],
-                "end": self[f"to_{index}"],
+                "start": slots[0]["start"],
+                "end": slots[0]["end"],
+                "slots": slots,
             }
 
     def clean(self):
         cleaned = super().clean()
-        times: dict[str, list[str]] = {}
+        times: dict[str, list[list[str]]] = {}
         for index, label in WEEKDAYS:
             if not cleaned.get(f"day_{index}"):
                 continue
-            start = cleaned.get(f"from_{index}")
-            end = cleaned.get(f"to_{index}")
-            if not start or not end:
-                self.add_error(f"from_{index}", f"Give both times for {label}.")
-                continue
-            if end <= start:
-                self.add_error(f"to_{index}", f"{label} ends before it starts.")
-                continue
-            times[str(index)] = [start.strftime("%H:%M"), end.strftime("%H:%M")]
+            slots = []
+            for number, (start_name, end_name) in enumerate(self._slot_names(index), start=1):
+                start = cleaned.get(start_name)
+                end = cleaned.get(end_name)
+                if number > 1 and not start and not end:
+                    continue  # an extra slot left empty is simply not used
+                if not start or not end:
+                    self.add_error(start_name, f"Give both times for {label}.")
+                    continue
+                if end <= start:
+                    self.add_error(end_name, f"{label} ends before it starts.")
+                    continue
+                slots.append((start, end, end_name))
+            slots.sort()
+            # Two slots on one day that overlap would be a clash with itself.
+            for (a_start, a_end, _), (b_start, b_end, b_name) in zip(slots, slots[1:]):
+                if b_start < a_end:
+                    self.add_error(
+                        b_name,
+                        f"On {label}, {b_start:%H:%M} to {b_end:%H:%M} overlaps "
+                        f"{a_start:%H:%M} to {a_end:%H:%M}.",
+                    )
+            if slots:
+                times[str(index)] = [
+                    [start.strftime("%H:%M"), end.strftime("%H:%M")] for start, end, _ in slots
+                ]
 
         if not times:
             self.add_error(None, "Choose at least one day of the week.")
@@ -327,6 +363,58 @@ class RecurrenceForm(OnBehalfMixin, StyledFormMixin, forms.Form):
                 f"Bookings may be made up to {limit} days ahead. "
                 f"The latest bookable date is {latest:%d %b %Y}.",
             )
+        return cleaned
+
+
+
+class SeriesChangeForm(RecurrenceForm):
+    """A weekly class that moves room or time partway through the semester.
+
+    The weekday grid, the time rules and the advance limit are those of a new
+    weekly booking. What differs: the semester is the old series' own, the
+    start is "from which date", the room may change, and a reason is required
+    because the old dates are cancelled with it.
+    """
+
+    layout = [["starts_on", "repeat_until"]]
+
+    venue = forms.ModelChoiceField(
+        queryset=Venue.objects.filter(status=ResourceStatus.ACTIVE).order_by(
+            "display_order", "name"
+        ),
+        label="Venue from that date",
+        empty_label=None,
+    )
+    reason = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 2}),
+        label="Why it changed",
+        help_text="For example: the faculty moved the class to Thursday. The office sees this.",
+    )
+
+    def __init__(self, *args, series, **kwargs):
+        super().__init__(*args, user=None, **kwargs)
+        del self.fields["term"]
+        self.series = series
+        self.fields["starts_on"].label = "Change from"
+        self.fields["starts_on"].help_text = (
+            "The first date with the new room or time. Dates before it stay as they are."
+        )
+        self.fields["repeat_until"].label = "Repeat until"
+        if not self.is_bound:
+            self.fields["venue"].initial = series.resource_id
+            self.fields["repeat_until"].initial = series.repeat_until
+            self.fields["purpose"].initial = series.purpose
+            for index, _label in WEEKDAYS:
+                slots = series.slots_for(series.weekday_times, index)
+                if slots:
+                    self.fields[f"day_{index}"].initial = True
+                for (start_name, end_name), (start, end) in zip(self._slot_names(index), slots):
+                    self.fields[start_name].initial = start
+                    self.fields[end_name].initial = end
+
+    def clean(self):
+        cleaned = super().clean()
+        cleaned["term"] = self.series.term
         return cleaned
 
 

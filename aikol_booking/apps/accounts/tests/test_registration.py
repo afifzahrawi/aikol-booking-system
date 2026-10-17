@@ -203,6 +203,18 @@ class LoginTests(TestCase):
         )
         self.assertRedirects(response, "/")
 
+    def test_an_unverified_person_is_told_after_signing_in(self):
+        self.user.email_verified = False
+        self.user.save(update_fields=["email_verified"])
+
+        response = self.client.post(
+            "/sign-in/",
+            {"username": self.user.email, "password": "prototype-password-1"},
+            follow=True,
+        )
+
+        self.assertContains(response, "Confirm your email address before making a booking")
+
     def test_the_dashboard_needs_a_signed_in_user(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 302)
@@ -250,7 +262,7 @@ class CancellationCutoffTests(TestCase):
             role=Role.APPROVER,
         )
         venue = Venue.objects.create(
-            code="VEN-C", name="Discussion Room", venue_type=Venue.VenueType.DISCUSSION,
+            code="VEN-C", name="Discussion Room", venue_type_id=Venue.VenueType.DISCUSSION,
             location="Level 1", capacity=10,
         )
         self.far = Booking.objects.create(
@@ -271,6 +283,14 @@ class CancellationCutoffTests(TestCase):
 
     def test_the_owner_may_not_cancel_inside_the_three_day_cutoff(self):
         self.assertFalse(self.soon.can_be_cancelled_by(self.owner))
+
+    def test_a_late_cancellation_still_opens_an_explanation_for_the_owner(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("bookings:detail", args=[self.soon.pk]))
+
+        self.assertContains(response, "Cancel booking")
+        response = self.client.get(reverse("bookings:cancel", args=[self.soon.pk]))
+        self.assertContains(response, "too late to cancel this booking yourself")
 
     def test_an_approver_is_not_bound_by_the_cutoff(self):
         self.assertTrue(self.soon.can_be_cancelled_by(self.approver))

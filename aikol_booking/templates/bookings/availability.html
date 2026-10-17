@@ -76,9 +76,13 @@
                        aria-label="Book {{ resource.name }} on {{ row.date|date:'l d F' }}"></a>
                 {% endif %}
                 {% for block in row.blocks %}
+                    {% comment %} The purpose shows on hover and on keyboard focus straight away,
+                       from data-tip. A title attribute alone appeared late, if at all,
+                       and never on a touch screen. {% endcomment %}
                     <span class="avail-block{% if block.pending %} pending{% endif %}"
                           data-left="{{ block.left }}" data-width="{{ block.width }}"
-                          title="{{ block.title }}">{{ block.label }}</span>
+                          tabindex="0" aria-label="{{ block.title }}"
+                          data-tip="{{ block.title }}"><span class="avail-label">{{ block.label }}</span></span>
                 {% endfor %}
             </div>
         </div>

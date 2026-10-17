@@ -131,8 +131,10 @@ yourself.
 
 ## 6. Keys
 
-**Keys** has three lists: **Awaiting Collection** (approved bookings whose key is still with you),
-**Keys Out**, and **Overdue** (still out after the booking ended).
+**Keys** keeps venue keys and vehicle keys apart: choose **Venue Keys** or **Vehicle Keys** at the
+top. Each has three lists: **Awaiting Collection** (approved bookings whose key is still with you),
+**Out Now** (an overdue key is marked), and **To Confirm** (records made at the office kiosk, see
+below). Type a booking number or a name in **Search** to find one booking quickly.
 
 ![The key register.](images/admin/07-keys.png)
 
@@ -146,14 +148,30 @@ name and telephone number.
 
 *Issue the Key: leave Collected by blank when the person who booked collects it.*
 
-**Taking a key back.** Choose **Record return** on the key under **Keys Out**, record who handed it back, and note any damage or
+**Taking a key back.** Choose **Record return** on the key under **Out Now**, record who handed it back, and note any damage or
 anything left behind.
+
+**Vehicles: mileage and petrol.** For a car, the issue and return screens also ask for the
+mileage, and the return screen for a photo of the petrol receipt. All three are optional: fill
+them in when you have them. The mileage on return cannot be lower than when the car went out.
+
+**The office kiosk.** For the office PC that people use to record keys themselves, sign in as the
+Admin and choose **Open the office kiosk** on Keys. The PC then shows only the kiosk: a person types
+their booking number and records that they have collected or returned the key (with mileage and
+receipt for a car). Typing any other address on that PC leads back to the kiosk. To leave it,
+choose **Admin: close the kiosk** and enter the Admin password. Use the kiosk on the office PC
+only: the lock applies to that whole browser, so other tabs in it are locked too.
+
+**Confirming kiosk records.** Every kiosk record waits under **To Confirm** until you check the
+key and choose **Confirm**, or **Reject** if it did not happen (the record is cleared and the
+booking goes back to the list it came from). Records you make yourself on Keys need no
+confirmation. The tabs show how many are waiting.
 
 ---
 
 ## 7. Venues, vehicles and facilities
 
-**Resources** has three tabs: **Venues**, **Vehicles** and **Facilities**.
+**Resources** has four tabs: **Venues**, **Vehicles**, **Facilities** and **Venue Types**.
 
 ![The venue list.](images/admin/09-venues.png)
 
@@ -171,6 +189,9 @@ withdrawn from booking automatically.
 **Photographs.** Choose **Images** from a row's actions. Add several at once, or drag photographs
 onto the page. JPEG, PNG or WebP, up to 5 MB each. The arrows move a photograph earlier or later;
 the **first** one is shown everywhere else. A venue with no photograph shows a drawing instead.
+Venue photographs are always 4:3: after you choose them, each opens in a crop window where you
+drag the photograph (or use the arrow keys) and zoom to choose what is kept. If you skip the crop,
+the photograph is cropped from the centre. Every venue photograph is stored at 1600 by 1200.
 
 ![A venue's photographs.](images/admin/11-images.png)
 
@@ -193,6 +214,13 @@ stop offering them here, and drag the rows into the order they should appear on 
 ![The facility list.](images/admin/13-facilities.png)
 
 *Resources, Facilities.*
+
+**Venue Types** are the kinds of room (moot court, seminar room and so on) that people filter the
+venue list by. Add a type, rename one, or set **Offered** to **No** to stop offering it; venues that
+already have it keep it. A type that any venue uses cannot be deleted.
+
+**Venue order.** On **Venues**, drag a row by its handle (or use the up and down arrow keys) to set
+the order venues appear in for everyone.
 
 ---
 

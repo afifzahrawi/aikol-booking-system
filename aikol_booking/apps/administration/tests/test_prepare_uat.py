@@ -27,11 +27,11 @@ class PrepareUatTests(TestCase):
         self.person = make_user("someone@demo.aikol.test")
         self.admin = make_user("office@demo.aikol.test", Role.ADMINISTRATOR)
         self.test_room = Venue.objects.create(
-            code="TEST-01", name="Test Venue", venue_type=Venue.VenueType.MEETING,
+            code="TEST-01", name="Test Venue", venue_type_id=Venue.VenueType.MEETING,
             location="L1", capacity=5,
         )
         self.real_room = Venue.objects.create(
-            code="AIKOL-MR-01", name="Meeting Room A", venue_type=Venue.VenueType.MEETING,
+            code="AIKOL-MR-01", name="Meeting Room A", venue_type_id=Venue.VenueType.MEETING,
             location="L3", capacity=16,
         )
         start = timezone.now() + dt.timedelta(days=3)

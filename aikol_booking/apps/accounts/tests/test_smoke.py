@@ -34,7 +34,7 @@ class SmokeTests(TestCase):
             role=Role.ADMINISTRATOR, affiliation=Affiliation.STAFF,
         )
         cls.venue = Venue.objects.create(
-            code="VEN-1", name="Seminar Room 1", venue_type=Venue.VenueType.SEMINAR,
+            code="VEN-1", name="Seminar Room 1", venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1", capacity=30,
         )
         cls.car = Vehicle.objects.create(

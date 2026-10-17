@@ -44,7 +44,7 @@ class OperationalFixtures(TestCase):
         self.room = Venue.objects.create(
             code="ROOM-OPS",
             name="Operations Room",
-            venue_type=Venue.VenueType.MEETING,
+            venue_type_id=Venue.VenueType.MEETING,
             location="Level 1",
             capacity=30,
         )
@@ -347,6 +347,12 @@ class AvailabilityChartTests(OperationalFixtures):
         response = self.chart()
         labels = [b["label"] for row in response.context["rows"] for b in row["blocks"]]
         self.assertEqual(labels, ["14:00 to 17:00"])
+
+    def test_a_booking_block_reveals_its_purpose_on_hover(self):
+        response = self.chart()
+        blocks = [block for row in response.context["rows"] for block in row["blocks"]]
+        self.assertIn("Purpose: Chart", blocks[0]["title"])
+        self.assertContains(response, "Purpose: Chart")
 
     def test_free_time_opens_the_booking_form_for_that_day(self):
         response = self.chart()

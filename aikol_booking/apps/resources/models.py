@@ -66,6 +66,28 @@ class Facility(models.Model):
         return self.name
 
 
+class VenueType(models.Model):
+    """A kind of room, maintained by the Admin.
+
+    This was a fixed list in code. The office needed to add and rename types,
+    so it became a table, keyed the same way as `Facility`: `code` is the
+    stable identity that CSV imports and saved filter links use, and `name` is
+    the label, free to edit. The six original codes are seeded by migration,
+    which is why `Venue.VenueType` still names them for code and tests.
+    """
+
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=60)
+    is_active = models.BooleanField(default=True)
+    is_seeded = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Resource(models.Model):
     """The bookable thing. Never deleted once any booking refers to it."""
 
@@ -150,6 +172,8 @@ class Venue(Resource):
     """A room. Occupied within a single day, unlike a vehicle."""
 
     class VenueType(models.TextChoices):
+        """The seeded type codes. The live list is the `VenueType` table."""
+
         MOOT_COURT = "MOOT_COURT", "Moot court"
         SEMINAR = "SEMINAR", "Seminar room"
         MEETING = "MEETING", "Meeting room"
@@ -161,9 +185,22 @@ class Venue(Resource):
         # Meta.ordering is NOT inherited from Resource under multi-table
         # inheritance. Without this the list views paginate an unordered
         # queryset, which can repeat or skip rows between pages.
-        ordering = ("name",)
+        ordering = ("display_order", "name")
 
-    venue_type = models.CharField(max_length=20, choices=VenueType.choices)
+    # Keyed by code and stored in the same column as before, so existing rows
+    # and every `venue_type_id="SEMINAR"` keep their meaning. PROTECT: a type
+    # in use is deactivated, never deleted out from under a room.
+    venue_type = models.ForeignKey(
+        "resources.VenueType",
+        to_field="code",
+        db_column="venue_type",
+        on_delete=models.PROTECT,
+        related_name="venues",
+    )
+    # Set by the administrator's ordering screen, never typed. The public and
+    # office venue lists use this before name so the office can present rooms
+    # in the order that makes sense to its users.
+    display_order = models.PositiveIntegerField(default=0)
     location = models.CharField(max_length=120)
     floor = models.CharField(max_length=30, blank=True)
     capacity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
@@ -180,7 +217,12 @@ class Venue(Resource):
             self.VenueType.LECTURE: "lecture",
             self.VenueType.DISCUSSION: "discussion",
             self.VenueType.CONFERENCE: "conference",
-        }.get(self.venue_type, "conference")
+        }.get(self.venue_type_id, "conference")
+
+    def get_venue_type_display(self) -> str:
+        # Kept under the name the choices field gave it, which templates,
+        # exports and the card subtitle already use.
+        return self.venue_type.name if self.venue_type_id else ""
 
     @property
     def card_subtitle(self) -> str:

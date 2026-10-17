@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Change Weekly Booking{% endblock %}
+{% block content %}
+<h1>Change the Timetable</h1>
+<p class="lede">For a class that moves to another room or time partway through the semester.
+    Dates before the change stay as they are. From the change, the old dates are cancelled
+    and the new ones are sent for approval.</p>
+
+<section class="card">
+    <div class="card-body">
+        <dl class="kv">
+            <dt>Now</dt><dd>{{ series.resource.name }}, {{ series.describe_times }}</dd>
+            <dt>Booked for</dt><dd>{{ series.user.full_name }}</dd>
+            <dt>Semester</dt><dd>{% if series.term %}{{ series.term.name }}{% else %}None{% endif %}</dd>
+            <dt>Period</dt><dd>{{ series.starts_on|date:"d M Y" }} to {{ series.repeat_until|date:"d M Y" }}</dd>
+        </dl>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="field-row">
+                <div class="field">{{ form.starts_on.label_tag }}{{ form.starts_on }}
+                    <p class="help">{{ form.starts_on.help_text }}</p>{{ form.starts_on.errors }}</div>
+                <div class="field">{{ form.repeat_until.label_tag }}{{ form.repeat_until }}{{ form.repeat_until.errors }}</div>
+            </div>
+
+            <div class="field">{{ form.venue.label_tag }}{{ form.venue }}{{ form.venue.errors }}</div>
+
+            {% include "bookings/_series_days.html" %}
+
+            <div class="field">{{ form.purpose.label_tag }}{{ form.purpose }}{{ form.purpose.errors }}</div>
+            <div class="field">{{ form.reason.label_tag }}{{ form.reason }}
+                <p class="help">{{ form.reason.help_text }}</p>{{ form.reason.errors }}</div>
+
+            {% include "bookings/_series_plan.html" %}
+
+            <div class="btn-group">
+                <a class="btn" href="{% if user.is_administrator %}{% url 'bookings:manage' %}{% else %}{% url 'bookings:mine' %}{% endif %}">Cancel</a>
+                <button class="btn btn-primary" type="submit">
+                    {% if plan %}Confirm the change{% else %}Check these dates{% endif %}</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/series-slots.js' %}?v=20261017-1" defer></script>{% endblock %}

@@ -150,7 +150,7 @@ class VenueConflictTests(ConflictRuleMixin, TestCase):
         return Venue.objects.create(
             code=f"VEN-{code}",
             name=f"Seminar Room {code}",
-            venue_type=Venue.VenueType.SEMINAR,
+            venue_type_id=Venue.VenueType.SEMINAR,
             location="Level 1",
             capacity=30,
         )

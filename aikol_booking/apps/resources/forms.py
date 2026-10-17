@@ -5,10 +5,11 @@ from __future__ import annotations
 import re
 
 from django import forms
+from django.db.models import Q
 
 from config.forms import StyledFormMixin, yes_no_field
 
-from .models import Facility, ResourceImage, ResourceStatus, Vehicle, Venue
+from .models import Facility, ResourceImage, ResourceStatus, Vehicle, Venue, VenueType
 from .validators import validate_image_upload
 
 
@@ -51,6 +52,13 @@ class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.limit_facilities()
+        # Only offered types, plus the venue's own if it has since been
+        # withdrawn, so editing an old room never blanks its type.
+        offered = Q(is_active=True)
+        if self.instance.pk and self.instance.venue_type_id:
+            offered |= Q(code=self.instance.venue_type_id)
+        self.fields["venue_type"].queryset = VenueType.objects.filter(offered)
+        self.fields["venue_type"].empty_label = "Choose a type"
         if self.instance.pk:
             # The code is the stable identity that imports and saved links use.
             self.fields["code"].disabled = True
@@ -61,6 +69,19 @@ class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
         if opens and closes and closes <= opens:
             raise forms.ValidationError("A venue must close after it opens.")
         return closes
+
+    def save(self, commit: bool = True) -> Venue:
+        venue = super().save(commit=False)
+        if not venue.pk:
+            # New venues join the bottom of the list. Their position can then
+            # be changed with the reorder controls, rather than by maintaining
+            # a fragile number field by hand.
+            last = Venue.objects.order_by("-display_order", "-pk").first()
+            venue.display_order = (last.display_order if last else 0) + 1
+        if commit:
+            venue.save()
+            self.save_m2m()
+        return venue
 
 
 class VehicleForm(StyledFormMixin, forms.ModelForm):
@@ -99,6 +120,45 @@ class VehicleForm(StyledFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             self.fields["code"].disabled = True
+
+
+class VenueTypeForm(StyledFormMixin, forms.ModelForm):
+    """The kinds of room a venue can be. The code, like a facility's, is fixed
+    once saved so imports and saved filter links keep working."""
+
+    is_active = yes_no_field(
+        "Offered", help_text="Choose No to stop offering it. Venues that already have it keep it."
+    )
+    layout = [["name", "code"], ["is_active"]]
+
+    class Meta:
+        model = VenueType
+        fields = ("name", "code", "is_active")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields["code"].disabled = True
+            self.fields["code"].help_text = (
+                "The code is fixed. Renaming the type does not change it."
+            )
+        else:
+            self.fields["code"].required = False
+            self.fields["code"].help_text = "Generated from the name. Once saved it never changes."
+
+    def clean(self):
+        cleaned = super().clean()
+        if not self.instance.pk and not cleaned.get("code"):
+            name = cleaned.get("name") or ""
+            code = re.sub(r"[^A-Z0-9]+", "_", name.upper()).strip("_")[:20]
+            if not code:
+                self.add_error("name", "Give the type a name.")
+            elif VenueType.objects.filter(code=code).exists():
+                self.add_error("name", "A venue type with this name already exists.")
+            else:
+                cleaned["code"] = code
+                self.instance.code = code
+        return cleaned
 
 
 class FacilityForm(StyledFormMixin, forms.ModelForm):

@@ -1,4 +1,4 @@
-{# Resources is one area; these are its three kinds of thing. #}
+{# Resources is one area; these are its kinds of thing. #}
 <nav class="workspace-tabs" aria-label="Resource kind">
     <a href="{% url 'resources:manage_venues' %}"
        {% if tab == 'venues' %}aria-current="page"{% endif %}>Venues</a>
@@ -6,4 +6,6 @@
        {% if tab == 'vehicles' %}aria-current="page"{% endif %}>Vehicles</a>
     <a href="{% url 'resources:manage_facilities' %}"
        {% if tab == 'facilities' %}aria-current="page"{% endif %}>Facilities</a>
+    <a href="{% url 'resources:manage_venue_types' %}"
+       {% if tab == 'venue_types' %}aria-current="page"{% endif %}>Venue Types</a>
 </nav>
