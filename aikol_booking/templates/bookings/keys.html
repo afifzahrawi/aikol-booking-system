@@ -7,8 +7,8 @@
 {% include "administration/_nav.html" with tab='keys' %}
 
 <nav class="workspace-tabs" aria-label="Kind of key">
-    <a href="?kind=venue" {% if kind == 'venue' %}aria-current="page"{% endif %}>Venue Keys{% if confirm_by_kind.venue %} <span class="nav-badge">{{ confirm_by_kind.venue }}</span>{% endif %}</a>
-    <a href="?kind=vehicle" {% if kind == 'vehicle' %}aria-current="page"{% endif %}>Vehicle Keys{% if confirm_by_kind.vehicle %} <span class="nav-badge">{{ confirm_by_kind.vehicle }}</span>{% endif %}</a>
+    <a href="?kind=venue" {% if kind == 'venue' %}aria-current="page"{% endif %}>Venue Keys{% if confirm_by_kind.venue %} <span class="tab-count">{{ confirm_by_kind.venue }}</span>{% endif %}</a>
+    <a href="?kind=vehicle" {% if kind == 'vehicle' %}aria-current="page"{% endif %}>Vehicle Keys{% if confirm_by_kind.vehicle %} <span class="tab-count">{{ confirm_by_kind.vehicle }}</span>{% endif %}</a>
 </nav>
 
 {% if overdue_count %}
@@ -21,7 +21,7 @@
 <nav class="workspace-tabs" aria-label="Key register view">
     <a href="?kind={{ kind }}&amp;tab=awaiting{% if q %}&amp;q={{ q|urlencode }}{% endif %}" {% if tab == 'awaiting' %}aria-current="page"{% endif %}>Awaiting Collection</a>
     <a href="?kind={{ kind }}&amp;tab=out{% if q %}&amp;q={{ q|urlencode }}{% endif %}" {% if tab == 'out' %}aria-current="page"{% endif %}>Out Now</a>
-    <a href="?kind={{ kind }}&amp;tab=confirm{% if q %}&amp;q={{ q|urlencode }}{% endif %}" {% if tab == 'confirm' %}aria-current="page"{% endif %}>To Confirm{% if confirm_count %} <span class="nav-badge">{{ confirm_count }}</span>{% endif %}</a>
+    <a href="?kind={{ kind }}&amp;tab=confirm{% if q %}&amp;q={{ q|urlencode }}{% endif %}" {% if tab == 'confirm' %}aria-current="page"{% endif %}>To Confirm{% if confirm_count %} <span class="tab-count">{{ confirm_count }}</span>{% endif %}</a>
 </nav>
 
 <section class="card key-register">

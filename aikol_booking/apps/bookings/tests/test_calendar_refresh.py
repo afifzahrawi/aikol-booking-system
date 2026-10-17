@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from unittest.mock import patch
 
 from django.urls import reverse
 from django.utils import timezone
@@ -92,6 +93,11 @@ class KioskShortNumberTests(VehicleFixtures):
     def setUp(self) -> None:
         super().setUp()
         today = timezone.localdate()
+        # "Today" must still have the booking ahead whatever the hour the
+        # suite runs, so the clock is held at 09:00.
+        clock = patch("django.utils.timezone.now", return_value=at(today, "09:00"))
+        clock.start()
+        self.addCleanup(clock.stop)
         self.today_booking = Booking.objects.create(
             resource=self.room, user=self.owner, created_by=self.owner,
             start_at=at(today, "21:00"), end_at=at(today, "21:45"),

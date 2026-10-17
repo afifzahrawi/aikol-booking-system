@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import SiteContent
 
@@ -115,6 +116,7 @@ def chrome(request):
         return {
             "admin_area": False,
             "pending_count": 0,
+            "my_attention": _my_attention(user),
             "shell_nav": shell_nav,
             "show_back_navigation": view_name not in requester_roots,
             "back_fallback_url": reverse(
@@ -170,7 +172,45 @@ def chrome(request):
     return {
         "admin_area": is_admin_area,
         "pending_count": Booking.objects.filter(status=BookingStatus.PENDING).count(),
+        "my_attention": _my_attention(user),
+        **(_office_attention() if user.is_administrator else {}),
         "shell_nav": shell_nav,
         "show_back_navigation": view_name not in (admin_roots if is_admin_area else requester_roots),
         "back_fallback_url": reverse(_section_root(path, shell_nav, is_admin_area)),
+    }
+
+
+def _my_attention(user) -> int:
+    """Keys this person still has after their booking ended: the one thing on
+    My Bookings that needs them to act."""
+    from apps.bookings.models import KeyHandover
+
+    return KeyHandover.objects.filter(
+        booking__user=user,
+        issued_at__isnull=False,
+        returned_at__isnull=True,
+        booking__end_at__lt=timezone.now(),
+    ).count()
+
+
+def _office_attention() -> dict:
+    """What needs the Admin, by area, for the badges on the rail and tabs."""
+    from apps.bookings.keys import awaiting_confirmation, outstanding_keys
+    from apps.bookings.models import Booking, BookingStatus, ManagementDecision
+    from apps.notifications.models import EmailConfiguration
+
+    ready = EmailConfiguration.load().is_ready
+    ready = ready() if callable(ready) else ready
+    keys_to_confirm = awaiting_confirmation().count()
+    keys_overdue = outstanding_keys().filter(booking__end_at__lt=timezone.now()).count()
+    return {
+        "keys_attention": keys_to_confirm + keys_overdue,
+        # A car the office approved still waits for Kulliyyah management.
+        "management_waiting": Booking.objects.filter(
+            status=BookingStatus.APPROVED,
+            management_status=ManagementDecision.PENDING,
+            resource__resource_type="VEHICLE",
+            end_at__gte=timezone.now(),
+        ).count(),
+        "system_attention": not ready,
     }

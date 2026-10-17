@@ -691,3 +691,227 @@ a:not(.btn):not(.cal-ev):not(.kiosk-tile):hover { text-decoration-thickness: 1px
     .cal-now::before { animation: none; }
     .btn, .rf-seg-thumb, .workspace-tabs a, .rf-lift, .rf-press, .cal-ev, .picker-days button, .picker-slots button, .keypad button, .kiosk-tile { transition: none; }
 }
+
+/* ---- Colour and separation (18 October 2026) ------------------------------
+   The first pass read as white on white. The ground now carries a soft teal
+   tint, the rail is AIKOL teal again, card headers and table heads have a
+   tinted band, figures sit on tinted tiles, and containers are spaced apart
+   so each reads as its own object. */
+:root {
+    --docket-vellum: #e9efed;
+    --page: #e9efed;
+    --tint: #f1f6f4;
+    --tint-line: #dbe6e2;
+}
+html, body, .docket-workspace { background: var(--docket-vellum); }
+
+.app-nav { background: #0d4f47; border-right: 0; }
+.app-nav a { color: #d6e6e2; }
+.app-nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+.app-nav a[aria-current="page"] { color: #0a4e44; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
+.app-nav .nav-divider { background: rgba(255, 255, 255, 0.16); }
+.nav-profile summary { color: #fff; background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.18); box-shadow: none; }
+.nav-profile summary:hover { background: rgba(255, 255, 255, 0.16); }
+.nav-profile-icon, .nav-profile-name small { color: #d6e6e2; }
+
+.card, .form-sheet, .summary-box, .record-sheet, .docket-index, .home-card, .result-card, .cal-board, .book-card, .kiosk-panel, .board.availability {
+    box-shadow: 0 1px 2px rgba(13, 79, 71, 0.06), 0 8px 24px rgba(13, 79, 71, 0.06);
+}
+.card + .card, .card + section, section + .card, .docket-index + .card, .card + .docket-index { margin-top: 1.5rem; }
+.grid { gap: 1.25rem; }
+.card-head { background: var(--tint); border-bottom-color: var(--tint-line); }
+.card-head h2, .card-head h2.label { color: var(--docket-green-deep); }
+.docket-toolbar, .toolbar, .card > .toolbar, .docket-index > .toolbar { background: var(--tint); border-bottom-color: var(--tint-line); }
+table.data thead, table.data thead tr { background: var(--tint); }
+table.data th { color: var(--docket-green-deep); border-bottom-color: var(--tint-line); }
+table.data tbody tr:nth-child(even) { background: transparent; }
+.workspace-tabs, .rf-seg { background: #dce6e3; }
+.page-head h1, .cal-bar h1, .home-hero h1 { color: var(--docket-green-deep); }
+
+/* Figures on tinted tiles, each kind its own colour. */
+.grid-4:has(> .stat), .booking-stats { gap: 1rem; overflow: visible; border: 0; margin-bottom: 1.5rem; }
+.stat { box-shadow: none; background: var(--docket-green-soft); }
+.stat .v { color: var(--docket-green-deep); }
+.stat.info { background: #e8f0fd; }
+.stat.info .v { color: #0a4ca8; }
+.stat.accent { background: #fff1dc; }
+.stat.accent .v { color: #8a4b00; }
+.stat.neutral { background: #fff; }
+.stat.neutral .v { color: var(--docket-ink); }
+
+/* Home: the search sits on a teal band; Up Next is tinted. */
+.home-hero { padding: clamp(1.5rem, 3vw, 2.5rem); border-radius: 24px; background: #0d4f47; color: #fff; }
+.home-hero h1 { color: #fff; }
+.home-greeting { color: #bcd8d1; }
+.home-hero .rf-seg { background: rgba(255, 255, 255, 0.16); }
+.home-hero .rf-seg button { color: #e6f1ee; }
+.home-hero .rf-seg [aria-pressed="true"] { color: var(--docket-ink); }
+.home-hero .capsule { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); }
+.home-cards { gap: 1.5rem; }
+.home-card-next { background: var(--docket-green-soft); }
+.home-card-head h2 { color: var(--docket-green-deep); }
+.announcement { background: #fff8eb; }
+
+/* Calendar side column: each group is its own card. */
+.cal-side > section, .cal-side > form { padding: 1rem; border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(13, 79, 71, 0.06); }
+.wait-item { background: var(--tint); }
+.wait-item:hover { background: var(--docket-green-soft); }
+.cal-grid-head { background: var(--tint); }
+
+/* Room page and kiosk. */
+.fact-pills li { background: #fff; box-shadow: 0 1px 2px rgba(13, 79, 71, 0.06); }
+.book-card h2 { color: var(--docket-green-deep); }
+.kiosk-tile { box-shadow: 0 1px 2px rgba(13, 79, 71, 0.06), 0 6px 18px rgba(13, 79, 71, 0.06); }
+
+.app-footer { background: #0d4f47; color: #bcd8d1; border-top: 0; }
+.app-footer h4, .app-footer a { color: #fff; }
+.app-footer .foot-label, .footer-copyright { color: #bcd8d1; border-top-color: rgba(255, 255, 255, 0.16); }
+
+/* Popups and office forms: grouped sections, as in iOS settings. The dialog
+   body is the tinted ground; each card inside it is a white group, and each
+   section inside a form is a softly tinted sub-group instead of a band
+   divided by hairlines. */
+.action-dialog-body { background: var(--tint); }
+.action-dialog-body .card,
+.action-dialog-body .card + .card {
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+    border: 0;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(13, 79, 71, 0.06);
+    overflow: visible;
+}
+.action-dialog-body .card + .card { margin-top: 1rem; }
+.action-dialog-body .page-head { margin-bottom: 1rem; }
+.action-dialog-body .page-head .lede { margin: 0; font-size: 0.95rem; }
+.action-dialog-head h2 { color: var(--docket-green-deep); font-size: 1.2rem; }
+
+.docket-section {
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.1rem;
+    border: 0;
+    border-radius: 14px;
+    background: var(--tint);
+}
+.docket-section:first-child { padding-top: 1rem; }
+.docket-section-heading { margin-bottom: 0.75rem; }
+.docket-section-heading h2 { color: var(--docket-green-deep); font-size: 1.05rem; }
+
+.settings-section {
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+    border: 0;
+    border-radius: var(--radius-card);
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(13, 79, 71, 0.06), 0 8px 24px rgba(13, 79, 71, 0.06);
+}
+.settings-intro { margin: calc(-1 * clamp(1.25rem, 2.5vw, 1.75rem)) calc(-1 * clamp(1.25rem, 2.5vw, 1.75rem)) 1.35rem; padding: 1rem clamp(1.25rem, 2.5vw, 1.75rem); border-radius: var(--radius-card) var(--radius-card) 0 0; background: var(--tint); border-bottom: 1px solid var(--tint-line); }
+.settings-intro h2 { color: var(--docket-green-deep); font-size: 1.15rem; }
+.content-editor { gap: 1.5rem; }
+.form-sheet, .record-sheet { border: 0; }
+.cal-today { border: 0; box-shadow: 0 1px 2px rgba(13, 79, 71, 0.08); }
+.profile-account { border: 0; border-radius: var(--radius-card); background: var(--tint); }
+.docket-list, .docket-list.term-list { border: 0; border-radius: var(--radius-card); background: #fff; box-shadow: 0 1px 2px rgba(13, 79, 71, 0.06), 0 8px 24px rgba(13, 79, 71, 0.06); overflow: hidden; }
+.docket-list > * + * { border-top: 1px solid var(--tint-line); }
+.break-row { border: 0; border-radius: 14px; background: var(--tint); }
+.term-breaks span { padding: 0.3rem 0.7rem; border: 0; border-radius: var(--radius-pill); background: var(--tint); font-size: 0.8rem; }
+
+/* Attention markers: a red count where something waits for this person, a
+   red dot where something is wrong (email delivery off). One colour, so red
+   always means "look here". */
+.nav-dot { display: inline-block; width: 0.55rem; height: 0.55rem; margin-left: auto; border-radius: 50%; background: #d73a2c; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9); animation: rf-pulse 2.4s ease-in-out infinite; }
+.workspace-tabs .nav-dot { margin-left: 0.4rem; box-shadow: none; }
+.tab-count { display: inline-grid; min-width: 1.25rem; height: 1.25rem; margin-left: 0.4rem; padding: 0 0.35rem; place-items: center; border-radius: var(--radius-pill); color: #fff; background: #d73a2c; font-size: 0.7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.nav-badge { animation: rf-pop 420ms var(--ease-spring) both; }
+.nav-collapsed .docket-shell .nav-dot { position: absolute; transform: translate(0.75rem, -0.6rem); }
+@media (prefers-reduced-motion: reduce) { .nav-dot, .nav-badge { animation: none; } }
+.action-dialog-body .booking-form-card, .action-dialog-body .booking-form { width: 100%; max-width: none; }
+
+/* ---- A wider corporate palette (18 October 2026) ---------------------------
+   Teal stays the institution's anchor. IIUM gold is the second accent, navy
+   carries titles, and sky, plum and coral mark categories so areas can be
+   told apart at a glance. */
+:root {
+    --navy: #1f3b57;
+    --gold: #c8962e;
+    --gold-deep: #8a6414;
+    --gold-soft: #fbf1dc;
+    --sky: #2f7fc1;
+    --sky-soft: #e6f0fa;
+    --plum: #6d4c9f;
+    --plum-soft: #f0eaf8;
+    --coral: #c85a37;
+    --coral-soft: #fbe9e3;
+}
+
+/* Titles in navy; teal is kept for actions and selection. */
+.page-head h1, .cal-bar h1, .room-head h1, .card-head h2, .card-head h2.label, .home-card-head h2,
+.settings-intro h2, .docket-section-heading h2, .book-card h2, .action-dialog-head h2, .kiosk-panel h1 { color: var(--navy); }
+table.data th { color: var(--navy); }
+
+.home-hero h1 { color: #fff; }
+.home-greeting { color: #f3d58f; }
+.capsule button[type="submit"] { color: #1d1d1f; background: #e2b552; }
+.capsule button[type="submit"]:hover { background: #d4a43c; }
+.brand-name { color: var(--navy); }
+
+/* Each area of the rail has its own icon colour; the chosen item keeps it. */
+.app-nav > a svg { color: #9cc9bf; }
+.app-nav > a[href="/"] svg { color: #7fd1c1; }
+.app-nav > a[href="/bookings/"] svg, .app-nav > a[href="/manage/bookings/calendar/"] svg, .app-nav > a[href="/approvals/"] svg { color: #8cc4f0; }
+.app-nav > a[href="/rooms/"] svg, .app-nav > a[href="/manage/rooms/"] svg { color: #f0c46a; }
+.app-nav > a[href="/cars/"] svg, .app-nav > a[href="/manage/users/"] svg { color: #f3a57c; }
+.app-nav > a[href="/manage/"] svg, .app-nav > a[href="/manage/reports/"] svg { color: #c4b2f0; }
+.app-nav > a[href="/manage/keys/"] svg { color: #f0c46a; }
+.app-nav > a[href="/manage/settings/"] svg { color: #c9d3d1; }
+.app-nav > a[aria-current="page"][href="/"] svg { color: #0f6b5e; }
+.app-nav > a[aria-current="page"][href="/bookings/"] svg, .app-nav > a[aria-current="page"][href="/manage/bookings/calendar/"] svg, .app-nav > a[aria-current="page"][href="/approvals/"] svg { color: var(--sky); }
+.app-nav > a[aria-current="page"][href="/rooms/"] svg, .app-nav > a[aria-current="page"][href="/manage/rooms/"] svg, .app-nav > a[aria-current="page"][href="/manage/keys/"] svg { color: var(--gold-deep); }
+.app-nav > a[aria-current="page"][href="/cars/"] svg, .app-nav > a[aria-current="page"][href="/manage/users/"] svg { color: var(--coral); }
+.app-nav > a[aria-current="page"][href="/manage/"] svg, .app-nav > a[aria-current="page"][href="/manage/reports/"] svg { color: var(--plum); }
+.app-nav a[aria-current="page"] { color: var(--navy); }
+
+/* Figures: four distinct tints. */
+.stat { background: var(--docket-green-soft); }
+.stat.info { background: var(--sky-soft); }
+.stat.info .v { color: var(--sky); }
+.stat.accent { background: var(--gold-soft); }
+.stat.accent .v { color: var(--gold-deep); }
+.stat.neutral { background: var(--plum-soft); }
+.stat.neutral .v { color: var(--plum); }
+
+/* Charts: a categorical set instead of one green. */
+.hbars .hbar:nth-child(5n+1) .fill { background: var(--docket-green); }
+.hbars .hbar:nth-child(5n+2) .fill { background: var(--sky); }
+.hbars .hbar:nth-child(5n+3) .fill { background: var(--gold); }
+.hbars .hbar:nth-child(5n+4) .fill { background: var(--plum); }
+.hbars .hbar:nth-child(5n+5) .fill { background: var(--coral); }
+.bar-col .bar { background: var(--sky); }
+
+/* Home and room page. */
+.home-card-next { background: var(--docket-green-soft); }
+.agenda li:nth-child(4n+1) .date b { color: var(--docket-green); }
+.agenda li:nth-child(4n+2) .date b { color: var(--sky); }
+.agenda li:nth-child(4n+3) .date b { color: var(--gold-deep); }
+.agenda li:nth-child(4n+4) .date b { color: var(--plum); }
+.announcement { background: var(--gold-soft); }
+.announcement h3 { color: var(--gold-deep); }
+.fact-pills li:nth-child(5n+1) { background: var(--docket-green-soft); color: var(--docket-green-deep); }
+.fact-pills li:nth-child(5n+2) { background: var(--sky-soft); color: #1d5b8f; }
+.fact-pills li:nth-child(5n+3) { background: var(--gold-soft); color: var(--gold-deep); }
+.fact-pills li:nth-child(5n+4) { background: var(--plum-soft); color: var(--plum); }
+.fact-pills li:nth-child(5n+5) { background: var(--coral-soft); color: #9a3f22; }
+.result-card .btn-primary { background: var(--docket-green); }
+
+/* Info and calendar touches. */
+.notice-info { background: var(--sky-soft); color: #1d4f7c; }
+.badge-info { background: var(--sky-soft); color: #1d5b8f; }
+.mini-month .grid a.in-range { color: #1d5b8f; background: var(--sky-soft); }
+.cal-today { color: var(--sky); }
+.kiosk-tile .act.collect { color: #1d5b8f; background: var(--sky-soft); }
+.side-h { color: var(--navy); }
+
+/* Home photograph: the AIKOL building fills the band behind a teal veil (option A, approved 18 October 2026). */
+.home-hero { position: relative; overflow: hidden; isolation: isolate; }
+.home-hero-photo { display: none; }
+.home-hero.photo-bg .home-hero-photo { display: block; position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+.home-hero.photo-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(13, 79, 71, 0.94) 0%, rgba(13, 79, 71, 0.82) 45%, rgba(13, 79, 71, 0.45) 100%); }

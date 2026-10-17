@@ -6,7 +6,8 @@
 {% comment %} One question and one form. The search is a real GET form that answers on
    the server, so it works with JavaScript off; the Venue and Vehicle switch
    is a segmented control over a hidden field. {% endcomment %}
-<section class="home-hero rf-rise" aria-labelledby="greeting">
+<section class="home-hero photo-bg rf-rise" aria-labelledby="greeting">
+    <img class="home-hero-photo" src="{% if site_content.home_image %}{{ site_content.home_image.url }}{% else %}{% static 'images/aikol-building.jpg' %}{% endif %}" alt="" aria-hidden="true">
     <p class="home-greeting">Assalamualaikum, {{ user.full_name }}</p>
     <h1 id="greeting">Book a room or a car.</h1>
     {% if not user.email_verified %}
@@ -102,7 +103,7 @@
 <div class="home-cards">
 {% comment %} The Admin works from the calendar; Up Next is for people who book. {% endcomment %}
 {% if not user.is_administrator %}
-<section class="home-card rf-rise-2" aria-labelledby="next-h">
+<section class="home-card home-card-next rf-rise-2" aria-labelledby="next-h">
     <div class="home-card-head">
         <h2 id="next-h">Up Next</h2>
         {% if next_booking %}<span>{{ next_booking.start_at|date:"D j M, H:i" }} to {% if next_booking.start_at.date == next_booking.end_at.date %}{{ next_booking.end_at|date:"H:i" }}{% else %}{{ next_booking.end_at|date:"D j M, H:i" }}{% endif %}</span>{% endif %}

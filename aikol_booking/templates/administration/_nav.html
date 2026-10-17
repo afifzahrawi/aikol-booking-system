@@ -1,7 +1,7 @@
 {% if tab == 'settings' or tab == 'content' or tab == 'emails' or tab == 'data' or tab == 'audit' or tab == 'calendar' %}
 <nav class="workspace-tabs" aria-label="System administration">
     <a href="{% url 'administration:settings' %}"
-       {% if tab == 'settings' %}aria-current="page"{% endif %}>Booking Rules</a>
+       {% if tab == 'settings' %}aria-current="page"{% endif %}>Booking Rules{% if system_attention %} <span class="nav-dot" role="img" aria-label="Email delivery is off"></span>{% endif %}</a>
     <a href="{% url 'bookings:academic_terms' %}"
        {% if tab == 'calendar' %}aria-current="page"{% endif %}>Academic Calendars</a>
     <a href="{% url 'administration:site_content' %}"

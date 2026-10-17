@@ -32,6 +32,20 @@ tokens alone. The reference designs are the canvas "AIKOL Booking Redesign".
   teal ramp from the accent, waiting bookings are a white block with a dashed or inset teal edge
   everywhere they appear. A page-wide audit (every background, border and corner checked on 38
   screens against this palette) found nothing left from the docket look.
+- **Colour and separation (approved 18 October 2026):** the ground is a soft teal-grey
+  `#e9efed`, the rail and footer are AIKOL teal `#0d4f47`, card headers and table heads carry a
+  tinted band, and containers are spaced 1.5 rem apart. Titles are navy `#1f3b57`. IIUM gold
+  `#c8962e` is the second accent (the home Find button); sky `#2f7fc1`, plum `#6d4c9f` and coral
+  `#c85a37` mark categories (rail icons, figure tiles, chart bars, fact pills). No decorative
+  pattern: a gold geometric pattern was tried and rejected.
+- **Popups and office forms** are grouped sections: a tinted dialog body, white groups, tinted
+  sub-groups, no hairline bands.
+- **Attention markers:** a red count where something waits for the person (Bookings, Keys, My
+  Bookings, Awaiting Decision, Vehicles awaiting management), a red dot where something is wrong
+  (email delivery off, on System and Booking Rules).
+- **Home photograph:** the AIKOL building (Site content's home image) fills the search band behind
+  a teal veil.
+- **Process:** design changes are shown to the office as a mockup and applied only once approved.
 - **Sign in:** one centred column on the light ground: the two crests, the office's heading and
   sentence from Site content, the form. The bullet points and the large photograph are no longer
   shown; their Site content fields remain.
