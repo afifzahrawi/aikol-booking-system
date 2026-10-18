@@ -12,7 +12,7 @@ issues and receives keys, and maintains resources, users and reports.
 
 ## Status
 
-**Phases 1 to 8 are complete.** The Django application is deployed to Google Cloud Run with Neon
+**Phases 1 to 8 are complete.** The Django application is deployed to Google Cloud Run with Supabase
 PostgreSQL and private Cloudflare R2 storage. The generated Cloud Run hostname is available for
 testing. Public launch still depends on a configured SMTP mailbox, remediation and completion of
 the recorded UAT cases, a PostgreSQL concurrency check, a final public hostname, and staff handover.
@@ -90,7 +90,7 @@ browser, on the server, and by a PostgreSQL exclusion constraint.
 
 Python 3.11+ / Django 5.x LTS · Django templates + Bootstrap 5 (vendored, no CDN) ·
 PostgreSQL in production, SQLite in development · Google Cloud Run + Gunicorn + WhiteNoise ·
-Neon PostgreSQL · private Cloudflare R2 storage · Django's own authentication (no IIUM single
+Supabase PostgreSQL · private Cloudflare R2 storage · Django's own authentication (no IIUM single
 sign-on) · Cloud Scheduler for maintenance, no message queue.
 
 ## Notes on this repository

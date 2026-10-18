@@ -44,7 +44,7 @@ and manageable, bookings can be submitted, decided and cancelled — single and 
 key custody, user management, settings and the audit log are in place, and
 bulk CSV import and export, reporting and retention are built, and the
 **security review is done**. Production runs at the generated `*.run.app` hostname on Cloud Run
-with Neon PostgreSQL and Cloudflare R2 — see `docs/technical/managed-cloud-deployment.md`.
+with Supabase PostgreSQL and Cloudflare R2 — see `docs/technical/managed-cloud-deployment.md`.
 Phase 9 (user acceptance testing) can begin: **email leaves the production outbox** (Gmail SMTP,
 entered on the System screen on 21 September 2026, verified end to end with a password reset).
 Two operational items remain open (section 5, *Still open*).
@@ -147,6 +147,16 @@ Two operational items remain open (section 5, *Still open*).
     only) and applied by `chrome.js`, because the CSP refuses inline styles.
   - The type is the device's own system font with IBM Plex Sans as fallback: SF and Segoe UI
     are already on the machines, so nothing new is downloaded or served.
+
+- **Database moved from Neon to Supabase, 18 October 2026.** Neon's 100 compute-hours a month ran
+  out while the site was live, because the every-minute outbox job kept the database awake around
+  the clock. Supabase Free has no compute cap, so the scheduler stays as it is. The newest R2
+  backup (taken minutes before the cutoff) was restored into a new Supabase project with the new
+  `restore_database` command; counts were verified, the public REST API was locked (RLS on every
+  table, no privileges for `anon` or `authenticated`), and `database-url` was repointed. Details,
+  restore steps and limits: `docs/technical/managed-cloud-deployment.md`. The email job did not
+  need changing; the earlier idea of sending email at once with a half-hourly sweep was dropped as
+  unnecessary on a provider without a compute cap.
 
 The answers changed the scope materially. Vehicle booking, recurring bookings, key custody tracking,
 a separate Approver role, self-registration, booking confirmation email and an administrator-managed
@@ -350,7 +360,7 @@ prototype.
 | Scheduled jobs | **Cloud Scheduler calling a private, IAM-authenticated maintenance service** (`config/maintenance.py`) | Outbox drain, `COMPLETED` transition, backups. A request-billed service, not a Cloud Run Job — Jobs bill a one-minute minimum per run. No Celery |
 | Charts (app) | Plain HTML/CSS; **Chart.js** only if a chart genuinely needs it | Vendored if adopted |
 | Web server | **Gunicorn + WhiteNoise in one container** | TLS is terminated by Cloud Run; the Caddy/Compose files remain for a self-hosted fallback |
-| Hosting | **Google Cloud Run (max 1 instance, scale to zero); Neon PostgreSQL; Cloudflare R2 (private buckets, signed URLs); Secret Manager** | Live. Oracle's free VM was tried and rejected by Oracle's own screening. Google requires an active billing account; the free allowance is not a hard cap, so instance count and spend alerts are the controls |
+| Hosting | **Google Cloud Run (max 1 instance, scale to zero); Supabase PostgreSQL; Cloudflare R2 (private buckets, signed URLs); Secret Manager** | Live. Oracle's free VM was tried and rejected by Oracle's own screening. Google requires an active billing account; the free allowance is not a hard cap, so instance count and spend alerts are the controls |
 | Domain | **The generated `*.run.app` hostname**, for now | A `.my` domain was researched and deliberately not bought pending a decision on institutional ownership |
 | Version control | **Git** | |
 | Testing | Django test framework | `manage.py test`. 373 tests. The PostgreSQL run uses `config.settings.postgres` |

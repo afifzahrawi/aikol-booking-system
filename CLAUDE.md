@@ -11,7 +11,7 @@ Django booking system for **venues and vehicles (cars)** at the Ahmad Ibrahim Ku
 (AIKOL), IIUM. Requesters check availability and book; the office (Approver, Administrator)
 decides, cancels, issues and receives keys, and maintains resources, users and reports.
 
-**Live on Google Cloud Run** (`*.run.app`, no custom domain yet), Neon PostgreSQL, Cloudflare R2,
+**Live on Google Cloud Run** (`*.run.app`, no custom domain yet), Supabase PostgreSQL (free plan), Cloudflare R2,
 Secret Manager. Phases 1 to 8 complete; **Phase 9, user acceptance testing**, is next. Email is
 delivered (Gmail SMTP via the System screen). The staff second factor is **switched off**
 (`MFA_ENFORCED = False`, office request, 1 October 2026); setting it to `True` restores it.

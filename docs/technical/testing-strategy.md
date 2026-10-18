@@ -177,7 +177,7 @@ testing what they claim to test.
 
 `config/settings/postgres.py` exists for exactly this. It is the development settings with the
 database taken from `DATABASE_URL`, so any disposable PostgreSQL 15+ will do — a local instance, a
-container, or a throwaway Neon branch. Never the production branch: Django creates and drops a
+container, or a throwaway Supabase project. Never the production branch: Django creates and drops a
 `test_` database on the same server.
 
 ```

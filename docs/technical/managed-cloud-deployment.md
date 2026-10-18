@@ -9,7 +9,7 @@ Oracle account path and removes VM patching, Docker-daemon maintenance and Caddy
 | --- | --- | --- |
 | Django | Cloud Run service | 1 vCPU, 512 MiB, concurrency 20, minimum 0, maximum 1 |
 | Scheduled commands | Private request-billed Cloud Run service + Cloud Scheduler | Three authenticated schedules; no one-minute Job minimum |
-| PostgreSQL | Neon Free | Pooled TLS connection URL |
+| PostgreSQL | Supabase Free (Singapore) | Session pooler URL, TLS |
 | Images and database backups | Cloudflare R2 Standard | Separate media and backup buckets |
 | Secrets | Google Secret Manager | Runtime account can read only named secrets |
 | Container images | Artifact Registry | One repository with old-image cleanup |
@@ -46,7 +46,7 @@ billing account and select that project. Configure alerts at 70%, 80% and 90% of
 free-allowance operating envelope. If available, add a conservative Cloud Run spend cap below that
 boundary. Alerts are not cutoffs; spend-cap enforcement is a preview and can have reporting delay.
 
-Create the Neon database and the two R2 Standard buckets first. Keep both buckets private; media
+Create the Supabase project and the two R2 Standard buckets first. Keep both buckets private; media
 objects are delivered with one-hour signed URLs. Then create the six secrets without
 putting their values on a command line or in Git:
 
@@ -186,6 +186,47 @@ Retention cleanup is never scheduled because it requires administrator review an
 7. Confirm the PostgreSQL overlap constraint rejects conflicting pending and approved bookings.
 8. Verify all three Scheduler jobs show successful executions.
 9. Complete UAT before declaring production live.
+
+## The database: Supabase, and why not Neon
+
+The database moved from Neon Free to **Supabase Free** on 18 October 2026. Neon's free plan allows
+100 compute-hours per project per month and suspends the database when they run out; the
+every-minute email job meant the database never slept, used about 6 hours a day, and the allowance
+ran out on 18 October with the site live (every request returned a server error). Supabase's free
+plan has no compute-hour cap: a project pauses only after a week with no activity, which a live site
+never has. Its limits (500 MB database, 5 GB transfer, 2 projects per organization) are far above
+current use (about 36 MB).
+
+- **Connection:** the *Session pooler* string (host `…pooler.supabase.com`, user
+  `postgres.<project ref>`). Cloud Run has no IPv6, so the direct `db.<ref>.supabase.co` address
+  cannot be used. Session mode keeps Django's prepared statements and `conn_max_age` working.
+- **Secrets:** the string lives in Secret Manager as `database-url`. Store or change it without
+  showing it: `deploy/cloud-run/set-database-secret.ps1 -SecretName database-url`. Older versions
+  are kept, so the previous database can be restored by enabling them.
+- **The public REST API must stay shut.** Supabase publishes every table in the `public` schema
+  through a REST API unless row-level security is on. All tables have RLS enabled with no policies,
+  and `anon` and `authenticated` hold no privileges, including by default for new tables (migration
+  `lock_public_tables_from_rest_api`). The app connects as `postgres`, which bypasses RLS. After any
+  new table is added, run the Supabase security advisor and confirm no `rls_disabled_in_public`.
+- **Project:** `AIKOL Booking Production`, ref `agesjaqqoyikqubjivax`, in the ChatSSM organization.
+  The old Neon project is kept untouched as a fallback until the office decides to delete it.
+- **Backups still work unchanged:** `pg_dump` 18 can dump the Supabase PostgreSQL 17 server.
+
+### Restoring a backup
+
+`deploy/cloud-run/restore-database.ps1` runs the `restore_database` management command as a Cloud
+Run job against the database named by `-TargetSecret`:
+
+```powershell
+.\deploy\cloud-run\restore-database.ps1 -Check                       # open the newest backup, change nothing
+.\deploy\cloud-run\restore-database.ps1 -TargetSecret database-url-supabase   # load it
+```
+
+Always run `-Check` first and read the row counts printed after a restore. To move the live site to
+another database: store its string in a staging secret, restore into it, apply the RLS lock above if
+it is Supabase, then `promote-database-secret.ps1` and force new revisions with
+`gcloud run services update <service> --update-env-vars DB_SWITCH=<label>`. This was done end to
+end on 18 October 2026 (626 bookings, 198 audit entries, both overlap constraints verified).
 
 ## Updating
 

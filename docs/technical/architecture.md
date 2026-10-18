@@ -19,7 +19,7 @@ Google Cloud Run: container → Gunicorn → Django application
         ▼
 Django ORM
         ▼
-Neon PostgreSQL (hosted) / SQLite (development)
+Supabase PostgreSQL (hosted) / SQLite (development)
         │
         ▼
 Cloudflare R2 — resource images and off-server backup objects
@@ -164,7 +164,7 @@ protection rules require an administrator to review and confirm.
 
 The selected managed target is Google Cloud Run with request-based billing, a private maintenance
 service, a migration-only Cloud Run Job and
-Cloud Scheduler, with Neon PostgreSQL and Cloudflare R2 object storage. Django owns the email outbox and sender; an
+Cloud Scheduler, with Supabase PostgreSQL and Cloudflare R2 object storage. Django owns the email outbox and sender; an
 administrator supplies the SMTP endpoint. It does not rely on a developer's computer. See
 `managed-cloud-deployment.md` for setup, operations and free-tier limitations.
 

@@ -46,3 +46,7 @@ db.sqlite3
 .env
 /aikol_booking/media/
 /aikol_booking/staticfiles/
+
+# Never commit credentials saved by hand
+*Password*.txt
+*password*.txt

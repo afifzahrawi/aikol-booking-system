@@ -37,7 +37,7 @@ audit and an authenticated/unauthenticated dynamic scan against the staging host
 
 ## Phishing resistance
 
-- Require MFA for every Google Cloud, Neon, Cloudflare, source-control and production administrator
+- Require MFA for every Google Cloud, Supabase, Cloudflare, source-control and production administrator
   account. Prefer passkeys or hardware security keys over SMS.
 - Application administrators must use individually assigned accounts; shared administrator
   credentials are prohibited. Administrator MFA is a go-live requirement, and is built — see
@@ -244,7 +244,7 @@ Managed infrastructure removes host patching and SSH, but these remain ours:
 - A dedicated runtime service account receives only Secret Manager access to the six named secrets.
 - Scheduled maintenance is a separate private Cloud Run service. Only its dedicated scheduler
   identity has `run.invoker`; the public service returns 404 for the internal maintenance paths.
-- Google, Neon and Cloudflare owner accounts use phishing-resistant MFA and no shared credentials.
+- Google, Supabase and Cloudflare owner accounts use phishing-resistant MFA and no shared credentials.
 - Database and R2 credentials are scoped, rotated after staff changes and never exposed to browsers.
 - Cloud Audit Logs, job failures, billing alerts and unusual authentication failures are reviewed.
 - Backups copied off-server, encrypted, and **test-restored monthly** (`data-retention.md`).

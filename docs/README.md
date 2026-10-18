@@ -18,7 +18,7 @@ intended to be read in a browser and printed to PDF.
 | [AIKOL Booking System - Admin Guide.docx](AIKOL%20Booking%20System%20-%20Admin%20Guide.docx) | The admin guide as a Word file |
 | [user-guide.md](user-guide.md) | First-time guide for requesters: account, finding a room or car, availability, booking, weekly bookings, cancelling, keys |
 | [uat-test-script.md](uat-test-script.md) | Acceptance test script for the office: 17 sections, every use case with expected results, phone runs marked |
-| [technical/managed-cloud-deployment.md](technical/managed-cloud-deployment.md) | Cloud Run, Neon and R2 deployment, scheduled jobs, cost controls and go-live checks |
+| [technical/managed-cloud-deployment.md](technical/managed-cloud-deployment.md) | Cloud Run, Supabase and R2 deployment, scheduled jobs, cost controls and go-live checks |
 | [technical/custom-domain.md](technical/custom-domain.md) | Giving production its own hostname: registrar, verification, Cloud Run domain mapping, `-PublicDomain` |
 | [technical/security.md](technical/security.md) | Authentication, self-registration, the three roles, personal data, upload handling, destructive-operation safeguards, server operations |
 | [technical/testing-strategy.md](technical/testing-strategy.md) | What must be tested, the required conflict, recurrence, vehicle, key, email and facility tests, performance checks |
@@ -28,7 +28,7 @@ intended to be read in a browser and printed to PDF.
 ## Project status
 
 Phases 1 to 8 are complete, including the Django application, security review, deployment design
-and automated tests. The production stack is deployed to Cloud Run, Neon and Cloudflare R2. UAT has
+and automated tests. The production stack is deployed to Cloud Run, Supabase and Cloudflare R2. UAT has
 been run and its recorded results are being remediated before public launch.
 
 The answers changed the scope: vehicle booking, recurring bookings, key custody tracking, a separate
