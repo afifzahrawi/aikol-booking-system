@@ -42,7 +42,7 @@ class SiteContentTests(TestCase):
         self.assertContains(response, "A factual introduction from the office.")
         # The bullet points are no longer shown on the simplified sign-in page.
         self.assertNotContains(response, "First point")
-        self.assertContains(response, "iium_logo_uploaded.jpg")
+        self.assertContains(response, "iium_logo.png")
 
     def test_footer_lists_fax_every_email_and_the_copyright_last(self):
         content = SiteContent.load()
@@ -74,6 +74,36 @@ class SiteContentTests(TestCase):
         form = SiteContentForm(data, instance=SiteContent.load())
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["email"], "booking@iium.edu.my\nkeys@iium.edu.my")
+
+    def test_an_uploaded_logo_loses_its_white_and_is_sized_for_the_header(self):
+        from io import BytesIO
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image, ImageDraw
+
+        from ..forms import SiteContentForm
+
+        # A dark ring on a white sheet: the sheet and the white inside the ring
+        # (like the hole in an O) must both become transparent.
+        sheet = Image.new("RGB", (800, 400), "white")
+        ImageDraw.Draw(sheet).ellipse((200, 50, 600, 350), outline="black", width=60)
+        buffer = BytesIO()
+        sheet.save(buffer, format="JPEG")
+        upload = SimpleUploadedFile("crest.jpg", buffer.getvalue(), content_type="image/jpeg")
+
+        data = {name: getattr(SiteContent.load(), name) for name in SiteContentForm.Meta.fields
+                if not name.endswith(("logo", "image"))}
+        form = SiteContentForm(data, {"logo": upload}, instance=SiteContent.load())
+        self.assertTrue(form.is_valid(), form.errors)
+        logo = form.cleaned_data["logo"]
+        self.assertTrue(logo.name.endswith(".png"))
+        with Image.open(BytesIO(logo.read())) as stored:
+            stored = stored.convert("RGBA")
+            self.assertEqual(stored.height, 160)
+            centre = (stored.width // 2, stored.height // 2)
+            self.assertEqual(stored.getpixel((0, 0))[3], 0)
+            self.assertEqual(stored.getpixel(centre)[3], 0)
+            self.assertEqual(stored.getpixel((stored.width // 2, 25))[3], 255)
 
     def test_only_administrators_can_manage_announcements(self):
         self.client.force_login(self.user)

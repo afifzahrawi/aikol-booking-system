@@ -227,11 +227,21 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
             )
         return "\n".join(addresses)
 
+    def _clean_logo(self, field_name):
+        image = self._clean_image(field_name)
+        # A new logo loses its white and is sized for the header before it is
+        # stored, so the Admin never has to prepare the file by hand.
+        if image and hasattr(image, "content_type"):
+            from .images import transparent_logo_upload
+
+            return transparent_logo_upload(image)
+        return image
+
     def clean_logo(self):
-        return self._clean_image("logo")
+        return self._clean_logo("logo")
 
     def clean_iium_logo(self):
-        return self._clean_image("iium_logo")
+        return self._clean_logo("iium_logo")
 
     def clean_login_image(self):
         return self._clean_image("login_image")

@@ -33,7 +33,9 @@ class SecurityPolicyMiddleware:
             "font-src 'self'",
             f"img-src {' '.join(image_sources)}",
             "object-src 'none'",
-            "script-src 'self'",
+            # Allows only the inline speculation-rules block in base.html, never
+            # inline script: it is JSON the browser reads, not code it runs.
+            "script-src 'self' 'inline-speculation-rules'",
             "style-src 'self'",
             "form-action 'self'",
             "frame-ancestors 'none'",

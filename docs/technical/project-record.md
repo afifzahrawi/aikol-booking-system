@@ -56,6 +56,11 @@ Two operational items remain open (section 5, *Still open*).
   the `COMPLETED` transition and backups, and a migration-only Cloud Run Job. Every secret is read
   from Secret Manager; `deploy/cloud-run/deploy.ps1` refuses to run until all six exist. A
   `SecurityPolicyMiddleware` sets a deny-by-default Content-Security-Policy and a Permissions-Policy.
+  Its `script-src` adds only `'inline-speculation-rules'` (19 October 2026): `base.html` carries
+  one speculation-rules block that prefetches a page while the pointer rests on its link, so
+  navigation does not wait on the server. Exports, templates and sign-out are excluded because
+  their GET does something. Logos are made transparent and resized when uploaded
+  (`apps/administration/images.py`).
 - **Redesigned.** The interface was audited end to end (`docs/ux-audit.md`) and brought onto the
   locked multi-page system in `design.md`, carried by `static/css/tokens.css` and `redesign.css`.
 - **Self-drive is gone entirely.** Requesters never drive a Kulliyyah car, so the licence fields left
