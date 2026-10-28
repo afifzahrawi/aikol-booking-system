@@ -88,10 +88,18 @@ You stay signed in on your device until you sign out from the menu under your na
 
 ## 3. Find a room or a car
 
-- **Venue** in the menu lists every room: moot court, lecture rooms, seminar rooms, meeting rooms,
-  discussion rooms. Search by name or location, or filter by seats and facilities.
-- **Vehicles** lists the Kulliyyah cars with their seats.
-- Open one to see its photographs, location, capacity and opening hours.
+- **Venue** in the menu shows the rooms that are free at the date and time at the top of the page,
+  grouped by building. Change the date or times, type how many people are coming, or tap a room
+  type, and the list updates straight away. With a number of people, the smallest room that fits
+  comes first and is marked **Best fit**.
+- Turn off **Free at this time only** to see every room, with booked ones marked **Booked until**
+  and rooms under maintenance marked as such.
+- **Grid** and **List** switch between large pictures and a compact list. A building with many
+  rooms shows one row until you press **Show all**.
+- **Your Recent Rooms** at the top lists the rooms you booked last, with whether each is free.
+- **Book** on a free room opens the booking form with your date and times already filled in.
+- **Vehicles** works the same way for the Kulliyyah cars.
+- Open a room or car to see its photographs, location, capacity and opening hours.
 
 The home page has a quicker route: choose a date and time there and it shows you what is free.
 

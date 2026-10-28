@@ -185,7 +185,8 @@ confirmation. The tabs show how many are waiting.
 
 ## 7. Venues, vehicles and facilities
 
-**Resources** has four tabs: **Venues**, **Vehicles**, **Facilities** and **Venue Types**.
+**Resources** has five tabs: **Venues**, **Vehicles**, **Facilities**, **Venue Types** and
+**Buildings**.
 
 ![The venue list.](images/admin/09-venues.png)
 
@@ -232,6 +233,11 @@ stop offering them here, and drag the rows into the order they should appear on 
 **Venue Types** are the kinds of room (moot court, seminar room and so on) that people filter the
 venue list by. Add a type, rename one, or set **Offered** to **No** to stop offering it; venues that
 already have it keep it. A type that any venue uses cannot be deleted.
+
+**Buildings** group the venue page: every venue belongs to one, chosen on the venue form. Add a
+building, rename it, or set **Shown** to **No** to stop offering it for new venues. **Position in
+lists** sets which building comes first on the venue page. A building with venues in it cannot be
+deleted.
 
 **Venue order.** On **Venues**, drag a row by its handle (or use the up and down arrow keys) to set
 the order venues appear in for everyone.
@@ -318,6 +324,10 @@ and the home page. **Remove image** on a logo or photograph returns the built-in
 Under **Contact and Footer**, enter the telephone and fax numbers, and one email address per line
 if more than one office answers booking questions. The copyright line at the very bottom of every
 page starts with the current year, which changes by itself; only the wording after it is edited here.
+
+Under **Page Notices**, edit the information boxes people read before they book: one on the vehicle
+page, one on the vehicle booking form, and the same pair for venues. Clear a heading and its text to
+hide that box. The venue ones start empty.
 
 **Announcements** appear on every requester's home page. Set a start and end time to schedule one,
 or set **Published: No** to take it down while keeping it on file.

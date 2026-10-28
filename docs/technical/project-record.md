@@ -61,6 +61,17 @@ Two operational items remain open (section 5, *Still open*).
   navigation does not wait on the server. Exports, templates and sign-out are excluded because
   their GET does something. Logos are made transparent and resized when uploaded
   (`apps/administration/images.py`).
+- **The venue and vehicle lists became a picker** (28 October 2026, `apps/resources/picker.py`).
+  People look for a room that is free when they need it and fits their group, not a catalogue, so
+  each resource carries its state for the chosen period (free, booked until, under maintenance),
+  free ones come first and, given a number of people, the smallest room that fits leads. One
+  bookings query decides every state, using the same overlap rule as the conflict check. It is not
+  paged: AIKOL has a few dozen rooms, grouped by building with each group showing one row until
+  Show all, which keeps a building together where paging split it. Filters are a plain GET form;
+  `static/js/picker.js` submits it as the person types and swaps in the results only (`X-Picker:
+  results`), with the address bar kept current. Buildings became a table the Admin edits
+  (`resources.0006`, created from the existing locations), and the guidance notices on the vehicle
+  and venue pages moved into Site Content so the office can word them.
 - **Redesigned.** The interface was audited end to end (`docs/ux-audit.md`) and brought onto the
   locked multi-page system in `design.md`, carried by `static/css/tokens.css` and `redesign.css`.
 - **Self-drive is gone entirely.** Requesters never drive a Kulliyyah car, so the licence fields left

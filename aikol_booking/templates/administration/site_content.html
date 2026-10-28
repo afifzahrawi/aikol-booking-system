@@ -59,6 +59,26 @@
 
     <section class="settings-section">
         <div class="settings-intro">
+            <h2>Page Notices</h2>
+            <p>The information boxes people read before they book. Leave a heading and its text empty to hide that box.</p>
+        </div>
+        <div class="settings-fields">
+            {% include "_field.html" with field=form.vehicle_list_notice_heading %}
+            {% include "_field.html" with field=form.vehicle_list_notice %}
+            {% include "_field.html" with field=form.vehicle_booking_notice_heading %}
+            {% include "_field.html" with field=form.vehicle_booking_notice %}
+            {% include "_field.html" with field=form.venue_list_notice_heading %}
+            {% include "_field.html" with field=form.venue_list_notice %}
+            {% include "_field.html" with field=form.venue_booking_notice_heading %}
+            {% include "_field.html" with field=form.venue_booking_notice %}
+            <div class="section-save">
+                <button class="btn btn-primary" type="submit">Save</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="settings-section">
+        <div class="settings-intro">
             <h2>Contact and Footer</h2>
             <p>The office details shown in the footer of every page.</p>
         </div>

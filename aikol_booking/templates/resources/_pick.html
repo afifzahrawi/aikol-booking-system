@@ -1,0 +1,35 @@
+{% load static %}
+{% comment %} One resource in the picker. The same markup is a card in the grid view and
+   a row in the list view; the stylesheet arranges it. The name link covers
+   the whole item, so a click anywhere but the button opens the details.
+   `compact` is the small tile in Your Recent Rooms. {% endcomment %}
+{% with resource=pick.resource %}
+<article class="pick pick-{{ pick.state }}{% if compact %} pick-compact{% endif %}">
+    <div class="pick-photo">
+        {% with resource.images.all|first as photo %}
+            {% if photo %}<img src="{{ photo.image.url }}" alt="" loading="lazy">
+            {% elif resource.placeholder %}<img src="{% static resource.placeholder %}" alt="" loading="lazy">{% endif %}
+        {% endwith %}
+    </div>
+    <span class="pick-status">{{ pick.label }}</span>
+    <div class="pick-body">
+        <h3><a class="pick-link" href="{% url 'resources:detail' resource.pk %}">{{ resource.name }}</a>{% if pick.best_fit %} <span class="pick-fit">Best fit</span>{% endif %}</h3>
+        {% if not compact %}
+        <p class="pick-meta">{% if is_vehicle %}{{ resource.make }} {{ resource.model }}, {{ resource.seats }} seats{% else %}{{ resource.get_venue_type_display }}, {{ resource.location }}, seats {{ resource.capacity }}{% endif %}</p>
+        {% if not is_vehicle %}
+        <p class="pick-facts">{% for f in resource.facilities.all|slice:":4" %}<span>{{ f.name }}</span>{% endfor %}{% with total=resource.facilities.all|length %}{% if total > 4 %}<span>+{{ total|add:"-4" }} more</span>{% endif %}{% endwith %}</p>
+        {% endif %}
+        {% endif %}
+    </div>
+    <div class="pick-action">
+        {% if pick.state == 'free' %}
+            <a class="btn btn-primary" data-modal-form data-modal-size="wide"
+               href="{% url 'bookings:create' resource.pk %}{% if not problems %}?{{ booking_query }}{% endif %}">{% if compact or problems %}Book{% else %}Book {{ from_time }} to {{ until_time }}{% endif %}</a>
+        {% elif pick.state == 'busy' %}
+            <a class="btn" href="{% url 'resources:detail' resource.pk %}">Other times</a>
+        {% else %}
+            <span class="btn" aria-disabled="true">Not bookable</span>
+        {% endif %}
+    </div>
+</article>
+{% endwith %}

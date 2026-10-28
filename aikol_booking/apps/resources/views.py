@@ -17,8 +17,16 @@ from django.views.decorators.http import require_POST
 
 from apps.audit.services import log_action
 
-from .forms import FacilityForm, ResourceImageForm, VehicleForm, VenueForm, VenueTypeForm
+from .forms import (
+    BuildingForm,
+    FacilityForm,
+    ResourceImageForm,
+    VehicleForm,
+    VenueForm,
+    VenueTypeForm,
+)
 from .models import (
+    Building,
     Facility,
     Resource,
     ResourceImage,
@@ -134,50 +142,31 @@ def _bookable_images() -> Prefetch:
 
 @login_required
 def venue_list(request):
-    # Rooms under maintenance are LISTED and marked, not hidden. A room that
-    # vanishes looks deleted; one marked "under maintenance" tells somebody why
-    # they cannot book it, which is the question they actually have.
-    venues = _filtered(
-        Venue.objects.select_related("venue_type").prefetch_related(
-            _bookable_images(), "facilities"
-        ),
-        request,
-        search_fields=("name", "code", "location"),
-    )
-    return _paginated(
-        request,
-        venues,
-        "resources/venue_list.html",
-        {"nav": "venues",
-         "types": VenueType.objects.filter(is_active=True).values_list("code", "name"),
-         "capacities": [10, 20, 40, 60, 100]},
-    )
+    # Rooms under maintenance are LISTED and marked when "free only" is off,
+    # not hidden for good. A room that vanishes looks deleted; one marked
+    # "under maintenance" tells somebody why they cannot book it.
+    return _picker(request, ResourceType.VENUE)
 
 
 @login_required
 def vehicle_list(request):
     # An untaxed car is withdrawn here rather than shown and then refused at the
     # booking form. The requester never learns why; that is an office matter.
-    from django.utils import timezone
+    return _picker(request, ResourceType.VEHICLE)
 
-    vehicles = _filtered(
-        Vehicle.objects.filter(road_tax_expiry__gte=timezone.localdate())
-        .prefetch_related(_bookable_images()),
-        request,
-        search_fields=("name", "code", "make", "model", "registration_number"),
-        allow_facility=False,
+
+def _picker(request, kind: str):
+    from .picker import build_picker
+
+    context = build_picker(request, kind)
+    context["nav"] = "vehicles" if kind == ResourceType.VEHICLE else "venues"
+    # The picker's own script asks for the results only when a filter changes.
+    template = (
+        "resources/_picker_results.html"
+        if request.headers.get("X-Picker") == "results"
+        else "resources/picker.html"
     )
-    return _paginated(
-        request,
-        vehicles,
-        "resources/vehicle_list.html",
-        {
-            "nav": "vehicles",
-            "types": [],
-            "capacities": [2, 4, 5, 7],
-            "hide_facility": True,
-        },
-    )
+    return render(request, template, context)
 
 
 @login_required
@@ -677,3 +666,74 @@ def venue_type_delete(request, pk: int):
     )
     messages.success(request, f"{name} deleted.")
     return redirect("resources:manage_venue_types")
+
+
+# -------------------------------------------------------------- buildings
+
+
+@administrator_required
+def manage_buildings(request):
+    buildings = Building.objects.annotate(usage=Count("venues")).order_by(
+        "display_order", "name"
+    )
+    return render(
+        request,
+        "resources/manage_buildings.html",
+        {"buildings": buildings, "nav": "resources"},
+    )
+
+
+@administrator_required
+def building_edit(request, pk: int | None = None):
+    instance = get_object_or_404(Building, pk=pk) if pk else None
+    form = BuildingForm(request.POST or None, instance=instance)
+    if request.method == "POST" and form.is_valid():
+        created = instance is None
+        building = form.save()
+        log_action(
+            actor=request.user,
+            action=f"BUILDING_{'CREATED' if created else 'UPDATED'}",
+            entity_type="Building",
+            entity_id=building.pk,
+            description=f"{building.name}.",
+            request=request,
+        )
+        messages.success(request, f"{building.name} {'created' if created else 'saved'}.")
+        return redirect("resources:manage_buildings")
+    return render(
+        request,
+        "resources/edit.html",
+        {
+            "form": form,
+            "kind": "building",
+            "instance": instance,
+            "cancel_to": "resources:manage_buildings",
+        },
+    )
+
+
+@administrator_required
+@require_POST
+def building_delete(request, pk: int):
+    """A building with rooms is hidden, never deleted; PROTECT on the venue enforces it."""
+    building = get_object_or_404(Building, pk=pk)
+    used = building.venues.count()
+    if used:
+        messages.error(
+            request,
+            f'"{building.name}" has {used} venue{"" if used == 1 else "s"} '
+            "and cannot be deleted. Set Shown to No instead.",
+        )
+        return redirect("resources:manage_buildings")
+    name = building.name
+    building.delete()
+    log_action(
+        actor=request.user,
+        action="BUILDING_DELETED",
+        entity_type="Building",
+        entity_id=pk,
+        description=f"{name} deleted; no venue was in it.",
+        request=request,
+    )
+    messages.success(request, f"{name} deleted.")
+    return redirect("resources:manage_buildings")

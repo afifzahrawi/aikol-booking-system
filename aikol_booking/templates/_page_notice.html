@@ -1,0 +1,8 @@
+{% comment %} A guidance notice whose wording the Admin keeps in Site Content. Shown only
+   when it has a heading or text. `extra` adds classes for a page's own layout. {% endcomment %}
+{% if heading or text %}
+<aside class="notice notice-info{% if extra %} {{ extra }}{% endif %}" aria-label="{{ label|default:'Booking information' }}">
+    {% if heading %}<strong>{{ heading }}</strong>{% endif %}
+    {{ text|linebreaksbr }}
+</aside>
+{% endif %}

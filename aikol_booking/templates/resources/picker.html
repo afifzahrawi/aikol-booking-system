@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if is_vehicle %}Vehicles{% else %}Venue{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head picker-head">
+    <div><h1>{% if is_vehicle %}Find a Vehicle{% else %}Find a Venue{% endif %}</h1></div>
+    <nav class="picker-switch" aria-label="What to book">
+        <a href="{% url 'resources:venues' %}?date={{ date|date:'Y-m-d' }}&amp;from={{ from_time }}&amp;until={{ until_time }}" {% if not is_vehicle %}aria-current="page"{% endif %}>Venue</a>
+        <a href="{% url 'resources:vehicles' %}?date={{ date|date:'Y-m-d' }}&amp;from={{ from_time }}&amp;until={{ until_time }}" {% if is_vehicle %}aria-current="page"{% endif %}>Vehicle</a>
+    </nav>
+</div>
+
+{% if is_vehicle %}
+{% include "_page_notice.html" with heading=site_content.vehicle_list_notice_heading text=site_content.vehicle_list_notice extra="vehicle-policy" label="Vehicle booking information" %}
+{% else %}
+{% include "_page_notice.html" with heading=site_content.venue_list_notice_heading text=site_content.venue_list_notice extra="page-notice" label="Venue booking information" %}
+{% endif %}
+
+{% comment %} A plain GET form, so every filtered view is a shareable link and the page
+   works without script. picker.js submits it as the person types and swaps
+   in the results only; the Show button is then hidden. {% endcomment %}
+<form class="picker-when" method="get" data-picker-form>
+    <label class="picker-field picker-search">
+        <span>Search</span>
+        <input class="input" type="search" name="q" value="{{ q }}"
+               placeholder="{% if is_vehicle %}Make, model or registration{% else %}Room, building or facility{% endif %}">
+    </label>
+    <label class="picker-field picker-people">
+        <span>How many people</span>
+        <input class="input" type="number" name="people" min="1" max="999" inputmode="numeric" value="{{ people }}" placeholder="Any">
+    </label>
+    <label class="picker-field">
+        <span>{% if is_vehicle %}Leaving{% else %}Date{% endif %}</span>
+        <input class="input" type="date" name="date" value="{{ date|date:'Y-m-d' }}">
+    </label>
+    <label class="picker-field">
+        <span>{% if is_vehicle %}At{% else %}From{% endif %}</span>
+        <select class="select" name="from">
+            {% for slot in slots %}<option value="{{ slot }}" {% if slot == from_time %}selected{% endif %}>{{ slot }}</option>{% endfor %}
+        </select>
+    </label>
+    {% if is_vehicle %}
+    <label class="picker-field">
+        <span>Returning</span>
+        <input class="input" type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+    </label>
+    {% endif %}
+    <label class="picker-field">
+        <span>{% if is_vehicle %}Back by{% else %}Until{% endif %}</span>
+        <select class="select" name="until">
+            {% for slot in slots %}<option value="{{ slot }}" {% if slot == until_time %}selected{% endif %}>{{ slot }}</option>{% endfor %}
+        </select>
+    </label>
+    <label class="picker-toggle">
+        <input type="checkbox" name="free" value="1" {% if free_only %}checked{% endif %}>
+        <span>Free at this time only</span>
+    </label>
+    {% if types %}
+    <fieldset class="picker-chips">
+        <legend>Type</legend>
+        {% for t in types %}
+        <label class="chip"><input type="checkbox" name="type" value="{{ t.code }}" {% if t.code in chosen_types %}checked{% endif %}><span>{{ t.name }}</span></label>
+        {% endfor %}
+    </fieldset>
+    {% endif %}
+    <div class="picker-submit"><button class="btn btn-primary" type="submit">Show</button></div>
+</form>
+
+<div data-picker-results aria-live="polite">
+    {% include "resources/_picker_results.html" %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/picker.js' %}?v=20261028-1" defer></script>
+{% endblock %}

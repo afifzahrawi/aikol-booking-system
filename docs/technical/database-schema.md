@@ -133,7 +133,8 @@ Primary key is also the foreign key to `resources` (Django MTI).
 | --- | --- | --- |
 | `resource_ptr_id` | bigint PK / FK → resources | |
 | `display_order` | integer | Set by dragging rows on the venue management screen. Public and office venue lists sort by this, then by name. New venues join the end. |
-| `building`, `floor`, `location` | varchar | `location` is the display string |
+| `building_id` | bigint FK → buildings, nullable | `on_delete=PROTECT`. Set from `location` on save when blank, so CSV imports land in a building (`resources.0006`) |
+| `floor`, `location` | varchar | `location` is the display string, for example "Level 3, AIKOL Main Building" |
 | `capacity` | integer | Validates `attendee_count` |
 | `venue_type` | varchar(20), FK → venue_types.code | `on_delete=PROTECT`. The column kept its name and values when types became a table (`resources.0005`) |
 
@@ -151,6 +152,21 @@ label. The six original types are seeded by migration with `is_seeded = true`.
 | `is_seeded` | boolean | Created by the migration rather than by the Admin |
 
 A type in use cannot be deleted (PROTECT); it is set to not offered instead.
+
+### `buildings`
+The buildings venues are in, maintained by the Admin on Resources, Buildings (October 2026). The
+venue picker groups rooms by building and the home search filters by it. Created from the existing
+locations by migration `resources.0006`, which drops a leading "Level n," so "Level 3, AIKOL Main
+Building" and "AIKOL Main Building" become one building.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | bigint PK | |
+| `name` | varchar(80) | **Unique**, editable; renaming renames it everywhere |
+| `is_active` | boolean | No hides it from the venue form; venues already in it keep it |
+| `display_order` | integer | Lower numbers come first on the venue page |
+
+A building with venues cannot be deleted (PROTECT); it is hidden instead.
 
 ### `vehicles`
 

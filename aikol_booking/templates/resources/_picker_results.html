@@ -1,0 +1,48 @@
+{% comment %} Everything below the filters. Rendered inside the page on a normal visit,
+   and on its own when picker.js asks for fresh results. {% endcomment %}
+{% if problems %}
+<div class="notice notice-warn" role="status">{% for problem in problems %}{{ problem }} {% endfor %}</div>
+{% endif %}
+
+{% if recent %}
+<section class="picker-recent" aria-labelledby="recentHeading">
+    <h2 id="recentHeading">Your Recent {% if is_vehicle %}Vehicles{% else %}Rooms{% endif %}</h2>
+    <div class="picker-recent-row">
+        {% for pick in recent %}{% include "resources/_pick.html" with compact=1 %}{% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if groups|length > 1 %}
+<nav class="picker-jump" aria-label="Go to a building">
+    <span>Go to</span>
+    {% for group in groups %}<a class="chip" href="#{{ group.slug }}">{{ group.name }} <small>{{ group.picks|length }}</small></a>{% endfor %}
+</nav>
+{% endif %}
+
+<div class="pick-summary">
+    <p data-picker-count>
+        {{ count }} {% if is_vehicle %}vehicle{{ count|pluralize }}{% else %}venue{{ count|pluralize }}{% endif %}{% if free_only and not problems %} free on {{ date|date:"D j M" }}, {{ from_time }} to {{ until_time }}{% endif %}{% if people %}, for {{ people }} people, best fit first{% endif %}
+    </p>
+    <div class="picker-view" role="group" aria-label="View" data-default-view="{{ default_view }}" hidden>
+        <button type="button" data-view="grid">Grid</button>
+        <button type="button" data-view="list">List</button>
+    </div>
+</div>
+
+<div class="picker-results" data-view="{{ default_view }}">
+{% for group in groups %}
+    <section class="picker-group{% if group.picks|length > preview.grid %} more-grid{% endif %}{% if group.picks|length > preview.list %} more-list{% endif %}{% if groups|length == 1 %} is-open{% endif %}" id="{{ group.slug }}">
+        {% if groups|length > 1 or not is_vehicle %}<h2>{{ group.name }} <small>{{ group.picks|length }}</small></h2>{% endif %}
+        <div class="picker-items">
+            {% for pick in group.picks %}{% include "resources/_pick.html" %}{% endfor %}
+        </div>
+        <button class="pick-more" type="button" data-show-all hidden>Show all {{ group.picks|length }} in {{ group.name }}</button>
+    </section>
+{% empty %}
+    <div class="empty-state">
+        {% if free_only %}Nothing is free then with these filters. Try another time, or turn off Free at this time only.
+        {% else %}Nothing matches these filters.{% endif %}
+    </div>
+{% endfor %}
+</div>

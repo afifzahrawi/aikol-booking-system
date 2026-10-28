@@ -9,7 +9,15 @@ from django.db.models import Q
 
 from config.forms import StyledFormMixin, yes_no_field
 
-from .models import Facility, ResourceImage, ResourceStatus, Vehicle, Venue, VenueType
+from .models import (
+    Building,
+    Facility,
+    ResourceImage,
+    ResourceStatus,
+    Vehicle,
+    Venue,
+    VenueType,
+)
 from .validators import validate_image_upload
 
 
@@ -30,8 +38,9 @@ class FacilityChoiceMixin:
 class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
     layout = [
         ["code", "name"],
-        ["location", "floor"],
-        ["venue_type", "capacity"],
+        ["building", "location"],
+        ["venue_type", "floor"],
+        ["capacity"],
         ["opens_at", "closes_at"],
     ]
 
@@ -40,7 +49,7 @@ class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
     class Meta:
         model = Venue
         fields = (
-            "code", "name", "venue_type", "location", "floor", "capacity",
+            "code", "name", "venue_type", "building", "location", "floor", "capacity",
             "opens_at", "closes_at", "description", "facilities", "status",
         )
         widgets = {
@@ -59,6 +68,16 @@ class VenueForm(StyledFormMixin, FacilityChoiceMixin, forms.ModelForm):
             offered |= Q(code=self.instance.venue_type_id)
         self.fields["venue_type"].queryset = VenueType.objects.filter(offered)
         self.fields["venue_type"].empty_label = "Choose a type"
+        # The same rule for buildings: hidden ones are not offered to new rooms.
+        shown = Q(is_active=True)
+        if self.instance.pk and self.instance.building_id:
+            shown |= Q(pk=self.instance.building_id)
+        self.fields["building"].queryset = Building.objects.filter(shown)
+        self.fields["building"].empty_label = "Choose a building"
+        self.fields["building"].required = True
+        self.fields["building"].help_text = "Add buildings under Resources, Buildings."
+        self.fields["location"].label = "Where in the building"
+        self.fields["location"].help_text = "For example Level 3, east wing."
         if self.instance.pk:
             # The code is the stable identity that imports and saved links use.
             self.fields["code"].disabled = True
@@ -159,6 +178,28 @@ class VenueTypeForm(StyledFormMixin, forms.ModelForm):
                 cleaned["code"] = code
                 self.instance.code = code
         return cleaned
+
+
+class BuildingForm(StyledFormMixin, forms.ModelForm):
+    """A building venues are in. Renaming it renames it everywhere at once."""
+
+    is_active = yes_no_field(
+        "Shown", help_text="Choose No to hide it from new venues. Rooms already in it keep it."
+    )
+    layout = [["name"], ["is_active", "display_order"]]
+
+    class Meta:
+        model = Building
+        fields = ("name", "is_active", "display_order")
+        labels = {"display_order": "Position in lists"}
+        help_texts = {"display_order": "Lower numbers come first on the venue page."}
+
+    def clean_name(self):
+        name = " ".join(self.cleaned_data["name"].split())
+        clash = Building.objects.filter(name__iexact=name).exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise forms.ValidationError("A building with this name already exists.")
+        return name
 
 
 class FacilityForm(StyledFormMixin, forms.ModelForm):

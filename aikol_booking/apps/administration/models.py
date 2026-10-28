@@ -209,6 +209,39 @@ class SiteContent(models.Model):
         default="International Islamic University Malaysia. All rights reserved.",
         help_text="Shown after the copyright sign and the current year.",
     )
+    # The guidance notices requesters read before booking. Wording, not code, so
+    # the office can change it. A notice whose heading and text are both blank
+    # is not shown; the venue ones start blank because AIKOL gave no venue text.
+    vehicle_list_notice_heading = models.CharField(
+        "vehicle page notice heading", max_length=120, blank=True,
+        default="Driver arrangement is included.",
+    )
+    vehicle_list_notice = models.TextField(
+        "vehicle page notice", blank=True,
+        default=(
+            "Anyone may request a vehicle. After approval, the Kulliyyah will arrange a driver "
+            "through VMU/STADD and assign the driver to the booking."
+        ),
+    )
+    vehicle_booking_notice_heading = models.CharField(
+        "vehicle booking form notice heading", max_length=120, blank=True,
+        default="Kulliyyah vehicles cannot be self-driven.",
+    )
+    vehicle_booking_notice = models.TextField(
+        "vehicle booking form notice", blank=True,
+        default=(
+            "A driver from the Vehicle Management Unit is arranged by the Kulliyyah office. "
+            "The trip needs booking approval and a separate management decision."
+        ),
+    )
+    venue_list_notice_heading = models.CharField(
+        "venue page notice heading", max_length=120, blank=True
+    )
+    venue_list_notice = models.TextField("venue page notice", blank=True)
+    venue_booking_notice_heading = models.CharField(
+        "venue booking form notice heading", max_length=120, blank=True
+    )
+    venue_booking_notice = models.TextField("venue booking form notice", blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

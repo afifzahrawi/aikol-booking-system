@@ -239,7 +239,7 @@ def dashboard(request):
     from apps.administration.models import Announcement, SystemSetting
     from apps.bookings.models import BLOCKING_STATUSES, Booking, BookingStatus
     from apps.bookings.services import find_conflicts, validate_period
-    from apps.resources.models import ResourceStatus, ResourceType, Vehicle, Venue
+    from apps.resources.models import Building, ResourceStatus, ResourceType, Vehicle, Venue
 
     window_start = SystemSetting.get("bookable_window_start")
     window_end = SystemSetting.get("bookable_window_end")
@@ -287,6 +287,8 @@ def dashboard(request):
                 model = Vehicle if kind == ResourceType.VEHICLE else Venue
                 # Photos are shown on each result card; one query, not one each.
                 pool = model.objects.filter(status=ResourceStatus.ACTIVE).prefetch_related("images")
+                if kind == ResourceType.VENUE:
+                    pool = pool.select_related("building")
                 if kind == ResourceType.VEHICLE:
                     pool = pool.filter(road_tax_expiry__gte=today)
                 for resource in pool:
@@ -297,7 +299,7 @@ def dashboard(request):
 
     building = request.GET.get("building", "")
     if searched and building and kind == ResourceType.VENUE:
-        free = [r for r in free if getattr(r, "location", "") == building]
+        free = [r for r in free if r.building and r.building.name == building]
 
     mine = Booking.objects.filter(user=request.user)
     # The booking to show under Up Next: the soonest one still running or to
@@ -326,9 +328,7 @@ def dashboard(request):
             "searched": searched,
             "free": free,
             "problems": problems,
-            "buildings": sorted(
-                {v for v in Venue.objects.values_list("location", flat=True) if v}
-            ),
+            "buildings": Building.objects.filter(is_active=True).values_list("name", flat=True),
             "building": building,
             "next_booking": next_booking,
             "next_step": _progress_step(next_booking),

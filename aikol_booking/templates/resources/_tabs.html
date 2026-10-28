@@ -8,4 +8,6 @@
        {% if tab == 'facilities' %}aria-current="page"{% endif %}>Facilities</a>
     <a href="{% url 'resources:manage_venue_types' %}"
        {% if tab == 'venue_types' %}aria-current="page"{% endif %}>Venue Types</a>
+    <a href="{% url 'resources:manage_buildings' %}"
+       {% if tab == 'buildings' %}aria-current="page"{% endif %}>Buildings</a>
 </nav>

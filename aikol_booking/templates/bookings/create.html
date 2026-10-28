@@ -15,10 +15,9 @@
 </div>
 
 {% if is_vehicle %}
-<div class="notice notice-info">
-    <strong>Kulliyyah vehicles cannot be self-driven.</strong>
-    A driver from the Vehicle Management Unit is arranged by the Kulliyyah office. The trip needs booking approval and a separate management decision.
-</div>
+{% include "_page_notice.html" with heading=site_content.vehicle_booking_notice_heading text=site_content.vehicle_booking_notice label="Vehicle booking information" %}
+{% else %}
+{% include "_page_notice.html" with heading=site_content.venue_booking_notice_heading text=site_content.venue_booking_notice label="Venue booking information" %}
 {% endif %}
 
 <section class="card booking-form-card">

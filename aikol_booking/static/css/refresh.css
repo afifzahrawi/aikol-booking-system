@@ -712,12 +712,19 @@ html, body, .docket-workspace { background: var(--docket-vellum); }
 .app-nav .nav-divider { background: rgba(255, 255, 255, 0.16); }
 .nav-profile summary { color: #fff; background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.18); box-shadow: none; }
 .nav-profile summary:hover { background: rgba(255, 255, 255, 0.16); }
-.nav-profile-icon, .nav-profile-name small { color: #d6e6e2; }
+.nav-profile-name small { color: #d6e6e2; }
+.nav-profile-icon { color: #fff; }
 
 .card, .form-sheet, .summary-box, .record-sheet, .docket-index, .home-card, .result-card, .cal-board, .book-card, .kiosk-panel, .board.availability {
     box-shadow: 0 1px 2px rgba(13, 79, 71, 0.06), 0 8px 24px rgba(13, 79, 71, 0.06);
 }
 .card + .card, .card + section, section + .card, .docket-index + .card, .card + .docket-index { margin-top: 1.5rem; }
+/* Cards side by side in a grid are spaced by the grid gap; the stacking margin
+   above pushed every card but the first down, so the first looked bigger. */
+.grid > .card + .card { margin-top: 0; }
+/* One picture shape for every resource card, whatever was uploaded. */
+.venue-card > img.framed { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+.venue-card .card-foot { margin-top: auto; }
 .grid { gap: 1.25rem; }
 .card-head { background: var(--tint); border-bottom-color: var(--tint-line); }
 .card-head h2, .card-head h2.label { color: var(--docket-green-deep); }
@@ -854,20 +861,10 @@ table.data th { color: var(--navy); }
 .capsule button[type="submit"]:hover { background: #d4a43c; }
 .brand-name { color: var(--navy); }
 
-/* Each area of the rail has its own icon colour; the chosen item keeps it. */
-.app-nav > a svg { color: #9cc9bf; }
-.app-nav > a[href="/"] svg { color: #7fd1c1; }
-.app-nav > a[href="/bookings/"] svg, .app-nav > a[href="/manage/bookings/calendar/"] svg, .app-nav > a[href="/approvals/"] svg { color: #8cc4f0; }
-.app-nav > a[href="/rooms/"] svg, .app-nav > a[href="/manage/rooms/"] svg { color: #f0c46a; }
-.app-nav > a[href="/cars/"] svg, .app-nav > a[href="/manage/users/"] svg { color: #f3a57c; }
-.app-nav > a[href="/manage/"] svg, .app-nav > a[href="/manage/reports/"] svg { color: #c4b2f0; }
-.app-nav > a[href="/manage/keys/"] svg { color: #f0c46a; }
-.app-nav > a[href="/manage/settings/"] svg { color: #c9d3d1; }
-.app-nav > a[aria-current="page"][href="/"] svg { color: #0f6b5e; }
-.app-nav > a[aria-current="page"][href="/bookings/"] svg, .app-nav > a[aria-current="page"][href="/manage/bookings/calendar/"] svg, .app-nav > a[aria-current="page"][href="/approvals/"] svg { color: var(--sky); }
-.app-nav > a[aria-current="page"][href="/rooms/"] svg, .app-nav > a[aria-current="page"][href="/manage/rooms/"] svg, .app-nav > a[aria-current="page"][href="/manage/keys/"] svg { color: var(--gold-deep); }
-.app-nav > a[aria-current="page"][href="/cars/"] svg, .app-nav > a[aria-current="page"][href="/manage/users/"] svg { color: var(--coral); }
-.app-nav > a[aria-current="page"][href="/manage/"] svg, .app-nav > a[aria-current="page"][href="/manage/reports/"] svg { color: var(--plum); }
+/* Every rail icon is white, one standard for the whole rail. The chosen item
+   sits on a white pill, so its icon takes the item's ink instead. */
+.app-nav > a svg { color: #fff; }
+.app-nav > a[aria-current="page"] svg { color: currentColor; }
 .app-nav a[aria-current="page"] { color: var(--navy); }
 
 /* Figures: four distinct tints. */
@@ -915,3 +912,127 @@ table.data th { color: var(--navy); }
 .home-hero-photo { display: none; }
 .home-hero.photo-bg .home-hero-photo { display: block; position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
 .home-hero.photo-bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(13, 79, 71, 0.94) 0%, rgba(13, 79, 71, 0.82) 45%, rgba(13, 79, 71, 0.45) 100%); }
+
+/* ---- Venue and vehicle picker ------------------------------------------ */
+/* One page answers "what is free when I need it". The same item markup is a
+   card in the grid view and a row in the list view. */
+.picker-head { align-items: center; }
+.picker-switch { display: inline-grid; grid-auto-flow: column; padding: 3px; border-radius: 12px; background: #e8e8ed; }
+.picker-switch a { padding: 0.45rem 1.3rem; border-radius: 9px; color: var(--docket-ink-2); font-weight: 600; text-decoration: none; transition: background-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+.picker-switch a[aria-current="page"] { background: #fff; color: var(--docket-ink); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
+
+.picker-when { position: sticky; top: 0.75rem; z-index: 5; display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem 0.9rem; margin-bottom: 1rem; padding: 0.9rem 1rem; border-radius: var(--radius-card); background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(14px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); }
+.picker-field { display: grid; gap: 0.2rem; font-size: 0.78rem; font-weight: 600; color: var(--docket-muted); }
+.picker-field .input, .picker-field .select { min-height: 2.5rem; font-size: 0.95rem; }
+.picker-search { flex: 1 1 14rem; }
+.picker-people .input { width: 7rem; }
+.picker-toggle { display: flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; font-size: 0.9rem; cursor: pointer; }
+.picker-toggle input { appearance: none; flex: none; position: relative; width: 38px; height: 22px; margin: 0; border-radius: 99px; background: #d1d1d6; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out); }
+.picker-toggle input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: transform var(--dur) var(--ease-out); }
+.picker-toggle input:checked { background: var(--docket-green); }
+.picker-toggle input:checked::after { transform: translateX(16px); }
+.picker-toggle input:focus-visible { outline: 2px solid var(--docket-green); outline-offset: 2px; }
+.picker-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; flex: 1 1 100%; margin: 0; padding: 0; border: 0; }
+.picker-chips legend { float: left; margin-right: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--docket-muted); }
+.chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.9rem; border: 1px solid var(--docket-rule); border-radius: 99px; background: #fff; color: var(--docket-ink-2); font-size: 0.88rem; font-weight: 500; text-decoration: none; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.chip:hover { border-color: #c7c7cc; color: var(--docket-ink); }
+.chip:active { transform: scale(0.96); }
+.chip small { color: var(--docket-muted); }
+.picker-chips .chip input { position: absolute; opacity: 0; pointer-events: none; }
+.picker-chips .chip:has(input:checked) { background: var(--docket-ink); border-color: var(--docket-ink); color: #fff; }
+.picker-chips .chip:has(input:focus-visible) { outline: 2px solid var(--docket-green); outline-offset: 2px; }
+.js .picker-submit { display: none; }
+
+.picker-recent { margin: 1.5rem 0 0; }
+.picker-recent h2, .picker-group h2 { display: flex; align-items: baseline; gap: 0.5rem; margin: 0 0 0.75rem; font-size: 1.05rem; }
+.picker-group h2 small { color: var(--docket-muted); font-size: 0.9rem; font-weight: 400; }
+.picker-recent-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem; }
+.picker-jump { display: flex; align-items: center; gap: 0.45rem; margin-top: 1.25rem; overflow-x: auto; scrollbar-width: none; }
+.picker-jump > span { flex: none; font-size: 0.78rem; font-weight: 600; color: var(--docket-muted); }
+.picker-jump .chip { flex: none; }
+.pick-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 1.25rem 0 0.25rem; }
+.pick-summary p { margin: 0; color: var(--docket-muted); font-size: 0.9rem; }
+.picker-view { display: inline-grid; grid-auto-flow: column; padding: 3px; border-radius: 10px; background: #e8e8ed; }
+.picker-view[hidden] { display: none; }
+.picker-view button { padding: 0.25rem 0.9rem; border: 0; border-radius: 8px; background: none; color: var(--docket-ink-2); font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background-color var(--dur) var(--ease-out); }
+.picker-view button[aria-pressed="true"] { background: #fff; color: var(--docket-ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+.picker-group { margin-top: 1.5rem; scroll-margin-top: 9rem; }
+.pick-more { display: none; margin: 0.9rem auto 0; padding: 0.5rem 1.2rem; border: 1px solid var(--docket-rule); border-radius: 99px; background: #fff; color: var(--docket-ink-2); font: inherit; font-weight: 600; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out); }
+.pick-more:hover { background: var(--docket-vellum); }
+
+/* A collapsed group shows one row of cards, or six list rows. */
+.js .picker-results[data-view="grid"] .picker-group:not(.is-open) .pick:nth-child(n+5),
+.js .picker-results[data-view="list"] .picker-group:not(.is-open) .pick:nth-child(n+7) { display: none; }
+.js .picker-results[data-view="grid"] .picker-group.more-grid:not(.is-open) .pick-more,
+.js .picker-results[data-view="list"] .picker-group.more-list:not(.is-open) .pick-more { display: block; }
+
+/* The item. */
+.pick { position: relative; display: grid; overflow: hidden; border-radius: var(--radius-card); background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); animation: rf-rise var(--dur-slow) var(--ease-out) both; }
+.pick-photo { grid-area: photo; overflow: hidden; aspect-ratio: 4 / 3; background: var(--docket-vellum); }
+.pick-photo img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease-out); }
+.pick-status { grid-area: status; justify-self: start; align-self: center; padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.pick-free .pick-status { background: var(--docket-green-soft); color: var(--docket-green-deep); }
+.pick-busy .pick-status { background: #fff1dc; color: #8a4b00; }
+.pick-off .pick-status { background: #ececf0; color: var(--docket-ink-2); }
+.pick-body { grid-area: body; min-width: 0; }
+.pick h3 { margin: 0; font-size: 1.02rem; line-height: 1.3; }
+.pick-link { color: var(--docket-green-deep); text-decoration: none; }
+.pick-link::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.pick-link:focus-visible { outline: none; }
+.pick:has(.pick-link:focus-visible) { box-shadow: 0 0 0 2px var(--docket-green); }
+.pick-fit { display: inline-block; margin-left: 0.25rem; padding: 0.05rem 0.45rem; border-radius: 99px; background: var(--docket-green-soft); color: var(--docket-green-deep); font-size: 0.72rem; font-weight: 600; vertical-align: 0.1em; }
+.pick-meta { margin: 0.15rem 0 0.5rem; color: var(--docket-muted); font-size: 0.86rem; }
+.pick-facts { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0; }
+.pick-facts span { padding: 0.1rem 0.5rem; border-radius: 99px; background: var(--docket-vellum); color: var(--docket-ink-2); font-size: 0.76rem; }
+.pick-action { grid-area: action; position: relative; z-index: 2; }
+.pick-action .btn { width: 100%; justify-content: center; }
+.pick-action [aria-disabled="true"] { color: var(--docket-muted); background: #ececf0; cursor: default; }
+@media (hover: hover) {
+    .pick:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.09); }
+    .pick:hover .pick-photo img { transform: scale(1.04); }
+}
+
+/* Grid: the status sits on the photo. */
+.picker-items { display: grid; gap: 1.25rem; }
+.picker-results[data-view="grid"] .picker-items { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.picker-results[data-view="grid"] .pick { grid-template-areas: "photo" "body" "action"; grid-template-rows: auto 1fr auto; }
+.picker-results[data-view="grid"] .pick-status { grid-area: photo; align-self: start; margin: 0.75rem; backdrop-filter: blur(8px); }
+.picker-results[data-view="grid"] .pick-body { padding: 0.9rem 1rem 0.5rem; }
+.picker-results[data-view="grid"] .pick-action { padding: 0.5rem 1rem 1rem; }
+
+/* List: ten rooms to a screen instead of three. */
+.picker-results[data-view="list"] .picker-items { gap: 0; overflow: hidden; border-radius: var(--radius-card); background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); container-type: inline-size; }
+.picker-results[data-view="list"] .pick { grid-template-areas: "photo body status action"; grid-template-columns: 4.5rem minmax(0, 1fr) 11rem 11rem; align-items: center; gap: 1rem; padding: 0.55rem 1rem; border-radius: 0; box-shadow: none; border-top: 1px solid var(--docket-rule); }
+.picker-results[data-view="list"] .pick:first-child { border-top: 0; }
+.picker-results[data-view="list"] .pick:hover { transform: none; box-shadow: none; background: #fafafa; }
+.picker-results[data-view="list"] .pick-photo { border-radius: 8px; }
+.picker-results[data-view="list"] .pick-meta { margin: 0.1rem 0 0; }
+.picker-results[data-view="list"] .pick-facts { display: none; }
+@container (max-width: 640px) {
+    .picker-results[data-view="list"] .pick { grid-template-areas: "photo body action" "photo status action"; grid-template-columns: 4rem minmax(0, 1fr) auto; row-gap: 0.3rem; }
+    .picker-results[data-view="list"] .pick-meta { display: none; }
+}
+
+/* Recent tiles: a small row with the status under the name. */
+.pick-compact { grid-template-areas: "photo body action" "photo status action"; grid-template-columns: 3.5rem minmax(0, 1fr) auto; align-items: center; gap: 0.15rem 0.75rem; padding: 0.6rem; }
+.pick-compact .pick-photo { border-radius: 8px; align-self: center; }
+.pick-compact h3 { font-size: 0.92rem; }
+.pick-compact .pick-action .btn { min-height: 2.2rem; padding: 0.4rem 0.9rem; }
+
+/* Results arrive one after another; capped so a long list never waits. */
+.picker-items .pick:nth-child(2) { animation-delay: 35ms; }
+.picker-items .pick:nth-child(3) { animation-delay: 70ms; }
+.picker-items .pick:nth-child(4) { animation-delay: 105ms; }
+.picker-items .pick:nth-child(5) { animation-delay: 140ms; }
+.picker-items .pick:nth-child(n+6) { animation-delay: 175ms; }
+[data-picker-results] { transition: opacity var(--dur) var(--ease-out); }
+[data-picker-results].is-loading { opacity: 0.55; }
+
+@media (max-width: 47.99rem) {
+    .picker-when { position: static; }
+    .picker-field:not(.picker-search) { flex: 1 1 40%; }
+    .picker-people .input, .picker-field .input, .picker-field .select { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pick, .pick-photo img, .chip, .picker-toggle input::after, [data-picker-results] { animation: none; transition: none; }
+}

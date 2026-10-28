@@ -11,6 +11,8 @@ resource, plus a `venues` or `vehicles` row carrying the extra columns.
 
 from __future__ import annotations
 
+import re
+
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -86,6 +88,41 @@ class VenueType(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Building(models.Model):
+    """A building venues are in, maintained by the Admin.
+
+    The venue list groups rooms by building and the home search filters by it.
+    It used to be read out of each venue's free-text location, where
+    "Level 3, AIKOL Main Building" and "AIKOL Main Building" were two places.
+    """
+
+    name = models.CharField(max_length=80, unique=True)
+    is_active = models.BooleanField(default=True)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ("display_order", "name")
+
+    def __str__(self) -> str:
+        return self.name
+
+    @staticmethod
+    def name_from_location(location: str) -> str:
+        """"Level 3, AIKOL Main Building" -> "AIKOL Main Building"."""
+        parts = [part.strip() for part in (location or "").split(",") if part.strip()]
+        if len(parts) > 1 and re.match(r"^(level|floor|aras|tingkat)\b", parts[0], re.I):
+            parts = parts[1:]
+        return ", ".join(parts)[:80]
+
+    @classmethod
+    def for_location(cls, location: str) -> "Building | None":
+        name = cls.name_from_location(location)
+        if not name:
+            return None
+        building = cls.objects.filter(name__iexact=name).first()
+        return building or cls.objects.create(name=name)
 
 
 class Resource(models.Model):
@@ -201,6 +238,11 @@ class Venue(Resource):
     # office venue lists use this before name so the office can present rooms
     # in the order that makes sense to its users.
     display_order = models.PositiveIntegerField(default=0)
+    # PROTECT: a building with rooms in it is hidden, never deleted. Null only
+    # for the moment between an import row and save(), which fills it in.
+    building = models.ForeignKey(
+        Building, on_delete=models.PROTECT, related_name="venues", null=True, blank=True
+    )
     location = models.CharField(max_length=120)
     floor = models.CharField(max_length=30, blank=True)
     capacity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
@@ -230,6 +272,10 @@ class Venue(Resource):
 
     def save(self, *args, **kwargs):
         self.resource_type = ResourceType.VENUE
+        # CSV imports and older scripts give only a location; the building is
+        # read from it so no room is left out of the building groups.
+        if self.building_id is None and self.location:
+            self.building = Building.for_location(self.location)
         super().save(*args, **kwargs)
 
 

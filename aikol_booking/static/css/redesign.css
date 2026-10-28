@@ -670,7 +670,7 @@ img, video, iframe { max-width: 100%; }
 .resource-index > .toolbar .input,
 .resource-index > .toolbar .select { width: 100%; }
 .resource-index .resource-grid { padding: clamp(1rem, 2.5cqi, 1.5rem); }
-.vehicle-policy { max-width: 58rem; margin-bottom: 1.25rem; padding: 1rem 1.15rem; }
+.vehicle-policy, .page-notice { max-width: 58rem; margin-bottom: 1.25rem; padding: 1rem 1.15rem; }
 
 .nav-profile { position: relative; width: 100%; margin-top: auto; }
 .nav-profile summary {

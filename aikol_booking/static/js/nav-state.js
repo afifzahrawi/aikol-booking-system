@@ -5,6 +5,9 @@
    this after paint drew the rail open and then animated it shut on every page. */
 (function () {
     'use strict';
+    // Lets the stylesheet tell a page with script from one without, so a
+    // collapsed list or a hidden Apply button never strands someone.
+    document.documentElement.classList.add('js');
     try {
         if (window.matchMedia('(min-width: 64rem)').matches
                 && sessionStorage.getItem('aikol-nav-collapsed') === 'true') {

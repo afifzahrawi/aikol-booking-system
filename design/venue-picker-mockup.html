@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venue Picker Mockup</title>
+<link rel="stylesheet" href="../aikol_booking/static/css/fonts.css">
+<style>
+:root {
+    --ink: #1d1d1f; --ink-2: #424245; --muted: #6e6e73; --vellum: #f5f5f7; --rule: #e5e5ea;
+    --green: #0f6b5e; --green-deep: #0a4e44; --green-soft: #e3f1ee; --rail: #0d4f47;
+    --amber: #8a4b00; --amber-soft: #fff1dc; --grey-soft: #ececf0;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1); --fast: 160ms; --mid: 260ms; --slow: 420ms;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 9rem; }
+html, body { margin: 0; background: var(--vellum); color: var(--ink); }
+body { font: 15px/1.5 "IBM Plex Sans", system-ui, sans-serif; display: grid; grid-template-columns: 15.5rem 1fr; min-height: 100vh; }
+.rail { position: sticky; top: 0; height: 100vh; background: var(--rail); padding: 1.25rem 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.rail a { display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.8rem; border-radius: 10px; color: #d6e6e2; text-decoration: none; font-weight: 500; }
+.rail a svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.rail a[aria-current] { background: #fff; color: #0a4e44; }
+.rail a[aria-current] svg { stroke: currentColor; }
+main { padding: 2rem clamp(1rem, 3vw, 2.5rem) 4rem; min-width: 0; }
+.mock-flag { display: inline-block; margin-bottom: 1rem; padding: 0.2rem 0.7rem; border-radius: 99px; background: var(--amber-soft); color: var(--amber); font-size: 0.8rem; font-weight: 600; }
+.head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+h1 { margin: 0; font-size: 2rem; letter-spacing: -0.02em; }
+
+/* Segmented controls: what to book, and how to view it. */
+.seg { position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 12px; background: #e8e8ed; }
+.seg button { position: relative; z-index: 1; border: 0; background: none; padding: 0.45rem 1.4rem; font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.seg.small button { padding: 0.25rem 0.9rem; font-size: 0.85rem; }
+.seg .thumb { position: absolute; inset: 3px auto 3px 3px; width: calc(50% - 3px); border-radius: 9px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); transition: transform var(--mid) var(--ease); }
+.seg[data-on="1"] .thumb { transform: translateX(100%); }
+
+/* The "when" bar: the question people actually have. */
+.when { position: sticky; top: 0.75rem; z-index: 5; display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem; padding: 0.9rem 1rem; border-radius: 18px; background: rgba(255,255,255,.9); backdrop-filter: blur(14px); box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+.when label { display: grid; gap: 0.2rem; font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+.when input, .when select { font: inherit; font-size: 0.95rem; color: var(--ink); padding: 0.5rem 0.7rem; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
+.when .search { flex: 1 1 14rem; }
+.when .search input { width: 100%; }
+.when .people input { width: 6.5rem; }
+.toggle { display: flex !important; align-items: center; gap: 0.5rem; padding-bottom: 0.55rem; font-size: 0.9rem !important; color: var(--ink) !important; cursor: pointer; }
+.toggle input { appearance: none; width: 38px; height: 22px; border: 0; border-radius: 99px; background: #d1d1d6; position: relative; padding: 0; cursor: pointer; transition: background var(--fast) var(--ease); }
+.toggle input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform var(--mid) var(--ease); }
+.toggle input:checked { background: var(--green); }
+.toggle input:checked::after { transform: translateX(16px); }
+
+/* Chips: one tap, no Apply button. */
+.chips { display: flex; gap: 0.5rem; margin: 0.75rem 0 0; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: none; }
+.chip { flex: none; border: 1px solid var(--rule); background: #fff; border-radius: 99px; padding: 0.4rem 0.95rem; font: inherit; font-size: 0.88rem; font-weight: 500; color: var(--ink-2); cursor: pointer; text-decoration: none; transition: background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.chip:active { transform: scale(0.96); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.chip small { color: var(--muted); margin-left: 0.3rem; }
+.chip-label { flex: none; align-self: center; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-right: 0.25rem; }
+
+/* Recent rooms: the few rooms a person books again and again. */
+.recent { margin-top: 1.5rem; }
+.recent h2, .group h2 { display: flex; align-items: baseline; gap: 0.5rem; margin: 0 0 0.75rem; font-size: 1.05rem; }
+.recent-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.75rem; }
+.tile { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem; border-radius: 14px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.05); animation: rise var(--slow) var(--ease) both; }
+.tile img { width: 3.5rem; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: #eee; }
+.tile b { display: block; font-size: 0.92rem; }
+.tile .dot { font-size: 0.78rem; font-weight: 600; }
+.tile button { margin-left: auto; }
+
+.summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 1.5rem 0 0.75rem; color: var(--muted); font-size: 0.9rem; }
+.summary .tools { display: flex; align-items: center; gap: 0.75rem; }
+.link { border: 0; background: none; color: var(--green); font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
+.group { margin-top: 1.75rem; }
+.group h2 small { color: var(--muted); font-weight: 400; font-size: 0.9rem; }
+.more { display: block; margin: 0.9rem auto 0; padding: 0.5rem 1.2rem; border: 1px solid var(--rule); border-radius: 99px; background: #fff; font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: background var(--fast) var(--ease); }
+.more:hover { background: var(--vellum); }
+
+/* Grid view. */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1.25rem; }
+.card { display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.05); cursor: pointer; transition: transform var(--mid) var(--ease), box-shadow var(--mid) var(--ease); animation: rise var(--slow) var(--ease) both; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.09); }
+.card .photo { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #eee; }
+.card .photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--slow) var(--ease); }
+.card:hover .photo img { transform: scale(1.04); }
+.pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.card .pill { position: absolute; left: 0.75rem; top: 0.75rem; backdrop-filter: blur(8px); }
+.pill.free { background: rgba(227,241,238,.95); color: var(--green-deep); }
+.pill.busy { background: rgba(255,241,220,.95); color: var(--amber); }
+.pill.off { background: rgba(236,236,240,.95); color: var(--ink-2); }
+.fit { display: inline-block; margin-left: 0.4rem; color: var(--green); font-size: 0.78rem; font-weight: 600; }
+.card .body { padding: 0.9rem 1rem 0.4rem; flex: 1; }
+.card h3, .row h3 { margin: 0; font-size: 1.05rem; color: var(--green-deep); }
+.card .meta { margin: 0.15rem 0 0.6rem; color: var(--muted); font-size: 0.86rem; }
+.facts { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.facts span { padding: 0.15rem 0.55rem; border-radius: 99px; background: var(--vellum); font-size: 0.78rem; color: var(--ink-2); }
+.card .foot { padding: 0.75rem 1rem 1rem; }
+
+/* List view: ten rooms on one screen instead of three. */
+.list { border-radius: 18px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.05); overflow: hidden; }
+.row { display: grid; grid-template-columns: 4.5rem minmax(0, 2fr) minmax(0, 1.4fr) 5rem 11rem 9.5rem; align-items: center; gap: 1rem; padding: 0.55rem 1rem; border-top: 1px solid var(--rule); cursor: pointer; transition: background var(--fast) var(--ease); animation: rise var(--slow) var(--ease) both; }
+.row:first-child { border-top: 0; }
+.row:hover { background: #fafafa; }
+.row img { width: 4.5rem; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: #eee; }
+.row h3 { font-size: 0.98rem; }
+.row .sub, .row .seats { color: var(--muted); font-size: 0.86rem; }
+.btn { width: 100%; border: 0; border-radius: 12px; padding: 0.65rem; font: inherit; font-weight: 600; background: var(--green); color: #fff; cursor: pointer; transition: background var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.btn.sm { width: auto; padding: 0.45rem 0.9rem; border-radius: 10px; font-size: 0.88rem; }
+.btn:hover { background: var(--green-deep); }
+.btn:active { transform: scale(0.98); }
+.btn[disabled] { background: var(--grey-soft); color: var(--muted); cursor: default; }
+.empty { padding: 3rem 1rem; text-align: center; color: var(--muted); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Rows follow the width the list actually has, not the window. */
+.list { container-type: inline-size; }
+@container (max-width: 820px) {
+    .row { grid-template-columns: 4.5rem minmax(0, 1fr) 5rem 11rem auto; }
+    .row > .sub { display: none; }
+}
+@container (max-width: 560px) {
+    .row { grid-template-columns: 4rem minmax(0, 1fr) auto; row-gap: 0.25rem; }
+    .row .seats { display: none; }
+    .row .pill { grid-column: 2; justify-self: start; }
+    .row .btn { grid-column: 3; grid-row: 1 / span 2; }
+}
+/* Phone: the rail becomes a bottom bar and the when bar stacks. */
+@media (max-width: 760px) {
+    body { grid-template-columns: 1fr; }
+    .rail { position: fixed; inset: auto 0 0 0; height: auto; z-index: 9; flex-direction: row; justify-content: space-around; padding: 0.4rem; }
+    .rail a span { display: none; }
+    .when label:not(.search):not(.toggle) { flex: 1 1 40%; }
+    .when label input, .when label select { width: 100% !important; }
+    main { padding-bottom: 6rem; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<nav class="rail" aria-label="Main navigation">
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9 20v-6h6v6"/></svg><span>Home</span></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/></svg><span>My Bookings</span></a>
+    <a href="#" aria-current="page" id="navVenue"><svg viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M8 20v-6h8v6M3 20h18"/></svg><span>Venue</span></a>
+    <a href="#" id="navVehicle"><svg viewBox="0 0 24 24"><path d="m5 16-1-4 2-5h12l2 5-1 4M6 16h12M7 16v3M17 16v3"/></svg><span>Vehicles</span></a>
+</nav>
+<main>
+    <span class="mock-flag">Mockup with illustrative data</span>
+    <div class="head">
+        <h1 id="title">Find a Venue</h1>
+        <div class="seg" id="kindSeg" data-on="0" role="group" aria-label="What to book">
+            <span class="thumb"></span>
+            <button type="button" data-kind="VENUE">Venue</button>
+            <button type="button" data-kind="VEHICLE">Vehicle</button>
+        </div>
+    </div>
+
+    <div class="when">
+        <label class="search">Search<input id="q" type="search" placeholder="Room name, code or building"></label>
+        <label class="people">How many people<input id="people" type="number" min="1" max="300" placeholder="Any"></label>
+        <label>Date<input id="date" type="date" value="2026-11-02"></label>
+        <label>From<select id="from"></select></label>
+        <label>Until<select id="until"></select></label>
+        <label class="toggle"><input id="freeOnly" type="checkbox" checked> Free at this time only</label>
+    </div>
+
+    <div class="chips" id="typeChips"></div>
+    <div class="chips" id="jumpChips"></div>
+
+    <section class="recent" id="recent"></section>
+
+    <div class="summary">
+        <span id="count"></span>
+        <span class="tools">
+            <button type="button" class="link" id="clear">Clear filters</button>
+            <span class="seg small" id="viewSeg" data-on="0" role="group" aria-label="View">
+                <span class="thumb"></span>
+                <button type="button" data-view="grid">Grid</button>
+                <button type="button" data-view="list">List</button>
+            </span>
+        </span>
+    </div>
+    <div id="results"></div>
+</main>
+
+<script>
+const P = '../aikol_booking/static/images/placeholders/';
+// Illustrative data only: rooms and timetables are invented for the mockup.
+const BUILDINGS = ['AIKOL Main Building', 'AIKOL Classrooms', 'AIKOL Library Wing', 'Postgraduate Block'];
+const KINDS = [
+  ['Lecture room', ['lecture.svg', 'lecture-v2.svg', 'lecture-v3.svg'], [30, 50, 80, 120], ['Projector', 'Microphone', 'Whiteboard']],
+  ['Seminar room', ['seminar-a.svg', 'seminar-b.svg', 'seminar-a-v2.svg'], [20, 30, 40], ['Projector', 'Video conferencing']],
+  ['Discussion room', ['discussion.svg', 'discussion-v2.svg'], [6, 8, 10], ['Smart television', 'Whiteboard']],
+  ['Meeting room', ['meeting-a.svg', 'meeting-b.svg'], [10, 12, 16], ['Smart television', 'Internet access']],
+  ['Conference room', ['conference.svg', 'conference-v2.svg'], [40, 60], ['Projector', 'Microphone', 'Recording']],
+];
+let seed = 7;
+const rand = n => (seed = (seed * 9301 + 49297) % 233280) / 233280 * n | 0;
+const VENUES = [];
+BUILDINGS.forEach((place, b) => {
+  const short = ['MB', 'CR', 'LW', 'PG'][b];
+  for (let i = 0; i < [8, 10, 7, 5][b]; i++) {
+    const [type, imgs, sizes, facts] = KINDS[(b + i) % KINDS.length];
+    const start = 8 + rand(8);
+    VENUES.push({
+      name: `${type.split(' ')[0]} ${short} ${i + 1}`, type, place,
+      seats: sizes[rand(sizes.length)], img: imgs[rand(imgs.length)],
+      busy: rand(3) ? [[start, start + 1 + rand(3)]] : [], facts: facts.slice(0, 1 + rand(facts.length)),
+      off: b === 0 && i === 4,
+    });
+  }
+});
+VENUES.push({name: 'Moot Court', type: 'Moot court', place: 'AIKOL Main Building', seats: 80, img: 'moot-court.svg', busy: [], facts: ['Microphone', 'Recording']});
+const VEHICLES = [
+  {name:'Toyota Innova', type:'MPV', place:'All vehicles', seats:7, img:'car-innova.svg', busy:[[8,13]], facts:['Luggage space']},
+  {name:'Proton Exora', type:'MPV', place:'All vehicles', seats:7, img:'car-exora.svg', busy:[], facts:['Luggage space']},
+  {name:'Perodua Bezza', type:'Sedan', place:'All vehicles', seats:4, img:'car-bezza.svg', busy:[[14,17]], facts:[]},
+  {name:'Proton Saga', type:'Sedan', place:'All vehicles', seats:4, img:'car-saga.svg', busy:[], facts:[]},
+];
+// The person's last bookings, newest first.
+const RECENT = {VENUE: ['Meeting LW 2', 'Seminar CR 2', 'Moot Court'], VEHICLE: ['Proton Exora']};
+const SHOWN = {grid: 4, list: 6};
+const LIST_AT = 12;
+
+const state = {kind: 'VENUE', types: new Set(), open: new Set(), view: null};
+try { state.view = localStorage.getItem('mock-view'); } catch (e) { /* storage blocked */ }
+const $ = id => document.getElementById(id);
+const fmt = h => `${String(Math.floor(h)).padStart(2,'0')}:${h % 1 ? '30' : '00'}`;
+const slug = s => s.replace(/\W+/g, '-').toLowerCase();
+
+for (let h = 8; h <= 18; h += 0.5) {
+  $('from').add(new Option(fmt(h), h, h === 9, h === 9));
+  $('until').add(new Option(fmt(h), h, h === 11, h === 11));
+}
+
+function status(r, from, until) {
+  if (r.off) return {cls: 'off', text: 'Under maintenance', bookable: false};
+  const clash = r.busy.find(([s, e]) => from < e && until > s);
+  if (!clash) return {cls: 'free', text: `Free ${fmt(from)} to ${fmt(until)}`, bookable: true};
+  return {cls: 'busy', text: `Booked until ${fmt(clash[1])}`, bookable: false};
+}
+
+function button(s, from, until, small) {
+  const label = s.bookable ? (small ? 'Book' : `Book ${fmt(from)} to ${fmt(until)}`) : (s.cls === 'off' ? 'Not bookable' : 'Other times');
+  return `<button class="btn${small ? ' sm' : ''}" type="button" ${s.bookable ? '' : 'disabled'}>${label}</button>`;
+}
+
+function chips(list) {
+  const types = [...new Set((state.kind === 'VENUE' ? VENUES : VEHICLES).map(r => r.type))];
+  $('typeChips').innerHTML = '<span class="chip-label">Type</span>' + types.map(t =>
+    `<button class="chip" type="button" data-type="${t}" aria-pressed="${state.types.has(t)}">${t}</button>`).join('');
+  const places = [...new Set(list.map(r => r.place))];
+  $('jumpChips').innerHTML = state.kind === 'VENUE' && places.length > 1 ? '<span class="chip-label">Go to</span>' +
+    places.map(p => `<a class="chip" href="#${slug(p)}">${p}<small>${list.filter(r => r.place === p).length}</small></a>`).join('') : '';
+}
+
+function recent(from, until) {
+  const all = state.kind === 'VENUE' ? VENUES : VEHICLES;
+  const rooms = RECENT[state.kind].map(n => all.find(r => r.name === n)).filter(Boolean);
+  $('recent').innerHTML = rooms.length ? `<h2>Your Recent ${state.kind === 'VENUE' ? 'Rooms' : 'Vehicles'}</h2><div class="recent-row">${rooms.map(r => {
+    const s = status(r, from, until);
+    return `<div class="tile"><img src="${P + r.img}" alt=""><div><b>${r.name}</b><span class="dot pill ${s.cls}">${s.text}</span></div>${button(s, from, until, true)}</div>`;
+  }).join('')}</div>` : '';
+}
+
+function render() {
+  const from = +$('from').value, until = +$('until').value, q = $('q').value.trim().toLowerCase();
+  const people = +$('people').value || 0;
+  const all = state.kind === 'VENUE' ? VENUES : VEHICLES;
+  const list = all.filter(r =>
+    (!state.types.size || state.types.has(r.type)) && r.seats >= people &&
+    (!q || (r.name + r.type + r.place).toLowerCase().includes(q)) &&
+    (!$('freeOnly').checked || status(r, from, until).bookable))
+    // Best fit first: free before booked, then the smallest room that still fits.
+    .sort((a, b) => status(b, from, until).bookable - status(a, from, until).bookable || a.seats - b.seats || a.name.localeCompare(b.name));
+
+  chips(list); recent(from, until);
+  const view = state.view || (list.length > LIST_AT ? 'list' : 'grid');
+  $('viewSeg').dataset.on = view === 'list' ? '1' : '0';
+  const noun = state.kind === 'VENUE' ? 'venue' : 'vehicle';
+  const when = new Date($('date').value).toLocaleDateString('en-GB', {weekday: 'short', day: 'numeric', month: 'short'});
+  $('count').textContent = `${list.length} ${noun}${list.length === 1 ? '' : 's'}${$('freeOnly').checked ? ` free on ${when}, ${fmt(from)} to ${fmt(until)}` : ''}${people ? `, for ${people} people, best fit first` : ''}`;
+  if (!list.length) { $('results').innerHTML = `<p class="empty">Nothing matches. Try another time or fewer filters.</p>`; return; }
+
+  const groups = [...new Set(list.map(r => r.place))];
+  let i = 0;
+  $('results').innerHTML = groups.map(g => {
+    const rows = list.filter(r => r.place === g);
+    const open = state.open.has(g) || groups.length === 1;
+    const shown = open ? rows : rows.slice(0, SHOWN[view]);
+    const items = shown.map((r, n) => {
+      const s = status(r, from, until);
+      const fit = people && n === 0 && s.bookable ? '<span class="fit">Best fit</span>' : '';
+      const delay = `animation-delay:${Math.min(i++, 10) * 35}ms`;
+      if (view === 'list') return `<div class="row" style="${delay}"><img src="${P + r.img}" alt="">
+        <div><h3>${r.name}${fit}</h3><span class="sub">${r.type}</span></div>
+        <span class="sub">${r.facts.join(', ') || 'No listed facilities'}</span>
+        <span class="seats">${r.seats} ${state.kind === 'VENUE' ? 'seats' : 'seats'}</span>
+        <span class="pill ${s.cls}">${s.text}</span>${button(s, from, until, true)}</div>`;
+      return `<article class="card" style="${delay}">
+        <div class="photo"><img src="${P + r.img}" alt=""><span class="pill ${s.cls}">${s.text}</span></div>
+        <div class="body"><h3>${r.name}${fit}</h3><p class="meta">${r.type}, seats ${r.seats}</p>
+        <div class="facts">${r.facts.map(f => `<span>${f}</span>`).join('')}</div></div>
+        <div class="foot">${button(s, from, until, false)}</div></article>`;
+    }).join('');
+    const more = rows.length > shown.length ? `<button class="more" type="button" data-open="${g}">Show all ${rows.length} in ${g}</button>`
+      : (state.open.has(g) && rows.length > SHOWN[view] ? `<button class="more" type="button" data-close="${g}">Show fewer</button>` : '');
+    return `<section class="group" id="${slug(g)}"><h2>${g} <small>${rows.length}</small></h2>
+      <div class="${view}">${items}</div>${more}</section>`;
+  }).join('');
+}
+
+function setKind(kind) {
+  state.kind = kind; state.types.clear(); state.open.clear();
+  $('kindSeg').dataset.on = kind === 'VEHICLE' ? '1' : '0';
+  $('title').textContent = kind === 'VENUE' ? 'Find a Venue' : 'Find a Vehicle';
+  $('q').placeholder = kind === 'VENUE' ? 'Room name, code or building' : 'Make, model or registration';
+  $('navVenue').toggleAttribute('aria-current', kind === 'VENUE');
+  $('navVehicle').toggleAttribute('aria-current', kind === 'VEHICLE');
+  render();
+}
+
+$('kindSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setKind(b.dataset.kind); });
+$('viewSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.view = b.dataset.view;
+  try { localStorage.setItem('mock-view', state.view); } catch (err) { /* storage blocked */ }
+  render();
+});
+$('navVenue').addEventListener('click', e => { e.preventDefault(); setKind('VENUE'); });
+$('navVehicle').addEventListener('click', e => { e.preventDefault(); setKind('VEHICLE'); });
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-type]'), o = e.target.closest('[data-open]'), c = e.target.closest('[data-close]');
+  if (t) { state.types.has(t.dataset.type) ? state.types.delete(t.dataset.type) : state.types.add(t.dataset.type); render(); }
+  if (o) { state.open.add(o.dataset.open); render(); }
+  if (c) { state.open.delete(c.dataset.close); render(); document.getElementById(slug(c.dataset.close)).scrollIntoView(); }
+});
+['q', 'people', 'date', 'from', 'until', 'freeOnly'].forEach(id => $(id).addEventListener('input', render));
+$('clear').addEventListener('click', () => { state.types.clear(); state.open.clear(); $('q').value = ''; $('people').value = ''; $('freeOnly').checked = false; render(); });
+render();
+</script>
+</body>
+</html>

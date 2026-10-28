@@ -75,6 +75,26 @@ class SiteContentTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["email"], "booking@iium.edu.my\nkeys@iium.edu.my")
 
+    def test_page_notices_come_from_site_content_and_hide_when_blank(self):
+        user = User.objects.create_user(
+            email="notice@demo.aikol.test", password="prototype-password-1",
+            full_name="Notice Reader", phone="03-6196 4000", email_verified=True,
+        )
+        self.client.force_login(user)
+        vehicles = self.client.get(reverse("resources:vehicles"))
+        self.assertContains(vehicles, "Driver arrangement is included.")
+        self.assertNotContains(self.client.get(reverse("resources:venues")), "Venue booking information")
+
+        content = SiteContent.load()
+        content.vehicle_list_notice_heading = "Book two days ahead."
+        content.vehicle_list_notice = "Drivers are arranged on weekdays."
+        content.venue_list_notice_heading = "Keys from the office."
+        content.save()
+        vehicles = self.client.get(reverse("resources:vehicles"))
+        self.assertContains(vehicles, "Book two days ahead.")
+        self.assertNotContains(vehicles, "Driver arrangement is included.")
+        self.assertContains(self.client.get(reverse("resources:venues")), "Keys from the office.")
+
     def test_an_uploaded_logo_loses_its_white_and_is_sized_for_the_header(self):
         from io import BytesIO
 

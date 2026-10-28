@@ -15,7 +15,14 @@ from django.utils import timezone
 from apps.accounts.models import Affiliation, Role, User
 from apps.audit.models import AuditLog
 from apps.bookings.models import Booking
-from apps.resources.models import Facility, ResourceImage, ResourceStatus, Vehicle, Venue
+from apps.resources.models import (
+    Building,
+    Facility,
+    ResourceImage,
+    ResourceStatus,
+    Vehicle,
+    Venue,
+)
 from apps.resources.services import DeletionRefused, delete_resource, reorder_facilities, reorder_venues
 from apps.resources.validators import validate_image_upload
 
@@ -147,7 +154,9 @@ class BrowsingTests(Fixtures):
         self.venue.status = ResourceStatus.MAINTENANCE
         self.venue.save(update_fields=["status"])
         self.client.force_login(self.plain)
-        response = self.client.get(reverse("resources:venues"))
+        # Shown once "Free at this time only" is off; hidden while it is on.
+        self.assertNotContains(self.client.get(reverse("resources:venues")), "Moot Court")
+        response = self.client.get(reverse("resources:venues"), {"free": "0"})
         self.assertContains(response, "Moot Court")
         self.assertContains(response, "Under maintenance")
         self.assertNotContains(response, f'href="/resource/{self.venue.pk}/book/"')
@@ -183,15 +192,21 @@ class BrowsingTests(Fixtures):
                 unordered = [w for w in caught if "unordered object_list" in str(w.message)]
                 self.assertEqual(unordered, [], f"{name} paginates an unordered queryset")
 
-    def test_pagination_links_keep_the_active_filters(self):
+    def test_a_long_building_group_is_collapsed_behind_show_all(self):
+        """The picker is not paged: a building's rooms all arrive, and the page
+        shows one row of them until Show all is pressed."""
         for i in range(21):
             Venue.objects.create(
                 code=f"VEN-P{i}", name=f"Tutorial Room {i}",
-                venue_type_id=Venue.VenueType.DISCUSSION, location="Level 3", capacity=10,
+                venue_type_id=Venue.VenueType.DISCUSSION, location="Level 3, Tutorial Block",
+                capacity=10,
             )
         self.client.force_login(self.plain)
         response = self.client.get(reverse("resources:venues"), {"q": "tutorial"})
-        self.assertContains(response, "q=tutorial&amp;page=2")
+        self.assertContains(response, "Tutorial Room 20")
+        self.assertContains(response, "more-grid")
+        self.assertContains(response, "Show all 21 in Tutorial Block")
+        self.assertEqual(response.context["default_view"], "list")
 
 
 class DeletionGateTests(Fixtures):
@@ -419,20 +434,23 @@ class FacilityTests(Fixtures):
 class VenueOrderingTests(Fixtures):
     def setUp(self) -> None:
         super().setUp()
+        # One building, so the order compared is the Admin's, not the grouping's.
+        self.venue.building = Building.objects.create(name="AIKOL Main Building")
+        self.venue.save(update_fields=["building"])
         self.venues = [
             self.venue,
             Venue.objects.create(
                 code="VEN-2",
                 name="Seminar Room",
                 venue_type_id=Venue.VenueType.SEMINAR,
-                location="Level 1",
+                location="Level 1, AIKOL Main Building",
                 capacity=30,
             ),
             Venue.objects.create(
                 code="VEN-3",
                 name="Lecture Hall",
                 venue_type_id=Venue.VenueType.LECTURE,
-                location="Level 3",
+                location="Level 3, AIKOL Main Building",
                 capacity=100,
             ),
         ]
@@ -473,7 +491,7 @@ class VenueOrderingTests(Fixtures):
 
         self.client.force_login(self.plain)
         response = self.client.get(reverse("resources:venues"))
-        names = [venue.name for venue in response.context["page"].object_list]
+        names = [pick.resource.name for group in response.context["groups"] for pick in group.picks]
         self.assertEqual(names[:3], ["Lecture Hall", "Seminar Room", "Moot Court"])
 
 
@@ -484,6 +502,7 @@ class ResourceEditTests(Fixtures):
             reverse("resources:venue_new"),
             {
                 "code": "VEN-NEW", "name": "Discussion Room 3", "venue_type": "DISCUSSION",
+                "building": Building.objects.create(name="AIKOL Annex").pk,
                 "location": "Level 3", "floor": "3", "capacity": "12",
                 "opens_at": "08:00", "closes_at": "22:00", "description": "",
                 "status": ResourceStatus.ACTIVE,

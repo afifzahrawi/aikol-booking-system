@@ -35,6 +35,10 @@ urlpatterns = [
     path("manage/facilities/reorder/", views.facility_reorder, name="facility_reorder"),
     path("manage/facilities/<int:pk>/delete/", views.facility_delete, name="facility_delete"),
     path("manage/venue-types/", views.manage_venue_types, name="manage_venue_types"),
+    path("manage/buildings/", views.manage_buildings, name="manage_buildings"),
+    path("manage/buildings/new/", views.building_edit, name="building_new"),
+    path("manage/buildings/<int:pk>/", views.building_edit, name="building_edit"),
+    path("manage/buildings/<int:pk>/delete/", views.building_delete, name="building_delete"),
     path("manage/venue-types/new/", views.venue_type_edit, name="venue_type_new"),
     path("manage/venue-types/<int:pk>/", views.venue_type_edit, name="venue_type_edit"),
     path(

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Buildings{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Buildings</h1></div>
+    <div class="btn-group"><a class="btn btn-primary" data-modal-form href="{% url 'resources:building_new' %}">Add building</a></div>
+</div>
+{% include "resources/_tabs.html" with tab='buildings' %}
+
+<section class="card">
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr>
+            <th scope="col">Name</th><th scope="col">Position</th><th scope="col">Venues</th>
+            <th scope="col">Status</th><th scope="col">Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for b in buildings %}
+            <tr>
+                <td><strong>{{ b.name }}</strong></td>
+                <td>{{ b.display_order }}</td>
+                <td>{% if b.usage %}{{ b.usage }} venue{{ b.usage|pluralize }}
+                    {% else %}<span class="help">No venues</span>{% endif %}</td>
+                <td>{% if b.is_active %}<span class="badge badge-active">Shown</span>
+                    {% else %}<span class="badge badge-inactive">Hidden</span>{% endif %}</td>
+                <td class="row-actions"><div class="btn-group">
+                    <a class="btn btn-sm" data-modal-form href="{% url 'resources:building_edit' b.pk %}">Edit</a>
+                    <form method="post" action="{% url 'resources:building_delete' b.pk %}" class="inline">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-danger" type="submit"
+                                {% if b.usage %}disabled title="Has {{ b.usage }} venue(s)"{% endif %}>Delete</button>
+                    </form>
+                </div></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5"><div class="empty-state">No buildings yet.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endblock %}
