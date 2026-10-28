@@ -3,8 +3,14 @@
 Laid out like a desktop calendar (Google Calendar, Teams). Every position is a
 percentage of the bookable window, computed here so the template only places
 boxes: a booking's top and height within its day column, or its left and width
-along a room's row. Bookings that overlap within one day sit side by side in
-lanes, as a calendar shows double-booked meetings, so none hides another.
+along a room's row.
+
+Two things kept the week unreadable on a busy week, and are handled here. A
+booking running over more than one day (a car trip, mostly) filled whole day
+columns; it is drawn instead as a bar in the Trips lane above the hours, like
+an all-day event. And five overlapping bookings became five slivers; at most
+`MAX_LANES` sit side by side, the rest are counted as "+n more" on a booking
+they overlap and listed in that day's agenda.
 """
 
 from __future__ import annotations
@@ -22,6 +28,8 @@ from apps.resources.models import Resource, ResourceStatus, ResourceType
 from .models import BLOCKING_STATUSES, Booking, BookingStatus
 
 KINDS = {"venue": ResourceType.VENUE, "vehicle": ResourceType.VEHICLE}
+MAX_LANES = 2
+VEHICLE_GROUP = "Kulliyyah Vehicles"
 
 
 @dataclass
@@ -36,6 +44,7 @@ class Block:
     height: float = 0.0
     left: float = 0.0
     width: float = 0.0
+    hidden: int = 0  # overlapping bookings counted on this one as "+n more"
 
     @property
     def is_vehicle(self) -> bool:
@@ -45,12 +54,50 @@ class Block:
     def is_pending(self) -> bool:
         return self.booking.status == BookingStatus.PENDING
 
+    @property
+    def more_top(self) -> float:
+        return round(self.top + self.height, 3)
+
+    @property
+    def more_left(self) -> float:
+        return round(self.left + self.width, 3)
+
+
+@dataclass
+class Trip:
+    """A booking over more than one day, as a bar across the Trips lane."""
+
+    booking: Booking
+    first: int  # column of the first day shown, 0 for Monday
+    last: int
+    row: int = 0
+    starts_before: bool = False
+    ends_after: bool = False
+
+    @property
+    def is_vehicle(self) -> bool:
+        return self.booking.resource.resource_type == ResourceType.VEHICLE
+
+    @property
+    def is_pending(self) -> bool:
+        return self.booking.status == BookingStatus.PENDING
+
+    @property
+    def grid(self) -> str:
+        """Grid placement as custom properties; column 1 holds the lane's label."""
+        return f"--from:{self.first + 2};--to:{self.last + 3};--row:{self.row + 1}"
+
 
 @dataclass
 class Day:
     date: dt.date
     is_today: bool
     blocks: list[Block] = field(default_factory=list)
+    agenda: list[Booking] = field(default_factory=list)  # everything on this day
+
+    @property
+    def key(self) -> str:
+        return self.date.isoformat()
 
 
 def window() -> tuple[int, int]:
@@ -128,7 +175,61 @@ def _assign_lanes(blocks: list[Block]) -> None:
             o for o in blocks
             if o.start_minutes < block.end_minutes and o.end_minutes > block.start_minutes
         ]
-        block.lanes = max(o.lane for o in overlapping) + 1
+        block.lanes = min(max(o.lane for o in overlapping) + 1, MAX_LANES)
+
+
+def _overlaps(a: Block, b: Block) -> bool:
+    return a.start_minutes < b.end_minutes and a.end_minutes > b.start_minutes
+
+
+def _cap_lanes(blocks: list[Block]) -> list[Block]:
+    """Blocks beyond `MAX_LANES` are counted on a shown block they overlap,
+    preferring the one beside where they would have gone."""
+    shown = [b for b in blocks if b.lane < MAX_LANES]
+    for extra in (b for b in blocks if b.lane >= MAX_LANES):
+        hosts = [s for s in shown if _overlaps(s, extra)]
+        if hosts:
+            max(hosts, key=lambda s: s.lane).hidden += 1
+    return shown
+
+
+def _last_day(booking: Booking) -> dt.date:
+    """The last date a booking occupies; one ending at midnight ends the day before."""
+    end = timezone.localtime(booking.end_at)
+    return (end - dt.timedelta(microseconds=1)).date()
+
+
+def _is_trip(booking: Booking) -> bool:
+    return timezone.localtime(booking.start_at).date() < _last_day(booking)
+
+
+def _trips(rows: list[Booking], monday: dt.date) -> tuple[list[Trip], int]:
+    """Multi-day bookings packed into as few rows as possible."""
+    sunday = monday + dt.timedelta(days=6)
+    trips = []
+    for booking in rows:
+        if not _is_trip(booking):
+            continue
+        first = timezone.localtime(booking.start_at).date()
+        last = _last_day(booking)
+        trips.append(Trip(
+            booking=booking,
+            first=max(0, (first - monday).days),
+            last=min(6, (last - monday).days),
+            starts_before=first < monday,
+            ends_after=last > sunday,
+        ))
+    trips.sort(key=lambda t: (t.first, -t.last))
+    row_ends: list[int] = []
+    for trip in trips:
+        for index, ends in enumerate(row_ends):
+            if ends < trip.first:
+                trip.row, row_ends[index] = index, trip.last
+                break
+        else:
+            trip.row = len(row_ends)
+            row_ends.append(trip.last)
+    return trips, len(row_ends)
 
 
 def week(monday: dt.date, *, kinds: set[str], term: str = "") -> dict:
@@ -139,9 +240,16 @@ def week(monday: dt.date, *, kinds: set[str], term: str = "") -> dict:
     for day in days:
         day.is_today = day.date == today
     rows = bookings_between(monday, monday + dt.timedelta(days=7), kinds=kinds, term=term)
+    trips, trip_rows = _trips(rows, monday)
+    hourly = [r for r in rows if not _is_trip(r)]
     for day in days:
-        day.blocks = [b for b in (_clip(r, day.date, opens, closes) for r in rows) if b]
-        _assign_lanes(day.blocks)
+        day.agenda = [
+            r for r in rows
+            if timezone.localtime(r.start_at).date() <= day.date <= _last_day(r)
+        ]
+        blocks = [b for b in (_clip(r, day.date, opens, closes) for r in hourly) if b]
+        _assign_lanes(blocks)
+        day.blocks = _cap_lanes(blocks)
         for block in day.blocks:
             block.top = round((block.start_minutes - opens) / span * 100, 3)
             block.height = round((block.end_minutes - block.start_minutes) / span * 100, 3)
@@ -152,6 +260,8 @@ def week(monday: dt.date, *, kinds: set[str], term: str = "") -> dict:
     now_minutes = now.hour * 60 + now.minute
     return {
         "days": days,
+        "trips": trips,
+        "trip_rows": trip_rows,
         "bookings": rows,
         "hours": _hour_marks(opens, closes),
         "span_hours": span / 60,
@@ -169,8 +279,14 @@ def by_room(day: dt.date, *, kinds: set[str], term: str = "") -> dict:
         Resource.objects.filter(
             resource_type__in=[KINDS[k] for k in kinds], status=ResourceStatus.ACTIVE
         )
-        .select_related("venue", "vehicle")
-        .order_by("resource_type", "venue__display_order", "name")
+        .select_related("venue__building", "vehicle")
+        .order_by(
+            "-resource_type",  # VENUE before VEHICLE: rooms first, the cars last
+            "venue__building__display_order",
+            "venue__building__name",
+            "venue__display_order",
+            "name",
+        )
     )
     by_resource: dict[int, list[Block]] = {}
     for booking in rows:
@@ -179,10 +295,22 @@ def by_room(day: dt.date, *, kinds: set[str], term: str = "") -> dict:
             block.left = round((block.start_minutes - opens) / span * 100, 3)
             block.width = round((block.end_minutes - block.start_minutes) / span * 100, 3)
             by_resource.setdefault(booking.resource_id, []).append(block)
+    # Grouped by building, as the room picker is, so a long list of rooms
+    # reads in the order people walk the Kulliyyah.
+    groups: list[dict] = []
+    for resource in resources:
+        if resource.resource_type == ResourceType.VEHICLE:
+            name = VEHICLE_GROUP
+        else:
+            building = getattr(getattr(resource, "venue", None), "building", None)
+            name = building.name if building else "Other Venues"
+        if not groups or groups[-1]["name"] != name:
+            groups.append({"name": name, "rooms": []})
+        groups[-1]["rooms"].append(
+            {"resource": resource, "blocks": by_resource.get(resource.pk, [])}
+        )
     return {
-        "rooms": [
-            {"resource": r, "blocks": by_resource.get(r.pk, [])} for r in resources
-        ],
+        "groups": groups,
         "bookings": rows,
         "hours": _hour_marks(opens, closes),
         "span_hours": span / 60,

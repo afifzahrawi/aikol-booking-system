@@ -67,13 +67,20 @@ this month's requests. A yellow notice appears when a key is still out after its
 
 **Bookings** opens on a calendar of the week, like Google Calendar or Teams. Each day is a
 column; venues are shaded green and vehicles orange, and a booking still waiting for a decision has
-a dashed outline. Bookings at the same time sit side by side. The red line is the time now.
+a dashed outline. Up to two bookings at the same time sit side by side; when more overlap, a
+**+1 more** (or +2, +3) badge shows on one of them. The red line is the time now.
 
-- Use the arrows or **Today** to move through the weeks, or pick a day in the small month.
-- **By Room** shows one day with a row for each venue and car: the quickest way to see what is free.
-- Untick **Venues** or **Vehicles** to hide them, or search by booking number, name or room.
+- Use the arrows or **Today** to move through the weeks. Choose the dates beside them to open a
+  month and jump to any week.
+- A booking that runs over more than one day, such as a car trip, is a bar in the **Trips** row
+  above the hours.
+- Choose a day's heading, or a **+n more** badge, to see every booking on that day in a list.
+- **By Room** shows one day with a row for each venue, grouped by building, and each car: the
+  quickest way to see what is free.
+- Choose **Venues** or **Vehicles** to hide or show them, or search by booking number, name or room.
 - Choose a booking to open its details on the right. **Approve** decides it at once; **Decline**
-  asks for the reason the requester will see. **Waiting for You** lists what still needs a decision.
+  asks for the reason the requester will see. The red **awaiting decision** button at the top lists
+  what still needs a decision, with **Approve** and **Review** beside each.
 
 The other tabs, **Venues** and **Vehicles**, are the full list of bookings, with filters and export.
 

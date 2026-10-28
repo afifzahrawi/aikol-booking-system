@@ -289,10 +289,32 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.32); -webkit-backdrop-filter: blu
 .rf-seg:not(.rf-seg-ready) [aria-current="page"], .rf-seg:not(.rf-seg-ready) [aria-pressed="true"] { background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
 
 /* ---- Week calendar (Bookings, Calendar) -------------------------------- */
-.cal-shell { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-start; }
-.cal-side { flex: 1 1 15rem; max-width: 17rem; display: flex; flex-direction: column; gap: 1.5rem; }
-.cal-main { flex: 999 1 34rem; min-width: 0; }
+.cal-main { min-width: 0; }
 .cal-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-bottom: 1rem; }
+.cal-tools { gap: 0.6rem 0.75rem; }
+.cal-nav { display: flex; align-items: center; gap: 0.25rem; }
+.cal-waiting { display: inline-flex; align-items: center; padding: 0.45rem 0.95rem; border-radius: var(--radius-pill); color: #a12a1f; background: #fde9e7; font-size: 0.88rem; font-weight: 600; text-decoration: none; transition: background-color var(--dur-fast) var(--ease-out); }
+.cal-waiting:hover { background: #fbd9d5; }
+.cal-jump { position: relative; }
+.cal-jump > summary { list-style: none; padding: 0.35rem 0.6rem; border-radius: 9px; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out); }
+.cal-jump > summary::-webkit-details-marker { display: none; }
+.cal-jump > summary::after { content: ""; display: inline-block; width: 0.4rem; height: 0.4rem; margin: 0 0 0.2rem 0.55rem; border: solid var(--docket-muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.cal-jump > summary:hover, .cal-jump[open] > summary { background: #e8e8ed; }
+.cal-jump-pop { position: absolute; z-index: 25; top: calc(100% + 0.4rem); left: 0; width: 16rem; padding: 0.9rem; border-radius: var(--radius-card); background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 18px 44px rgba(0, 0, 0, 0.16); animation: rf-peek var(--dur) var(--ease-out) both; }
+.cal-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.cal-chip { position: relative; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; border: 1px solid var(--docket-rule-dark); border-radius: var(--radius-pill); background: #fff; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.cal-chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.cal-chip i { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--docket-green); }
+.cal-chip.vehicle i { background: #b4580f; }
+.cal-chip:has(input:not(:checked)) { border-style: dashed; color: var(--docket-muted); background: transparent; }
+.cal-chip:has(input:not(:checked)) i { background: #c7c7cc; }
+.cal-chip:has(input:focus-visible) { outline: 2px solid var(--docket-ink); outline-offset: 2px; }
+.cal-search { width: 13rem; border-radius: var(--radius-pill); }
+@media (max-width: 40rem) {
+    .cal-tools .cal-spacer { display: none; }
+    .cal-filters { flex: 1 1 100%; }
+    .cal-search { flex: 1 1 8rem; width: auto; min-width: 0; }
+}
 .cal-bar h1 { margin: 0; font-size: 1.6rem; }
 .cal-range { font-size: 1.05rem; font-weight: 600; }
 .cal-step { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border-radius: 9px; color: var(--docket-ink); text-decoration: none; transition: background-color var(--dur-fast) var(--ease-out); }
@@ -304,7 +326,35 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.32); -webkit-backdrop-filter: blu
 .cal-scroll { overflow-x: auto; }
 .cal-grid-head, .cal-grid { display: grid; grid-template-columns: 3.5rem repeat(var(--cal-days, 7), minmax(7rem, 1fr)); min-width: 48rem; }
 .cal-grid-head { border-bottom: 1px solid var(--docket-rule); }
-.cal-dayhead { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.75rem 0.6rem 0.6rem; }
+.cal-dayhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.5rem; padding: 0.7rem 0.6rem 0.55rem; color: inherit; text-decoration: none; border-radius: 10px; transition: background-color var(--dur-fast) var(--ease-out); }
+.cal-dayhead:hover { background: #f5f5f7; }
+.cal-count { flex-basis: 100%; color: var(--docket-muted); font-size: 0.72rem; }
+.cal-col.is-today { background-color: #fffafa; }
+/* Bookings over more than one day, as bars above the hours. */
+.cal-trips { display: grid; grid-template-columns: 3.5rem repeat(7, minmax(7rem, 1fr)); grid-template-rows: repeat(var(--trip-rows, 1), 1.75rem); gap: 3px 0; min-width: 48rem; padding: 0.4rem 0; border-bottom: 1px solid var(--docket-rule); background: #fcfcfd; }
+.cal-trips-label { grid-row: 1 / -1; padding: 0.3rem 0.5rem 0 0; color: #8e8e93; font-size: 0.7rem; text-align: right; }
+.cal-trip { grid-column: var(--from) / var(--to); grid-row: var(--row); display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0 3px; padding: 0 0.6rem; border-radius: 7px; color: var(--docket-green-deep); background: var(--docket-green-soft); font-size: 0.75rem; text-decoration: none; white-space: nowrap; overflow: hidden; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+.cal-trip:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); }
+.cal-trip strong { font-weight: 600; flex-shrink: 0; }
+.cal-trip span { overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
+.cal-trip.is-vehicle { color: #7a3a06; background: #fbebdd; }
+.cal-trip.is-pending { background: #fff; border: 1.5px dashed var(--docket-green); }
+.cal-trip.is-vehicle.is-pending { border-color: #b4580f; }
+.cal-trip.from-before { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: 0; }
+.cal-trip.to-after { border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 0; }
+.cal-trip.is-selected { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--docket-green); }
+/* Overlaps past two side by side: counted here, listed in the day's panel. */
+.cal-more { position: absolute; z-index: 4; transform: translate(calc(-100% - 0.4rem), calc(-100% - 0.3rem)); padding: 0.05rem 0.5rem; border-radius: var(--radius-pill); color: #fff; background: var(--docket-ink); font-size: 0.68rem; font-weight: 600; line-height: 1.5; text-decoration: none; white-space: nowrap; transition: transform var(--dur-fast) var(--ease-out); }
+.cal-more:hover { transform: translate(calc(-100% - 0.4rem), calc(-100% - 0.3rem)) scale(1.06); }
+.cal-room-group { margin: 0; padding: 0.5rem 1rem; border-bottom: 1px solid var(--docket-rule); background: #fafafa; color: var(--docket-ink); font-size: 0.8rem; font-weight: 700; }
+.cal-agenda { display: flex; flex-direction: column; }
+.cal-agenda-item { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr) auto; align-items: center; gap: 0.6rem; padding: 0.65rem 0.4rem; border-top: 1px solid var(--docket-rule); border-radius: 8px; color: var(--docket-ink); text-decoration: none; transition: background-color var(--dur-fast) var(--ease-out); }
+a.cal-agenda-item:hover { background: #f5f5f7; }
+.cal-agenda-item time { color: var(--docket-muted); font-size: 0.8rem; line-height: 1.3; }
+.cal-agenda-item strong { display: block; font-size: 0.9rem; font-weight: 600; }
+.cal-agenda-item small { color: var(--docket-muted); }
+.cal-agenda-item.is-decision { grid-template-columns: 3.6rem minmax(0, 1fr); }
+.cal-decide { grid-column: 2; display: flex; gap: 0.4rem; }
 .cal-dayhead .dow { color: var(--docket-muted); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .cal-dayhead .num { width: 2.1rem; height: 2.1rem; display: grid; place-items: center; border-radius: 50%; font-size: 1.3rem; font-weight: 600; }
 .cal-dayhead.is-today .dow { color: #d73a2c; }
@@ -378,16 +428,6 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.32); -webkit-backdrop-filter: blu
 .mini-month .grid a.in-range { color: var(--docket-green-deep); background: var(--docket-green-soft); font-weight: 500; }
 .mini-month .grid a.is-today { color: #fff; background: #d73a2c; font-weight: 600; }
 .mini-month .grid a.out { color: #c7c7cc; }
-.side-h { margin: 0 0 0.4rem; color: var(--docket-muted); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-.side-h .count { margin-left: 0.4rem; padding: 1px 7px; border-radius: var(--radius-pill); color: #fff; background: #d73a2c; font-size: 0.68rem; letter-spacing: 0; }
-.side-check { display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0; font-size: 0.9rem; cursor: pointer; }
-.side-check input { width: 1rem; height: 1rem; accent-color: var(--docket-green); }
-.side-check.vehicle input { accent-color: #b4580f; }
-.side-check small { margin-left: auto; color: var(--docket-muted); }
-.wait-item { display: flex; flex-direction: column; gap: 2px; width: 100%; margin-bottom: 0.4rem; padding: 0.6rem 0.75rem; border: 0; border-radius: 10px; color: var(--docket-ink); background: #fff; font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out); }
-.wait-item:hover { background: #fafafc; }
-.wait-item span { font-size: 0.88rem; font-weight: 500; }
-.wait-item small { color: var(--docket-muted); }
 
 /* The details drawer floats over the board's right edge, as a desktop
    calendar's event card does, so opening it never reflows the week. */
@@ -686,10 +726,10 @@ a:not(.btn):not(.cal-ev):not(.kiosk-tile):hover { text-decoration-thickness: 1px
 
 @media (prefers-reduced-motion: reduce) {
     .action-dialog[open] { animation: none; }
-    .rf-rise, .rf-rise-2, .rf-rise-3, .cal-ev, .cal-peek, .progress-fill, .kiosk-number.is-wrong, .kiosk-done .bubble { animation: none; }
+    .rf-rise, .rf-rise-2, .rf-rise-3, .cal-ev, .cal-peek, .cal-jump-pop, .progress-fill, .kiosk-number.is-wrong, .kiosk-done .bubble { animation: none; }
     .kiosk-done .bubble path { animation: none; stroke-dashoffset: 0; }
     .cal-now::before { animation: none; }
-    .btn, .rf-seg-thumb, .workspace-tabs a, .rf-lift, .rf-press, .cal-ev, .picker-days button, .picker-slots button, .keypad button, .kiosk-tile { transition: none; }
+    .btn, .rf-seg-thumb, .workspace-tabs a, .rf-lift, .rf-press, .cal-ev, .cal-trip, .cal-more, .cal-chip, .cal-dayhead, .picker-days button, .picker-slots button, .keypad button, .kiosk-tile { transition: none; }
 }
 
 /* ---- Colour and separation (18 October 2026) ------------------------------

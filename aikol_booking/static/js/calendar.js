@@ -2,16 +2,24 @@
     'use strict';
 
     // Bookings calendar. Choosing a booking opens its details beside the
-    // board instead of leaving the page; without this script each block is an
-    // ordinary link to the booking. The filters apply as soon as they change.
+    // board instead of leaving the page; a day's heading or "+n more" opens
+    // that day's list, and the awaiting button the requests to decide. Without
+    // this script each of them is an ordinary link. The filters apply as soon
+    // as they change.
     const panel = document.getElementById('cal-peek');
     let current = null;
 
     function open(id, trigger) {
-        const source = document.getElementById('peek-' + id);
+        return show('peek-' + id, trigger, id);
+    }
+
+    function show(templateId, trigger, bookingId) {
+        const source = document.getElementById(templateId);
         if (!panel || !source) return false;
-        document.querySelectorAll('.cal-ev.is-selected').forEach(el => el.classList.remove('is-selected'));
-        document.querySelectorAll('[data-peek="' + id + '"]').forEach(el => el.classList.add('is-selected'));
+        document.querySelectorAll('.is-selected').forEach(el => el.classList.remove('is-selected'));
+        if (bookingId) {
+            document.querySelectorAll('[data-peek="' + bookingId + '"]').forEach(el => el.classList.add('is-selected'));
+        }
         panel.replaceChildren(source.content.cloneNode(true));
         // Replaying the entrance makes a change of booking visible.
         panel.hidden = false;
@@ -28,7 +36,7 @@
         if (!panel) return;
         panel.hidden = true;
         panel.replaceChildren();
-        document.querySelectorAll('.cal-ev.is-selected').forEach(el => el.classList.remove('is-selected'));
+        document.querySelectorAll('.is-selected').forEach(el => el.classList.remove('is-selected'));
         if (current) current.focus();
         current = null;
     }
@@ -45,7 +53,16 @@
             open(listed.dataset.peekOpen, listed);
             return;
         }
+        const listing = event.target.closest('[data-panel]');
+        if (listing && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+            if (show('panel-' + listing.dataset.panel, listing)) event.preventDefault();
+            return;
+        }
         if (event.target.closest('[data-peek-close]')) { close(); return; }
+        // The month under the date range folds away like a menu.
+        document.querySelectorAll('details[data-dismiss-outside][open]').forEach(menu => {
+            if (!menu.contains(event.target)) menu.open = false;
+        });
         // A click anywhere else on the page puts the drawer away, except in a
         // dialog the drawer itself opened (Decline).
         if (panel && !panel.hidden && !panel.contains(event.target) && !event.target.closest('dialog')) close();

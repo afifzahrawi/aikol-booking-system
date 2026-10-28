@@ -160,6 +160,11 @@ Two operational items remain open (section 5, *Still open*).
     for You" list. Choosing a booking opens a details drawer with Approve and Decline; an
     approval from the drawer returns to the calendar (`next`, checked to be the calendar's own
     URL). The rail's Bookings item now opens the calendar; the register is "All Bookings".
+    Reworked 29 October 2026 (`design/admin-calendar-mockup.html`) because a busy week was
+    unreadable: the side column became one toolbar row (the month opens under the date range,
+    the waiting list from an "awaiting decision" button), multi-day bookings moved to a Trips
+    lane instead of filling day columns, overlaps are capped at two lanes with "+n more", each
+    day heading opens that day's list, and By Room groups venues by building.
   - **Home** for requesters: one search capsule with a Venue/Vehicle segmented control, an Up
     Next card with Requested, Approved, Key collected, Key returned progress, and Coming Up.
   - **Room page**: photo, facts as pills, and a booking card with a 7-day, half-hour time picker

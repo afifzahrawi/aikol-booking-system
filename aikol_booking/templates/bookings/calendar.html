@@ -4,24 +4,25 @@
 {% block content %}
 <div class="cal-bar">
     <h1>Bookings</h1>
-    <a class="cal-step" href="{{ prev_link }}" aria-label="{% if view == 'week' %}Previous week{% else %}Previous day{% endif %}"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m12.5 4.5-5.5 5.5 5.5 5.5"/></svg></a>
-    <a class="cal-step" href="{{ next_link }}" aria-label="{% if view == 'week' %}Next week{% else %}Next day{% endif %}"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m7.5 4.5 5.5 5.5-5.5 5.5"/></svg></a>
-    <span class="cal-range">{% if view == 'week' %}{{ monday|date:"j" }}{% if monday.month != sunday.month %} {{ monday|date:"M" }}{% endif %} to {{ sunday|date:"j F Y" }}{% else %}{{ day|date:"l j F Y" }}{% endif %}</span>
-    <a class="cal-today" href="{{ today_link }}">Today</a>
     <span class="cal-spacer"></span>
-    <nav class="rf-seg" aria-label="Calendar view" data-seg>
-        <span class="rf-seg-thumb" aria-hidden="true"></span>
-        <a href="{{ week_link }}" {% if view == 'week' %}aria-current="page"{% endif %}>Week</a>
-        <a href="{{ rooms_link }}" {% if view == 'rooms' %}aria-current="page"{% endif %}>By Room</a>
-    </nav>
+    {% if waiting_count %}
+        <a class="cal-waiting" href="{% url 'bookings:approvals' %}" data-panel="waiting">{{ waiting_count }} awaiting decision</a>
+    {% endif %}
+    <a class="btn btn-primary" href="{% url 'bookings:admin_start' %}">New booking</a>
 </div>
 {% include "bookings/_management_tabs.html" %}
 
-<div class="cal-shell">
-    <aside class="cal-side" aria-label="Calendar filters and requests">
-        <a class="btn btn-primary" href="{% url 'bookings:admin_start' %}">New booking</a>
-
-        <section class="mini-month" aria-label="{{ month.label }}">
+{% comment %} One row of controls: where in time, then what to show. The month to jump
+   from opens under the date range instead of taking a column of its own. {% endcomment %}
+<div class="cal-bar cal-tools">
+    <div class="cal-nav">
+        <a class="cal-step" href="{{ prev_link }}" aria-label="{% if view == 'week' %}Previous week{% else %}Previous day{% endif %}"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m12.5 4.5-5.5 5.5 5.5 5.5"/></svg></a>
+        <a class="cal-today" href="{{ today_link }}">Today</a>
+        <a class="cal-step" href="{{ next_link }}" aria-label="{% if view == 'week' %}Next week{% else %}Next day{% endif %}"><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m7.5 4.5 5.5 5.5-5.5 5.5"/></svg></a>
+    </div>
+    <details class="cal-jump" data-dismiss-outside>
+        <summary class="cal-range">{% if view == 'week' %}{{ monday|date:"j" }}{% if monday.month != sunday.month %} {{ monday|date:"M" }}{% endif %} to {{ sunday|date:"j F Y" }}{% else %}{{ day|date:"l j F Y" }}{% endif %}</summary>
+        <section class="mini-month cal-jump-pop" aria-label="{{ month.label }}">
             <strong>{{ month.label }}</strong>
             <div class="grid">
                 <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
@@ -32,111 +33,182 @@
                 {% endfor %}
             </div>
         </section>
+    </details>
+    <span class="cal-spacer"></span>
+    <form class="cal-filters" method="get" data-autosubmit>
+        <input type="hidden" name="week" value="{{ monday|date:'Y-m-d' }}">
+        <input type="hidden" name="view" value="{{ view }}">
+        <input type="hidden" name="day" value="{{ day|date:'Y-m-d' }}">
+        <input type="hidden" name="f" value="1">
+        <label class="cal-chip"><input type="checkbox" name="show" value="venue" {% if 'venue' in kinds %}checked{% endif %}><i aria-hidden="true"></i>Venues</label>
+        <label class="cal-chip vehicle"><input type="checkbox" name="show" value="vehicle" {% if 'vehicle' in kinds %}checked{% endif %}><i aria-hidden="true"></i>Vehicles</label>
+        <input class="input cal-search" type="search" name="q" value="{{ q }}" placeholder="Number, name or room" aria-label="Search bookings">
+        <button class="btn btn-sm" type="submit" data-autosubmit-button>Apply</button>
+    </form>
+    <nav class="rf-seg" aria-label="Calendar view" data-seg>
+        <span class="rf-seg-thumb" aria-hidden="true"></span>
+        <a href="{{ week_link }}" {% if view == 'week' %}aria-current="page"{% endif %}>Week</a>
+        <a href="{{ rooms_link }}" {% if view == 'rooms' %}aria-current="page"{% endif %}>By Room</a>
+    </nav>
+</div>
 
-        <form method="get" data-autosubmit>
-            <input type="hidden" name="week" value="{{ monday|date:'Y-m-d' }}">
-            <input type="hidden" name="view" value="{{ view }}">
-            <input type="hidden" name="day" value="{{ day|date:'Y-m-d' }}">
-            <input type="hidden" name="f" value="1">
-            <h2 class="side-h">Show</h2>
-            <label class="side-check"><input type="checkbox" name="show" value="venue" {% if 'venue' in kinds %}checked{% endif %}> Venues</label>
-            <label class="side-check vehicle"><input type="checkbox" name="show" value="vehicle" {% if 'vehicle' in kinds %}checked{% endif %}> Vehicles</label>
-            <div class="field mt-sm">
-                <label for="cal-q">Search</label>
-                <input class="input" type="search" id="cal-q" name="q" value="{{ q }}" placeholder="Number, name or room">
+<div class="cal-main">
+    <div class="cal-board">
+    {% if view == 'week' %}
+        <div class="cal-scroll">
+            <div class="cal-grid-head">
+                <span></span>
+                {% for d in board.days %}
+                    <a class="cal-dayhead{% if d.is_today %} is-today{% endif %}" href="?week={{ monday|date:'Y-m-d' }}&amp;view=rooms&amp;day={{ d.key }}" data-panel="day-{{ d.key }}"
+                       aria-label="{{ d.date|date:'l j F' }}, {{ d.agenda|length }} booking{{ d.agenda|length|pluralize }}">
+                        <span class="dow">{{ d.date|date:"D" }}</span><span class="num">{{ d.date.day }}</span>
+                        <small class="cal-count">{% if d.agenda %}{{ d.agenda|length }} booking{{ d.agenda|length|pluralize }}{% else %}Free{% endif %}</small>
+                    </a>
+                {% endfor %}
             </div>
-            <button class="btn btn-sm" type="submit" data-autosubmit-button>Apply</button>
-        </form>
-
-        <section aria-labelledby="wait-h">
-            <h2 class="side-h" id="wait-h">Waiting for You{% if waiting_count %}<span class="count">{{ waiting_count }}</span>{% endif %}</h2>
-            {% for b in waiting %}
-                <a class="wait-item" href="?week={{ b.start_at|date:'Y-m-d' }}&amp;view=week&amp;selected={{ b.pk }}" data-peek-open="{{ b.pk }}">
-                    <span>{{ b.resource.name }}</span>
-                    <small>{{ b.start_at|date:"D j M, H:i" }}</small>
-                </a>
-            {% empty %}
-                <p class="help">Nothing to decide.</p>
-            {% endfor %}
-            {% if waiting_count > waiting|length %}<a class="btn-link" href="{% url 'bookings:approvals' %}">See all {{ waiting_count }}</a>{% endif %}
-        </section>
-    </aside>
-
-    <div class="cal-main">
-        <div class="cal-board">
-        {% if view == 'week' %}
-            <div class="cal-scroll">
-                <div class="cal-grid-head">
-                    <span></span>
-                    {% for d in board.days %}
-                        <div class="cal-dayhead{% if d.is_today %} is-today{% endif %}">
-                            <span class="dow">{{ d.date|date:"D" }}</span><span class="num">{{ d.date.day }}</span>
-                        </div>
+            {% if board.trips %}
+                {% comment %} Bookings over more than one day, drawn once across the days they
+                   cover, like all-day events, instead of filling every hour of those days. {% endcomment %}
+                <div class="cal-trips" data-vars="--trip-rows:{{ board.trip_rows }}">
+                    <span class="cal-trips-label">Trips</span>
+                    {% for t in board.trips %}
+                        <a class="cal-trip{% if t.is_vehicle %} is-vehicle{% endif %}{% if t.is_pending %} is-pending{% endif %}{% if t.starts_before %} from-before{% endif %}{% if t.ends_after %} to-after{% endif %}"
+                           href="{% url 'bookings:detail' t.booking.pk %}" data-peek="{{ t.booking.pk }}" data-vars="{{ t.grid }}"
+                           aria-label="{{ t.booking.resource.name }}, {{ t.booking.start_at|date:'D j M H:i' }} to {{ t.booking.end_at|date:'D j M H:i' }}{% if t.is_pending %}, waiting for a decision{% endif %}">
+                            <strong>{{ t.booking.resource.name }}</strong>
+                            <span>{{ t.booking.purpose|truncatechars:60 }}</span>
+                        </a>
                     {% endfor %}
                 </div>
-                <div class="cal-grid" data-vars="--cal-span:{{ board.span_hours }}">
-                    <div class="cal-hours">
-                        {% for h in board.hours %}<span data-top="{{ h.top }}">{{ h.label }}</span>{% endfor %}
-                    </div>
-                    {% for d in board.days %}
-                        <div class="cal-col" aria-label="{{ d.date|date:'l j F' }}">
-                            {% for b in d.blocks %}
-                                <a class="cal-ev{% if b.is_vehicle %} is-vehicle{% endif %}{% if b.is_pending %} is-pending{% endif %}"
-                                   href="{% url 'bookings:detail' b.booking.pk %}" data-peek="{{ b.booking.pk }}"
-                                   data-top="{{ b.top }}" data-height="{{ b.height }}" data-left="{{ b.left }}" data-width="{{ b.width }}"
-                                   aria-label="{{ b.booking.resource.name }}, {{ d.date|date:'D j M' }}, {{ b.label }}{% if b.is_pending %}, waiting for a decision{% endif %}">
-                                    <strong>{{ b.booking.resource.name }}</strong>
-                                    <span>{{ b.label }}</span>
-                                    <span>{{ b.booking.purpose|truncatechars:60 }}</span>
-                                    {% if b.is_pending %}<span class="tag">Waiting</span>{% endif %}
-                                </a>
-                            {% endfor %}
-                            {% if d.is_today and board.now_top is not None %}<span class="cal-now" aria-hidden="true" data-top="{{ board.now_top }}"></span>{% endif %}
-                        </div>
-                    {% empty %}
-                        <div class="cal-col"><div class="empty-state">Tick Venues or Vehicles to see bookings.</div></div>
-                    {% endfor %}
+            {% endif %}
+            <div class="cal-grid" data-vars="--cal-span:{{ board.span_hours }}">
+                <div class="cal-hours">
+                    {% for h in board.hours %}<span data-top="{{ h.top }}">{{ h.label }}</span>{% endfor %}
                 </div>
-            </div>
-        {% else %}
-            <div class="cal-scroll">
-                <div class="cal-rooms" data-vars="--cal-hours:{{ board.hours|length }}">
-                    <div class="cal-room-head">
-                        <span class="cal-room-name"><strong>{{ day|date:"D j M" }}</strong></span>
-                        <div class="ticks">{% for h in board.hours %}<span>{{ h.label }}</span>{% endfor %}</div>
+                {% for d in board.days %}
+                    <div class="cal-col{% if d.is_today %} is-today{% endif %}" aria-label="{{ d.date|date:'l j F' }}">
+                        {% for b in d.blocks %}
+                            <a class="cal-ev{% if b.is_vehicle %} is-vehicle{% endif %}{% if b.is_pending %} is-pending{% endif %}"
+                               href="{% url 'bookings:detail' b.booking.pk %}" data-peek="{{ b.booking.pk }}"
+                               data-top="{{ b.top }}" data-height="{{ b.height }}" data-left="{{ b.left }}" data-width="{{ b.width }}"
+                               aria-label="{{ b.booking.resource.name }}, {{ d.date|date:'D j M' }}, {{ b.label }}{% if b.is_pending %}, waiting for a decision{% endif %}">
+                                <strong>{{ b.booking.resource.name }}</strong>
+                                <span>{{ b.label }}</span>
+                                <span>{{ b.booking.purpose|truncatechars:60 }}</span>
+                            </a>
+                            {% if b.hidden %}
+                                <a class="cal-more" href="?week={{ monday|date:'Y-m-d' }}&amp;view=rooms&amp;day={{ d.key }}" data-panel="day-{{ d.key }}"
+                                   data-top="{{ b.more_top }}" data-left="{{ b.more_left }}">+{{ b.hidden }} more</a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if d.is_today and board.now_top is not None %}<span class="cal-now" aria-hidden="true" data-top="{{ board.now_top }}"></span>{% endif %}
                     </div>
-                    {% for row in board.rooms %}
+                {% empty %}
+                    <div class="cal-col"><div class="empty-state">Choose Venues or Vehicles to see bookings.</div></div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="cal-scroll">
+            <div class="cal-rooms" data-vars="--cal-hours:{{ board.hours|length }}">
+                <div class="cal-room-head">
+                    <span class="cal-room-name"><strong>{{ day|date:"D j M" }}</strong></span>
+                    <div class="ticks">{% for h in board.hours %}<span>{{ h.label }}</span>{% endfor %}</div>
+                </div>
+                {% for group in board.groups %}
+                    <h2 class="cal-room-group">{{ group.name }}</h2>
+                    {% for row in group.rooms %}
                         <div class="cal-room">
                             <span class="cal-room-name">{{ row.resource.name }}
-                                <small>{% if row.resource.resource_type == 'VEHICLE' %}Vehicle, {{ row.resource.vehicle.seats }} seats{% else %}Seats {{ row.resource.venue.capacity }}{% endif %}</small></span>
+                                <small>{% if row.resource.resource_type == 'VEHICLE' %}{{ row.resource.vehicle.seats }} seats{% else %}Seats {{ row.resource.venue.capacity }}{% endif %}</small></span>
                             <div class="cal-track">
                                 {% for b in row.blocks %}
                                     <a class="cal-ev{% if b.is_vehicle %} is-vehicle{% endif %}{% if b.is_pending %} is-pending{% endif %}"
                                        href="{% url 'bookings:detail' b.booking.pk %}" data-peek="{{ b.booking.pk }}"
                                        data-left="{{ b.left }}" data-width="{{ b.width }}"
                                        aria-label="{{ row.resource.name }}, {{ b.label }}{% if b.is_pending %}, waiting for a decision{% endif %}">
-                                        <strong>{{ b.label }}</strong>
-                                        <span>{{ b.booking.purpose|truncatechars:50 }}</span>
+                                        <strong>{{ b.booking.user.full_name }}</strong>
+                                        <span>{{ b.label }}</span>
                                     </a>
                                 {% endfor %}
                             </div>
                         </div>
-                    {% empty %}
-                        <div class="empty-state">Tick Venues or Vehicles to see bookings.</div>
                     {% endfor %}
-                </div>
+                {% empty %}
+                    <div class="empty-state">Choose Venues or Vehicles to see bookings.</div>
+                {% endfor %}
             </div>
-        {% endif %}
         </div>
-        <p class="cal-legend">
-            <span><i aria-hidden="true"></i>Venue, approved</span>
-            <span><i class="v" aria-hidden="true"></i>Vehicle, approved</span>
-            <span><i class="p" aria-hidden="true"></i>Waiting for a decision</span>
-        </p>
+    {% endif %}
     </div>
-
-    <aside class="cal-peek" id="cal-peek" aria-live="polite" aria-label="Booking details" hidden></aside>
+    <p class="cal-legend">
+        <span><i aria-hidden="true"></i>Venue, approved</span>
+        <span><i class="v" aria-hidden="true"></i>Vehicle, approved</span>
+        <span><i class="p" aria-hidden="true"></i>Waiting for a decision</span>
+    </p>
 </div>
+
+<aside class="cal-peek" id="cal-peek" aria-live="polite" aria-label="Booking details" hidden></aside>
+
+{% comment %} Each day's full list, opened from its heading or from "+n more", so a
+   booking that did not fit beside the others is one click away. {% endcomment %}
+{% for d in board.days %}
+<template id="panel-day-{{ d.key }}">
+    <div class="cal-peek-card">
+        <div class="cal-peek-top">
+            <div>
+                <h2>{{ d.date|date:"l j F" }}</h2>
+                <span class="when">{{ d.agenda|length }} booking{{ d.agenda|length|pluralize }}</span>
+            </div>
+            <button class="icon-close" type="button" data-peek-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+        <div class="cal-agenda">
+            {% for b in d.agenda %}
+                <a class="cal-agenda-item" href="{% url 'bookings:detail' b.pk %}" data-peek-open="{{ b.pk }}">
+                    <time>{% if b.start_at|date:'Y-m-d' == d.key %}{{ b.start_at|date:"H:i" }}{% else %}From {{ b.start_at|date:"D j" }}{% endif %}</time>
+                    <span><strong>{{ b.resource.name }}</strong><small>{{ b.user.full_name }}, until {% if b.end_at|date:'Y-m-d' == d.key %}{{ b.end_at|date:"H:i" }}{% else %}{{ b.end_at|date:"D j, H:i" }}{% endif %}</small></span>
+                    {% if b.status == 'PENDING' %}<span class="badge badge-pending">Waiting</span>{% endif %}
+                </a>
+            {% empty %}
+                <p class="help">Nothing booked on this day.</p>
+            {% endfor %}
+        </div>
+    </div>
+</template>
+{% endfor %}
+
+{% if waiting_count %}
+<template id="panel-waiting">
+    <div class="cal-peek-card">
+        <div class="cal-peek-top">
+            <div>
+                <h2>Awaiting Decision</h2>
+                <span class="when">{{ waiting_count }} request{{ waiting_count|pluralize }}, soonest first</span>
+            </div>
+            <button class="icon-close" type="button" data-peek-close aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+        <div class="cal-agenda">
+            {% for b in waiting %}
+                <div class="cal-agenda-item is-decision">
+                    <time>{{ b.start_at|date:"D j" }}<br>{{ b.start_at|date:"H:i" }}</time>
+                    <span><strong>{{ b.resource.name }}</strong><small>{{ b.user.full_name }}</small></span>
+                    <form method="post" action="{% url 'bookings:decide' b.pk %}" class="cal-decide">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button class="btn btn-sm btn-primary" type="submit" name="action" value="approve">Approve</button>
+                        {% if b.pk in on_board %}
+                            <a class="btn btn-sm" href="{% url 'bookings:detail' b.pk %}" data-peek-open="{{ b.pk }}">Review</a>
+                        {% else %}
+                            <a class="btn btn-sm" href="{% url 'bookings:detail' b.pk %}">Review</a>
+                        {% endif %}
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+        {% if waiting_count > waiting|length %}<a class="btn-link" href="{% url 'bookings:approvals' %}">See all {{ waiting_count }}</a>{% endif %}
+    </div>
+</template>
+{% endif %}
 
 {% comment %} One detail card per booking on the board, shown in the side panel when its
    block is chosen. Rendered here, not fetched, so opening it is instant. {% endcomment %}
@@ -176,4 +248,4 @@
 <span hidden data-initial-peek="{{ selected }}"></span>
 {% endblock %}
 
-{% block scripts %}<script src="{% static 'js/calendar.js' %}?v=20261018-1" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/calendar.js' %}?v=20261029-1" defer></script>{% endblock %}

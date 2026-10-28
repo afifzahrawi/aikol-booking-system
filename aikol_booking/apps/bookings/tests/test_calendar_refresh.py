@@ -52,6 +52,43 @@ class CalendarTests(VehicleFixtures):
         self.assertNotEqual(blocks[self.booking.pk].lane, blocks[other.pk].lane)
         self.assertLess(blocks[other.pk].width, 50)
 
+    def test_more_than_two_overlaps_are_counted_not_squeezed(self):
+        for hour in ("09:30", "10:00", "10:30"):
+            Booking.objects.create(
+                resource=self.car, user=self.owner, created_by=self.owner,
+                start_at=at(self.day, hour), end_at=at(self.day, "12:00"),
+                purpose="Crowded", status=BookingStatus.PENDING,
+            )
+        board = cal.week(cal.monday_of(self.day), kinds={"venue", "vehicle"})
+        day = next(d for d in board["days"] if d.date == self.day)
+        self.assertTrue(all(b.lane < cal.MAX_LANES for b in day.blocks))
+        self.assertEqual(
+            len(day.blocks) + sum(b.hidden for b in day.blocks), len(day.agenda)
+        )
+        page = self.client.get(self.url, self.week)
+        self.assertContains(page, "more</a>")
+        self.assertContains(page, f'id="panel-day-{self.day.isoformat()}"')
+
+    def test_a_booking_over_several_days_is_a_trip_not_a_column(self):
+        away = Booking.objects.create(
+            resource=self.car, user=self.owner, created_by=self.owner,
+            start_at=at(self.day + dt.timedelta(days=20), "08:00"),
+            end_at=at(self.day + dt.timedelta(days=22), "17:00"),
+            purpose="Visit", status=BookingStatus.APPROVED,
+        )
+        board = cal.week(cal.monday_of(away.start_at.date()), kinds={"vehicle"})
+        self.assertEqual([t.booking for t in board["trips"]], [away])
+        self.assertFalse(any(b.booking == away for d in board["days"] for b in d.blocks))
+        days_listing_it = [d for d in board["days"] if away in d.agenda]
+        trip = board["trips"][0]
+        self.assertEqual(len(days_listing_it), trip.last - trip.first + 1)
+
+    def test_by_room_groups_rooms_by_building(self):
+        board = cal.by_room(self.day, kinds={"venue", "vehicle"})
+        names = [g["name"] for g in board["groups"]]
+        self.assertEqual(names[-1], cal.VEHICLE_GROUP)
+        self.assertEqual(len(names), len(set(names)))
+
     def test_by_room_lists_each_resource(self):
         page = self.client.get(self.url, {**self.week, "view": "rooms", "day": self.day.isoformat()})
         self.assertContains(page, "Seminar Room 1")
@@ -121,6 +158,14 @@ class KioskShortNumberTests(VehicleFixtures):
 
 class RoomPickerAndHomeTests(VehicleFixtures):
     def test_a_room_page_offers_free_and_taken_times(self):
+        # A booking inside the week the page shows; earlier slots today are only
+        # taken once the day has started, so the test must not rely on them.
+        tomorrow = timezone.localdate() + dt.timedelta(days=1)
+        Booking.objects.create(
+            resource=self.room, user=self.owner, created_by=self.owner,
+            start_at=at(tomorrow, "10:00"), end_at=at(tomorrow, "11:00"),
+            purpose="Taken", status=BookingStatus.APPROVED,
+        )
         self.client.force_login(self.plain)
         page = self.client.get(reverse("resources:detail", args=[self.room.pk]))
         self.assertContains(page, "data-picker")

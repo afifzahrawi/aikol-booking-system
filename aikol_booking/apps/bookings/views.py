@@ -758,13 +758,14 @@ def booking_calendar(request):
 
     if view == "week":
         board = cal.week(monday, kinds=kinds, term=term) if kinds else {
-            "days": [], "bookings": [], "hours": [], "span_hours": 14, "now_top": None
+            "days": [], "trips": [], "trip_rows": 0, "bookings": [], "hours": [],
+            "span_hours": 14, "now_top": None,
         }
     else:
         board = cal.by_room(day, kinds=kinds, term=term) if kinds else {
-            "rooms": [], "bookings": [], "hours": [], "span_hours": 14
+            "groups": [], "bookings": [], "hours": [], "span_hours": 14
         }
-    waiting, waiting_count = cal.waiting_for_decision()
+    waiting, waiting_count = cal.waiting_for_decision(limit=12)
 
     def link(**changes) -> str:
         params = {"week": monday.isoformat(), "view": view, "day": day.isoformat()}
@@ -792,7 +793,8 @@ def booking_calendar(request):
             "month": cal.mini_month(day if view == "rooms" else monday, week_start=monday),
             "waiting": waiting,
             "waiting_count": waiting_count,
-            "selected": selected if selected.isdigit() else "",
+            "on_board": {b.pk for b in board["bookings"]},
+            "selected":selected if selected.isdigit() else "",
             "prev_link": link(
                 week=(monday - dt.timedelta(days=7)).isoformat(),
                 day=(day - dt.timedelta(days=7 if view == "week" else 1)).isoformat(),
