@@ -1036,3 +1036,10 @@ table.data th { color: var(--navy); }
 @media (prefers-reduced-motion: reduce) {
     .pick, .pick-photo img, .chip, .picker-toggle input::after, [data-picker-results] { animation: none; transition: none; }
 }
+
+/* The Admin edits a page notice where it appears. */
+.notice-editable { position: relative; padding-right: 4.5rem; }
+.notice-edit { position: absolute; top: 0.7rem; right: 0.8rem; padding: 0.2rem 0.75rem; border-radius: 99px; background: rgba(255, 255, 255, 0.85); color: var(--docket-green-deep); font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: background-color var(--dur-fast) var(--ease-out); }
+.notice-edit:hover { background: #fff; }
+.notice-add { display: block; margin-bottom: 1.25rem; padding: 0.75rem 1rem; border: 1.5px dashed var(--docket-rule-dark, #c7c7cc); border-radius: 14px; color: var(--docket-muted); font-size: 0.9rem; font-weight: 600; text-align: center; text-decoration: none; transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.notice-add:hover { border-color: var(--docket-green); color: var(--docket-green-deep); }

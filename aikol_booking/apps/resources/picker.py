@@ -32,8 +32,6 @@ from .models import (
 
 # A group shows this many before "Show all"; the list view fits more per row.
 GROUP_PREVIEW = {"grid": 4, "list": 6}
-# Above this many results the page opens as a list unless the person chose.
-LIST_VIEW_ABOVE = 12
 RECENT_COUNT = 3
 
 FREE, BUSY, OFF = "free", "busy", "off"
@@ -277,7 +275,9 @@ def build_picker(request, kind: str) -> dict:
         "groups": groups,
         "count": len(picks),
         "recent": recent,
-        "default_view": "list" if len(picks) > LIST_VIEW_ABOVE else "grid",
+        # Grid first, as the office asked; a person's own choice of List is
+        # remembered by picker.js in their browser.
+        "default_view": "grid",
         "preview": GROUP_PREVIEW,
         "booking_query": (
             f"start_date={date:%Y-%m-%d}&start_time={from_time}"

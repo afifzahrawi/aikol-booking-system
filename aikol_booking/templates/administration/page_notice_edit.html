@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ place }} Notice{% endblock %}
+{% block content %}
+<h1>Edit {{ place }} Notice</h1>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {{ form.non_field_errors }}
+    {% include "_form_fields.html" %}
+    <div class="btn-group">
+        <a class="btn" href="{% if next %}{{ next }}{% else %}{% url 'administration:site_content' %}{% endif %}">Cancel</a>
+        <button class="btn btn-primary" type="submit">Save</button>
+    </div>
+</form>
+{% endblock %}

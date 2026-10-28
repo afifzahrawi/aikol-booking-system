@@ -31,8 +31,13 @@ _PATCHED = "_aikol_clears_cache"
 
 
 def _clear_caches() -> None:
+    from apps.administration.memo import forget
+
     for alias in caches:
         caches[alias].clear()
+    # The in-process page memory has the same problem: a rollback fires no
+    # save signal, so a value one test wrote would be shown to the next.
+    forget()
 
 
 def _wrap(cls) -> None:

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Calendar Mockup</title>
+<link rel="stylesheet" href="../aikol_booking/static/css/fonts.css">
+<style>
+:root {
+    --ink: #1d1d1f; --ink-2: #424245; --muted: #6e6e73; --vellum: #f5f5f7; --rule: #e5e5ea; --rule-2: #f0f0f3;
+    --green: #0f6b5e; --green-deep: #0a4e44; --green-soft: #e3f1ee; --rail: #0d4f47;
+    --venue: #1f6fb2; --venue-soft: #e6f0fa; --car: #b4580f; --car-soft: #fff1dc;
+    --pending: #8a4b00; --red: #d73a2c;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1); --fast: 160ms; --mid: 260ms;
+    --hour: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--vellum); color: var(--ink); }
+body { font: 14px/1.45 "IBM Plex Sans", system-ui, sans-serif; display: grid; grid-template-columns: 15.5rem 1fr; min-height: 100vh; }
+.rail { background: var(--rail); padding: 1.25rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.rail a { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.8rem; border-radius: 10px; color: #d6e6e2; text-decoration: none; font-weight: 500; }
+.rail a[aria-current] { background: #fff; color: #0a4e44; }
+.rail b { min-width: 1.3rem; padding: 0 0.35rem; border-radius: 99px; background: var(--red); color: #fff; font-size: 0.72rem; text-align: center; }
+main { padding: 1.5rem clamp(1rem, 2.5vw, 2rem) 3rem; min-width: 0; }
+.flag { display: inline-block; margin-bottom: 0.75rem; padding: 0.2rem 0.7rem; border-radius: 99px; background: var(--car-soft); color: var(--pending); font-size: 0.78rem; font-weight: 600; }
+
+/* One toolbar instead of three control areas. */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-bottom: 0.9rem; }
+h1 { margin: 0 0.4rem 0 0; font-size: 1.75rem; letter-spacing: -0.02em; }
+.nav { display: flex; align-items: center; gap: 0.25rem; }
+.icon { width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08); font-size: 1rem; cursor: pointer; }
+.pill-btn { border: 0; border-radius: 99px; padding: 0.35rem 0.9rem; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08); font: inherit; font-weight: 600; cursor: pointer; }
+.range { position: relative; font-size: 1.05rem; font-weight: 600; border: 0; background: none; cursor: pointer; padding: 0.3rem 0.5rem; border-radius: 8px; }
+.range:hover { background: #e8e8ed; }
+.range::after { content: " ▾"; color: var(--muted); font-size: 0.8rem; }
+.spacer { flex: 1; }
+.seg { display: inline-grid; grid-auto-flow: column; padding: 3px; border-radius: 10px; background: #e8e8ed; }
+.seg button { border: 0; background: none; padding: 0.3rem 0.9rem; border-radius: 8px; font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: background var(--mid) var(--ease); }
+.seg button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.chip { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid var(--rule); background: #fff; border-radius: 99px; padding: 0.3rem 0.8rem; font: inherit; font-weight: 500; cursor: pointer; }
+.chip i { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
+.chip[aria-pressed="false"] { border-style: dashed; background: transparent; color: var(--muted); }
+.chip[aria-pressed="false"] i { background: #c7c7cc !important; }
+.search { border: 1px solid var(--rule); border-radius: 99px; padding: 0.4rem 0.9rem; font: inherit; width: 13rem; background: #fff; }
+.primary { border: 0; border-radius: 10px; padding: 0.5rem 1rem; background: var(--green); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.waiting { display: inline-flex; align-items: center; gap: 0.45rem; border: 0; border-radius: 99px; padding: 0.35rem 0.85rem; background: #fde9e7; color: #a12a1f; font: inherit; font-weight: 600; cursor: pointer; }
+
+/* The board. */
+.board { background: #fff; border-radius: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.05); overflow: hidden; }
+.days { display: grid; grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--rule); }
+.days div { padding: 0.55rem 0.5rem; font-size: 0.78rem; color: var(--muted); font-weight: 600; text-transform: none; }
+.days b { margin-left: 0.3rem; font-size: 1.15rem; color: var(--ink); }
+.days .today b { display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--red); color: #fff; font-size: 0.95rem; }
+.days .count { display: block; margin-top: 0.1rem; font-weight: 500; }
+
+/* Trips lane: multi-day car trips as bars above the hours. */
+.trips { display: grid; grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr)); grid-auto-rows: 1.65rem; gap: 3px 0; padding: 0.4rem 0; border-bottom: 1px solid var(--rule); background: #fcfcfd; }
+.trips > span { grid-row: 1 / -1; font-size: 0.72rem; color: var(--muted); padding: 0.2rem 0.5rem; }
+.trip { margin: 0 4px; padding: 0 0.55rem; border-radius: 7px; background: var(--car-soft); border-left: 3px solid var(--car); color: #6b3a00; font-size: 0.76rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.65rem; cursor: pointer; }
+.trip.pending { background: repeating-linear-gradient(135deg, #fff7ea 0 6px, #fff1dc 6px 12px); }
+
+/* Hours: the bookable window only; busy hours stay readable. */
+.grid { display: grid; grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr)); position: relative; max-height: 30rem; overflow-y: auto; }
+.hours div { height: var(--hour); font-size: 0.7rem; color: var(--muted); text-align: right; padding-right: 0.5rem; transform: translateY(-0.5em); }
+.col { position: relative; border-left: 1px solid var(--rule-2); background-image: linear-gradient(var(--rule-2) 1px, transparent 1px); background-size: 100% var(--hour); }
+.col.today { background-color: #fffafa; }
+.ev { position: absolute; left: 3px; right: 3px; padding: 0.2rem 0.4rem; border-radius: 7px; background: var(--venue-soft); border-left: 3px solid var(--venue); font-size: 0.74rem; line-height: 1.25; overflow: hidden; cursor: pointer; transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
+.ev:hover { z-index: 3; transform: scale(1.02); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
+.ev b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #0f3f66; }
+.ev small { color: var(--muted); }
+.ev.pending { background: repeating-linear-gradient(135deg, #f1f6fc 0 6px, var(--venue-soft) 6px 12px); border-left-style: dashed; }
+.more { position: absolute; right: 4px; bottom: 4px; padding: 0.05rem 0.45rem; border-radius: 99px; background: var(--ink); color: #fff; font-size: 0.68rem; font-weight: 600; }
+
+/* By Room: one row per room, so nothing overlaps. */
+.timeline { display: none; }
+.by-room .week { display: none; }
+.by-room .timeline { display: block; }
+.tl-head, .tl-row { display: grid; grid-template-columns: 11rem 1fr; }
+.tl-head { border-bottom: 1px solid var(--rule); font-size: 0.72rem; color: var(--muted); }
+.tl-hours { display: grid; grid-template-columns: repeat(14, 1fr); }
+.tl-hours span { padding: 0.5rem 0.3rem; border-left: 1px solid var(--rule-2); }
+.tl-group { padding: 0.45rem 0.9rem; background: #fafafa; border-bottom: 1px solid var(--rule); font-size: 0.78rem; font-weight: 700; color: var(--ink-2); }
+.tl-row { border-bottom: 1px solid var(--rule-2); min-height: 2.6rem; }
+.tl-row > span { padding: 0.6rem 0.9rem; font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-lane { position: relative; background-image: linear-gradient(90deg, var(--rule-2) 1px, transparent 1px); background-size: calc(100% / 14) 100%; }
+.tl-lane .ev { top: 0.35rem; bottom: 0.35rem; left: auto; right: auto; }
+
+/* Day agenda, opened from "+2 more" or the Waiting button. */
+.panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(24rem, 92vw); background: #fff; box-shadow: -10px 0 40px rgba(0,0,0,.15); padding: 1.25rem; transform: translateX(105%); transition: transform var(--mid) var(--ease); z-index: 20; overflow-y: auto; }
+.panel.open { transform: none; }
+.panel h2 { margin: 0 0 0.25rem; font-size: 1.15rem; }
+.panel p { margin: 0 0 1rem; color: var(--muted); }
+.panel .close { position: absolute; top: 1rem; right: 1rem; }
+.item { display: grid; grid-template-columns: 4.2rem 1fr auto; gap: 0.6rem; align-items: center; padding: 0.65rem 0; border-top: 1px solid var(--rule); }
+.item time { color: var(--muted); font-size: 0.8rem; }
+.item b { display: block; }
+.item small { color: var(--muted); }
+.tag { padding: 0.15rem 0.55rem; border-radius: 99px; font-size: 0.72rem; font-weight: 600; background: var(--green-soft); color: var(--green-deep); }
+.tag.p { background: var(--car-soft); color: var(--pending); }
+.decide { display: flex; gap: 0.4rem; }
+.decide button { border: 0; border-radius: 8px; padding: 0.3rem 0.7rem; font: inherit; font-weight: 600; cursor: pointer; background: var(--green); color: #fff; }
+.decide button + button { background: #ececf0; color: var(--ink-2); }
+.legend { display: flex; gap: 1.1rem; margin-top: 0.75rem; color: var(--muted); font-size: 0.78rem; }
+.legend span::before { content: ""; display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: 0.35rem; border-radius: 3px; vertical-align: -0.1em; background: var(--venue-soft); border-left: 3px solid var(--venue); }
+.legend .c::before { background: var(--car-soft); border-color: var(--car); }
+.legend .p::before { background: repeating-linear-gradient(135deg, #f1f6fc 0 3px, var(--venue-soft) 3px 6px); border-left-style: dashed; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<nav class="rail">
+    <a href="#">Home</a><a href="#">My Bookings</a><a href="#">Venue</a><a href="#">Vehicles</a>
+    <a href="#" style="margin-top:.75rem">Overview</a><a href="#" aria-current="page">Bookings <b>9</b></a>
+    <a href="#">Keys <b>2</b></a><a href="#">Resources</a><a href="#">People</a><a href="#">Insights</a><a href="#">System</a>
+</nav>
+<main id="main">
+    <span class="flag">Mockup with illustrative data</span>
+    <div class="bar">
+        <h1>Bookings</h1>
+        <div class="nav"><button class="icon" type="button">‹</button><button class="pill-btn" type="button">Today</button><button class="icon" type="button">›</button></div>
+        <button class="range" type="button" title="Opens a month to jump to any week">26 Oct to 1 Nov 2026</button>
+        <span class="spacer"></span>
+        <button class="waiting" type="button" id="waitingBtn">9 awaiting decision</button>
+        <button class="primary" type="button">New booking</button>
+    </div>
+    <div class="bar">
+        <div class="seg" id="viewSeg"><button type="button" data-view="week" aria-pressed="true">Week</button><button type="button" data-view="room" aria-pressed="false">By Room</button></div>
+        <button class="chip" type="button" data-kind="venue" aria-pressed="true"><i style="background:var(--venue)"></i>Venues</button>
+        <button class="chip" type="button" data-kind="car" aria-pressed="true"><i style="background:var(--car)"></i>Vehicles</button>
+        <span class="spacer"></span>
+        <input class="search" type="search" placeholder="Booking number, name or room">
+    </div>
+
+    <section class="board" id="board">
+        <div class="week">
+            <div class="days" id="days"></div>
+            <div class="trips" id="trips"><span>Trips</span></div>
+            <div class="grid" id="grid"><div class="hours" id="hours"></div></div>
+        </div>
+        <div class="timeline" id="timeline"></div>
+    </section>
+    <div class="legend"><span>Venue, approved</span><span class="c">Vehicle, approved</span><span class="p">Waiting for a decision (striped)</span></div>
+</main>
+
+<aside class="panel" id="panel" aria-label="Day agenda">
+    <button class="icon close" type="button" id="closePanel">×</button>
+    <h2 id="panelTitle"></h2><p id="panelSub"></p>
+    <div id="panelBody"></div>
+</aside>
+
+<script>
+// Illustrative data only.
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], DATES = [26,27,28,29,30,31,1], TODAY = 2;
+const ROOMS = {'AIKOL Main Building': ['Moot Court','Seminar Room 1','Seminar Room 2','Conference Room','Lecture Room 1'],
+               'AIKOL Library Wing': ['Discussion Room 1','Discussion Room 2','Meeting Room A'],
+               'AIKOL Classrooms': ['LR 1.1','LR 1.2','LR 2.1']};
+const ALL = Object.values(ROOMS).flat();
+const WHO = ['Aisyah','Hafiz','Nurul','Daniel','Siti','Imran','Farah','Amir','Zul','Mei Ling','Kumar','Hana'];
+let seed = 11; const r = n => (seed = (seed * 9301 + 49297) % 233280) / 233280 * n | 0;
+const EVENTS = [];
+for (let d = 0; d < 5; d++) for (let k = 0; k < 9 + r(5); k++) {
+  const s = 8 + r(9) + (r(2) ? 0.5 : 0), len = 1 + r(3);
+  EVENTS.push({d, s, e: Math.min(s + len, 21), room: ALL[r(ALL.length)], who: WHO[r(WHO.length)], pending: r(5) === 0});
+}
+EVENTS.push({d:5, s:9, e:12, room:'Moot Court', who:'Moot Society', pending:false});
+const TRIPS = [{from:1,to:2,name:'Toyota Innova, Melaka visit'},{from:3,to:6,name:'Proton Exora, Kuantan moot',pending:true},{from:0,to:0,name:'Perodua Bezza, Putrajaya court'},{from:4,to:5,name:'Proton Saga, Ipoh seminar'}];
+const fmt = h => `${String(Math.floor(h)).padStart(2,'0')}:${h % 1 ? '30' : '00'}`;
+const START = 8, END = 21, HOUR = 44, MAXCOLS = 2;
+const $ = id => document.getElementById(id);
+
+function week() {
+  $('days').innerHTML = '<div></div>' + DAYS.map((d, i) => `<div class="${i === TODAY ? 'today' : ''}">${d}<b>${DATES[i]}</b><span class="count">${EVENTS.filter(e => e.d === i).length} bookings</span></div>`).join('');
+  // Pack trips into as few rows as possible, like all-day events.
+  const rows = [];
+  const placed = TRIPS.map(t => {
+    let row = rows.findIndex(end => end < t.from);
+    if (row === -1) { row = rows.length; rows.push(t.to); } else rows[row] = t.to;
+    return `<div class="trip${t.pending ? ' pending' : ''}" style="grid-column:${t.from + 2} / ${t.to + 3};grid-row:${row + 1}">${t.name}</div>`;
+  });
+  $('trips').innerHTML = `<span style="grid-row:1 / ${rows.length + 1}">Trips</span>` + placed.join('');
+  $('hours').innerHTML = Array.from({length: END - START}, (_, i) => `<div>${fmt(START + i)}</div>`).join('');
+  $('grid').querySelectorAll('.col').forEach(c => c.remove());
+  DAYS.forEach((_, d) => {
+    const col = document.createElement('div');
+    col.className = 'col' + (d === TODAY ? ' today' : '');
+    col.style.height = (END - START) * HOUR + 'px';
+    // Lay out overlaps: at most two side by side, the rest behind "+n more".
+    const list = EVENTS.filter(e => e.d === d).sort((a, b) => a.s - b.s);
+    const lanes = [];
+    const shown = [];
+    list.forEach(e => {
+      let lane = lanes.findIndex(end => end <= e.s);
+      if (lane === -1) { lane = lanes.length; lanes.push(e.e); } else lanes[lane] = e.e;
+      if (lane >= MAXCOLS) {
+        // Counted on the visible booking it overlaps instead of drawn as a sliver.
+        const host = shown.find(v => v.e > e.s && v.s < e.e && v.lane === MAXCOLS - 1) || shown.find(v => v.e > e.s && v.s < e.e);
+        if (host) { host.hidden += 1; }
+        return;
+      }
+      const el = document.createElement('div');
+      el.className = 'ev' + (e.pending ? ' pending' : '');
+      el.style.top = (e.s - START) * HOUR + 1 + 'px';
+      el.style.height = (e.e - e.s) * HOUR - 3 + 'px';
+      el.style.left = `calc(${lane * 50}% + 3px)`; el.style.right = `calc(${(MAXCOLS - 1 - lane) * 50}% + 3px)`;
+      el.innerHTML = `<b>${e.room}</b><small>${fmt(e.s)} ${e.who}</small>`;
+      el.onclick = () => agenda(d);
+      col.appendChild(el);
+      shown.push({...e, lane, el, hidden: 0});
+    });
+    shown.filter(v => v.hidden).forEach(v => {
+      v.el.insertAdjacentHTML('beforeend', `<span class="more">+${v.hidden} more</span>`);
+    });
+    $('grid').appendChild(col);
+  });
+  $('grid').scrollTop = 0;
+}
+
+function timeline() {
+  const d = TODAY;
+  let html = `<div class="tl-head"><span style="padding:.5rem .9rem">${DAYS[d]} ${DATES[d]}</span><div class="tl-hours">${Array.from({length: 14}, (_, i) => `<span>${fmt(START + i)}</span>`).join('')}</div></div>`;
+  for (const [b, rooms] of Object.entries(ROOMS)) {
+    html += `<div class="tl-group">${b}</div>`;
+    rooms.forEach(room => {
+      const evs = EVENTS.filter(e => e.d === d && e.room === room);
+      html += `<div class="tl-row"><span>${room}</span><div class="tl-lane">${evs.map(e => `<div class="ev${e.pending ? ' pending' : ''}" style="left:calc(${(e.s - START) / 14 * 100}% + 2px);width:calc(${(e.e - e.s) / 14 * 100}% - 4px)"><b>${e.who}</b><small>${fmt(e.s)} to ${fmt(e.e)}</small></div>`).join('')}</div></div>`;
+    });
+  }
+  $('timeline').innerHTML = html;
+}
+
+function agenda(d, waitingOnly) {
+  const list = (waitingOnly ? EVENTS.filter(e => e.pending) : EVENTS.filter(e => e.d === d)).sort((a, b) => a.d - b.d || a.s - b.s);
+  $('panelTitle').textContent = waitingOnly ? 'Awaiting Decision' : `${DAYS[d]} ${DATES[d]} October`;
+  $('panelSub').textContent = `${list.length} booking${list.length === 1 ? '' : 's'}`;
+  $('panelBody').innerHTML = list.map(e => `<div class="item"><time>${waitingOnly ? DAYS[e.d] + ' ' : ''}${fmt(e.s)}</time><div><b>${e.room}</b><small>${e.who}, until ${fmt(e.e)}</small></div>${e.pending ? (waitingOnly ? '<span class="decide"><button>Approve</button><button>Review</button></span>' : '<span class="tag p">Pending</span>') : '<span class="tag">Approved</span>'}</div>`).join('');
+  $('panel').classList.add('open');
+}
+
+$('closePanel').onclick = () => $('panel').classList.remove('open');
+$('waitingBtn').onclick = () => agenda(0, true);
+$('viewSeg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('viewSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  $('board').classList.toggle('by-room', b.dataset.view === 'room');
+};
+document.querySelectorAll('[data-kind]').forEach(chip => chip.onclick = () => {
+  const on = chip.getAttribute('aria-pressed') !== 'true';
+  chip.setAttribute('aria-pressed', on);
+  if (chip.dataset.kind === 'car') $('trips').style.display = on ? '' : 'none';
+  else $('grid').querySelectorAll('.ev,.more').forEach(x => x.style.visibility = on ? '' : 'hidden');
+});
+week(); timeline();
+</script>
+</body>
+</html>

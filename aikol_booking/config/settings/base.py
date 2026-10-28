@@ -43,6 +43,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "config.middleware.SecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "config.middleware.SlidingSessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -82,7 +83,8 @@ AUTH_USER_MODEL = "accounts.User"
 # Sliding expiry keeps an active office shift usable, while an open tab left
 # overnight must authenticate again before it can submit an action.
 SESSION_COOKIE_AGE = 60 * 60 * 12
-SESSION_SAVE_EVERY_REQUEST = True
+# Sliding, but written at most every ten minutes: config.middleware.SlidingSessionMiddleware.
+SESSION_SAVE_EVERY_REQUEST = False
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

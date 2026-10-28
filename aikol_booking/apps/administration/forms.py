@@ -258,6 +258,17 @@ class SiteContentForm(StyledFormMixin, forms.ModelForm):
         return self._clean_image("home_image")
 
 
+class PageNoticeForm(StyledFormMixin, forms.Form):
+    """One page notice, edited from the page it appears on."""
+
+    heading = forms.CharField(max_length=120, required=False)
+    text = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 4}),
+        required=False,
+        help_text="Leave the heading and text empty to hide this notice.",
+    )
+
+
 class AnnouncementForm(StyledFormMixin, forms.ModelForm):
     is_active = yes_no_field("Published", help_text="Choose No to hide it without deleting it.")
     layout = [["tone", "is_active"], ["starts_at", "ends_at"]]

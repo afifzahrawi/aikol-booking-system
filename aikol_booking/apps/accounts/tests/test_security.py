@@ -52,7 +52,26 @@ class SessionSecurityTests(TestCase):
 
     def test_idle_session_expires_within_half_a_day(self):
         self.assertEqual(settings.SESSION_COOKIE_AGE, 60 * 60 * 12)
-        self.assertTrue(settings.SESSION_SAVE_EVERY_REQUEST)
+        self.assertIn("config.middleware.SlidingSessionMiddleware", settings.MIDDLEWARE)
+
+    def test_the_session_is_extended_while_used_but_not_written_on_every_click(self):
+        from django.contrib.sessions.models import Session
+
+        from config.middleware import SlidingSessionMiddleware
+
+        self.client.get(reverse("accounts:profile"))
+        key = self.client.session.session_key
+        first = Session.objects.get(session_key=key).expire_date
+        self.client.get(reverse("accounts:profile"))
+        self.assertEqual(Session.objects.get(session_key=key).expire_date, first)
+
+        # Ten minutes on, the next click moves the expiry forward again.
+        session = self.client.session
+        session[SlidingSessionMiddleware.KEY] -= SlidingSessionMiddleware.REFRESH_SECONDS
+        session.save()
+        before = Session.objects.get(session_key=key).expire_date
+        self.client.get(reverse("accounts:profile"))
+        self.assertGreater(Session.objects.get(session_key=key).expire_date, before)
 
 
 class EnumerationTests(TestCase):

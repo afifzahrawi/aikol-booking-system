@@ -1,8 +1,15 @@
 {% comment %} A guidance notice whose wording the Admin keeps in Site Content. Shown only
-   when it has a heading or text. `extra` adds classes for a page's own layout. {% endcomment %}
+   when it has a heading or text. `key` names it for the Admin's in-place Edit
+   button; an empty notice shows the Admin a slot to add one, and nobody else
+   anything. `extra` adds classes for a page's own layout. {% endcomment %}
 {% if heading or text %}
-<aside class="notice notice-info{% if extra %} {{ extra }}{% endif %}" aria-label="{{ label|default:'Booking information' }}">
+<aside class="notice notice-info{% if extra %} {{ extra }}{% endif %}{% if user.is_administrator and key %} notice-editable{% endif %}" aria-label="{{ label|default:'Booking information' }}">
     {% if heading %}<strong>{{ heading }}</strong>{% endif %}
     {{ text|linebreaksbr }}
+    {% if user.is_administrator and key %}
+    <a class="notice-edit" data-modal-form href="{% url 'administration:page_notice_edit' key %}?next={{ request.get_full_path|urlencode }}">Edit</a>
+    {% endif %}
 </aside>
+{% elif user.is_administrator and key %}
+<a class="notice-add{% if extra %} {{ extra }}{% endif %}" data-modal-form href="{% url 'administration:page_notice_edit' key %}?next={{ request.get_full_path|urlencode }}">Add a notice for this page</a>
 {% endif %}

@@ -151,3 +151,31 @@ class KioskLockMiddleware:
             if not allowed:
                 return redirect("bookings:kiosk")
         return self.get_response(request)
+
+
+class SlidingSessionMiddleware:
+    """Keeps a signed-in session alive while it is used, without a database
+    write on every click.
+
+    `SESSION_SAVE_EVERY_REQUEST` wrote the session back after every page: three
+    round trips to the database on each click, for an expiry that only needs
+    to move forward now and then. Touching the session at most every
+    `REFRESH_SECONDS` keeps the 12-hour idle limit to within ten minutes.
+    """
+
+    REFRESH_SECONDS = 600
+    KEY = "_refreshed_at"
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        session = getattr(request, "session", None)
+        if session is not None and not session.is_empty():
+            import time
+
+            now = int(time.time())
+            if now - int(session.get(self.KEY, 0)) >= self.REFRESH_SECONDS:
+                session[self.KEY] = now  # marks the session modified, so it is saved
+        return response

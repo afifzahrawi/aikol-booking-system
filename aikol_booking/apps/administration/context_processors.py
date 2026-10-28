@@ -59,7 +59,9 @@ def site_content(request):
     # Django's built-in authentication views already use the key ``site`` for
     # RequestSite. A distinct key keeps editable content from being replaced on
     # the sign-in and password-reset screens.
-    return {"site_content": SiteContent.load()}
+    from .memo import remembered
+
+    return {"site_content": remembered("site_content", 60, SiteContent.load)}
 
 
 def _section_root(path: str, shell_nav: str, is_admin_area: bool) -> str:
@@ -124,8 +126,6 @@ def chrome(request):
             ),
         }
 
-    from apps.bookings.models import Booking, BookingStatus
-
     admin_paths = ("/manage/", "/approvals/")
     if path == "/manage/":
         shell_nav = "overview"
@@ -135,7 +135,7 @@ def chrome(request):
         shell_nav = "keys"
     elif path.startswith(
         ("/manage/rooms/", "/manage/cars/", "/manage/facilities/", "/manage/venue-types/",
-         "/manage/resource/")
+         "/manage/buildings/", "/manage/resource/")
     ):
         shell_nav = "resources"
     elif path.startswith("/resource/"):
@@ -171,7 +171,7 @@ def chrome(request):
     }
     return {
         "admin_area": is_admin_area,
-        "pending_count": Booking.objects.filter(status=BookingStatus.PENDING).count(),
+        "pending_count": _pending_count(),
         "my_attention": _my_attention(user),
         **(_office_attention() if user.is_administrator else {}),
         "shell_nav": shell_nav,
@@ -193,7 +193,25 @@ def _my_attention(user) -> int:
     ).count()
 
 
+def _pending_count() -> int:
+    from apps.bookings.models import Booking, BookingStatus
+
+    from .memo import remembered
+
+    return remembered(
+        "pending_count", 30, lambda: Booking.objects.filter(status=BookingStatus.PENDING).count()
+    )
+
+
 def _office_attention() -> dict:
+    """What needs the Admin, remembered briefly; see `memo`. Overdue keys
+    depend on the clock, so the memory is short rather than until a save."""
+    from .memo import remembered
+
+    return remembered("office_attention", 30, _count_office_attention)
+
+
+def _count_office_attention() -> dict:
     """What needs the Admin, by area, for the badges on the rail and tabs."""
     from apps.bookings.keys import awaiting_confirmation, outstanding_keys
     from apps.bookings.models import Booking, BookingStatus, ManagementDecision

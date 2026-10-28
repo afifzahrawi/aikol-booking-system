@@ -95,6 +95,47 @@ class SiteContentTests(TestCase):
         self.assertNotContains(vehicles, "Driver arrangement is included.")
         self.assertContains(self.client.get(reverse("resources:venues")), "Keys from the office.")
 
+    def test_the_admin_edits_a_notice_on_its_page_and_returns_there(self):
+        admin = User.objects.create_user(
+            email="notice-admin@demo.aikol.test", password="prototype-password-1",
+            full_name="Notice Admin", phone="03-6196 4000", email_verified=True,
+            role=Role.ADMINISTRATOR,
+        )
+        self.client.force_login(admin)
+        page = self.client.get(reverse("resources:vehicles"))
+        edit_url = reverse("administration:page_notice_edit", args=["vehicle_list"])
+        self.assertContains(page, edit_url)
+        # The venue notice starts empty: the Admin sees a slot to add one.
+        self.assertContains(self.client.get(reverse("resources:venues")), "Add a notice for this page")
+
+        response = self.client.post(
+            edit_url,
+            {"heading": "Book two days ahead.", "text": "Drivers work weekdays.", "next": "/cars/"},
+        )
+        self.assertRedirects(response, "/cars/", fetch_redirect_response=False)
+        content = SiteContent.load()
+        self.assertEqual(content.vehicle_list_notice_heading, "Book two days ahead.")
+        self.assertEqual(content.vehicle_list_notice, "Drivers work weekdays.")
+
+        # A next address on another site is ignored.
+        response = self.client.post(
+            edit_url, {"heading": "", "text": "", "next": "https://example.com/"}
+        )
+        self.assertRedirects(
+            response, reverse("administration:site_content"), fetch_redirect_response=False
+        )
+
+    def test_only_the_admin_sees_or_uses_the_notice_editor(self):
+        user = User.objects.create_user(
+            email="notice-user@demo.aikol.test", password="prototype-password-1",
+            full_name="Notice User", phone="03-6196 4000", email_verified=True,
+        )
+        self.client.force_login(user)
+        self.assertNotContains(self.client.get(reverse("resources:vehicles")), "notice-edit")
+        self.assertNotContains(self.client.get(reverse("resources:venues")), "Add a notice")
+        edit_url = reverse("administration:page_notice_edit", args=["vehicle_list"])
+        self.assertEqual(self.client.post(edit_url, {"heading": "x"}).status_code, 403)
+
     def test_an_uploaded_logo_loses_its_white_and_is_sized_for_the_header(self):
         from io import BytesIO
 

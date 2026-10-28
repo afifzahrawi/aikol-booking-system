@@ -123,7 +123,14 @@ class SystemSetting(models.Model):
 
     @classmethod
     def get(cls, key: str, default: str | None = None) -> str:
-        row = cls.objects.filter(key=key).values_list("value", flat=True).first()
+        from .memo import remembered
+
+        # Read on most pages, sometimes several times; see `memo`.
+        row = remembered(
+            f"setting:{key}",
+            60,
+            lambda: cls.objects.filter(key=key).values_list("value", flat=True).first(),
+        )
         if row is not None:
             return row
         if default is not None:
@@ -242,6 +249,19 @@ class SiteContent(models.Model):
         "venue booking form notice heading", max_length=120, blank=True
     )
     venue_booking_notice = models.TextField("venue booking form notice", blank=True)
+
+    # The page notices by key: (heading field, text field, where it appears).
+    # The key is what the in-place Edit button and its URL name.
+    PAGE_NOTICES = {
+        "vehicle_list": ("vehicle_list_notice_heading", "vehicle_list_notice", "Vehicle page"),
+        "vehicle_booking": (
+            "vehicle_booking_notice_heading", "vehicle_booking_notice", "Vehicle booking form",
+        ),
+        "venue_list": ("venue_list_notice_heading", "venue_list_notice", "Venue page"),
+        "venue_booking": (
+            "venue_booking_notice_heading", "venue_booking_notice", "Venue booking form",
+        ),
+    }
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

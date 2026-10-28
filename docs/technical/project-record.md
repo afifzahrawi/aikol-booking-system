@@ -71,7 +71,15 @@ Two operational items remain open (section 5, *Still open*).
   `static/js/picker.js` submits it as the person types and swaps in the results only (`X-Picker:
   results`), with the address bar kept current. Buildings became a table the Admin edits
   (`resources.0006`, created from the existing locations), and the guidance notices on the vehicle
-  and venue pages moved into Site Content so the office can word them.
+  and venue pages moved into Site Content so the office can word them. The Admin edits each
+  notice in place from its page (an Edit button opening the usual dialog).
+- **Fewer database round trips per click** (28 October 2026). Every page re-read the header
+  content, the booking rules, the email settings and the rail badges, and wrote the session back:
+  14 to 27 queries, each a round trip to Supabase. Those values are now remembered in the web
+  process for up to a minute (`apps/administration/memo.py`) and forgotten on any save of the rows
+  they come from; only one web instance runs, so that is sufficient. The session is extended at most
+  every ten minutes (`SlidingSessionMiddleware`) instead of written on every request, keeping the
+  12-hour idle limit. Pages now take 5 to 13 queries.
 - **Redesigned.** The interface was audited end to end (`docs/ux-audit.md`) and brought onto the
   locked multi-page system in `design.md`, carried by `static/css/tokens.css` and `redesign.css`.
 - **Self-drive is gone entirely.** Requesters never drive a Kulliyyah car, so the licence fields left

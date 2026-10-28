@@ -20,8 +20,8 @@
 <link rel="expect" href="#main" blocking="render">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
-<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20261028-1">
-<link rel="stylesheet" href="{% static 'css/refresh.css' %}?v=20261028-3">
+<link rel="stylesheet" href="{% static 'css/redesign.css' %}?v=20261028-2">
+<link rel="stylesheet" href="{% static 'css/refresh.css' %}?v=20261028-4">
 <script src="{% static 'js/nav-state.js' %}?v=20261028-1"></script>
 </head>
 <body class="{% if request.session.kiosk_mode %}is-signed-out is-kiosk{% elif user.is_authenticated and not mfa_gate %}is-authenticated {% if admin_area %}is-administration{% else %}is-requester{% endif %}{% else %}is-signed-out{% endif %}">

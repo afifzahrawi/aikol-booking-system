@@ -15,9 +15,9 @@
 </div>
 
 {% if is_vehicle %}
-{% include "_page_notice.html" with heading=site_content.vehicle_booking_notice_heading text=site_content.vehicle_booking_notice label="Vehicle booking information" %}
+{% include "_page_notice.html" with key="vehicle_booking" heading=site_content.vehicle_booking_notice_heading text=site_content.vehicle_booking_notice label="Vehicle booking information" %}
 {% else %}
-{% include "_page_notice.html" with heading=site_content.venue_booking_notice_heading text=site_content.venue_booking_notice label="Venue booking information" %}
+{% include "_page_notice.html" with key="venue_booking" heading=site_content.venue_booking_notice_heading text=site_content.venue_booking_notice label="Venue booking information" %}
 {% endif %}
 
 <section class="card booking-form-card">

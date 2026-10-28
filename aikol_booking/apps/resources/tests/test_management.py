@@ -206,7 +206,7 @@ class BrowsingTests(Fixtures):
         self.assertContains(response, "Tutorial Room 20")
         self.assertContains(response, "more-grid")
         self.assertContains(response, "Show all 21 in Tutorial Block")
-        self.assertEqual(response.context["default_view"], "list")
+        self.assertEqual(response.context["default_view"], "grid")
 
 
 class DeletionGateTests(Fixtures):

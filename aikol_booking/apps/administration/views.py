@@ -326,6 +326,46 @@ def site_content(request):
 
 
 @administrator_required
+def page_notice_edit(request, key: str):
+    """Edit one notice from the page it is on, then go back to that page."""
+    from django.http import Http404
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    from .forms import PageNoticeForm
+
+    if key not in SiteContent.PAGE_NOTICES:
+        raise Http404("No such notice.")
+    heading_field, text_field, place = SiteContent.PAGE_NOTICES[key]
+    content = SiteContent.load()
+    form = PageNoticeForm(
+        request.POST or None,
+        initial={"heading": getattr(content, heading_field), "text": getattr(content, text_field)},
+    )
+    back = request.POST.get("next") or request.GET.get("next") or ""
+    if not url_has_allowed_host_and_scheme(back, {request.get_host()}, request.is_secure()):
+        back = ""
+    if request.method == "POST" and form.is_valid():
+        setattr(content, heading_field, form.cleaned_data["heading"].strip())
+        setattr(content, text_field, form.cleaned_data["text"].strip())
+        content.save(update_fields=[heading_field, text_field, "updated_at"])
+        log_action(
+            actor=request.user,
+            action="SITE_CONTENT_UPDATED",
+            entity_type="SiteContent",
+            entity_id=1,
+            description=f"{place} notice changed.",
+            request=request,
+        )
+        flash.success(request, f"{place} notice saved.")
+        return redirect(back or "administration:site_content")
+    return render(
+        request,
+        "administration/page_notice_edit.html",
+        {"form": form, "place": place, "next": back},
+    )
+
+
+@administrator_required
 def announcement_new(request):
     form = AnnouncementForm(request.POST or None)
     if request.method == "POST" and form.is_valid():

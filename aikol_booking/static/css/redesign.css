@@ -54,7 +54,7 @@
 .app-nav { view-transition-name: rail; }
 .docket-workspace { view-transition-name: workspace; }
 ::view-transition-old(workspace) { animation: none; mix-blend-mode: normal; }
-::view-transition-new(workspace) { animation: page-in var(--dur) var(--ease-out) both; mix-blend-mode: normal; }
+::view-transition-new(workspace) { animation: page-in var(--dur-fast) var(--ease-out) both; mix-blend-mode: normal; }
 /* Pages differ in height. Morphing the workspace box between them stretched
    both snapshots like a rubber sheet; instead the box takes its new size at
    once and each snapshot is drawn at its natural size from the top. */
