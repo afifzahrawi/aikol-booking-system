@@ -80,6 +80,24 @@ Two operational items remain open (section 5, *Still open*).
   they come from; only one web instance runs, so that is sufficient. The session is extended at most
   every ten minutes (`SlidingSessionMiddleware`) instead of written on every request, keeping the
   12-hour idle limit. Pages now take 5 to 13 queries.
+- **Office requests, 29 October 2026.** The venue and vehicle pages show everything by default,
+  in the Admin's own order (free or booked is on each card); "Free at this time only" is now
+  opt-in. Vehicles gained `display_order` and the same drag-to-reorder screen as venues, and an
+  unfiltered management list is no longer split into pages, so the whole order can be set (it
+  used to stop at 20 venues). Names are stored in capitals (`User.save`, the bulk import, and
+  migration `accounts.0006` for existing people), as on an IIUM card; there is no username,
+  people sign in by email. Signed image addresses are remembered in the web process instead of
+  the database cache (one round trip per photograph before), and the public service starts
+  with Cloud Run's startup CPU boost. The remaining pause is the cold start after the service
+  has been idle (`--min 0`); keeping it warm costs money, so that is left to the office.
+- **Insights rebuilt, 29 October 2026** (mockup `design/insights-mockup.html`, approved). Periods
+  are this month, a semester (`academic_terms`) or the last 12 months, counted to today and
+  compared with the same length before. Four topics (venues, vehicles, office work, who books)
+  under a "needs attention" row and six headline figures. Corrections to the old screen: room use
+  is against each room's own `opens_at`/`closes_at` instead of a fixed 08:00 to 22:00; the
+  approval rate counts decisions made in the period, not bookings starting in it, and leaves out
+  bookings the deciding officer entered; the CSV covers the period shown. No new table, field or
+  dependency; everything is read from existing columns.
 - **Redesigned.** The interface was audited end to end (`docs/ux-audit.md`) and brought onto the
   locked multi-page system in `design.md`, carried by `static/css/tokens.css` and `redesign.css`.
 - **Self-drive is gone entirely.** Requesters never drive a Kulliyyah car, so the licence fields left

@@ -1083,3 +1083,59 @@ table.data th { color: var(--navy); }
 .notice-edit:hover { background: #fff; }
 .notice-add { display: block; margin-bottom: 1.25rem; padding: 0.75rem 1rem; border: 1.5px dashed var(--docket-rule-dark, #c7c7cc); border-radius: 14px; color: var(--docket-muted); font-size: 0.9rem; font-weight: 600; text-align: center; text-decoration: none; transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 .notice-add:hover { border-color: var(--docket-green); color: var(--docket-green-deep); }
+
+/* Insights. Bars that compare one measure keep one colour; colour changes only
+   where it means something (a low figure, a car, a late cancellation). */
+.insight-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-bottom: 1.25rem; }
+.insight-pick { display: flex; gap: 0.5rem; align-items: center; }
+.insight-pick select { min-width: 14rem; }
+.insight-dates summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--docket-green-deep); }
+.insight-dates form { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: end; margin-top: 0.5rem; }
+.insight-dates label { display: grid; gap: 0.2rem; font-size: 0.82rem; color: var(--docket-muted); }
+.insight-attention { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.insight-alert { display: grid; gap: 0.15rem; padding: 0.85rem 1rem 0.85rem 1.1rem; border-radius: 14px; border-left: 4px solid var(--docket-green); background: var(--docket-green-soft); color: var(--docket-ink); text-decoration: none; transition: transform var(--dur-fast) var(--ease-out); }
+.insight-alert:hover { transform: translateY(-1px); }
+.insight-alert b { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.1; }
+.insight-alert span { font-size: 0.86rem; color: var(--docket-ink-2, var(--docket-muted)); }
+.insight-alert.tone-red { border-color: var(--docket-oxblood); background: var(--docket-oxblood-soft); }
+.insight-alert.tone-red b { color: var(--docket-oxblood); }
+.insight-alert.tone-amber { border-color: var(--docket-brass); background: var(--docket-brass-soft); }
+.insight-alert.tone-amber b { color: var(--docket-brass); }
+.insight-alert.tone-green b { color: var(--docket-green-deep); }
+.insight-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+@media (min-width: 720px) { .insight-kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1180px) { .insight-kpis { grid-template-columns: repeat(6, 1fr); } }
+.insight-kpi { display: grid; gap: 0.2rem; padding: 1rem 1.1rem; border-radius: var(--radius-card); background: #fff; border: 1px solid var(--docket-rule); }
+.insight-kpi small { font-size: 0.8rem; font-weight: 500; color: var(--docket-muted); }
+.insight-kpi strong { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; color: var(--docket-ink); }
+.insight-kpi .delta { font-size: 0.78rem; font-weight: 600; color: var(--docket-muted); }
+.insight-kpi .delta-good { color: var(--docket-green); }
+.insight-kpi .delta-bad { color: var(--docket-oxblood); }
+.insight-tabs { margin-bottom: 1rem; }
+.insight-pane .hbars .hbar .fill { background: var(--docket-green); }
+.insight-pane .hbars .hbar .fill.fill-low { background: var(--docket-brass); }
+.insight-pane .hbars .hbar .fill.fill-car { background: var(--sky); }
+.insight-pane .bar-col .bar { background: var(--docket-green); }
+.insight-pane .bar-col .bar.bar-other { background: #b5dcd3; }
+.insight-pane .bars { overflow-x: auto; }
+.insight-scroll { max-height: 22rem; overflow-y: auto; padding-right: 0.25rem; }
+.insight-pill { display: inline-block; padding: 0.1rem 0.6rem; border-radius: var(--radius-pill); font-size: 0.78rem; font-weight: 600; }
+.insight-pill.tone-ok { background: var(--docket-green-soft); color: var(--docket-green-deep); }
+.insight-pill.tone-warn { background: var(--docket-brass-soft); color: var(--docket-brass); }
+.insight-pill.tone-bad { background: var(--docket-oxblood-soft); color: var(--docket-oxblood); }
+.insight-split { display: flex; height: 14px; border-radius: var(--radius-pill); overflow: hidden; background: #ececf0; }
+.insight-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin: 0.6rem 0 0; padding: 0; list-style: none; font-size: 0.85rem; }
+.insight-legend i { display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.4rem; border-radius: 3px; vertical-align: -1px; }
+.part-good, .part-student { background: var(--docket-green); }
+.part-warn { background: var(--docket-brass); }
+.part-lecturer { background: var(--sky); }
+.part-staff { background: var(--plum); }
+.part-public { background: var(--coral); }
+.print-only { display: none; }
+@media print {
+    .app-nav, .app-sidebar, .insight-bar, .insight-tabs, .page-head .btn-group, .insight-alert:hover { display: none; }
+    .insight-pane[hidden] { display: block; }
+    .print-only { display: block; margin: 1.5rem 0 0.5rem; font-size: 1.2rem; }
+    .insight-scroll { max-height: none; overflow: visible; }
+    .card, .insight-kpi, .insight-alert { break-inside: avoid; }
+}

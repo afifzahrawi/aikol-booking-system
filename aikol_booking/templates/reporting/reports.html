@@ -1,136 +1,351 @@
 {% extends "base.html" %}
 {% load static %}{# not inherited from base.html #}
-{% block title %}Reports{% endblock %}
+{% block title %}Insights{% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/heatmap.js' %}" defer></script>
+<script src="{% static 'js/heatmap.js' %}?v=20261029-1" defer></script>
+<script src="{% static 'js/insights.js' %}?v=20261029-1" defer></script>
 {% endblock %}
 {% block content %}
 <div class="page-head">
-    <div><h1>Reports</h1>
-        <p class="lede">{{ start|date:"d M Y" }} to {{ today|date:"d M Y" }}, {{ days }} days.</p></div>
+    <div><h1>Insights</h1>
+        <p class="lede">{{ period.label }}: {{ period.start|date:"j M Y" }} to {{ period.end|date:"j M Y" }}{% if period.previous %}, compared with {{ period.previous.start|date:"j M Y" }} to {{ period.previous.end|date:"j M Y" }}{% endif %}.</p></div>
     <div class="btn-group">
-        <a class="btn" href="?days=30">30 days</a>
-        <a class="btn" href="?days=90">90 days</a>
-        <a class="btn" href="?days=365">A year</a>
-        <a class="btn btn-primary" href="{% url 'importexport:export_bookings' %}">Export bookings</a>
+        <a class="btn" href="{% url 'importexport:export_bookings' %}?from={{ period.start|date:'Y-m-d' }}&amp;to={{ period.end|date:'Y-m-d' }}">Download CSV</a>
+        <button class="btn btn-primary" type="button" data-print>Print Report</button>
     </div>
 </div>
-{% include "administration/_nav.html" with tab='reports' %}
 
-<div class="grid grid-4">
-    <div class="stat"><span class="k">Bookings</span><span class="v">{{ headline.total }}</span>
-        <span class="d">{{ headline.approved }} approved, {{ headline.rejected }} rejected,
-            {{ headline.cancelled }} cancelled</span></div>
-    <div class="stat info"><span class="k">Approval Rate</span>
-        <span class="v">{% if headline.approval_rate is not None %}{{ headline.approval_rate }}%{% else %}None{% endif %}</span>
-        <span class="d">of all decided requests</span></div>
-    <div class="stat accent"><span class="k">Room Hours Booked</span><span class="v">{{ headline.room_hours }}</span>
-        <span class="d">approved and completed</span></div>
-    <div class="stat neutral"><span class="k">Vehicle Trip Days</span><span class="v">{{ headline.trip_days }}</span>
-        <span class="d">approved and completed</span></div>
-</div>
-
-<section class="card">
-    <div class="card-head">
-        <h2 class="label">Room Demand by Hour and Day</h2>
-        <span class="help">
-            {% if heat.busiest %}Busiest: {{ heat.busiest.name }}
-                {{ heat.busiest.hour }}:00, {{ heat.busiest.value }} venue-hours
-            {% else %}No approved room bookings in the period{% endif %}
-        </span>
-    </div>
-    <div class="card-body">
-        <p class="help m-0 mb-xs">
-           How busy venues are at each hour of the day. Vehicles are not included.</p>
-
-        <div class="heat-wrap">
-        <table class="heat" id="heat">
-            <thead><tr><th scope="col">Venue</th>
-                {% for hour in heat.hours %}<th scope="col">{{ hour }}</th>{% endfor %}
-            </tr></thead>
-            <tbody>
-            {% for row in heat.rows %}
-                <tr><th scope="row">{{ row.name }}</th>
-                {% for cell in row.cells %}
-                    <td data-level="{{ cell.level }}" data-hour="{{ cell.hour }}"
-                        data-value="{{ cell.value }}" tabindex="0"
-                        title="{{ row.name }} {{ cell.hour }}:00, {{ cell.value }} venue-hours">
-                        <span class="visually-hidden">{{ cell.value }} venue-hours</span></td>
-                {% endfor %}
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        </div>
-
-        <div class="heat-foot">
-            <p class="heat-read m-0" id="heatRead" role="status" aria-live="polite">
-                Total {{ heat.total }} venue-hours in the period. Hover or tab a cell for its value.</p>
-            <div class="heat-scale" aria-hidden="true">
-                <span>None</span>
-                <i class="swatch-0"></i>
-                <span class="swatch-gap">Fewer</span>
-                <i class="swatch-1"></i><i class="swatch-2"></i>
-                <i class="swatch-3"></i><i class="swatch-4"></i>
-                <i class="swatch-5"></i>
-                <span>More</span>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="card">
-    <div class="card-head"><h2 class="label">Bookings per Month</h2></div>
-    <div class="card-body">
-        <div class="bars">
-        {% for row in monthly %}
-            <div class="bar-col">
-                <div class="bar" data-height="{{ row.percent }}"><span>{{ row.count }}</span></div>
-                <span class="bar-label">{{ row.label }}</span>
-            </div>
+<div class="insight-bar">
+    <nav class="rf-seg" aria-label="Period">
+        {% for key, name in periods %}
+            <a href="?period={{ key }}" {% if period.kind == key %}aria-current="page"{% endif %}>{{ name }}</a>
         {% endfor %}
-        </div>
-    </div>
+    </nav>
+    <form method="get" class="insight-pick">
+        {% if terms %}
+        <label class="visually-hidden" for="pickTerm">Semester</label>
+        <select id="pickTerm" name="term" data-autosubmit>
+            {% for term in terms %}
+                <option value="{{ term.pk }}" {% if period.term == term %}selected{% endif %}>{{ term.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="hidden" name="period" value="semester">
+        <button class="btn" type="submit" data-autosubmit-hide>Show</button>
+        {% endif %}
+    </form>
+    <details class="insight-dates" {% if period.kind == 'custom' %}open{% endif %}>
+        <summary>Other Dates</summary>
+        <form method="get">
+            <input type="hidden" name="period" value="custom">
+            <label>From <input type="date" name="from" value="{{ period.start|date:'Y-m-d' }}"></label>
+            <label>To <input type="date" name="to" value="{{ period.end|date:'Y-m-d' }}"></label>
+            <button class="btn" type="submit">Show</button>
+        </form>
+    </details>
+</div>
+
+{% if attention %}
+<section class="insight-attention" aria-label="Needs attention now">
+    {% for item in attention %}
+        <a class="insight-alert tone-{{ item.tone }}" href="{% url item.url %}">
+            <b>{{ item.figure }}</b><span>{{ item.text }}</span></a>
+    {% endfor %}
+</section>
+{% endif %}
+
+<section class="insight-kpis" aria-label="The period at a glance">
+    {% for k in kpis %}
+        <div class="insight-kpi"><small>{{ k.title }}</small>
+            <strong>{{ k.shown }}</strong>
+            <span class="delta delta-{{ k.tone }}">{{ k.text }}</span></div>
+    {% endfor %}
 </section>
 
-<div class="grid grid-2 grid-top">
+<nav class="workspace-tabs insight-tabs" aria-label="Insight topics">
+    <a href="?{{ query }}{% if query %}&amp;{% endif %}tab=venues" data-pane="venues" {% if tab == 'venues' %}aria-current="page"{% endif %}>Venues</a>
+    <a href="?{{ query }}{% if query %}&amp;{% endif %}tab=vehicles" data-pane="vehicles" {% if tab == 'vehicles' %}aria-current="page"{% endif %}>Vehicles</a>
+    <a href="?{{ query }}{% if query %}&amp;{% endif %}tab=office" data-pane="office" {% if tab == 'office' %}aria-current="page"{% endif %}>Office Work</a>
+    <a href="?{{ query }}{% if query %}&amp;{% endif %}tab=people" data-pane="people" {% if tab == 'people' %}aria-current="page"{% endif %}>Who Books</a>
+</nav>
+
+{# Venues #}
+<div class="insight-pane" id="pane-venues" data-pane-body="venues" {% if tab != 'venues' %}hidden{% endif %}>
+    <h2 class="print-only">Venues</h2>
+    <div class="grid grid-2 grid-top">
+        <section class="card">
+            <div class="card-head"><h3 class="label">Room Use by Building</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">Booked hours against each room's own opening hours. Shows where space is short.</p>
+                <div class="hbars">
+                {% for row in venue_use.buildings %}
+                    <div class="hbar"><span>{{ row.name }}</span>
+                        <div class="track"><div class="fill" data-width="{{ row.percent }}"></div></div>
+                        <span class="val">{{ row.percent }}%</span></div>
+                {% empty %}
+                    <div class="empty-state">No active venue.</div>
+                {% endfor %}
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-head"><h3 class="label">Rooms</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">Most and least used. A room seldom booked may be unknown to students or need fixing.</p>
+                <div class="hbars insight-scroll">
+                {% for row in venue_use.rooms %}
+                    <div class="hbar"><span>{{ row.name }}</span>
+                        <div class="track"><div class="fill{% if row.low %} fill-low{% endif %}" data-width="{{ row.percent }}"></div></div>
+                        <span class="val">{{ row.percent }}%</span></div>
+                {% empty %}
+                    <div class="empty-state">No active venue.</div>
+                {% endfor %}
+                </div>
+            </div>
+        </section>
+    </div>
+
     <section class="card">
-        <div class="card-head"><h2 class="label">Utilisation by Resource</h2></div>
+        <div class="card-head">
+            <h3 class="label">Busiest Times</h3>
+            <span class="help">
+                {% if heat.busiest %}Busiest: {{ heat.busiest.name }}
+                    {{ heat.busiest.hour }}:00, {{ heat.busiest.value }} room-hours
+                {% else %}No approved room bookings in the period{% endif %}
+            </span>
+        </div>
         <div class="card-body">
-            <p class="help m-0 mb-xs">How much of the day each one is booked.</p>
-            <div class="hbars">
-            {% for row in utilisation %}
-                <div class="hbar"><span>{{ row.resource.name }}</span>
-                    <div class="track"><div class="fill" data-width="{{ row.percent }}"></div></div>
-                    <span class="val">{{ row.percent }}%</span></div>
-            {% empty %}
-                <div class="empty-state">No active resource.</div>
-            {% endfor %}
+            <p class="help m-0 mb-xs">Approved room hours by weekday and hour. Darker is busier. Vehicles are not included.</p>
+            <div class="heat-wrap">
+            <table class="heat" id="heat">
+                <thead><tr><th scope="col">Day</th>
+                    {% for hour in heat.hours %}<th scope="col">{{ hour }}</th>{% endfor %}
+                </tr></thead>
+                <tbody>
+                {% for row in heat.rows %}
+                    <tr><th scope="row">{{ row.name }}</th>
+                    {% for cell in row.cells %}
+                        <td data-level="{{ cell.level }}" data-hour="{{ cell.hour }}"
+                            data-value="{{ cell.value }}" tabindex="0"
+                            title="{{ row.name }} {{ cell.hour }}:00, {{ cell.value }} room-hours">
+                            <span class="visually-hidden">{{ cell.value }} room-hours</span></td>
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            <div class="heat-foot">
+                <p class="heat-read m-0" id="heatRead" role="status" aria-live="polite">
+                    Total {{ heat.total }} room-hours in the period. Hover or tab a cell for its value.</p>
+                <div class="heat-scale" aria-hidden="true">
+                    <span>None</span>
+                    <i class="swatch-0"></i>
+                    <span class="swatch-gap">Fewer</span>
+                    <i class="swatch-1"></i><i class="swatch-2"></i>
+                    <i class="swatch-3"></i><i class="swatch-4"></i>
+                    <i class="swatch-5"></i>
+                    <span>More</span>
+                </div>
             </div>
         </div>
     </section>
 
-    <div class="stack">
+    <div class="grid grid-2 grid-top">
         <section class="card">
-            <div class="card-head"><h2 class="label">Keys</h2></div>
+            <div class="card-head"><h3 class="label">Right-Sized Rooms</h3></div>
             <div class="card-body">
-                <dl class="kv">
-                    <dt>Out now</dt><dd>{{ keys.out }}</dd>
-                    <dt>Overdue</dt><dd>{{ keys.overdue }}</dd>
-                    <dt>Completed with no key ever issued</dt><dd>{{ keys.uncollected }}
-                        <span class="help">(nobody collected a key)</span></dd>
-                </dl>
+                <p class="help m-0 mb-xs">Expected attendees against seats. Large rooms booked by small groups block bigger events.</p>
+                <div class="table-wrap">
+                <table class="data data-compact">
+                    <thead><tr><th scope="col">Room</th><th scope="col" class="num">Seats</th>
+                        <th scope="col" class="num">Usual Group</th><th scope="col">Fit</th></tr></thead>
+                    <tbody>
+                    {% for row in venue_use.fit %}
+                        <tr><td>{{ row.name }}</td><td class="num">{{ row.seats }}</td>
+                            <td class="num">{{ row.usual }}</td>
+                            <td><span class="insight-pill tone-{{ row.tone }}">{{ row.verdict }}</span></td></tr>
+                    {% empty %}
+                        <tr><td colspan="4"><div class="empty-state">No booking in this period gave a number of attendees.</div></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </div>
             </div>
         </section>
-
         <section class="card">
-            <div class="card-head"><h2 class="label">Most Frequent Requesters</h2></div>
+            <div class="card-head"><h3 class="label">Bookings per Month</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">Venues and vehicles together, by the month they take place. The months shown above are darker.</p>
+                <div class="bars">
+                {% for row in monthly %}
+                    <div class="bar-col">
+                        <div class="bar{% if not row.current %} bar-other{% endif %}" data-height="{{ row.percent }}"><span>{{ row.count }}</span></div>
+                        <span class="bar-label">{{ row.label }}</span>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+{# Vehicles #}
+<div class="insight-pane" id="pane-vehicles" data-pane-body="vehicles" {% if tab != 'vehicles' %}hidden{% endif %}>
+    <h2 class="print-only">Vehicles</h2>
+    <section class="card">
+        <div class="card-head"><h3 class="label">Each Car</h3></div>
+        <div class="card-body">
+            <p class="help m-0 mb-xs">Days out on trips in the period, and distance from the mileage written at key handover.</p>
+            <div class="table-wrap">
+            <table class="data data-compact">
+                <thead><tr><th scope="col">Car</th><th scope="col" class="num">Trip Days</th>
+                    <th scope="col" class="num">Distance</th><th scope="col" class="num">Road Tax Until</th></tr></thead>
+                <tbody>
+                {% for car in vehicle_use.cars %}
+                    <tr><td>{{ car.name }} <span class="help">{{ car.registration }}</span></td>
+                        <td class="num">{{ car.days }}</td>
+                        <td class="num">{% if car.distance is not None %}{{ car.distance }} km{% else %}Not recorded{% endif %}</td>
+                        <td class="num">{{ car.road_tax|date:"j M Y" }}</td></tr>
+                {% empty %}
+                    <tr><td colspan="4"><div class="empty-state">No active car.</div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </section>
+    <div class="grid grid-2 grid-top">
+        <section class="card">
+            <div class="card-head"><h3 class="label">Where Trips Go</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">Most frequent destinations, to plan driver time.</p>
+                <div class="hbars">
+                {% for row in vehicle_use.places %}
+                    <div class="hbar"><span>{{ row.name }}</span>
+                        <div class="track"><div class="fill fill-car" data-width="{{ row.percent }}"></div></div>
+                        <span class="val">{{ row.count }}</span></div>
+                {% empty %}
+                    <div class="empty-state">No approved trip in this period.</div>
+                {% endfor %}
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-head"><h3 class="label">Management Approval</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">The second approval, by Kulliyyah management, for the VMU driver.</p>
+                {% with m=vehicle_use.management %}
+                {% if m.total %}
+                <dl class="kv">
+                    <dt>Decided in the period</dt><dd>{{ m.total }}</dd>
+                    <dt>Approved</dt><dd>{{ m.approved }}%</dd>
+                    <dt>Not approved</dt><dd>{{ m.declined }}%</dd>
+                    <dt>Usual wait after the office approves</dt><dd>{% if m.wait_days is not None %}{{ m.wait_days }} days{% else %}None{% endif %}</dd>
+                </dl>
+                {% else %}
+                    <div class="empty-state">Management decided no trip in this period.</div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </section>
+    </div>
+</div>
+
+{# Office work #}
+<div class="insight-pane" id="pane-office" data-pane-body="office" {% if tab != 'office' %}hidden{% endif %}>
+    <h2 class="print-only">Office Work</h2>
+    <div class="grid grid-2 grid-top">
+        <section class="card">
+            <div class="card-head"><h3 class="label">Time to Decide</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">From request to the office's decision, for {{ office.decided }} decision{{ office.decided|pluralize }} in the period. Long waits leave requesters unsure.</p>
+                <div class="hbars">
+                {% for row in office.speed %}
+                    <div class="hbar"><span>{{ row.name }}</span>
+                        <div class="track"><div class="fill{% if forloop.last %} fill-low{% endif %}" data-width="{{ row.percent }}"></div></div>
+                        <span class="val">{{ row.percent }}%</span></div>
+                {% endfor %}
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-head"><h3 class="label">Why Requests Are Declined</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">From the reasons the office writes. A reason that keeps coming back may call for clearer guidance.</p>
+                <div class="hbars">
+                {% for row in office.reasons %}
+                    <div class="hbar"><span>{{ row.name }}</span>
+                        <div class="track"><div class="fill fill-low" data-width="{{ row.percent }}"></div></div>
+                        <span class="val">{{ row.count }}</span></div>
+                {% empty %}
+                    <div class="empty-state">No request was declined in this period.</div>
+                {% endfor %}
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-head"><h3 class="label">Keys</h3></div>
+            <div class="card-body">
+                <dl class="kv">
+                    <dt>Keys handed out</dt><dd>{{ office.keys.issued }}</dd>
+                    <dt>Returned after the booking ended</dt><dd>{{ office.keys.late }}{% if office.keys.issued %} ({{ office.keys.late_percent }}%){% endif %}</dd>
+                    <dt>Booking finished, key never collected</dt><dd>{{ office.keys.never }}</dd>
+                    <dt>Collected at the kiosk</dt><dd>{% if office.keys.kiosk_percent is not None %}{{ office.keys.kiosk_percent }}%{% else %}None{% endif %}</dd>
+                </dl>
+                <a class="btn btn-sm mt-xs" href="{% url 'bookings:keys' %}">Keys out now</a>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-head"><h3 class="label">Cancellations</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">Inside three days of the booking the office has to cancel; earlier ones free the room or car for others.</p>
+                {% with c=office.cancellations %}
+                {% if c.early or c.late %}
+                <div class="insight-split" aria-hidden="true">
+                    <div class="part-good" data-width="{{ c.early_percent }}"></div>
+                    <div class="part-warn" data-width="{{ c.late_percent }}"></div>
+                </div>
+                <ul class="insight-legend">
+                    <li><i class="part-good"></i>Three days or more before: {{ c.early }}</li>
+                    <li><i class="part-warn"></i>Inside three days: {{ c.late }}</li>
+                </ul>
+                {% else %}
+                    <div class="empty-state">Nothing was cancelled in this period.</div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </section>
+    </div>
+</div>
+
+{# Who books #}
+<div class="insight-pane" id="pane-people" data-pane-body="people" {% if tab != 'people' %}hidden{% endif %}>
+    <h2 class="print-only">Who Books</h2>
+    <div class="grid grid-2 grid-top">
+        <section class="card">
+            <div class="card-head"><h3 class="label">Bookings by Group</h3></div>
+            <div class="card-body">
+                <p class="help m-0 mb-xs">From each person's affiliation.</p>
+                {% if groups %}
+                <div class="insight-split" aria-hidden="true">
+                    {% for g in groups %}<div class="part-{{ g.key }}" data-width="{{ g.percent }}"></div>{% endfor %}
+                </div>
+                <ul class="insight-legend">
+                    {% for g in groups %}<li><i class="part-{{ g.key }}"></i>{{ g.name }}: {{ g.count }} ({{ g.percent }}%)</li>{% endfor %}
+                </ul>
+                {% else %}
+                    <div class="empty-state">Nothing in this period.</div>
+                {% endif %}
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-head"><h3 class="label">Most Frequent Requesters</h3></div>
             <div class="card-body">
                 <div class="table-wrap">
                 <table class="data data-compact">
                     <thead><tr><th scope="col">Name</th><th scope="col">Affiliation</th>
-                        <th scope="col">Bookings</th></tr></thead>
+                        <th scope="col" class="num">Bookings</th></tr></thead>
                     <tbody>
                     {% for row in requesters %}
                         <tr><td>{{ row.name }}</td><td>{{ row.affiliation|title }}</td>
@@ -141,7 +356,7 @@
                     </tbody>
                 </table>
                 </div>
-                <p class="help mt-xs">Names and counts only.</p>
+                <p class="help mt-xs">Names and counts only, to know whom to consult on changes.</p>
             </div>
         </section>
     </div>

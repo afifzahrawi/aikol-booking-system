@@ -22,7 +22,7 @@
         var day = row.querySelector('th').textContent.trim();
         var hour = cell.dataset.hour;
         var value = Number(cell.dataset.value);
-        readout.textContent = day + ' ' + hour + ':00\u2013' + (Number(hour) + 1) + ':00 \u00b7 ' +
+        readout.textContent = day + ' ' + hour + ':00 to ' + (Number(hour) + 1) + ':00, ' +
             (value > 0 ? value + ' room-hours booked' : 'nothing booked');
     }
 

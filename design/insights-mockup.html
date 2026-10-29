@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insights Mockup</title>
+<style>
+:root {
+    --ink: #1d1d1f; --ink-2: #424245; --muted: #6e6e73; --vellum: #f5f5f7; --rule: #e5e5ea; --rule-2: #f0f0f3;
+    --green: #0f6b5e; --green-deep: #0a4e44; --green-soft: #e3f1ee; --rail: #0d4f47;
+    --car: #b4580f; --car-soft: #fbebdd; --red: #b42318; --red-soft: #fde9e7; --amber: #8a4b00; --amber-soft: #fff1dc;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--vellum); color: var(--ink); }
+body { font: 14px/1.45 "IBM Plex Sans", system-ui, sans-serif; display: grid; grid-template-columns: 15.5rem 1fr; min-height: 100vh; }
+.rail { background: var(--rail); padding: 1.25rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.rail a { padding: 0.55rem 0.8rem; border-radius: 10px; color: #fff; text-decoration: none; font-weight: 500; }
+.rail a[aria-current] { background: #fff; color: var(--green-deep); }
+main { padding: 1.5rem clamp(1rem, 2.5vw, 2rem) 3rem; min-width: 0; }
+.flag { display: inline-block; margin-bottom: 0.75rem; padding: 0.2rem 0.7rem; border-radius: 99px; background: var(--amber-soft); color: var(--amber); font-size: 0.78rem; font-weight: 600; }
+h1 { margin: 0; font-size: 1.75rem; letter-spacing: -0.02em; }
+h2 { margin: 0 0 0.2rem; font-size: 1.1rem; }
+.sub { margin: 0 0 1rem; color: var(--muted); font-size: 0.85rem; }
+
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.8rem; margin: 0.5rem 0 1.25rem; }
+.spacer { flex: 1; }
+.seg { display: inline-grid; grid-auto-flow: column; padding: 3px; border-radius: 10px; background: #e8e8ed; }
+.seg button { border: 0; background: none; padding: 0.3rem 0.85rem; border-radius: 8px; font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.select { border: 1px solid var(--rule); border-radius: 10px; padding: 0.4rem 0.7rem; background: #fff; font: inherit; }
+.btn { border: 1px solid var(--rule); border-radius: 10px; padding: 0.45rem 0.9rem; background: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.btn.primary { border-color: var(--green); background: var(--green); color: #fff; }
+
+/* Needs attention first: what the office should act on today. */
+.attention { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
+.alert { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.85rem 1rem; border-radius: 14px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.alert b { display: block; font-size: 1.35rem; line-height: 1.1; }
+.alert span { color: var(--muted); font-size: 0.82rem; }
+.alert i { width: 0.6rem; height: 0.6rem; margin-top: 0.5rem; border-radius: 50%; flex: none; }
+.alert.red i { background: var(--red); } .alert.amber i { background: #d98a1c; } .alert.green i { background: var(--green); }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+.kpi { padding: 1rem 1.1rem; border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.kpi small { display: block; color: var(--muted); font-size: 0.78rem; font-weight: 600; }
+.kpi strong { display: block; margin: 0.15rem 0; font-size: 1.7rem; letter-spacing: -0.02em; }
+.delta { font-size: 0.78rem; font-weight: 600; }
+.delta.up { color: var(--green-deep); } .delta.down { color: var(--red); } .delta.flat { color: var(--muted); }
+
+.tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--rule); margin-bottom: 1.25rem; }
+.tabs button { border: 0; background: none; padding: 0.6rem 0.9rem; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--green); }
+.pane { display: none; } .pane.on { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.card { padding: 1.1rem 1.2rem; border-radius: 18px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.05); min-width: 0; }
+.card.wide { grid-column: 1 / -1; }
+.why { margin: 0 0 0.9rem; color: var(--muted); font-size: 0.8rem; }
+
+.rows { display: flex; flex-direction: column; gap: 0.55rem; }
+.row { display: grid; grid-template-columns: 9.5rem 1fr 3.4rem; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+.row span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track { height: 0.6rem; border-radius: 99px; background: var(--rule-2); overflow: hidden; }
+.fill { height: 100%; border-radius: 99px; background: var(--green); }
+.fill.car { background: var(--car); } .fill.low { background: #9aa5a3; }
+.row em { font-style: normal; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.75rem; padding: 0.4rem 0.3rem; border-bottom: 1px solid var(--rule); }
+td { padding: 0.5rem 0.3rem; border-bottom: 1px solid var(--rule-2); font-variant-numeric: tabular-nums; }
+td.num, th.num { text-align: right; }
+.pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 99px; font-size: 0.72rem; font-weight: 600; background: var(--amber-soft); color: var(--amber); }
+.pill.ok { background: var(--green-soft); color: var(--green-deep); }
+
+.heat { display: grid; grid-template-columns: 2.4rem repeat(14, 1fr); gap: 3px; font-size: 0.66rem; color: var(--muted); }
+.heat i { aspect-ratio: 1.6; border-radius: 4px; background: var(--green); }
+.heat span { display: flex; align-items: center; }
+.spark { display: flex; align-items: flex-end; gap: 4px; height: 7rem; padding-top: 0.5rem; }
+.spark div { flex: 1; border-radius: 5px 5px 2px 2px; background: var(--green-soft); position: relative; }
+.spark div.cur { background: var(--green); }
+.spark-labels { display: flex; gap: 4px; margin-top: 0.3rem; font-size: 0.66rem; color: var(--muted); }
+.spark-labels span { flex: 1; text-align: center; }
+.split { display: flex; height: 0.9rem; border-radius: 99px; overflow: hidden; margin: 0.3rem 0 0.6rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.78rem; color: var(--ink-2); }
+.legend b { display: inline-block; width: 0.65rem; height: 0.65rem; border-radius: 3px; margin-right: 0.3rem; vertical-align: -0.05em; }
+.note { margin-top: 1.5rem; padding: 1rem 1.2rem; border-radius: 14px; background: #fff; font-size: 0.85rem; color: var(--ink-2); }
+.note h3 { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--ink); }
+.note ul { margin: 0; padding-left: 1.1rem; }
+@media (max-width: 760px) { body { grid-template-columns: 1fr; } .rail { display: none; } .row { grid-template-columns: 7rem 1fr 3rem; } }
+</style>
+</head>
+<body>
+<nav class="rail">
+    <a href="#">Overview</a><a href="#">Bookings</a><a href="#">Keys</a><a href="#">Resources</a><a href="#">People</a><a href="#" aria-current="page">Insights</a><a href="#">System</a>
+</nav>
+<main>
+    <span class="flag">Mockup with illustrative data</span>
+    <h1>Insights</h1>
+    <div class="bar">
+        <div class="seg" role="group" aria-label="Period">
+            <button type="button" aria-pressed="false">This month</button>
+            <button type="button" aria-pressed="true">This semester</button>
+            <button type="button" aria-pressed="false">Last 12 months</button>
+        </div>
+        <select class="select" aria-label="Semester"><option>Semester 1, 2026/2027 (29 Sep to 24 Jan)</option><option>Semester 3, 2025/2026</option><option>Custom dates</option></select>
+        <span class="spacer"></span>
+        <button class="btn" type="button">Download CSV</button>
+        <button class="btn primary" type="button">Print Report</button>
+    </div>
+
+    <section class="attention" aria-label="Needs attention">
+        <div class="alert red"><i></i><div><b>9</b><span>requests awaiting a decision, oldest waiting 3 days</span></div></div>
+        <div class="alert amber"><i></i><div><b>2</b><span>keys overdue now, both venue keys</span></div></div>
+        <div class="alert amber"><i></i><div><b>3</b><span>car trips waiting for Kulliyyah management</span></div></div>
+        <div class="alert green"><i></i><div><b>Road tax</b><span>next renewal in 41 days (Kulliyyah Vehicle 2)</span></div></div>
+    </section>
+
+    <section class="kpis" aria-label="This semester at a glance">
+        <div class="kpi"><small>Bookings</small><strong>412</strong><span class="delta up">Up 18% on last semester</span></div>
+        <div class="kpi"><small>Room Use</small><strong>38%</strong><span class="delta up">Up 4 points</span></div>
+        <div class="kpi"><small>Average Time to Decide</small><strong>6.5 h</strong><span class="delta down">Slower by 1.2 h</span></div>
+        <div class="kpi"><small>Approved</small><strong>91%</strong><span class="delta flat">Same as last semester</span></div>
+        <div class="kpi"><small>Late Cancellations</small><strong>14</strong><span class="delta down">Up from 9</span></div>
+        <div class="kpi"><small>Car Trip Days</small><strong>57</strong><span class="delta up">Up 11</span></div>
+    </section>
+
+    <div class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-pane="venues">Venues</button>
+        <button type="button" role="tab" aria-selected="false" data-pane="vehicles">Vehicles</button>
+        <button type="button" role="tab" aria-selected="false" data-pane="office">Office Work</button>
+        <button type="button" role="tab" aria-selected="false" data-pane="people">Who Books</button>
+    </div>
+
+    <div class="pane on" id="venues">
+        <section class="card">
+            <h2>Room Use by Building</h2>
+            <p class="why">Booked hours against each room's own opening hours. Shows where space is short.</p>
+            <div class="rows">
+                <div class="row"><span>AIKOL Main Building</span><div class="track"><div class="fill" style="width:52%"></div></div><em>52%</em></div>
+                <div class="row"><span>AIKOL Library Wing</span><div class="track"><div class="fill" style="width:44%"></div></div><em>44%</em></div>
+                <div class="row"><span>AIKOL Annex</span><div class="track"><div class="fill" style="width:17%"></div></div><em>17%</em></div>
+            </div>
+        </section>
+        <section class="card">
+            <h2>Rooms</h2>
+            <p class="why">Most and least used. A room seldom booked may be unknown to students or need fixing.</p>
+            <div class="rows">
+                <div class="row"><span>Moot Court</span><div class="track"><div class="fill" style="width:71%"></div></div><em>71%</em></div>
+                <div class="row"><span>Seminar Room 1</span><div class="track"><div class="fill" style="width:63%"></div></div><em>63%</em></div>
+                <div class="row"><span>Discussion Room 2</span><div class="track"><div class="fill" style="width:49%"></div></div><em>49%</em></div>
+                <div class="row"><span>Meeting Room A</span><div class="track"><div class="fill low" style="width:6%"></div></div><em>6%</em></div>
+                <div class="row"><span>LR 2.1</span><div class="track"><div class="fill low" style="width:3%"></div></div><em>3%</em></div>
+            </div>
+        </section>
+        <section class="card">
+            <h2>Busiest Times</h2>
+            <p class="why">Approved room hours by weekday and hour. Darker is busier.</p>
+            <div class="heat" id="heat"></div>
+        </section>
+        <section class="card">
+            <h2>Right-Sized Rooms</h2>
+            <p class="why">Expected attendees against seats. Large rooms booked by small groups block bigger events.</p>
+            <table>
+                <thead><tr><th>Room</th><th class="num">Seats</th><th class="num">Usual group</th><th></th></tr></thead>
+                <tbody>
+                    <tr><td>Moot Court</td><td class="num">120</td><td class="num">14</td><td><span class="pill">Often too big</span></td></tr>
+                    <tr><td>Seminar Room 1</td><td class="num">40</td><td class="num">31</td><td><span class="pill ok">Good fit</span></td></tr>
+                    <tr><td>Discussion Room 1</td><td class="num">8</td><td class="num">7</td><td><span class="pill ok">Good fit</span></td></tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="card wide">
+            <h2>Bookings per Month</h2>
+            <p class="why">Venues and vehicles together; this semester's months are darker.</p>
+            <div class="spark" id="spark"></div><div class="spark-labels" id="sparkLabels"></div>
+        </section>
+    </div>
+
+    <div class="pane" id="vehicles">
+        <section class="card">
+            <h2>Each Car</h2>
+            <p class="why">Days out on trips this semester, and distance from the key handover mileage.</p>
+            <table>
+                <thead><tr><th>Car</th><th class="num">Trip days</th><th class="num">Distance</th><th class="num">Road tax</th></tr></thead>
+                <tbody>
+                    <tr><td>Kulliyyah Vehicle 1</td><td class="num">24</td><td class="num">3,180 km</td><td class="num">Mar 2027</td></tr>
+                    <tr><td>Kulliyyah Vehicle 2</td><td class="num">19</td><td class="num">2,410 km</td><td class="num">9 Dec 2026</td></tr>
+                    <tr><td>Kulliyyah Vehicle 3</td><td class="num">14</td><td class="num">1,560 km</td><td class="num">Jun 2027</td></tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="card">
+            <h2>Where Trips Go</h2>
+            <p class="why">Most frequent destinations, to plan driver time.</p>
+            <div class="rows">
+                <div class="row"><span>Putrajaya courts</span><div class="track"><div class="fill car" style="width:80%"></div></div><em>16</em></div>
+                <div class="row"><span>Kuala Lumpur courts</span><div class="track"><div class="fill car" style="width:55%"></div></div><em>11</em></div>
+                <div class="row"><span>Melaka</span><div class="track"><div class="fill car" style="width:20%"></div></div><em>4</em></div>
+            </div>
+        </section>
+        <section class="card">
+            <h2>Management Approval</h2>
+            <p class="why">The second approval for the VMU driver.</p>
+            <div class="rows">
+                <div class="row"><span>Approved</span><div class="track"><div class="fill" style="width:88%"></div></div><em>88%</em></div>
+                <div class="row"><span>Declined</span><div class="track"><div class="fill low" style="width:12%"></div></div><em>12%</em></div>
+                <div class="row"><span>Usual wait</span><div class="track"><div class="fill car" style="width:40%"></div></div><em>1.8 d</em></div>
+            </div>
+        </section>
+    </div>
+
+    <div class="pane" id="office">
+        <section class="card">
+            <h2>Time to Decide</h2>
+            <p class="why">From request to the office's decision. Long waits leave students unsure.</p>
+            <div class="rows">
+                <div class="row"><span>Same day</span><div class="track"><div class="fill" style="width:62%"></div></div><em>62%</em></div>
+                <div class="row"><span>Next day</span><div class="track"><div class="fill" style="width:27%"></div></div><em>27%</em></div>
+                <div class="row"><span>Two days or more</span><div class="track"><div class="fill low" style="width:11%"></div></div><em>11%</em></div>
+            </div>
+        </section>
+        <section class="card">
+            <h2>Why Requests Are Declined</h2>
+            <p class="why">From the reasons the office writes. Repeated reasons may call for clearer guidance.</p>
+            <div class="rows">
+                <div class="row"><span>Room needed by Kulliyyah</span><div class="track"><div class="fill low" style="width:45%"></div></div><em>9</em></div>
+                <div class="row"><span>Missing details</span><div class="track"><div class="fill low" style="width:30%"></div></div><em>6</em></div>
+                <div class="row"><span>Too short notice</span><div class="track"><div class="fill low" style="width:15%"></div></div><em>3</em></div>
+            </div>
+        </section>
+        <section class="card">
+            <h2>Keys</h2>
+            <p class="why">Handed out this semester and how many came back late.</p>
+            <table>
+                <tbody>
+                    <tr><td>Keys handed out</td><td class="num">286</td></tr>
+                    <tr><td>Returned late</td><td class="num">21 (7%)</td></tr>
+                    <tr><td>Approved but never collected</td><td class="num">17</td></tr>
+                    <tr><td>Collected at the kiosk</td><td class="num">64%</td></tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="card">
+            <h2>Cancellations</h2>
+            <p class="why">Inside three days of the booking they need the office; earlier ones free the room for others.</p>
+            <div class="split"><div style="width:72%;background:var(--green)"></div><div style="width:28%;background:#d98a1c"></div></div>
+            <div class="legend"><span><b style="background:var(--green)"></b>3 days or more before: 36</span><span><b style="background:#d98a1c"></b>Inside 3 days: 14</span></div>
+        </section>
+    </div>
+
+    <div class="pane" id="people">
+        <section class="card">
+            <h2>Bookings by Group</h2>
+            <p class="why">From each person's affiliation.</p>
+            <div class="split"><div style="width:58%;background:var(--green)"></div><div style="width:30%;background:#5f9c92"></div><div style="width:12%;background:var(--car)"></div></div>
+            <div class="legend"><span><b style="background:var(--green)"></b>Students 58%</span><span><b style="background:#5f9c92"></b>Staff 30%</span><span><b style="background:var(--car)"></b>Others 12%</span></div>
+        </section>
+        <section class="card">
+            <h2>Most Frequent</h2>
+            <p class="why">Societies and staff who book most, to know whom to consult on changes.</p>
+            <table>
+                <thead><tr><th>Name</th><th>Group</th><th class="num">Bookings</th></tr></thead>
+                <tbody>
+                    <tr><td>MOOT SOCIETY</td><td>Student</td><td class="num">38</td></tr>
+                    <tr><td>NURUL HUDA</td><td>Staff</td><td class="num">22</td></tr>
+                    <tr><td>LAW STUDENTS SOCIETY</td><td>Student</td><td class="num">19</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <section class="note">
+        <h3>Also Fixed While Building This</h3>
+        <ul>
+            <li>Download CSV gives the bookings of the period shown, not every booking ever made.</li>
+            <li>Approval rate counts decisions made in the period, not bookings that start in it.</li>
+            <li>Room use counts each room's own opening hours, not a fixed 08:00 to 22:00.</li>
+            <li>Every figure is compared with the previous period of the same length.</li>
+        </ul>
+    </section>
+</main>
+<script>
+// Illustrative data only.
+const heat = document.getElementById('heat');
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+let seed = 7; const r = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+heat.insertAdjacentHTML('beforeend', '<span></span>' + Array.from({length: 14}, (_, i) => `<span>${i % 2 ? '' : String(8 + i).padStart(2, '0')}</span>`).join(''));
+days.forEach((d, i) => {
+    heat.insertAdjacentHTML('beforeend', `<span>${d}</span>` + Array.from({length: 14}, (_, h) => {
+        const busy = i > 4 ? r() * 0.25 : Math.max(0.06, (h > 0 && h < 9 ? 0.55 : 0.2) + r() * 0.45 - (i === 4 && h > 4 ? 0.3 : 0));
+        return `<i style="opacity:${Math.min(1, busy).toFixed(2)}"></i>`;
+    }).join(''));
+});
+const months = ['Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'];
+const counts = [61, 22, 48, 70, 82, 77, 40, 18, 25, 66, 118, 131];
+const max = Math.max(...counts);
+document.getElementById('spark').innerHTML = counts.map((c, i) => `<div class="${i >= 10 ? 'cur' : ''}" style="height:${c / max * 100}%" title="${months[i]}: ${c}"></div>`).join('');
+document.getElementById('sparkLabels').innerHTML = months.map(m => `<span>${m}</span>`).join('');
+document.querySelectorAll('[data-pane]').forEach(tab => tab.onclick = () => {
+    document.querySelectorAll('[data-pane]').forEach(t => t.setAttribute('aria-selected', t === tab));
+    document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === tab.dataset.pane));
+});
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)));
+</script>
+</body>
+</html>

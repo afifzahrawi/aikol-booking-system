@@ -246,8 +246,10 @@ building, rename it, or set **Shown** to **No** to stop offering it for new venu
 lists** sets which building comes first on the venue page. A building with venues in it cannot be
 deleted.
 
-**Venue order.** On **Venues**, drag a row by its handle (or use the up and down arrow keys) to set
-the order venues appear in for everyone.
+**Venue and vehicle order.** On **Venues** or **Vehicles**, drag a row by its handle (or use the up
+and down arrow keys) to set the order they appear in for everyone. Clear any search or filter
+first: the order is changed on the complete list. On the venue page rooms stay grouped by
+building, in this order within each building.
 
 ---
 
@@ -277,9 +279,26 @@ Open a person to change their details, affiliation or role.
 
 ## 9. Insights
 
-Reports for 30 days, 90 days or a year: bookings and approval rate, room demand by hour and day,
-bookings per month, how much each resource is used, keys, and the most frequent requesters.
-**Export bookings** downloads every booking as a CSV file for Excel.
+Choose **This month**, **This semester** (pick an earlier semester from the list) or **Last 12
+months**, or set your own dates under **Other Dates**. A period that is still running is counted
+up to today, and every figure is compared with the same length of the period before.
+
+- **Needs attention** at the top is about now, whatever the period: requests waiting for a
+  decision, keys overdue, car trips waiting for Kulliyyah management, and the next road tax
+  renewal. Select one to go to the page that deals with it.
+- **The figures strip**: bookings, room use, average time to decide, share approved, late
+  cancellations (inside three days) and car trip days.
+- **Venues**: room use by building and by room, measured against each room's own opening hours;
+  the busiest times of the week; whether rooms suit the groups that book them; bookings per month.
+- **Vehicles**: trip days and distance for each car (from the mileage written at key handover),
+  where trips go, and how management's approval went.
+- **Office Work**: how quickly requests were decided, the reasons written when declining, keys,
+  and early against late cancellations.
+- **Who Books**: bookings by student, lecturer, staff and public, and the most frequent requesters.
+
+Bookings the office entered and approved itself are left out of the decision figures, since they
+never waited. **Download CSV** gives the bookings of the period shown; **Print Report** prints
+every topic on one report.
 
 ![Reports.](images/admin/16-insights.png)
 

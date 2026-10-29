@@ -1,8 +1,6 @@
-"""The reports screen."""
+"""The Insights screen."""
 
 from __future__ import annotations
-
-import datetime as dt
 
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render
@@ -29,31 +27,39 @@ def approver_required(view):
 @approver_required
 def reports(request):
     today = timezone.localdate()
-    try:
-        days = max(7, min(365, int(request.GET.get("days", 90))))
-    except (TypeError, ValueError):
-        days = 90
-    start = today - dt.timedelta(days=days)
+    terms = services.started_terms(today)
+    period = services.resolve_period(request.GET, today, terms)
+    venues = services.active_venues()
+    vehicles = services.active_vehicles()
 
-    bookings = services.period_bookings(start, today)
+    bookings = services.period_bookings(period.start, period.end)
     heat = services.demand_heatmap(bookings)
     for row in heat["rows"]:
         row["name"] = WEEKDAY_NAMES[row["weekday"]]
     if heat["busiest"]:
         heat["busiest"]["name"] = WEEKDAY_NAMES[heat["busiest"]["weekday"]]
 
+    tab = request.GET.get("tab")
+    # The tab links keep the period; the tabs switch in place when script runs.
+    keep = request.GET.copy()
+    keep.pop("tab", None)
     return render(
         request,
         "reporting/reports.html",
         {
-            "days": days,
-            "start": start,
-            "today": today,
-            "headline": services.headline(bookings),
+            "period": period,
+            "periods": services.PERIODS,
+            "terms": terms,
+            "query": keep.urlencode(),
+            "tab": tab if tab in {"venues", "vehicles", "office", "people"} else "venues",
+            "attention": services.attention(vehicles, today),
+            "kpis": services.kpis(period, venues),
+            "venue_use": services.venue_use(period, venues),
             "heat": heat,
-            "utilisation": services.utilisation(bookings, days=days),
-            "monthly": services.monthly_volume(),
+            "monthly": services.monthly_volume(period, today),
+            "vehicle_use": services.vehicle_use(period, vehicles),
+            "office": services.office_work(period),
+            "groups": services.by_affiliation(bookings),
             "requesters": services.frequent_requesters(bookings),
-            "keys": services.key_summary(),
         },
     )
