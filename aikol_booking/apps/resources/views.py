@@ -41,6 +41,7 @@ from .services import (
     delete_resource,
     fit_venue_photo,
     reorder_facilities,
+    reorder_vehicles,
     reorder_venues,
 )
 
@@ -97,7 +98,9 @@ def _filtered(
     return queryset.distinct()
 
 
-def _paginated(request, queryset, template: str, extra: dict | None = None):
+def _paginated(
+    request, queryset, template: str, extra: dict | None = None, per_page: int = PAGE_SIZE
+):
     from django.core.paginator import Paginator
 
     # A page of an unordered queryset can repeat or skip rows at the boundary.
@@ -106,11 +109,11 @@ def _paginated(request, queryset, template: str, extra: dict | None = None):
     if not queryset.ordered:
         order = (
             ("display_order", "name", "pk")
-            if queryset.model is Venue
+            if queryset.model in (Venue, Vehicle)
             else ("name", "pk")
         )
         queryset = queryset.order_by(*order)
-    page = Paginator(queryset, PAGE_SIZE).get_page(request.GET.get("page"))
+    page = Paginator(queryset, per_page).get_page(request.GET.get("page"))
     # Carry the filters into the pager links. Without this, page 2 of a
     # filtered list is page 2 of the whole table.
     params = request.GET.copy()
@@ -250,6 +253,18 @@ def _slot_picker(venue, days: int = 7) -> list[dict]:
 # ------------------------------------------------------------- management
 
 
+# Reordering needs the whole list on one page, so an unfiltered list is not
+# split into pages. The Kulliyyah has tens of rooms, not thousands.
+REORDER_PAGE_SIZE = 500
+
+
+def _is_filtered(request) -> bool:
+    return any(
+        (request.GET.get(key) or "").strip()
+        for key in ("q", "status", "facility", "type", "capacity")
+    )
+
+
 @administrator_required
 def manage_venues(request):
     venues = _filtered(
@@ -257,21 +272,19 @@ def manage_venues(request):
         request,
         search_fields=("name", "code", "location"),
     )
-    filtered = any(
-        (request.GET.get(key) or "").strip()
-        for key in ("q", "status", "facility", "type", "capacity")
-    )
+    filtered = _is_filtered(request)
     return _paginated(
         request,
         venues,
         "resources/manage_venues.html",
         {
             "nav": "resources",
-            # Changing a subset would create an order nobody saw. Limit the
-            # interaction to the full, single-page list just as facilities do.
+            # Changing a subset would create an order nobody saw, so the order
+            # is changed only on the complete list.
             "filtered": filtered,
-            "can_reorder": not filtered and venues.count() <= PAGE_SIZE,
+            "can_reorder": not filtered,
         },
+        per_page=PAGE_SIZE if filtered else REORDER_PAGE_SIZE,
     )
 
 
@@ -283,11 +296,18 @@ def manage_vehicles(request):
         search_fields=("name", "code", "make", "model", "registration_number"),
         allow_facility=False,
     )
+    filtered = _is_filtered(request)
     return _paginated(
         request,
         vehicles,
         "resources/manage_vehicles.html",
-        {"nav": "resources", "hide_facility": True},
+        {
+            "nav": "resources",
+            "hide_facility": True,
+            "filtered": filtered,
+            "can_reorder": not filtered,
+        },
+        per_page=PAGE_SIZE if filtered else REORDER_PAGE_SIZE,
     )
 
 
@@ -319,25 +339,35 @@ def venue_edit(request, pk: int | None = None):
     return _edit_resource(request, VenueForm, instance, "venue", "resources:manage_venues")
 
 
-@administrator_required
-@require_POST
-def venue_reorder(request):
-    """Accept the visible venue order and record it as consecutive positions."""
+def _reorder(request, reorder, kind: str, back: str):
+    """Accept the visible order and record it as consecutive positions."""
     ids = request.POST.getlist("order[]") or request.POST.get("order", "").split(",")
     try:
-        reorder_venues([i for i in ids if str(i).strip()])
+        reorder([i for i in ids if str(i).strip()])
     except (ValidationError, ValueError) as exc:
         return JsonResponse({"ok": False, "error": str(exc)}, status=400)
     log_action(
         actor=request.user,
-        action="VENUE_REORDERED",
-        entity_type="Venue",
-        description="Venue display order changed.",
+        action=f"{kind.upper()}_REORDERED",
+        entity_type=kind.title(),
+        description=f"{kind.title()} display order changed.",
         request=request,
     )
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({"ok": True})
-    return redirect("resources:manage_venues")
+    return redirect(back)
+
+
+@administrator_required
+@require_POST
+def venue_reorder(request):
+    return _reorder(request, reorder_venues, "venue", "resources:manage_venues")
+
+
+@administrator_required
+@require_POST
+def vehicle_reorder(request):
+    return _reorder(request, reorder_vehicles, "vehicle", "resources:manage_vehicles")
 
 
 @administrator_required

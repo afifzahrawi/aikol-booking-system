@@ -66,7 +66,6 @@
     <div class="card-foot">
         <p class="help reorder-note m-0">
             {% if filtered %}Clear the search and filters to change the venue order.
-            {% elif not can_reorder %}Keep the list to 20 or fewer venues before changing the order.
             {% else %}Drag a handle, or press the up and down arrow keys, to change the venue order.{% endif %}
         </p>
         {% include "_pagination.html" %}

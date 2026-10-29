@@ -49,7 +49,7 @@ class ProfileEditTests(TestCase):
         )
         self.assertRedirects(response, reverse("accounts:profile"))
         self.user.refresh_from_db()
-        self.assertEqual(self.user.full_name, "Updated Name")
+        self.assertEqual(self.user.full_name, "UPDATED NAME")  # names are kept in capitals
         self.assertEqual(self.user.phone, "+60 12-345 6789")
         self.assertEqual(self.user.email, "person@demo.aikol.test")
         self.assertTrue(

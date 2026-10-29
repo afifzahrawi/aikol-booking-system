@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Manage Vehicles{% endblock %}
 {% block content %}
 <div class="page-head">
@@ -7,18 +8,36 @@
 </div>
 {% include "resources/_tabs.html" with tab='vehicles' %}
 
+<div class="notice notice-info">
+    {% if can_reorder %}Drag a vehicle by its handle, or use the up and down arrow keys, to set the order shown to users.
+    {% else %}Vehicle order is set from the complete, unfiltered list so each move is predictable.{% endif %}
+</div>
+
 <section class="card">
     {% include "resources/_filters.html" with placeholder="Make, model or registration" show_status=1 %}
     <div class="table-wrap">
     <table class="data">
         <thead><tr>
+            <th scope="col" class="drag-col">Order</th>
             <th scope="col">Vehicle</th><th scope="col">Registration</th><th scope="col">Seats</th>
             <th scope="col">Road tax</th><th scope="col">Bookings</th>
             <th class="status-column" scope="col">Status</th><th class="actions-column" scope="col">Actions</th>
         </tr></thead>
-        <tbody>
+        <tbody id="rows">
         {% for car in page %}
-            <tr>
+            <tr data-id="{{ car.pk }}" {% if can_reorder %}draggable="true"{% endif %}>
+                <td class="drag-cell">
+                    <button class="draghandle" type="button" data-handle="{{ car.pk }}"
+                            {% if not can_reorder %}disabled{% endif %}
+                            aria-label="Reorder {{ car.name }}. Use the up and down arrow keys to move it."
+                            title="Drag to reorder, or use the arrow keys">
+                        <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+                            <circle cx="6" cy="3" r="1.4"></circle><circle cx="10" cy="3" r="1.4"></circle>
+                            <circle cx="6" cy="8" r="1.4"></circle><circle cx="10" cy="8" r="1.4"></circle>
+                            <circle cx="6" cy="13" r="1.4"></circle><circle cx="10" cy="13" r="1.4"></circle>
+                        </svg>
+                    </button>
+                </td>
                 <td><strong>{{ car.name }}</strong><br>
                     <span class="help">{{ car.make }} {{ car.model }} {{ car.year }},
                     <span class="mono">{{ car.code }}</span></span></td>
@@ -41,11 +60,21 @@
                 </details></td>
             </tr>
         {% empty %}
-            <tr><td colspan="7"><div class="empty-state">No vehicle matches the current filters.</div></td></tr>
+            <tr><td colspan="8"><div class="empty-state">No vehicle matches the current filters.</div></td></tr>
         {% endfor %}
         </tbody>
     </table>
     </div>
     {% include "resources/_pager.html" %}
 </section>
+
+<form method="post" action="{% url 'resources:vehicle_reorder' %}" id="reorderForm" hidden>
+    {% csrf_token %}<input type="hidden" name="order" id="orderField">
+</form>
+{% endblock %}
+
+{% block scripts %}
+{% if can_reorder %}
+<script src="{% static 'js/reorder.js' %}" defer></script>
+{% endif %}
 {% endblock %}

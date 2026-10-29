@@ -31,7 +31,7 @@ _PATCHED = "_aikol_clears_cache"
 
 
 def _clear_caches() -> None:
-    from apps.administration.memo import forget
+    from apps.administration.memo import forget_all as forget
 
     for alias in caches:
         caches[alias].clear()

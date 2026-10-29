@@ -143,20 +143,15 @@ def build_picker(request, kind: str) -> dict:
     window_end = SystemSetting.get("bookable_window_end")
     slots = half_hour_slots(window_start, window_end)
     params = request.GET
-    searched = "date" in params
 
     default_date, default_from, default_until = default_period(slots, timezone.localtime())
     date = _date(params.get("date")) or default_date
     end_date = (_date(params.get("end_date")) or date) if is_vehicle else date
     from_time = params.get("from") if params.get("from") in slots else default_from
     until_time = params.get("until") if params.get("until") in slots else default_until
-    # A first visit shows only what is free. The form always sends "free"
-    # (picker.js adds free=0 when the switch is off); without it, a submitted
-    # form means the switch was off.
-    if "free" in params:
-        free_only = params.get("free") == "1"
-    else:
-        free_only = not searched
+    # Everything is shown until the person asks for free ones only (office
+    # request, 29 October 2026): a first visit should show every room.
+    free_only = params.get("free") == "1"
     term = (params.get("q") or "").strip()
     people_raw = params.get("people") or params.get("capacity") or ""
     people = int(people_raw) if people_raw.isdigit() and 0 < int(people_raw) < 1000 else 0
@@ -222,10 +217,11 @@ def build_picker(request, kind: str) -> dict:
 
     def order(pick: Pick):
         size = getattr(pick.resource, size_field)
-        rank = {FREE: 0, BUSY: 1, OFF: 2}[pick.state]
         if people:
+            rank = {FREE: 0, BUSY: 1, OFF: 2}[pick.state]
             return (rank, size, pick.resource.name)
-        return (rank, getattr(pick.resource, "display_order", 0), pick.resource.name)
+        # The Admin's own order; each card already says whether it is free.
+        return (pick.resource.display_order, pick.resource.name)
 
     picks.sort(key=order)
 

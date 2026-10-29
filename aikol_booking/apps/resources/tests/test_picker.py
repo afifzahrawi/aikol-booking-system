@@ -163,3 +163,40 @@ class BuildingTests(Fixtures):
         for user in (self.plain, make_user("approver2@demo.aikol.test", Role.APPROVER)):
             self.client.force_login(user)
             self.assertEqual(self.client.get(reverse("resources:manage_buildings")).status_code, 403)
+
+
+
+class OrderTests(Fixtures):
+    """The office's own order is what people see, for venues and vehicles."""
+
+    def test_the_venue_page_follows_the_admin_order_and_shows_everything(self):
+        from apps.resources.services import reorder_venues
+
+        later = Venue.objects.create(
+            code="VEN-9", name="Zeta Room", venue_type_id=Venue.VenueType.SEMINAR,
+            location=self.venue.location, capacity=20,
+        )
+        reorder_venues([later.pk, self.venue.pk])
+        self.client.force_login(self.plain)
+        page = self.client.get(reverse("resources:venues"))
+        self.assertFalse(page.context["free_only"])
+        shown = [p.resource.pk for g in page.context["groups"] for p in g.picks]
+        self.assertEqual(shown, [later.pk, self.venue.pk])
+
+    def test_vehicles_can_be_reordered_by_the_admin(self):
+        from apps.resources.models import Vehicle
+
+        second = Vehicle.objects.create(
+            code="CAR-9", name="Another Car", registration_number="ZZZ 9999",
+            make=self.car.make, model=self.car.model, year=self.car.year, seats=self.car.seats,
+            road_tax_expiry=self.car.road_tax_expiry,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("resources:vehicle_reorder"), {"order": f"{self.car.pk},{second.pk}"}
+        )
+        self.assertRedirects(response, reverse("resources:manage_vehicles"))
+        self.assertEqual(list(Vehicle.objects.values_list("pk", flat=True)), [self.car.pk, second.pk])
+        page = self.client.get(reverse("resources:manage_vehicles"))
+        self.assertTrue(page.context["can_reorder"])
+        self.assertContains(page, "reorder.js")

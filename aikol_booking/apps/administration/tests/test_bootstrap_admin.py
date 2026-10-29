@@ -25,7 +25,7 @@ class BootstrapAdminTests(TestCase):
         token = output.getvalue().strip().split("=", 1)[1]
         password = Fernet(key.encode()).decrypt(token.encode()).decode()
         user = get_user_model().objects.get(email="bazlibaderul@iium.edu.my")
-        self.assertEqual(user.full_name, "Muhammad Bazli Bin Baderul Hisham")
+        self.assertEqual(user.full_name, "MUHAMMAD BAZLI BIN BADERUL HISHAM")
         self.assertEqual(user.affiliation, Affiliation.STAFF)
         self.assertEqual(user.role, Role.ADMINISTRATOR)
         self.assertTrue(user.is_staff and user.is_superuser and user.email_verified)

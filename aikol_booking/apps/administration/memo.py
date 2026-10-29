@@ -20,6 +20,7 @@ from typing import Any, Callable
 
 _store: dict[str, tuple[float, Any]] = {}
 _lock = threading.Lock()
+KEEP_PREFIX = "r2-url:"
 
 
 def remembered(key: str, seconds: float, compute: Callable[[], Any]) -> Any:
@@ -35,6 +36,15 @@ def remembered(key: str, seconds: float, compute: Callable[[], Any]) -> Any:
 
 
 def forget(*_args, **_kwargs) -> None:
-    """Drop everything. Shaped as a signal receiver so it can be connected directly."""
+    """Drop what a save may have changed. Shaped as a signal receiver so it can
+    be connected directly. Signed image addresses are kept: no save changes
+    them, and re-signing would make every browser download the images again."""
+    with _lock:
+        for key in [k for k in _store if not k.startswith(KEEP_PREFIX)]:
+            del _store[key]
+
+
+def forget_all() -> None:
+    """Between tests, where nothing may carry over."""
     with _lock:
         _store.clear()

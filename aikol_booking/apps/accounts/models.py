@@ -145,6 +145,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self) -> str:
         return f"{self.full_name} <{self.email}>"
 
+    @staticmethod
+    def normalise_name(name: str) -> str:
+        """Names are kept in capitals, as on an IIUM card and the office's own
+        lists (office request, 29 October 2026), with spacing tidied."""
+        return " ".join((name or "").split()).upper()
+
+    def save(self, *args, **kwargs):
+        self.full_name = self.normalise_name(self.full_name)
+        super().save(*args, **kwargs)
+
     # -- Authority -------------------------------------------------------
     # Checked in views, never inferred from a hidden menu item.
 

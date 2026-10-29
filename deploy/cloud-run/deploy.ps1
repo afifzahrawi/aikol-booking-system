@@ -98,7 +98,7 @@ if ($existingUrl) {
     Invoke-OperationalJob "aikol-migrate" $releaseEnvironment "python manage.py migrate --noinput && python manage.py createcachetable"
 }
 
-Invoke-Step "Deploying the public service" { gcloud run deploy $Service --image $image --region $Region --platform managed --allow-unauthenticated --service-account $runtimeAccount --cpu 1 --memory 512Mi --concurrency 20 --min 0 --max 1 --timeout 30 --execution-environment gen2 --no-cpu-boost --set-env-vars $bootstrapEnvironment --set-secrets $secretMap }
+Invoke-Step "Deploying the public service" { gcloud run deploy $Service --image $image --region $Region --platform managed --allow-unauthenticated --service-account $runtimeAccount --cpu 1 --memory 512Mi --concurrency 20 --min 0 --max 1 --timeout 30 --execution-environment gen2 --cpu-boost --set-env-vars $bootstrapEnvironment --set-secrets $secretMap }
 $publicUrl = (gcloud run services describe $Service --region $Region --format "value(status.url)" 2>&1 | Where-Object { $_ -is [string] } | Select-Object -Last 1)
 $publicHost = ([Uri]$publicUrl).Host
 $allowedHosts = Get-AllowedHosts $publicHost

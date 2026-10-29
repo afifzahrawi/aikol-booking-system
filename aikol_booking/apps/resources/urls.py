@@ -15,6 +15,7 @@ urlpatterns = [
     path("manage/rooms/<int:pk>/", views.venue_edit, name="venue_edit"),
     path("manage/rooms/reorder/", views.venue_reorder, name="venue_reorder"),
     path("manage/cars/", views.manage_vehicles, name="manage_vehicles"),
+    path("manage/cars/reorder/", views.vehicle_reorder, name="vehicle_reorder"),
     path("manage/cars/new/", views.vehicle_edit, name="vehicle_new"),
     path("manage/cars/<int:pk>/", views.vehicle_edit, name="vehicle_edit"),
     path("manage/resource/<int:pk>/delete/", views.resource_delete, name="delete"),

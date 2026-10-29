@@ -3,7 +3,6 @@
 import hashlib
 
 from django.conf import settings
-from django.core.cache import cache
 from django.core.exceptions import SuspiciousOperation
 from storages.backends.s3 import S3Storage
 
@@ -40,12 +39,12 @@ class CappedR2Storage(S3Storage):
         # Reusing one URL for most of its lifetime lets the browser cache it.
         if parameters or expire or http_method:
             return super().url(name, parameters, expire, http_method)
+        # Kept in this process, not the database cache: a page of venue photos
+        # would otherwise make one database round trip per image.
+        from apps.administration.memo import remembered
+
+        reuse = max(self.querystring_expire - 600, 0)  # ten minutes' margin
+        if not reuse:
+            return super().url(name)
         key = "r2-url:" + hashlib.sha256(name.encode()).hexdigest()
-        signed = cache.get(key)
-        if signed is None:
-            signed = super().url(name)
-            # Leave ten minutes of validity for a page rendered just before expiry.
-            reuse = max(self.querystring_expire - 600, 0)
-            if reuse:
-                cache.set(key, signed, reuse)
-        return signed
+        return remembered(key, reuse, lambda: super(CappedR2Storage, self).url(name))

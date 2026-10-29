@@ -458,7 +458,7 @@ def _import_users(rows: list[RowResult]) -> tuple[int, int]:
     people = []
     for row in rows:
         person = User(
-            full_name=row.data["name"],
+            full_name=User.normalise_name(row.data["name"]),
             email=row.data["email"].lower(),
             identification_number=row.data["identification_number"],
             phone=row.data["phone"],

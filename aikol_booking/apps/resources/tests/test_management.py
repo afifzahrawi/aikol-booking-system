@@ -154,9 +154,11 @@ class BrowsingTests(Fixtures):
         self.venue.status = ResourceStatus.MAINTENANCE
         self.venue.save(update_fields=["status"])
         self.client.force_login(self.plain)
-        # Shown once "Free at this time only" is off; hidden while it is on.
-        self.assertNotContains(self.client.get(reverse("resources:venues")), "Moot Court")
-        response = self.client.get(reverse("resources:venues"), {"free": "0"})
+        # Shown by default; hidden once "Free at this time only" is turned on.
+        self.assertNotContains(
+            self.client.get(reverse("resources:venues"), {"free": "1"}), "Moot Court"
+        )
+        response = self.client.get(reverse("resources:venues"))
         self.assertContains(response, "Moot Court")
         self.assertContains(response, "Under maintenance")
         self.assertNotContains(response, f'href="/resource/{self.venue.pk}/book/"')
@@ -165,7 +167,7 @@ class BrowsingTests(Fixtures):
         self.venue.status = ResourceStatus.MAINTENANCE
         self.venue.save(update_fields=["status"])
         self.client.force_login(self.plain)
-        response = self.client.get(reverse("resources:venues"), {"status": "ACTIVE"})
+        response = self.client.get(reverse("resources:venues"), {"free": "1"})
         self.assertNotContains(response, "Moot Court")
 
     def test_search_is_applied_in_the_query(self):

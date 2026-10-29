@@ -291,8 +291,10 @@ class Vehicle(Resource):
         MANUAL = "MANUAL", "Manual"
 
     class Meta:
-        ordering = ("name",)      # not inherited; see the note on Venue
+        ordering = ("display_order", "name")      # not inherited; see the note on Venue
 
+    # Set by the Admin's ordering screen, as for venues.
+    display_order = models.PositiveIntegerField(default=0)
     registration_number = models.CharField(max_length=20, unique=True)
     vehicle_class = models.CharField(max_length=20, default="CAR")
     make = models.CharField(max_length=40)

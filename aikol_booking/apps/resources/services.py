@@ -9,7 +9,7 @@ from __future__ import annotations
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from .models import Facility, Resource, ResourceStatus, Venue
+from .models import Facility, Resource, ResourceStatus, Vehicle, Venue
 
 
 class DeletionRefused(ValidationError):
@@ -68,27 +68,35 @@ def reorder_facilities(ordered_ids: list[int]) -> None:
 
 
 @transaction.atomic
-def reorder_venues(ordered_ids: list[int]) -> None:
-    """Move venues into the given order and keep unlisted venues after them.
+def reorder_resources(model, ordered_ids: list[int]) -> None:
+    """Move venues or vehicles into the given order and keep unlisted ones after them.
 
-    The interface only enables this on the complete venue list, but preserving
+    The interface only enables this on the complete, unfiltered list, but preserving
     unlisted rows makes a forged or stale filtered request safe as well.
     """
     ordered = list(dict.fromkeys(int(i) for i in ordered_ids))
-    known = {venue.pk: venue for venue in Venue.objects.select_for_update()}
+    known = {row.pk: row for row in model.objects.select_for_update()}
     missing = [pk for pk in ordered if pk not in known]
     if missing:
-        raise ValidationError(f"No venue with id {missing[0]}.")
+        raise ValidationError(f"No {model._meta.verbose_name} with id {missing[0]}.")
 
     rest = [
-        venue.pk
-        for venue in Venue.objects.select_for_update()
+        row.pk
+        for row in model.objects.select_for_update()
         .exclude(pk__in=ordered)
         .order_by("display_order", "name", "pk")
     ]
     for position, pk in enumerate(ordered + rest, start=1):
         known[pk].display_order = position
-    Venue.objects.bulk_update(known.values(), ["display_order"])
+    model.objects.bulk_update(known.values(), ["display_order"])
+
+
+def reorder_venues(ordered_ids: list[int]) -> None:
+    reorder_resources(Venue, ordered_ids)
+
+
+def reorder_vehicles(ordered_ids: list[int]) -> None:
+    reorder_resources(Vehicle, ordered_ids)
 
 
 # Venue photographs are shown side by side on cards and in the gallery, so they

@@ -178,6 +178,7 @@ A building with venues cannot be deleted (PROTECT); it is hidden instead.
 | `make`, `model` | varchar(50) | |
 | `year` | integer | |
 | `seats` | integer | Validates `passenger_count` |
+| `display_order` | integer | Set by dragging rows on the vehicle management screen, as for venues. Existing vehicles were numbered by name |
 | `transmission` | varchar(10) | `AUTO`, `MANUAL` — a requester who cannot drive manual needs to know before booking |
 | `fuel_type` | varchar(20) | |
 | `road_tax_expiry` | date | A trip ending after this date is refused. Shown on administrator screens only — the booking screens report the vehicle as unavailable without giving the reason |

@@ -92,8 +92,8 @@ You stay signed in on your device until you sign out from the menu under your na
   grouped by building. Change the date or times, type how many people are coming, or tap a room
   type, and the list updates straight away. With a number of people, the smallest room that fits
   comes first and is marked **Best fit**.
-- Turn off **Free at this time only** to see every room, with booked ones marked **Booked until**
-  and rooms under maintenance marked as such.
+- Every room is shown, with booked ones marked **Booked until** and rooms under maintenance marked
+  as such. Turn on **Free at this time only** to see just the rooms you can book for that time.
 - **Grid** and **List** switch between large pictures and a compact list. A building with many
   rooms shows one row until you press **Show all**.
 - **Your Recent Rooms** at the top lists the rooms you booked last, with whether each is free.

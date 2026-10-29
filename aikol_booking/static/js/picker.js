@@ -65,9 +65,6 @@
 
     function submit() {
         var params = new URLSearchParams(new FormData(form));
-        // The checkbox sends nothing when off; say so, or the server reads a
-        // first visit and turns it back on.
-        if (!params.has('free')) params.set('free', '0');
         load(form.action.split('?')[0] + '?' + params.toString());
     }
 
