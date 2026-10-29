@@ -355,7 +355,8 @@ def attention(vehicles: list[Vehicle], today: dt.date) -> list[dict]:
         else:
             text = f"next renewal in {days} day{'s' if days != 1 else ''} ({car.name})"
             tone = "amber" if days <= 30 else "green"
-        out.append({"tone": tone, "figure": "Road tax", "text": text, "url": "resources:manage_vehicles"})
+        out.append({"tone": tone, "figure": None, "text": f"Road tax: {text}",
+                    "url": "resources:manage_vehicles"})
     return out
 
 

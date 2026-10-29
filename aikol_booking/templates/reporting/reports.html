@@ -46,11 +46,16 @@
 </div>
 
 {% if attention %}
-<section class="insight-attention" aria-label="Needs attention now">
+<section class="card insight-attention">
+    <div class="card-head"><h2 class="label">Needs Attention</h2></div>
+    <ul>
     {% for item in attention %}
-        <a class="insight-alert tone-{{ item.tone }}" href="{% url item.url %}">
-            <b>{{ item.figure }}</b><span>{{ item.text }}</span></a>
+        <li><a href="{% url item.url %}">
+            <b class="insight-count tone-{{ item.tone }}">{% if item.figure is not None %}{{ item.figure }}{% elif item.tone == 'green' %}✓{% else %}!{% endif %}</b>
+            <span>{{ item.text|capfirst }}</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg></a></li>
     {% endfor %}
+    </ul>
 </section>
 {% endif %}
 
