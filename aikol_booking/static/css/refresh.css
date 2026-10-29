@@ -315,7 +315,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.32); -webkit-backdrop-filter: blu
     .cal-filters { flex: 1 1 100%; }
     .cal-search { flex: 1 1 8rem; width: auto; min-width: 0; }
 }
-.cal-bar h1 { margin: 0; font-size: 1.6rem; }
+.cal-bar h1 { margin: 0; }
 .cal-range { font-size: 1.05rem; font-weight: 600; }
 .cal-step { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border-radius: 9px; color: var(--docket-ink); text-decoration: none; transition: background-color var(--dur-fast) var(--ease-out); }
 .cal-step:hover { background: #e8e8ed; }
@@ -667,6 +667,11 @@ a.cal-agenda-item:hover { background: #f5f5f7; }
 .heat-scale .swatch-4, table.heat td[data-level="4"] { background: #2f8a7a; }
 .heat-scale .swatch-5, table.heat td[data-level="5"] { background: var(--docket-green); }
 table.heat td { border-radius: 6px; }
+/* The grid fills its card; on a phone it keeps a readable size and scrolls
+   inside .heat-wrap instead of shrinking the cells to slivers. */
+table.heat { width: 100%; min-width: 34rem; table-layout: fixed; border-spacing: 4px; }
+table.heat thead th:first-child { width: 3rem; }
+table.heat td { width: auto; height: 2.1rem; }
 .hbar .track { height: 10px; border-radius: var(--radius-pill); background: #ececf0; }
 .hbar .fill { border-radius: var(--radius-pill); background: var(--docket-green); }
 .bar-col .bar { border-radius: 6px 6px 2px 2px; background: var(--docket-green); }
@@ -762,6 +767,11 @@ html, body, .docket-workspace { background: var(--docket-vellum); }
 /* Cards side by side in a grid are spaced by the grid gap; the stacking margin
    above pushed every card but the first down, so the first looked bigger. */
 .grid > .card + .card { margin-top: 0; }
+/* A row of cards stacked above or below another card, or another row, gets the
+   same gap; without it the two touched. */
+.grid + .card, .grid + section, .card + .grid, section + .grid, .grid + .grid, .stack + .card,
+.card + .stack { margin-top: 1.5rem; }
+.grid > section + section { margin-top: 0; }
 /* One picture shape for every resource card, whatever was uploaded. */
 .venue-card > img.framed { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
 .venue-card .card-foot { margin-top: auto; }
@@ -1103,13 +1113,28 @@ table.data th { color: var(--navy); }
 .insight-count.tone-red { background: var(--docket-oxblood-soft); color: var(--docket-oxblood); }
 .insight-count.tone-amber { background: var(--docket-brass-soft); color: var(--docket-brass); }
 .insight-count.tone-green { background: var(--docket-green-soft); color: var(--docket-green-deep); }
+/* Cards side by side end level, so a short card does not leave a ragged hole
+   beside a long one. */
+.insight-pair { align-items: stretch; }
+/* Short report tables stay tables: the site-wide rule turns any table in a
+   narrow .table-wrap into stacked sheets, which made a four-column list of
+   rooms 150px a row. Here a table only scrolls if it truly does not fit. */
+.insight-table { overflow-x: auto; }
+.insight-table table.data { min-width: 22rem; }
+.insight-table td, .insight-table th { white-space: nowrap; }
+.insight-table td:first-child { white-space: normal; }
+.insight-facts { display: grid; grid-template-columns: 1fr auto; margin: 0; }
+.insight-facts dt, .insight-facts dd { margin: 0; padding: 0.6rem 0; border-bottom: 1px solid var(--docket-rule); font-size: 0.92rem; }
+.insight-facts dt { color: var(--docket-ink-2, var(--docket-muted)); }
+.insight-facts dd { padding-left: 1rem; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.insight-facts dt:last-of-type, .insight-facts dd:last-of-type { border-bottom: 0; }
 .insight-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
 @media (min-width: 720px) { .insight-kpis { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1180px) { .insight-kpis { grid-template-columns: repeat(6, 1fr); } }
-.insight-kpi { display: grid; gap: 0.2rem; padding: 1rem 1.1rem; border-radius: var(--radius-card); background: #fff; border: 1px solid var(--docket-rule); }
+.insight-kpi { display: grid; align-content: start; gap: 0.15rem; padding: 0.85rem 1rem; border-radius: var(--radius-card); background: #fff; border: 1px solid var(--docket-rule); }
 .insight-kpi small { font-size: 0.8rem; font-weight: 500; color: var(--docket-muted); }
-.insight-kpi strong { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; color: var(--docket-ink); }
-.insight-kpi .delta { font-size: 0.78rem; font-weight: 600; color: var(--docket-muted); }
+.insight-kpi strong { font-family: var(--font-display); font-size: 1.6rem; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; color: var(--docket-ink); }
+.insight-kpi .delta { font-size: 0.76rem; line-height: 1.3; font-weight: 600; color: var(--docket-muted); }
 .insight-kpi .delta-good { color: var(--docket-green); }
 .insight-kpi .delta-bad { color: var(--docket-oxblood); }
 .insight-tabs { margin-bottom: 1rem; }
@@ -1139,4 +1164,24 @@ table.data th { color: var(--navy); }
     .print-only { display: block; margin: 1.5rem 0 0.5rem; font-size: 1.2rem; }
     .insight-scroll { max-height: none; overflow: visible; }
     .card, .insight-kpi { break-inside: avoid; }
+}
+/* Who Books: the group split is one short bar, so it sits above the list at
+   full width rather than as a mostly empty box beside it. */
+.insight-stack > .card + .card { margin-top: 1.25rem; }
+/* Labels here are sentences (rooms, places, reasons), so they get room and
+   may wrap instead of being cut to a fixed 168px. */
+.insight-pane .hbar { grid-template-columns: minmax(8rem, 38%) 1fr 3rem; }
+.insight-pane .hbar > span:first-child { white-space: normal; overflow: visible; line-height: 1.3; }
+/* Phones: the site-wide container rule stacks every table.data into sheets.
+   These report tables have three or four short columns that fit a phone as a
+   table, so they are put back; stacked, a ten-row list ran past 1,200px. */
+@container (max-width: 51.99rem) {
+    .insight-table table.data { display: table; min-width: 0; }
+    .insight-table table.data thead { position: static; width: auto; height: auto; overflow: visible; clip: auto; display: table-header-group; }
+    .insight-table table.data tbody { display: table-row-group; }
+    .insight-table table.data tbody tr { display: table-row; padding: 0; border-top: 0; }
+    .insight-table table.data td { display: table-cell; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--docket-rule); font-size: 0.85rem; }
+    .insight-table table.data td::before { content: none; }
+    .insight-table table.data td:first-child { font-weight: 600; }
+    .insight-table table.data th { padding: 0.5rem 0.6rem; font-size: 0.78rem; }
 }

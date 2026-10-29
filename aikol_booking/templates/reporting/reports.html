@@ -77,7 +77,7 @@
 {# Venues #}
 <div class="insight-pane" id="pane-venues" data-pane-body="venues" {% if tab != 'venues' %}hidden{% endif %}>
     <h2 class="print-only">Venues</h2>
-    <div class="grid grid-2 grid-top">
+    <div class="grid grid-2 insight-pair">
         <section class="card">
             <div class="card-head"><h3 class="label">Room Use by Building</h3></div>
             <div class="card-body">
@@ -156,12 +156,12 @@
         </div>
     </section>
 
-    <div class="grid grid-2 grid-top">
+    <div class="grid grid-2 insight-pair">
         <section class="card">
             <div class="card-head"><h3 class="label">Right-Sized Rooms</h3></div>
             <div class="card-body">
                 <p class="help m-0 mb-xs">Expected attendees against seats. Large rooms booked by small groups block bigger events.</p>
-                <div class="table-wrap">
+                <div class="insight-table">
                 <table class="data data-compact">
                     <thead><tr><th scope="col">Room</th><th scope="col" class="num">Seats</th>
                         <th scope="col" class="num">Usual Group</th><th scope="col">Fit</th></tr></thead>
@@ -202,7 +202,7 @@
         <div class="card-head"><h3 class="label">Each Car</h3></div>
         <div class="card-body">
             <p class="help m-0 mb-xs">Days out on trips in the period, and distance from the mileage written at key handover.</p>
-            <div class="table-wrap">
+            <div class="insight-table">
             <table class="data data-compact">
                 <thead><tr><th scope="col">Car</th><th scope="col" class="num">Trip Days</th>
                     <th scope="col" class="num">Distance</th><th scope="col" class="num">Road Tax Until</th></tr></thead>
@@ -220,7 +220,7 @@
             </div>
         </div>
     </section>
-    <div class="grid grid-2 grid-top">
+    <div class="grid grid-2 insight-pair">
         <section class="card">
             <div class="card-head"><h3 class="label">Where Trips Go</h3></div>
             <div class="card-body">
@@ -242,7 +242,7 @@
                 <p class="help m-0 mb-xs">The second approval, by Kulliyyah management, for the VMU driver.</p>
                 {% with m=vehicle_use.management %}
                 {% if m.total %}
-                <dl class="kv">
+                <dl class="insight-facts">
                     <dt>Decided in the period</dt><dd>{{ m.total }}</dd>
                     <dt>Approved</dt><dd>{{ m.approved }}%</dd>
                     <dt>Not approved</dt><dd>{{ m.declined }}%</dd>
@@ -260,7 +260,7 @@
 {# Office work #}
 <div class="insight-pane" id="pane-office" data-pane-body="office" {% if tab != 'office' %}hidden{% endif %}>
     <h2 class="print-only">Office Work</h2>
-    <div class="grid grid-2 grid-top">
+    <div class="grid grid-2 insight-pair">
         <section class="card">
             <div class="card-head"><h3 class="label">Time to Decide</h3></div>
             <div class="card-body">
@@ -292,7 +292,7 @@
         <section class="card">
             <div class="card-head"><h3 class="label">Keys</h3></div>
             <div class="card-body">
-                <dl class="kv">
+                <dl class="insight-facts">
                     <dt>Keys handed out</dt><dd>{{ office.keys.issued }}</dd>
                     <dt>Returned after the booking ended</dt><dd>{{ office.keys.late }}{% if office.keys.issued %} ({{ office.keys.late_percent }}%){% endif %}</dd>
                     <dt>Booking finished, key never collected</dt><dd>{{ office.keys.never }}</dd>
@@ -327,7 +327,7 @@
 {# Who books #}
 <div class="insight-pane" id="pane-people" data-pane-body="people" {% if tab != 'people' %}hidden{% endif %}>
     <h2 class="print-only">Who Books</h2>
-    <div class="grid grid-2 grid-top">
+    <div class="insight-stack">
         <section class="card">
             <div class="card-head"><h3 class="label">Bookings by Group</h3></div>
             <div class="card-body">
@@ -347,7 +347,7 @@
         <section class="card">
             <div class="card-head"><h3 class="label">Most Frequent Requesters</h3></div>
             <div class="card-body">
-                <div class="table-wrap">
+                <div class="insight-table">
                 <table class="data data-compact">
                     <thead><tr><th scope="col">Name</th><th scope="col">Affiliation</th>
                         <th scope="col" class="num">Bookings</th></tr></thead>

@@ -163,7 +163,7 @@ def compare(value, previous, *, unit: str = "count", higher_is_good: bool = True
     """A figure with its change on the previous period, worded for a first-time reader."""
     out = {"value": value, "previous": previous, "text": "", "tone": "flat"}
     if value is None or previous is None:
-        out["text"] = "Nothing to compare with" if previous is None else ""
+        out["text"] = "No earlier figure" if previous is None else ""
         return out
     diff = value - previous
     if unit == "percent_points":
@@ -184,7 +184,7 @@ def compare(value, previous, *, unit: str = "count", higher_is_good: bool = True
         if previous:
             out["text"] = f"{'Up' if diff > 0 else 'Down'} {round(abs(diff) / previous * 100)}% on {label}"
         else:
-            out["text"] = f"Up from none on {label}"
+            out["text"] = "Up from none"
     out["tone"] = "good" if (diff > 0) == higher_is_good else "bad"
     return out
 
